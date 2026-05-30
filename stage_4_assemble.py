@@ -67,7 +67,12 @@ def main(slug):
                 rife = staged_master_dir(slug, sh["who"], sh["kind"])
                 shot_mp4s.append(rife_shot(rife, sh["id"], per, p["work"]))
             elif sh["kind"] == "title":
+                # Per-episode titles dir wins; fall back to shared assets/titles/
                 tm = f"{p['titles']}/{sh['asset']}.mp4"
+                if not os.path.exists(tm):
+                    shared = f"/mnt/storage/shares/MACU/assets/titles/{sh['asset']}.mp4"
+                    if os.path.exists(shared):
+                        tm = shared
                 shot_mp4s.append(title_shot(tm, sh["id"], per, p["work"]))
             else:
                 raise ValueError(sh)
