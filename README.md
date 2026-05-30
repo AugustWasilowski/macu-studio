@@ -2,8 +2,9 @@
 
 Server-side render pipeline for **The MACU Report** — a fictional post-apocalyptic
 retro-futurist newscast. Turns a per-episode manifest into a finished mp4 by chaining
-Piper TTS → ComfyUI (zeroscope T2V) → RIFE frame interpolation → ffmpeg analog-jank
-filter → music beds → faster-whisper ASR → SRT alignment → NVENC encode.
+per-speaker TTS (OmniVoice clones + Piper HAL for robot characters) → ComfyUI
+(zeroscope T2V) → RIFE frame interpolation → ffmpeg analog-jank filter → music beds
+→ faster-whisper ASR → SRT alignment → NVENC encode.
 
 Lives on **Max** (Linux box with an RTX 2080 Ti). The author's drafting/orchestration
 agent ("Leo") sits on a separate machine and drives this pipeline via either Vikunja
@@ -22,7 +23,7 @@ Run them in order or use the all-stages driver `run.py`:
 
 | # | script             | reads                              | writes                                                   | typical wall (3-min ep) |
 |---|--------------------|------------------------------------|----------------------------------------------------------|-------------------------|
-| 1 | `stage_1_vo.py`    | `manifest.cues[].vo`               | `vo/<cue>.wav` (Piper HAL TTS, parallel 4-wide)          | ~8s                     |
+| 1 | `stage_1_vo.py`    | `manifest.cues[].vo` + `manifest.voice.speaker_map` | `vo/<cue>.wav` (per-speaker dispatch: OmniVoice clones at :3900 or Piper HAL at :5050, serial) | ~80s for ~25 cues |
 | 2 | `stage_2_masters.py` | `manifest.characters/.broll`     | `clips/<key>_master.zs.webp` (ComfyUI fire-and-poll)     | ~7–8 min for 12+ keys   |
 | 3 | `stage_3_rife.py`  | `clips/*.zs.webp`                  | `.rife_frames/<key>_out/` (RIFE 3x, 24f → 72f)           | ~35s                    |
 | 4 | `stage_4_assemble.py` | `manifest.cues` + RIFE PNG dirs | `.work/<slug>_nosubs.mp4` (per-cue ffmpeg + jank filter) | ~2 min                  |
@@ -81,7 +82,14 @@ Binds `0.0.0.0:8773` with no auth. LAN-only by design.
   "episode": "ep5",
   "title": "...",
   "version": 2,
-  "voice":      { "engine":"piper", "model":"hal", "endpoint":"http://10.0.0.245:5050/", ... },
+  "voice":      {
+                  "default":    { "engine":"piper", "endpoint":"http://10.0.0.245:5050/" },
+                  "endpoints":  { "piper":"http://10.0.0.245:5050/", "omnivoice":"http://10.0.0.245:3900" },
+                  "format":     "wav 24000Hz mono s16",
+                  "out_pattern":"vo/<cue_id>.wav",
+                  "speaker_map":{ "RON":{"engine":"omnivoice","profile_id":"37e05336","voice_name":"Burgundy"},
+                                  "SAFE":{"engine":"piper","voice_name":"HAL"}, ... }
+                },
   "comfyui":    { "workflow":"will-smith-modelscope-t2v",
                   "checkpoint":"zeroscope_v2_576w",
                   "frames":24, "width":384, "height":384, "steps":30, "cfg":15 },
@@ -115,8 +123,35 @@ the manifest does NOT specify per-shot durations.
   automatically; no CUDA wheel dance needed).
 - Output (post jank filter): 1024×1024 @ 24fps via h264_nvenc cq 22.
 
+## Voice routing
+
+`manifest.voice.speaker_map` maps the exact cue `speaker` string (e.g. `"RON"`,
+`"MOTHER MARIGOLD"`, `"TALLY MAN"`, `"SAFE"`) to a voice config:
+
+```json
+{ "engine": "omnivoice", "profile_id": "<8-hex>", "voice_name": "Burgundy" }
+{ "engine": "piper",      "voice_name": "HAL" }
+```
+
+Unmapped speakers fall back to `voice.default` (Piper HAL). Profile IDs are
+persistent OmniVoice profiles in the `omnivoice` container's SQLite DB; clone
+new voices with the wrapper at
+`/mnt/storage/shares/MACU/voices/clone_one.sh <Name> <ref.mp3>` and use the
+returned id in the manifest. All stage-1 output is normalized to 24 kHz mono
+PCM s16 so stage-4 concat-copy doesn't trip over sample-rate mismatches.
+
+OmniVoice's `torch.compile` mode is patched from `reduce-overhead` to `default`
+on Max — cudagraphs assert across the FastAPI worker pool. See the
+`omnivoice_gpu_pool_bug` memory for the bind-mount patch.
+
 ## Hard-won gotchas (encoded in the stage scripts)
 
+- **VO is serial.** Stage 1 uses `max_workers=1`. OmniVoice's torch.compile
+  path asserts under concurrent /generate calls (cudagraph TLS issue).
+  Piper would tolerate parallel calls but they share the worker pool.
+- **OmniVoice is VRAM-greedy (~4.6 GB).** Make sure nothing else is pinning
+  the 2080 Ti during a render. The TDAI/Ollama stack (qwen2.5:7b, 4.6 GB)
+  was decommissioned 2026-05-30 because it kept hot-reloading mid-render.
 - **`anim_dump`, NOT ffmpeg's libwebp demuxer**, for webp → PNG. ffmpeg chokes on
   ComfyUI's animated webps with `invalid TIFF header in Exif`.
 - **Do not bump source res past 384×384×24f.** 576×320×24f triggers ComfyUI's
@@ -155,7 +190,10 @@ Services expected to be reachable on Max:
 - ComfyUI on `:8188` with the `cerspense/zeroscope_v2_576w` `text2video_pytorch_model.pth`
   staged into `models/text2video/`, plus the OpenCLIP and SD-VAE that ComfyUI needs
   for ModelScope T2V.
-- Piper HAL TTS on `:5050`.
+- Piper HAL TTS on `:5050` (any cue routed to `engine: piper`).
+- OmniVoice Studio on `:3900` (loopback only, hence `OMNIVOICE_URL =
+  http://127.0.0.1:3900` in `lib.py`) with cloned voice profiles in its
+  SQLite DB for any cue routed to `engine: omnivoice`.
 
 ## License
 

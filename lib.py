@@ -10,6 +10,7 @@ PIPELINE = f"{SHARES}/pipeline"
 ASSETS = f"{SHARES}/assets"
 COMFY_URL = "http://10.0.0.245:8188"
 PIPER_URL = "http://10.0.0.245:5050"
+OMNIVOICE_URL = "http://127.0.0.1:3900"  # bound 127.0.0.1 only on max — stages run local
 COMFY_OUT = "/mnt/storage/comfyui/output/macu"
 
 
