@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+"""macu-render HTTP service.
+
+Drives the 8-stage pipeline (run.py) via HTTP for Leo's macu-report skill (or
+any caller). Single-worker queue (GPU is the bottleneck; one render at a time).
+
+Endpoints
+---------
+POST /render                {"slug":"epN", "from_stage":1, "only":null}
+    -> 202 {"job_id":"uuid", "queued":true}    or 400 if manifest missing
+
+GET  /jobs                                    list all known jobs (in-mem + disk)
+GET  /status/{job_id}                         current state + last-known events
+GET  /events/{job_id}?since=N                 SSE stream of events.jsonl,
+                                              one `data: <event-json>` per line,
+                                              starting from the Nth event
+GET  /health                                  liveness check
+
+Job state directory: /var/lib/macu-render/jobs/<job_id>/
+  - events.jsonl    structured events emitted by run.py
+  - run.log         combined stdout+stderr of run.py
+  - meta.json       job-level metadata
+
+Bind: 0.0.0.0:8773  (LAN-only by design; no auth)
+"""
+import os, sys, json, uuid, time, threading, queue, subprocess, signal
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+
+PIPELINE = os.path.dirname(os.path.abspath(__file__))
+JOBS_ROOT = "/var/lib/macu-render/jobs"
+SHARES_EP = "/mnt/storage/shares/MACU/episodes"
+RUN_PY = f"{PIPELINE}/run.py"
+PORT = 8773
+
+os.makedirs(JOBS_ROOT, exist_ok=True)
+
+# ----- job model -----------------------------------------------------------
+
+class Job:
+    def __init__(self, job_id, slug, from_stage=1, only=None):
+        self.id = job_id
+        self.slug = slug
+        self.from_stage = from_stage
+        self.only = only
+        self.state = "queued"       # queued | running | done | error
+        self.created_at = time.time()
+        self.started_at = None
+        self.finished_at = None
+        self.proc = None
+        self.events_path = f"{JOBS_ROOT}/{job_id}/events.jsonl"
+        self.log_path    = f"{JOBS_ROOT}/{job_id}/run.log"
+        self.meta_path   = f"{JOBS_ROOT}/{job_id}/meta.json"
+        os.makedirs(f"{JOBS_ROOT}/{job_id}", exist_ok=True)
+        # Touch the events file so SSE tail can open it immediately
+        open(self.events_path, "a").close()
+        self._persist()
+
+    def to_dict(self):
+        return {
+            "id": self.id, "slug": self.slug,
+            "from_stage": self.from_stage, "only": self.only,
+            "state": self.state,
+            "created_at": self.created_at,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "events_path": self.events_path,
+            "log_path": self.log_path,
+        }
+
+    def _persist(self):
+        with open(self.meta_path, "w") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+JOBS = {}        # job_id -> Job
+JOBS_LOCK = threading.Lock()
+WORK_Q = queue.Queue()
+
+def load_existing_jobs():
+    for jid in os.listdir(JOBS_ROOT):
+        meta = f"{JOBS_ROOT}/{jid}/meta.json"
+        if not os.path.exists(meta):
+            continue
+        try:
+            with open(meta) as f:
+                d = json.load(f)
+            j = Job.__new__(Job)
+            j.id = d["id"]; j.slug = d["slug"]
+            j.from_stage = d.get("from_stage", 1); j.only = d.get("only")
+            j.state = d.get("state", "unknown")
+            j.created_at = d.get("created_at"); j.started_at = d.get("started_at")
+            j.finished_at = d.get("finished_at")
+            j.events_path = d["events_path"]; j.log_path = d["log_path"]
+            j.meta_path = meta; j.proc = None
+            # Treat any still-running job as orphaned after a restart
+            if j.state in ("queued","running"):
+                j.state = "abandoned"
+                j._persist()
+            JOBS[j.id] = j
+        except Exception as e:
+            print(f"WARN load job {jid}: {e}", file=sys.stderr)
+
+# ----- worker thread -------------------------------------------------------
+
+def worker():
+    while True:
+        job_id = WORK_Q.get()
+        with JOBS_LOCK:
+            job = JOBS.get(job_id)
+        if not job:
+            continue
+        job.state = "running"; job.started_at = time.time(); job._persist()
+        cmd = [sys.executable, RUN_PY, job.slug,
+               "--events-out", job.events_path]
+        if job.from_stage and job.from_stage != 1:
+            cmd += ["--from", str(job.from_stage)]
+        if job.only:
+            cmd += ["--only", str(job.only)]
+        try:
+            with open(job.log_path, "wb") as log:
+                p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+                job.proc = p
+                p.wait()
+            job.state = "done" if p.returncode == 0 else "error"
+        except Exception as e:
+            job.state = "error"
+            with open(job.events_path, "a") as f:
+                f.write(json.dumps({"ts": time.time(), "kind": "job.error",
+                                    "error": str(e)}) + "\n")
+        finally:
+            job.finished_at = time.time(); job._persist()
+
+threading.Thread(target=worker, daemon=True).start()
+
+# ----- http handler --------------------------------------------------------
+
+def _json(handler, code, body):
+    payload = json.dumps(body).encode()
+    handler.send_response(code)
+    handler.send_header("Content-Type", "application/json")
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.send_header("Cache-Control", "no-store")
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "macu-render/1.0"
+
+    def log_message(self, fmt, *args):
+        sys.stderr.write(f"[{time.strftime('%H:%M:%S')}] {self.address_string()} {fmt % args}\n")
+
+    # GET ---------------------------------------------------------------
+    def do_GET(self):
+        u = urlparse(self.path)
+        if u.path == "/health":
+            return _json(self, 200, {"ok": True, "uptime_s": int(time.time()-START)})
+
+        if u.path == "/jobs":
+            with JOBS_LOCK:
+                items = [j.to_dict() for j in sorted(JOBS.values(), key=lambda j: -j.created_at)]
+            return _json(self, 200, {"jobs": items})
+
+        if u.path.startswith("/status/"):
+            job_id = u.path.split("/",2)[2]
+            with JOBS_LOCK:
+                j = JOBS.get(job_id)
+            if not j:
+                return _json(self, 404, {"error": "job not found"})
+            # Tail the last N events for state quick-view
+            events = []
+            if os.path.exists(j.events_path):
+                with open(j.events_path) as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line: continue
+                        try: events.append(json.loads(line))
+                        except json.JSONDecodeError: pass
+            return _json(self, 200, {"job": j.to_dict(),
+                                      "event_count": len(events),
+                                      "last_events": events[-12:]})
+
+        if u.path.startswith("/events/"):
+            job_id = u.path.split("/",2)[2]
+            with JOBS_LOCK:
+                j = JOBS.get(job_id)
+            if not j:
+                return _json(self, 404, {"error": "job not found"})
+            since = int(parse_qs(u.query).get("since", ["0"])[0])
+            return self._sse_stream(j, since)
+
+        if u.path == "/" or u.path == "/index":
+            return _json(self, 200, {
+                "service": "macu-render",
+                "endpoints": ["POST /render", "GET /jobs", "GET /status/{id}",
+                              "GET /events/{id}?since=N", "GET /health"],
+            })
+
+        _json(self, 404, {"error": "not found"})
+
+    # POST --------------------------------------------------------------
+    def do_POST(self):
+        u = urlparse(self.path)
+        if u.path != "/render":
+            return _json(self, 404, {"error": "not found"})
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            body = json.loads(self.rfile.read(length)) if length else {}
+        except json.JSONDecodeError:
+            return _json(self, 400, {"error": "invalid json"})
+        slug = body.get("slug")
+        if not slug:
+            return _json(self, 400, {"error": "slug required"})
+        manifest = f"{SHARES_EP}/{slug}/manifest.json"
+        if not os.path.exists(manifest):
+            return _json(self, 400, {"error": f"manifest not found: {manifest}"})
+        job_id = uuid.uuid4().hex[:12]
+        job = Job(job_id, slug,
+                  from_stage=int(body.get("from_stage", 1)),
+                  only=body.get("only"))
+        with JOBS_LOCK:
+            JOBS[job_id] = job
+        WORK_Q.put(job_id)
+        return _json(self, 202, {"job_id": job_id, "queued": True,
+                                  "events_url": f"/events/{job_id}",
+                                  "status_url": f"/status/{job_id}"})
+
+    # SSE ---------------------------------------------------------------
+    def _sse_stream(self, job, since):
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Connection", "keep-alive")
+            # Disable buffering for nginx-likes
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+        except Exception:
+            return
+
+        def write(line):
+            self.wfile.write(line.encode())
+            self.wfile.flush()
+
+        write(f": connected job={job.id} since={since}\n\n")
+        sent = 0
+        idle_pings = 0
+        with open(job.events_path) as f:
+            # Skip already-sent events
+            for _ in range(since):
+                if not f.readline():
+                    break
+                sent += 1
+            while True:
+                line = f.readline()
+                if line:
+                    line = line.strip()
+                    if line:
+                        try:
+                            write(f"data: {line}\n\n")
+                            sent += 1
+                            try:
+                                evt = json.loads(line)
+                                if evt.get("kind") in ("job.done", "job.error"):
+                                    write("event: end\ndata: {}\n\n")
+                                    return
+                            except json.JSONDecodeError:
+                                pass
+                        except (BrokenPipeError, ConnectionResetError):
+                            return
+                    idle_pings = 0
+                else:
+                    # No new data; reflect job state
+                    if job.state in ("done", "error", "abandoned"):
+                        try:
+                            write("event: end\ndata: {}\n\n")
+                        except Exception:
+                            pass
+                        return
+                    idle_pings += 1
+                    if idle_pings >= 30:  # 15s of nothing
+                        try:
+                            write(": ping\n\n")
+                        except (BrokenPipeError, ConnectionResetError):
+                            return
+                        idle_pings = 0
+                    time.sleep(0.5)
+
+# ----- main ----------------------------------------------------------------
+
+START = time.time()
+
+def main():
+    load_existing_jobs()
+    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
+    print(f"macu-render serving on 0.0.0.0:{PORT}  jobs={len(JOBS)}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+if __name__ == "__main__":
+    main()
