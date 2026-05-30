@@ -46,6 +46,26 @@ python3 run.py <slug> --events-out events.jsonl    # emit structured events for 
 
 Writes `/tmp/macu_render_<slug>_report.json` with per-stage timings.
 
+### Surgical VO iteration
+
+When you only want to change a few lines or swap a few speakers, don't pay the
+full stage-1 TTS bill. Edit the manifest (e.g. a `voice.speaker_map[<spk>]`
+swap, or a cue's `vo` text), then:
+
+```sh
+EP=/mnt/storage/shares/MACU/episodes/<slug>
+rm -f $EP/vo/<affected_cue>.wav            # delete only the cues you changed
+MTIME=$(stat -c %Y $EP/manifest.json)
+touch -d "@$((MTIME + 60))" $EP/vo/*.wav   # push surviving wavs past the manifest mtime
+python3 run.py <slug> --from 1
+```
+
+Stage 1's cache check is `mtime(vo/X.wav) > mtime(manifest)`, so the touch
+preserves caches for unchanged cues. Stages 4-8 cascade automatically because
+their own caches are also mtime-keyed against upstream artifacts. Whisper
+still re-runs (~5 min) since the audio changed, but TTS does only the cues
+you actually edited.
+
 ## HTTP service
 
 `serve.py` is a thin stdlib `http.server` wrapper for clients that can't or won't
