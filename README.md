@@ -13,6 +13,23 @@ task hand-off, the included `serve.py` HTTP service, or n8n webhook bridges.
 This repo doesn't include the source manifests, the rendered episodes, or the model
 weights — those live on the shared media drive (`/mnt/storage/shares/MACU/...`).
 
+## Authoring side — the `macu-report` skill
+
+This repo now holds **both halves** of the MACU production loop:
+
+- **`skills/macu-report/`** — the *authoring* skill, run on the writer's side (Leo / Claude cowork). It
+  brainstorms a MACU Report script with the writer, casts each character (prompt core, seed, and voice), and
+  emits the per-episode `manifest.json` that this pipeline consumes. It then kicks off a render — via the
+  `serve.py` HTTP service (reached through n8n MCP bridges from the sandboxed cowork environment) or a Vikunja
+  hand-off — and streams stage progress back into the chat.
+- **everything else in this repo** — the *render* pipeline documented below, which turns that manifest into
+  the finished mp4 on Max.
+
+The skill is a Claude skill: `skills/macu-report/SKILL.md` plus `references/` (the character/voice bible,
+world lore, the manifest schema, and the pipeline + render-trigger contract) and
+`scripts/validate_manifest.py`, which catches bad manifests before they ever reach this pipeline. Install it
+on the authoring machine — it's the front end to this repo's back end.
+
 ## Pipeline stages
 
 Each stage is a standalone module under `stage_<N>_<name>.py` and takes one positional
