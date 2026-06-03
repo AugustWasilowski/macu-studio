@@ -109,6 +109,34 @@ def main(path):
             if c not in cue_ids:
                 errors.append(f"music bed '{bed.get('name')}' references unknown cue '{c}'")
 
+    # --- standard episode bookends (soft — see references/thumbnail.md) ---
+    intro_cue = next((c for c in m["cues"]
+                      if c.get("segment") == "intro" or c.get("no_subs")), None)
+    if intro_cue is None:
+        warnings.append("no intro cue — expected a front WALTER cue with an 'intro' title shot, "
+                        "pad_seconds, no_subs:true (the animated open).")
+    else:
+        intro_shots = [s for s in intro_cue.get("shots", [])
+                       if s.get("kind") == "title" and s.get("asset") in ("intro", "thumb")]
+        if not intro_shots:
+            warnings.append("intro cue has no {kind:title, asset:'intro'} shot")
+        else:
+            for s in intro_shots:
+                if s.get("asset") not in titles:
+                    errors.append(f"intro references title asset '{s.get('asset')}' not in title_assets{{}}")
+        if not intro_cue.get("no_subs"):
+            warnings.append("intro cue should set no_subs:true (the card shows the title; the gag is in the VO)")
+    # closing bumper: a WALTER cue near the end teasing next (over the 'next' card)
+    tail = m["cues"][-3:] if len(m["cues"]) >= 3 else m["cues"]
+    if not any(c.get("speaker") == "WALTER"
+               and ("tune in" in (c.get("vo") or "").lower()
+                    or "stay tuned" in (c.get("vo") or "").lower()
+                    or "next week" in (c.get("vo") or "").lower())
+               for c in tail):
+        warnings.append("no Walter next-episode bumper near the end — weekday: \"Tune in for tomorrow's "
+                        "episode: <Subtitle>\" over the 'next' card; Friday: \"Tune in next week for a new "
+                        "installment of the Mayor Awesome Cinematic Universe!\"")
+
     # --- report ---
     n_char = sum(1 for cue in m["cues"] for sh in cue["shots"] if sh.get("kind") == "character")
     n_broll = sum(1 for cue in m["cues"] for sh in cue["shots"] if sh.get("kind") == "broll")

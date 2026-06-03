@@ -35,7 +35,12 @@ def main(slug):
 
     manifest_words = []
     for cue in m["cues"]:
-        for tok in re.findall(r"\S+", cue["vo"]):
+        # Hold cues set vo: "" (or omit it) — no words to align, no subs to burn.
+        # no_subs cues are spoken but deliberately not subtitled (e.g. the intro
+        # title card, whose episode title is already shown on the card).
+        if cue.get("no_subs"):
+            continue
+        for tok in re.findall(r"\S+", cue.get("vo") or ""):
             n = norm(tok)
             if n:
                 manifest_words.append({"tok": tok, "norm": n, "cue": cue["id"]})
@@ -89,7 +94,8 @@ def main(slug):
             if n >= MAX_WORDS or dur >= MAX_DUR: break
             if last in BREAK and n >= 2: break
             if last in SOFT and n >= 5: break
-            if j+1 < len(manifest_words) and manifest_words[j+1]["cue"] != manifest_words[i]["cue"]: break
+            if j+1 >= len(manifest_words): break
+            if manifest_words[j+1]["cue"] != manifest_words[i]["cue"]: break
             j += 1
         s = manifest_words[i]["s"]
         e = max(manifest_words[j]["e"] + END_PAD, s + MIN_DUR)

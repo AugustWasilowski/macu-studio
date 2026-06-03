@@ -4,15 +4,31 @@
 Idempotent: skips if /tmp/macu_whisper_<slug>.json exists.
 Usage: python3 stage_6_whisper.py <slug>
 """
-import sys, os, json, time, subprocess
+import sys, os, json, time, subprocess, threading
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import episode_paths
+from lib import episode_paths, progress_tick
 
 WHISPER_VENV = "/tmp/whisper-venv/bin/python"
 
+# Estimated wall-time multiplier for faster-whisper large-v3 CPU int8 on max.
+# Empirically ~10 min for a 4-min episode = 2.5×, padded a bit.
+WHISPER_WALL_MULTIPLIER = 2.5
+
+
+def _probe_duration(path):
+    """Return audio duration in seconds, or None if ffprobe fails."""
+    try:
+        r = subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
+                            "-of","default=noprint_wrappers=1:nokey=1", path],
+                           capture_output=True, text=True, check=True)
+        return float(r.stdout.strip())
+    except Exception:
+        return None
+
+
 def main(slug):
     p = episode_paths(slug)
-    src = p["music_nosubs"] if os.path.exists(p["music_nosubs"]) else p["nosubs"]
+    src = p["nosubs"]   # transcribe clean VO (no music) for accurate sub timing
     wav = f"/tmp/macu_{slug}_audio.wav"
     out = f"/tmp/macu_whisper_{slug}.json"
 
@@ -24,6 +40,21 @@ def main(slug):
     subprocess.run(["ffmpeg","-y","-i", src,"-vn","-ac","1","-ar","16000",
                     "-c:a","pcm_s16le", wav],
                    check=True, capture_output=True)
+
+    # Background ticker: estimates fraction from elapsed / (audio_dur × multiplier),
+    # capped at 0.95 so the post-subprocess tick(1.0) is the one that finalizes the zone.
+    audio_dur = _probe_duration(wav)
+    estimated_total = (audio_dur or 240.0) * WHISPER_WALL_MULTIPLIER
+    stop_ticker = threading.Event()
+
+    def _ticker():
+        t0 = time.time()
+        while not stop_ticker.wait(2.0):
+            frac = min(0.95, (time.time() - t0) / estimated_total)
+            progress_tick(6, "whisper", frac)
+
+    th = threading.Thread(target=_ticker, daemon=True)
+    th.start()
 
     script = f"""
 import json, time
@@ -42,7 +73,11 @@ with open("{out}","w") as f:
     json.dump({{"segments":out_segs,"duration":info.duration,"language":info.language}},f)
 print(f"whisper: {{len(out_segs)}} segs, {{sum(len(s['words']) for s in out_segs)}} words, {{time.time()-t0:.1f}}s")
 """
-    subprocess.run([WHISPER_VENV, "-c", script], check=True)
+    try:
+        subprocess.run([WHISPER_VENV, "-c", script], check=True)
+    finally:
+        stop_ticker.set()
+    progress_tick(6, "whisper", 1.0)
     print(f"[stage 6 whisper] {out} ({round(time.time()-start,2)}s)")
     return {"cached": False, "whisper": out, "wall_s": round(time.time()-start,2)}
 

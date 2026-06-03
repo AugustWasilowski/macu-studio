@@ -59,7 +59,7 @@ Bumping to 576×320×24f triggers ComfyUI lowvram offload and crashes the tempor
 ```json
 "music": {
   "enabled": true,
-  "source_dir": "/mnt/storage/shares/MACU/Musak",
+  "source_dir": "/mnt/storage/shares/MACU/assets/music",
   "clips": ["60s_big_band_00.mp3","60s_big_band_01.mp3","60s_big_band_02.mp3","60s_big_band_03.mp3"],
   "clip_seconds": 19.8, "gain": 0.16, "fade_in": 1.5, "fade_out": 2.5, "random": true,
   "beds": [
@@ -72,9 +72,10 @@ Bumping to 576×320×24f triggers ComfyUI lowvram offload and crashes the tempor
   "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
   "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
   "fontsize": 18,
-  "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2"
+  "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2"
 }
 ```
+**Do NOT put `FontName=` or `Fontsize=` inside `force_style`.** Stage 8 prepends its own `FontName=<resolved>,Fontsize=<n>` from the `font`/`fontsize` fields, and libass takes the LAST occurrence of a key — a stale `FontName=Better VCR` in the string overrides stage 8's fc-scan'd family (`Better VCR-JP`) and silently drops subtitles back to the default font. Keep `font: "Better VCR"` (fc-scan resolves it to the real family automatically; don't hard-code `Better VCR-JP`). `force_style` carries only the non-font style keys (colours, border, margin, alignment).
 Update each bed's `cues` to this episode's actual intro (first ~3 cues) and outro (last ~2 cues) — replace the
 `<last-2-cue-ids>` placeholder with real ids or validation fails. On a **short bit (≲6 cues)** the two beds
 overlap: use one cue each (intro = first cue, outro = last cue) or set `music.enabled` to `false` and skip the
@@ -92,6 +93,15 @@ Characters have distinct voices now (via the OmniVoice TTS), not one HAL for eve
   - Piper has one voice, **HAL** — no profile_id, just `{ "engine": "piper", "voice_name": "HAL" }`.
 - **Every distinct speaker in `cues[]` should have a `speaker_map` entry.** Unmapped speakers silently fall
   back to `voice.default` (Piper HAL) — fine for a deliberate robot, wrong for a person.
+
+> **Live voice docs (authoritative — prefer these over the snapshot table below):**
+> - `OmniVoice_Voice_Roster.md` — the live index of every cloned voice by character (profile_id, timbre,
+>   status). If it and the running registry (`GET :3900/profiles`) diverge, the registry wins.
+> - `OmniVoice_Voice_Tips.md` — voice SHAPING: the `speed` / `seed` / `instruct` / `guidance_scale` knobs and
+>   the full `/generate` reference. A two-register character (e.g. STRIDE) can be ONE profile with two
+>   `instruct` strings ("warm, chipper" vs "flat, robotic") — no second clone needed; `speed=0.85` slows a
+>   rushed read before you ever re-clone.
+> When you clone, recast, or approve a voice, UPDATE `OmniVoice_Voice_Roster.md` (and the Bible casting intent).
 
 ### Voice catalog (cloned OmniVoice profiles — IDs are persistent)
 
@@ -145,8 +155,9 @@ appliances is the joke; everyone else gets a real voice.
 - Shot kinds:
   - `{"kind":"character","who":"<characters key>","seed":N}` — seed should match `characters[who].seed`.
   - `{"kind":"broll","who":"<broll key>"}` — no seed.
-  - `{"kind":"title","asset":"macu_report_title"|"macu_report_bumper"}` — looked up under
-    `episodes/<slug>/titles/<asset>.mp4`.
+  - `{"kind":"title","asset":"macu_report_title"|"macu_report_bumper"|"thumb"}` — looked up under
+    `episodes/<slug>/titles/<asset>.mp4`. Add `"fill":"loop"` to loop the card across its whole slot (the
+    open card); default holds the last frame (`tpad`).
 
 ## Authoring conventions (from the proven EP5 run)
 
@@ -162,6 +173,75 @@ appliances is the joke; everyone else gets a real voice.
   → subtitles → final mp4).
 - **Per-shot `seed` override** is allowed (`shots[*].seed`) for when one character master comes out wrong and
   you want to re-roll just that instance without touching the others.
+
+## Silent beats (`hold` cues) & SFX
+
+**Silent / no-dialogue cues** (comedic reaction beats, animated moments): a cue with `vo: ""` plus
+`hold_seconds: N`. Max generates a silent wav of that length so the stage-4 timing math is untouched, and
+burns no subtitle. Two modes — set `hold_style`:
+- `"freeze"` (Max's default for no-dialogue cues): the shot FREEZES on its first frame. This is the
+  **double-take** technique — rapid still cutaways (Ron → Walter → Ron) that read as deadpan reaction stills.
+- `"play"`: the shot PLAYS OUT fully (animated). Use when the MOTION is the joke/payoff (e.g. the moon
+  blinking out, a slow wave, a final fade). Max must NOT first-frame these — call it out in the handoff too,
+  since freeze is the default.
+
+**SFX one-shots**: a top-level `sfx` block (sibling to `music`) — `{ "cue", "file", "gain", "at": "start|end" }`
+entries mixed at a cue's timestamp via the same stage-5 adelay→amix chain as music beds. Files live in the
+shared `assets/sfx/` dir (CC0, reusable). Missing file → skipped gracefully. Tonal SFX (dings, sweeps, hums,
+clicks) can be synthesized with ffmpeg into `assets/sfx/`; realistic ones (coins, etc.) are sourced CC0 from
+freesound. (Both `hold` cues and the `sfx` block were added to Max's pipeline in the ep10 work.)
+
+## Episode bookends — the animated open & the next-episode bumper
+
+Every episode opens on an **animated intro** (Walter's gag VO over `intro.mp4`) and closes on a **bumper**
+showing the NEXT episode's title card. Author both as cues; the pipeline handles the mechanics. Full spec +
+templates: `references/thumbnail.md`.
+
+**Open — first cue `c00`:**
+
+```json
+{
+  "id": "c00", "segment": "intro", "speaker": "WALTER",
+  "vo": "The MACU Report! In black and white! Tonight's episode: A safe AI, a hungry vending machine, and the Bloom Hour.",
+  "no_subs": true,
+  "pad_seconds": 2.0,
+  "shots": [ { "id": "c00_s1", "kind": "title", "asset": "intro" } ]
+}
+```
+
+- `asset:"intro"` is the animated open (TONIGHT → THE MACU REPORT → this episode's title card with flicker),
+  which **plays once then clone-holds** the title — do NOT add `fill:"loop"`. `pad_seconds` holds the title
+  ~2s past Walter's VO (audio silence-padded to match); `no_subs:true` keeps the gag in the audio only — the
+  card shows the *real* title, Walter announces a *different* one (+ brags "in black and white!"). Add
+  `intro` to `title_assets`.
+- Keep the intro animation (~5–6s) shorter than Walter's VO so it plays in full. Add `c00` to the **intro**
+  music bed's `cues` so the theme plays under the whole open.
+
+**Close — last cue (the bumper):** Walter teases next over the NEXT episode's title card.
+
+```json
+{ "id": "c99", "segment": "next_time", "speaker": "WALTER",
+  "vo": "Tune in for tomorrow's episode: Cavity or a Career.",
+  "no_subs": true, "pad_seconds": 1.5,
+  "shots": [ { "id": "c99_s1", "kind": "title", "asset": "next" } ] }
+```
+
+- **Mon–Thu:** `"Tune in for tomorrow's episode: <next subtitle>."` over `next.mp4` (the next ep's card).
+- **Friday / week finale:** `"Tune in next week for a new installment of the Mayor Awesome Cinematic Universe!"`
+  over the generic "next week" `next.mp4` card.
+- Add it to the **outro** bed's `cues`.
+
+**New cue/shot fields** (all optional; ignored when absent, so existing episodes are unaffected):
+
+- cue `pad_seconds: N` — trailing held/looped video + silence after the VO (tacked onto the last shot).
+- cue `no_subs: true` — spoken but deliberately not subtitled.
+- title shot `fill: "loop"` — loop the card across its slot instead of clone-holding the last frame (the
+  animated `intro`/`next` cards play once and clone-hold, so they do NOT use this).
+
+**Bookend assets in `titles/` (Max renders + moves them):** `intro.mp4` (1024×1024, animated open → this
+title card), `thumb_wide.mp4` (1920×1080 → `final/<slug>_thumb.png` for YouTube), and `next.mp4` (1024×1024,
+the NEXT episode's card for the bumper; Friday = a generic "next week" card). `intro` and `next` are cue
+shots (put them in `title_assets`); `thumb_wide.mp4` is not.
 
 ## Worked reference
 

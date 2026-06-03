@@ -3,7 +3,7 @@
 All stage scripts accept <slug> as argv and read paths relative to
 /mnt/storage/shares/MACU/episodes/<slug>/.
 """
-import os, json, subprocess, time, glob
+import os, json, socket, subprocess, time, glob, urllib.request, urllib.error
 
 SHARES = "/mnt/storage/shares/MACU"
 PIPELINE = f"{SHARES}/pipeline"
@@ -11,7 +11,58 @@ ASSETS = f"{SHARES}/assets"
 COMFY_URL = "http://10.0.0.245:8188"
 PIPER_URL = "http://10.0.0.245:5050"
 OMNIVOICE_URL = "http://127.0.0.1:3900"  # bound 127.0.0.1 only on max — stages run local
+OMNIVOICE_CONTAINER = "omnivoice"
 COMFY_OUT = "/mnt/storage/comfyui/output/macu"
+
+
+def omnivoice_start(wait_timeout=180, poll_interval=2):
+    """Bring the OmniVoice container up and wait until :3900 responds.
+
+    Idempotent: if the container is already running, `docker start` is a no-op
+    and the probe loop just confirms readiness. Raises RuntimeError on timeout.
+    """
+    print(f"[omnivoice] starting container '{OMNIVOICE_CONTAINER}' ...")
+    r = subprocess.run(["docker", "start", OMNIVOICE_CONTAINER],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"docker start {OMNIVOICE_CONTAINER} failed: "
+                           f"{r.stderr.strip() or r.stdout.strip()}")
+    deadline = time.time() + wait_timeout
+    last_err = None
+    while time.time() < deadline:
+        # 1) TCP first (cheap)
+        try:
+            with socket.create_connection(("127.0.0.1", 3900), timeout=2):
+                pass
+        except OSError as e:
+            last_err = e
+            time.sleep(poll_interval)
+            continue
+        # 2) HTTP confirm — any reply (200 / 404 / 405) means FastAPI is up
+        try:
+            urllib.request.urlopen(OMNIVOICE_URL + "/docs", timeout=3).read()
+            print(f"[omnivoice] ready after {wait_timeout - int(deadline - time.time())}s")
+            return
+        except urllib.error.HTTPError:
+            print(f"[omnivoice] ready (HTTP responding) after "
+                  f"{wait_timeout - int(deadline - time.time())}s")
+            return
+        except Exception as e:
+            last_err = e
+            time.sleep(poll_interval)
+    raise RuntimeError(f"omnivoice did not become ready in {wait_timeout}s "
+                       f"(last error: {last_err!r})")
+
+
+def omnivoice_stop():
+    """Stop the OmniVoice container to release VRAM. Best-effort — never raises."""
+    r = subprocess.run(["docker", "stop", "-t", "5", OMNIVOICE_CONTAINER],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        print(f"[omnivoice] stopped (VRAM released)")
+    else:
+        print(f"[omnivoice] stop returned non-zero: "
+              f"{r.stderr.strip() or r.stdout.strip()}")
 
 
 def episode_paths(slug):
@@ -29,6 +80,7 @@ def episode_paths(slug):
         "out_mp4": f"{base}/final/{slug}.mp4",
         "out_srt": f"{base}/final/{slug}.srt",
         "out_thumbs": f"{base}/final/{slug}_thumbs.jpg",
+        "out_thumb_png": f"{base}/final/{slug}_thumb.png",
         "music_dir": f"{base}/.work/music",
         "nosubs": f"{base}/.work/{slug}_nosubs.mp4",
         "music_nosubs": f"{base}/.work/{slug}_music_nosubs.mp4",
@@ -109,3 +161,26 @@ def staged_master_webp(slug, key, kind):
 def stage_timer():
     t0 = time.time()
     return lambda: round(time.time() - t0, 2)
+
+
+# Sub-stage progress hook. run.py registers a callback here at startup; stages
+# call progress_tick(...) to report intra-stage completion. Silent no-op when
+# unregistered, so stages stay runnable as standalone scripts.
+_progress_tick = None
+
+
+def set_progress_tick(fn):
+    """Register a callable fn(stage_n: int, name: str, frac: float)."""
+    global _progress_tick
+    _progress_tick = fn
+
+
+def progress_tick(stage_n, name, frac):
+    """Report fractional progress within stage_n. Safe to call always."""
+    if _progress_tick is None:
+        return
+    try:
+        f = max(0.0, min(1.0, float(frac)))
+        _progress_tick(int(stage_n), str(name), f)
+    except Exception:
+        pass

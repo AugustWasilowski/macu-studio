@@ -7,7 +7,7 @@ Usage: python3 stage_2_masters.py <slug>
 import sys, os, json, time, urllib.request, random, glob, shutil
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs, COMFY_URL,
-                 COMFY_OUT, staged_master_webp)
+                 COMFY_OUT, staged_master_webp, progress_tick)
 
 STYLE_NEG_FALLBACK = (
     "shutterstock, watermark, text, caption, logo, color, colour, modern, "
@@ -126,6 +126,7 @@ def main(slug):
                         shutil.copy2(src, j["target"])
                         done.add(j["key"])
                         print(f"  done {j['key']:24} +{round(time.time()-start,1)}s -> {j['target']}")
+                        progress_tick(2, "masters", len(done) / len(jobs))
             else:
                 # PID submission failed but cold-load probably still ran. Look for the file by prefix.
                 pattern = "/mnt/storage/comfyui/output/macu/{}/{}*.webp".format(slug, os.path.basename(j["prefix"]))
@@ -134,6 +135,7 @@ def main(slug):
                     shutil.copy2(matches[-1], j["target"])
                     done.add(j["key"])
                     print(f"  done {j['key']:24} (recovered cold-load) -> {j['target']}")
+                    progress_tick(2, "masters", len(done) / len(jobs))
 
     if len(done) < len(jobs):
         missing = [j["key"] for j in jobs if j["key"] not in done]

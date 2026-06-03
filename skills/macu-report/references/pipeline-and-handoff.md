@@ -25,10 +25,13 @@ the bridged MCPs (Vikunja, the n8n proxy).
    serialized on the GPU. First gen cold-loads and times out the request but keeps running (fire-and-poll).
 3. `interpolate_masters.py` — RIFE 3× (24→72 frames) for smooth motion. ~35s for a dozen masters.
 4. `assemble.py` — per shot: anim_dump → jank filtergraph (B&W, grain, vignette, etc.) → concat shots → mux
-   VO → per cue; then concat cues → mix the music beds → `final/<slug>_nosubs` cache.
+   VO → per cue; then concat cues → mix the music beds → `final/<slug>_nosubs` cache. The open cue plays the
+   animated `intro` card under Walter's announcement and clone-holds the title for the `pad_seconds` tail; the
+   closing bumper plays the NEXT episode's `next` card; `no_subs` cues are spoken but not subtitled.
 5. `run_whisper.py` — faster-whisper aligns the rendered audio for subtitle timing. (~10 min on CPU.)
 6. `build_srt_aligned.py` — manifest text at whisper timings → SRT (short lines, ~7 words/3s max).
 7. final burn — burns the SRT in the Better VCR font + NVENC encode → `final/<slug>.mp4` + `_thumbs.jpg`.
+   Then a 1920×1080 YouTube thumbnail is extracted from the wide open card → `final/<slug>_thumb.png`.
 
 Cheap re-renders: VO, masters, RIFE frames, and the `_nosubs` cut are cached, so subtitle/music/style tweaks
 re-encode in seconds without regenerating shots.
@@ -61,7 +64,7 @@ mcp__n8n-mcp__get_execution(workflowId="macuRenderStatus001", executionId=<id>, 
 Parse the same `Respond[...].json` → `{job:{state,...}, event_count, last_events[]}`.
 - `job.state` ∈ `queued | running | done | error | abandoned`. **Treat `abandoned` like `error`** (service was restarted mid-job).
 - `last_events` holds the recent `stage.started` / `stage.done` events (with `n`, `name`, `wall_s`, and the `result` payload). Diff it between polls to stream live stage progress into chat.
-- On `job.done`, the event carries `final` (the mp4 path), `thumbs`, `final_size_mb`, `final_duration_s`. The final lands at `episodes/<slug>/final/<slug>.mp4` and syncs back to Leo's drive — present it to August.
+- On `job.done`, the event carries `final` (the mp4 path), `thumbs`, `youtube_thumb` (the 1920×1080 `final/<slug>_thumb.png`), `final_size_mb`, `final_duration_s`. The final lands at `episodes/<slug>/final/<slug>.mp4` and syncs back to Leo's drive — present it (and the thumbnail) to August.
 
 **Cache-aware shortcuts** (same as the CLI `--from`/`--only`):
 - `{slug}` — full 8-stage pipeline (~13 min cold; whisper is the slow stage).
@@ -72,6 +75,10 @@ Parse the same `Respond[...].json` → `{job:{state,...}, event_count, last_even
 **Titles auto-resolve**: the assembler checks `episodes/<slug>/titles/<asset>.mp4` then falls back to the shared
 `/mnt/storage/shares/MACU/assets/titles/<asset>.mp4` (Max staged the canonical title + bumper there). So you do
 NOT need to stage title MP4s from cowork for a new episode.
+
+**Bookend assets**: the per-episode `intro.mp4`, `thumb_wide.mp4`, and `next.mp4` are rendered from
+Hyperframes during the handoff and **Max moves them into `episodes/<slug>/titles/`** (call them out in the
+task). The render then auto-extracts `final/<slug>_thumb.png` (1920×1080) from `thumb_wide.mp4` for YouTube.
 
 Fallback if the bridges ever break: the Vikunja-task handoff below still works with no new infra.
 
@@ -123,3 +130,11 @@ The coordination board is Vikunja **project 3** (`agent-coordination`). Users: *
 When something genuinely warrants it (a finished episode), you can announce in HAL register through the
 StackChan robot: `mcp__stackchan__speak`. The room-TTS `announce-home` webhook is NOT reachable from this
 sandbox, but StackChan is bridged and works.
+
+
+## Voice render reality — `speed` & two-register characters (2026-06-02)
+
+The OmniVoice `/generate` API accepts `speed` (see `OmniVoice_Voice_Tips.md`), but the **stage-1 VO wrapper in the MACU pipeline does not pass it yet** (found on SSA-115). Practical consequences when authoring/handoff:
+
+- **Shape performance from the LINE TEXT.** Warm = chipper punctuation, exclamations, contractions; cold/clinical = short clipped sentences, no contractions, em-dashes for hard stops. `instruct` will NOT do emotion (it 400s on free-text; it's gender/age/pitch/accent/whisper only).
+- **Two-register characters (e.g. STRIDE warm↔cold):** either (a) render the cold/flat machine half from **Piper HAL `:5050`** (canonical machine register) and the warm half from the OmniVoice clone, editing the seam in post; or (b) patch the stage-1 wrapper to forward `speed` (e.g. `0.85` for the cold half) before relying on it. Do NOT put `speed` in the manifest expecting it to take until the wrapper is patched.

@@ -16,7 +16,8 @@ import sys, os, json, time, importlib.util, subprocess, glob, argparse
 
 PIPELINE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PIPELINE)
-from lib import episode_paths, load_manifest
+from lib import episode_paths, load_manifest, set_progress_tick
+import stackchan
 
 STAGES = [
     (1, "vo",       "stage_1_vo"),
@@ -75,6 +76,26 @@ def make_thumbs(slug):
     canvas.save(out, "JPEG", quality=88)
     return out
 
+def make_youtube_thumb(slug):
+    """Pull one still for the YouTube upload thumbnail from the wide intro card
+    (titles/thumb_wide.mp4 @ 1920x1080), falling back to the square card
+    (titles/thumb.mp4). Writes final/<slug>_thumb.png. Returns the path, or
+    None if the episode has no thumb card."""
+    p = episode_paths(slug)
+    out = p["out_thumb_png"]
+    wide = f"{p['titles']}/thumb_wide.mp4"
+    square = f"{p['titles']}/thumb.mp4"
+    if os.path.exists(wide):
+        src, scale = wide, "1920:1080"
+    elif os.path.exists(square):
+        src, scale = square, "1024:1024"
+    else:
+        return None
+    subprocess.run(["ffmpeg", "-y", "-ss", "1.0", "-i", src,
+                    "-frames:v", "1", "-vf", f"scale={scale}", "-q:v", "2", out],
+                   capture_output=True, check=True)
+    return out
+
 _events_fp = None
 
 def emit(kind, **payload):
@@ -93,11 +114,22 @@ def main():
     ap.add_argument("--only", type=int, default=None)
     ap.add_argument("--events-out", default=None,
                     help="Append JSONL events to this path (one per stage + job-level)")
+    ap.add_argument("--no-stackchan", action="store_true",
+                    help="Disable StackChan LED progress bar (also via MACU_NO_STACKCHAN env var)")
     args = ap.parse_args()
     slug = args.slug
 
     if args.events_out:
         _events_fp = open(args.events_out, "a", buffering=1)  # line-buffered
+
+    # StackChan LED progress bar: opt-out via flag/env, auto-skip if device unreachable.
+    stackchan_on = not (args.no_stackchan or os.environ.get("MACU_NO_STACKCHAN"))
+    if stackchan_on:
+        stackchan_on = stackchan.reachable()
+        if not stackchan_on:
+            print("[stackchan] unreachable, LED progress disabled for this run")
+    stackchan.set_enabled(stackchan_on)
+    set_progress_tick(lambda n, name, frac: stackchan.paint(n, frac))
 
     # Sanity check: manifest must exist
     paths = episode_paths(slug)
@@ -109,32 +141,43 @@ def main():
     report = {"slug": slug, "stages": [], "started": time.time()}
     emit("job.started", slug=slug, from_stage=args.from_stage, only=args.only)
     t_total = time.time()
-    for num, name, modname in STAGES:
-        if args.only and num != args.only:
-            continue
-        if num < args.from_stage:
-            continue
-        print(f"\n=== stage {num} {name} ===")
-        emit("stage.started", n=num, name=name)
-        t0 = time.time()
-        mod = load_stage(modname)
-        try:
-            result = mod.main(slug) or {}
-        except Exception as e:
+    job_failed = False
+    try:
+        for num, name, modname in STAGES:
+            if args.only and num != args.only:
+                continue
+            if num < args.from_stage:
+                continue
+            print(f"\n=== stage {num} {name} ===")
+            emit("stage.started", n=num, name=name)
+            stackchan.paint(num, 0.0)
+            t0 = time.time()
+            mod = load_stage(modname)
+            try:
+                result = mod.main(slug) or {}
+            except Exception as e:
+                elapsed = round(time.time()-t0, 2)
+                report["stages"].append({"n": num, "name": name, "error": str(e),
+                                         "wall_s": elapsed})
+                print(f"!! stage {num} {name} FAILED ({elapsed}s): {e}")
+                emit("stage.error", n=num, name=name, error=str(e), wall_s=elapsed)
+                emit("job.error", error=f"stage {num} {name}: {e}")
+                with open(f"/tmp/macu_render_{slug}_report.json","w") as f:
+                    json.dump(report, f, indent=2)
+                stackchan.paint_error(num)
+                time.sleep(2)  # let the user see which zone failed before clear
+                job_failed = True
+                sys.exit(1)
             elapsed = round(time.time()-t0, 2)
-            report["stages"].append({"n": num, "name": name, "error": str(e),
-                                     "wall_s": elapsed})
-            print(f"!! stage {num} {name} FAILED ({elapsed}s): {e}")
-            emit("stage.error", n=num, name=name, error=str(e), wall_s=elapsed)
-            emit("job.error", error=f"stage {num} {name}: {e}")
-            with open(f"/tmp/macu_render_{slug}_report.json","w") as f:
-                json.dump(report, f, indent=2)
-            sys.exit(1)
-        elapsed = round(time.time()-t0, 2)
-        result["n"] = num; result["name"] = name; result["wall_s"] = elapsed
-        report["stages"].append(result)
-        print(f"-- stage {num} {name} done in {elapsed}s")
-        emit("stage.done", n=num, name=name, wall_s=elapsed, result=result)
+            result["n"] = num; result["name"] = name; result["wall_s"] = elapsed
+            report["stages"].append(result)
+            print(f"-- stage {num} {name} done in {elapsed}s")
+            emit("stage.done", n=num, name=name, wall_s=elapsed, result=result)
+            stackchan.paint(num, 1.0)
+    finally:
+        if job_failed:
+            stackchan.clear()
+        # success path clears after the celebratory hold below
 
     # Verify final
     final = paths["out_mp4"]
@@ -142,6 +185,13 @@ def main():
         thumbs = make_thumbs(slug)
         report["final"] = final
         report["thumbs"] = thumbs
+        try:
+            yt = make_youtube_thumb(slug)
+            if yt:
+                report["youtube_thumb"] = yt
+                print(f"YouTube thumb: {yt}")
+        except Exception as e:
+            print(f"[youtube thumb] skipped: {e}")
         report["final_size_mb"] = round(os.path.getsize(final)/(1024*1024), 2)
         try:
             r = subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
@@ -156,12 +206,21 @@ def main():
     with open(rep_path, "w") as f:
         json.dump(report, f, indent=2)
     emit("job.done", final=final, thumbs=report.get("thumbs"),
+         youtube_thumb=report.get("youtube_thumb"),
          final_size_mb=report.get("final_size_mb"),
          final_duration_s=report.get("final_duration_s"),
          total_wall_s=report["total_wall_s"], report_path=rep_path)
     print(f"\nReport: {rep_path}")
     print(f"Final:  {final}")
     print(f"Total wall: {report['total_wall_s']}s")
+
+    # Celebratory hold: only on a full render that produced final/<slug>.mp4.
+    # Partial runs (--from N, --only N) leave the last-painted state so August
+    # can see how far it got. He can clear manually via the MCP set_buffer tool.
+    if os.path.exists(final):
+        stackchan.paint_all_done()
+        time.sleep(3)
+        stackchan.clear()
 
 if __name__ == "__main__":
     main()

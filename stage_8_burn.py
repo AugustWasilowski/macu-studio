@@ -50,7 +50,13 @@ def main(slug):
     except FileNotFoundError:
         pass  # fc-list/fc-scan not installed — proceed with manifest name
 
-    style = f"FontName={font_name},Fontsize={fontsize},{extra}"
+    # Strip any FontName/Fontsize from the manifest's force_style so the
+    # resolved values win — libass takes the last occurrence in force_style,
+    # and a stale FontName=Better VCR in the manifest would override the
+    # fc-scan'd Better VCR-JP, causing a silent default-font fallback.
+    extra_parts = [p for p in (s.strip() for s in extra.split(","))
+                   if p and not p.lower().startswith(("fontname=", "fontsize="))]
+    style = ",".join([f"FontName={font_name}", f"Fontsize={fontsize}", *extra_parts])
     srt_esc = srt.replace(":","\\:")
     sub_filter = (f"subtitles='{srt_esc}':fontsdir='{fontsdir}':force_style='{style}'")
 

@@ -11,3 +11,31 @@ venv/
 *.log
 .idea/
 .vscode/
+
+# Episode artifacts (large generated files)
+episodes/*/clips/
+episodes/*/vo/
+episodes/*/frames/
+episodes/*/final/
+episodes/*/.rife_frames/
+episodes/*/.work/
+episodes/*/titles/*.mp4
+# Assets (large binary files)
+assets/music/
+assets/sfx/
+assets/fonts/
+# Voice profiles
+voices/*.wav
+voices/*.mp3
+# ComfyUI outputs
+*.webp
+*.zs.webp
+# Whisper cache
+/tmp/
+# Episode backup dirs
+*backup*/
+# Legacy episode dirs (EP2/EP3/EP4 were pre-pipeline)
+EP2/
+EP3/
+EP4/
+Commercials/
