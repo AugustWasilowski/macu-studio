@@ -39,3 +39,9 @@ EP2/
 EP3/
 EP4/
 Commercials/
+
+# studio
+studio/frontend/node_modules/
+studio/frontend/dist/
+studio/frontend/tsconfig.tsbuildinfo
+studio/**/*.egg-info/
