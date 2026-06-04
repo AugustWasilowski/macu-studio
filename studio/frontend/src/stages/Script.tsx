@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type GenManifestSummary } from "../api";
-import { writersApi } from "../api/writers";
 import { useStore } from "../store";
 import { Modal } from "../components/Modal";
 import { Markdown } from "../components/Markdown";
@@ -21,7 +20,6 @@ export function Script({ slug }: { slug: string }) {
   const [preview, setPreview] = useState(false);
   const [saved, setSaved] = useState(true);
   const [gen, setGen] = useState<GenManifestSummary | null>(null);
-  const [notesOpen, setNotesOpen] = useState(true);
 
   useEffect(() => {
     if (scriptQ.data) {
@@ -61,20 +59,6 @@ export function Script({ slug }: { slug: string }) {
       qc.invalidateQueries({ queryKey: ["cues", slug] });
     },
     onError: (e: Error) => push("apply failed: " + e.message, "err"),
-  });
-
-  // Send the script to Max's always-on writers' room (fire-and-forget).
-  const writersMut = useMutation({
-    mutationFn: () => writersApi.kick(slug),
-    onSuccess: () => push("Sent to Max — notes will appear when ready", "ok"),
-    onError: (e: Error) => push("writers' room failed: " + e.message, "err"),
-  });
-
-  // Poll for the synthesized notes Max writes to writers_room.md.
-  const notesQ = useQuery({
-    queryKey: ["writersRoom", slug],
-    queryFn: () => writersApi.notes(slug),
-    refetchInterval: 5000,
   });
 
   // Ctrl/Cmd+S
@@ -123,14 +107,6 @@ export function Script({ slug }: { slug: string }) {
             >
               {genMut.isPending ? "Reading script…" : "Generate manifest"}
             </button>
-            <button
-              className="btn"
-              disabled={writersMut.isPending}
-              title="Send script.md to Max's writers' room for a critique pass (notes appear when ready)"
-              onClick={() => writersMut.mutate()}
-            >
-              {writersMut.isPending ? "Sending…" : "Send to writers' room"}
-            </button>
           </div>
         </header>
         <div className="flex-1 min-h-0">
@@ -156,12 +132,6 @@ export function Script({ slug }: { slug: string }) {
         </footer>
       </section>
 
-      <WritersRoomPanel
-        open={notesOpen}
-        onToggle={() => setNotesOpen((v) => !v)}
-        notes={notesQ.data}
-      />
-
       <GenManifestModal
         summary={gen}
         onClose={() => setGen(null)}
@@ -169,45 +139,6 @@ export function Script({ slug }: { slug: string }) {
         applying={applyMut.isPending}
       />
     </div>
-  );
-}
-
-function WritersRoomPanel({
-  open, onToggle, notes,
-}: {
-  open: boolean;
-  onToggle: () => void;
-  notes?: { text: string; mtime: number | null; exists: boolean };
-}) {
-  const exists = !!notes?.exists;
-  return (
-    <section
-      className="panel flex flex-col ml-2 border-l hairline"
-      style={{ width: open ? 380 : 44, transition: "width 120ms ease" }}
-    >
-      <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-        {open && (
-          <div className="panel-title">
-            WRITERS' ROOM NOTES
-            {exists && <span className="text-green ml-2 text-[10px]">● ready</span>}
-          </div>
-        )}
-        <button className="btn ml-auto" onClick={onToggle} title={open ? "Collapse" : "Expand"}>
-          {open ? "›" : "‹"}
-        </button>
-      </header>
-      {open && (
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 text-[13px] leading-relaxed">
-          {exists ? (
-            <ScriptPreview text={notes!.text} />
-          ) : (
-            <div className="logtail text-[12px] text-txt-faint">
-              waiting for Max…
-            </div>
-          )}
-        </div>
-      )}
-    </section>
   );
 }
 
