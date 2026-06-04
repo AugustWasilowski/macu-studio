@@ -130,6 +130,29 @@ export function Audio({ slug }: { slug: string }) {
     onError: (e: Error, cueId) => { setBusy(`cue:${cueId}`, false); push(`regen failed: ${e.message}`, "err"); },
   });
 
+  // Edit a cue's VO text (the line the TTS reads) and save the manifest, like the script editor.
+  const saveCueText = useMutation({
+    mutationFn: async ({ id, text }: { id: string; text: string }) => {
+      const m = manifest.data as any;
+      if (!m) throw new Error("manifest not loaded");
+      const copy = JSON.parse(JSON.stringify(m));
+      const cue = (copy.cues || []).find((c: any) => c.id === id);
+      if (!cue) throw new Error(`cue ${id} not found`);
+      if ((cue.vo || "") === text) return { noop: true };
+      cue.vo = text;
+      await api.putManifest(slug, copy);
+      return { saved: true };
+    },
+    onSuccess: (r: any) => {
+      if (r?.saved) {
+        qc.invalidateQueries({ queryKey: ["manifest", slug] });
+        qc.invalidateQueries({ queryKey: ["cues", slug] });
+        push("VO text saved", "ok");
+      }
+    },
+    onError: (e: Error) => push("save failed: " + e.message, "err"),
+  });
+
   const regenAllMissing = () => {
     const missing = cues.data?.cues.filter((c) => c.status === "missing") ?? [];
     if (!missing.length) { push("No missing VO cues", "info"); return; }
@@ -260,6 +283,7 @@ export function Audio({ slug }: { slug: string }) {
           <div className="panel-title">MANIFEST PREVIEW</div>
           {selCue ? (
             <CueInspector
+              key={selCue.id}
               cue={selCue}
               isPlaying={curCueId === selCue.id}
               isBusy={!!busy[`cue:${selCue.id}`]}
@@ -267,6 +291,7 @@ export function Audio({ slug }: { slug: string }) {
               slug={slug}
               onPlay={() => togglePlay(selCue.id)}
               onRegen={() => regen.mutate(selCue.id)}
+              onSaveText={(text) => saveCueText.mutate({ id: selCue.id, text })}
             />
           ) : (
             <div className="text-txt-faint">Select a cue on the left to see its full metadata.</div>
@@ -279,7 +304,7 @@ export function Audio({ slug }: { slug: string }) {
 }
 
 function CueInspector({
-  cue, isPlaying, isBusy, speaker, slug, onPlay, onRegen,
+  cue, isPlaying, isBusy, speaker, slug, onPlay, onRegen, onSaveText,
 }: {
   cue: Cue;
   isPlaying: boolean;
@@ -288,8 +313,12 @@ function CueInspector({
   slug: string;
   onPlay: () => void;
   onRegen: () => void;
+  onSaveText: (text: string) => void;
 }) {
   void slug;
+  // Local draft; the component is keyed by cue.id so this resets when you select another cue.
+  const [draft, setDraft] = useState(cue.text);
+  const saveIfChanged = () => { if (draft !== cue.text) onSaveText(draft); };
   return (
     <>
       <div className="flex items-center gap-3">
@@ -309,8 +338,18 @@ function CueInspector({
         <RegenNotes onSubmit={() => onRegen()} />
       </div>
       <div className="flex flex-col gap-1">
-        <span className="label-tiny">cue.text</span>
-        <p className="text-amber whitespace-pre-wrap">{cue.text || <em className="text-txt-faint">(hold cue, no VO)</em>}</p>
+        <span className="label-tiny">cue.text <span className="text-txt-faint">/ VO — saves on blur</span></span>
+        <textarea
+          className="input w-full text-amber"
+          style={{ minHeight: 80, resize: "vertical", whiteSpace: "pre-wrap" }}
+          value={draft}
+          placeholder={cue.is_hold ? "(hold cue — typing here adds spoken VO)" : "VO line the TTS reads…"}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={saveIfChanged}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); }
+          }}
+        />
       </div>
       <div className="grid grid-cols-2 gap-1.5 text-[12px]">
         <span className="label-tiny">speaker</span><span>{cue.speaker}</span>
