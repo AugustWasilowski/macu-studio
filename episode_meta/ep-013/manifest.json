@@ -1,0 +1,802 @@
+{
+  "episode": "ep-013",
+  "title": "The MACU Report — Episode 13 — The Combine",
+  "version": 1,
+  "authored_by": "leo",
+  "authored": "2026-06-01",
+  "notes": "WEEK 2 (Wed) — Road to the Crater Bowl, Day 3. Fresh reset: NO Unit 7/moon/Signal. CONTINUITY: moon returned end of ep10, normal, unmentioned. Roster is ZERO (ep12 the last Slag walked home) → Ron holds live tryouts ('The Combine'); Coach Bodhi=Snoop judges 'energy', prefers the least-alive; nobody viable, so Ron drafts BRENDA (Walter's car, where Gary=Newman lives) onto the Slags. Wider-MACU bit: SURVIVAL STRENGTH SANCTUM (SARGE=Announcer, VO over gym b-roll). ONE ignored AI beat (Glowboys' 0.4s 40-yd = machine/reactor/war-bot tech) — long fuse to ~ep15. Recurring kill-line: '____ during the weather' (ep13: the barrel rolls into the crater). NO new clones — all profiles exist. NO hold cues. v2 script (writers'-room punch-up). NEW GRAPHIC: open_tryouts card. REUSE: the_crater_bowl; scoreboard comp new state 'scoreboard_noline' (CRATER BOWL / NO LINE / UNPRICEABLE); macu_weather. OmniVoice /generate = multipart -F.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "GARY": {
+        "engine": "omnivoice",
+        "profile_id": "bebcfa40",
+        "voice_name": "Newman"
+      },
+      "CRATER CARL": {
+        "engine": "omnivoice",
+        "profile_id": "bc466292",
+        "voice_name": "Popiel"
+      },
+      "COACH BODHI": {
+        "engine": "omnivoice",
+        "profile_id": "31649b70",
+        "voice_name": "Snoop"
+      },
+      "CHET": {
+        "engine": "omnivoice",
+        "profile_id": "973d5617",
+        "voice_name": "Howie"
+      },
+      "SARGE": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w (watermark-free). 384x384x24f locked - do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Cold-start fire-and-poll. For each cue with non-empty vo: POST the line (multipart form-data -F, NOT JSON) to the speaker_map voice -> vo/<cue_id>.wav. No hold cues this episode. Per-shot screen time = cue duration / number of shots. Apply jank filtergraph, RIFE 3x, concat, mux VO, mix music beds, mix sfx one-shots, burn subs -> final/ep13.mp4.",
+  "title_assets": {
+    "macu_report_title": "auto-resolves from shared assets/titles",
+    "macu_report_bumper": "auto-resolves from shared assets/titles",
+    "open_tryouts": "episodes/ep13/titles/open_tryouts.mp4 (NEW — Hyperframes 'macu-open-tryouts-card'; reads 'SLAGS OPEN TRYOUTS'. Max: render + copy here)",
+    "scoreboard_noline": "episodes/ep13/titles/scoreboard_noline.mp4 (NEW STATE of ep11 'crater-bowl-scoreboard-card': CRATER BOWL / NO LINE / UNPRICEABLE)",
+    "macu_weather": "REUSE — copy ep11/ep7 weather card here, or auto-resolves from shared assets/titles"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "combine",
+        "anchor": "cues",
+        "cues": [
+          "c06",
+          "c07",
+          "c08",
+          "c09",
+          "c10"
+        ],
+        "max_seconds": 34,
+        "gain": 0.18,
+        "loop": true,
+        "note": "Big-band bed under the tryout combine segment. Loop to cover."
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c32",
+          "c33"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Intro + a bed under the combine + outro. Rest plays dry."
+  },
+  "sfx": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/sfx",
+    "note": "One-shots mixed at each cue's start (VO stays full). SYNTH (Max, ffmpeg into assets/sfx/, reuse from ep11/ep12): intercom_crackle.wav (Gary's intercom signature), reactor_hum.wav (low ominous hum under the Glowboys/reactor beat). Missing file -> skip gracefully.",
+    "acquire_needed": [],
+    "cues": [
+      {
+        "cue": "c04",
+        "file": "intercom_crackle.wav",
+        "gain": 0.5,
+        "at": "start"
+      },
+      {
+        "cue": "c19",
+        "file": "intercom_crackle.wav",
+        "gain": 0.5,
+        "at": "start"
+      },
+      {
+        "cue": "c24",
+        "file": "intercom_crackle.wav",
+        "gain": 0.5,
+        "at": "start"
+      },
+      {
+        "cue": "c27",
+        "file": "reactor_hum.wav",
+        "gain": 0.4,
+        "at": "start"
+      },
+      {
+        "cue": "c33",
+        "file": "intercom_crackle.wav",
+        "gain": 0.35,
+        "at": "start"
+      }
+    ]
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Do NOT put FontName=/Fontsize= in force_style; stage 8 prepends its own from font/fontsize."
+  },
+  "characters": {
+    "ron_facepaint": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, fervent, at a vintage news desk"
+    },
+    "ron_defiant": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, chin up, defiant, at the news desk"
+    },
+    "ron_fraying": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, fraying, wide-eyed, leaning toward the camera"
+    },
+    "ron_idea": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, an idea dawning, finger raised, at the news desk"
+    },
+    "ron_proud": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint smearing, proud, hand over heart, at the news desk"
+    },
+    "ron_bet": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, sliding two keys across the news desk, intense"
+    },
+    "ron_consistency": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, leaning back, arms folded, resolute, at the news desk"
+    },
+    "ron_alarmed": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint, alarmed, pointing at a television monitor"
+    },
+    "ron_recover": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, two stripes of team face paint smearing, recovering a brave face, at the news desk"
+    },
+    "walter_deadpan": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, deadpan, even expression"
+    },
+    "walter_pained": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, a long pause, faintly pained, at the news desk"
+    },
+    "walter_toss": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, gesturing toward a television monitor, measured"
+    },
+    "walter_dry": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, one eyebrow slightly raised, dry"
+    },
+    "walter_monday": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, hands folded, flat expression"
+    },
+    "walter_wind": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, not looking up, smoothly reading from notes"
+    },
+    "walter_breezy": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, breezy, gesturing past, pleasant"
+    },
+    "walter_weather": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, gesturing at a chalk weather map, measured, 1970s studio"
+    },
+    "carl_manic": {
+      "seed": 6161,
+      "core": "a manic superfan sports correspondent in face paint and a team scarf, at the rim of a smoky crater stadium, 1970s broadcast, wild grin, shouting into a microphone"
+    },
+    "chet": {
+      "seed": 7373,
+      "core": "a soft pudgy cheerful man in an ill-fitting borrowed helmet and street clothes, hopeful nervous smile, at the rim of a crater stadium, 1970s broadcast"
+    },
+    "bodhi_serene": {
+      "seed": 4200,
+      "core": "a serene bald coach in a tracksuit and dark sunglasses, seated cross-legged at the rim of a smoky crater, beatific calm, 1970s broadcast, speaking calmly, hands open"
+    }
+  },
+  "broll": {
+    "intercom_speaker": "a dented control-room intercom speaker with a single glowing red bulb, 1970s",
+    "brenda_curtains": "a lone car in a dark studio parking lot with tiny curtains in the windows and a thermos on the dash, cozy, night",
+    "combine_line": "a ragged line of mismatched wasteland applicants waiting at the rim of a crater stadium, 1970s broadcast",
+    "combine_line_thin": "a nearly empty crater stadium rim, a couple of forlorn applicants and a steel drum, 1970s broadcast",
+    "steel_drum": "a battered steel oil drum standing alone on a crater field, lit like an athlete, 1970s broadcast",
+    "sanctum_gym": "a grim wasteland gymnasium, figures hauling scrap metal and tires, harsh light, 1970s broadcast",
+    "sanctum_tire": "a silhouette flipping a massive tractor tire at dusk in a ruined yard, 1970s broadcast",
+    "brenda_team": "a lone car in the lot, headlights bright, little curtains drawn back, looking eager, night",
+    "brenda_scarf": "a lone car in the lot with a team scarf tied to its antenna, headlights on, night",
+    "brenda_dim": "a lone car in a dark empty parking lot, one curtain twitching, headlights slowly dimming, night",
+    "glowboys_blur": "hulking glowing armored athletes blurring across a field at impossible speed, light trails, ominous, 1970s broadcast",
+    "weather_map": "a 1970s television weather map of a blasted region, chalk symbols"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. It's Wednesday. The Sector Nine Slags' current roster stands at — and I want to be transparent — zero. Which is why tonight, we make history.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron_facepaint",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "The Slags have no players, no coach who blinks, and one athlete who walked into the wasteland during last night's weather.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter_deadpan",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Which is why tonight: the first-ever live Crater Bowl tryout. The Slags are open for applications.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron_defiant",
+          "seed": 77777
+        },
+        {
+          "id": "c03_s2",
+          "kind": "title",
+          "asset": "open_tryouts"
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "GARY",
+      "vo": "Mornin', fellas. Brenda made coffee. Well — I made it. In Brenda. We're settlin' in real nice out here. Thinkin' about little curtains. She likes the light.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "broll",
+          "who": "intercom_speaker"
+        },
+        {
+          "id": "c04_s2",
+          "kind": "broll",
+          "who": "brenda_curtains"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "Please get out of my car, Gary. To the field.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "walter_pained",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "combine",
+      "speaker": "WALTER",
+      "vo": "We go live to the Big Hole, where Crater Carl is running the Slags' open combine.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "walter_toss",
+          "seed": 24601
+        },
+        {
+          "id": "c06_s2",
+          "kind": "broll",
+          "who": "combine_line"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "combine",
+      "speaker": "CRATER CARL",
+      "vo": "Thanks, Walter! Tremendous turnout — we got nine, maybe ten warm bodies, and I'm being generous on both numbers! The book opened the Slags at a hundred-to-one, and I'm told the linemaker is now on the phone with a priest! First up — a real specimen!",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "carl_manic",
+          "seed": 6161
+        },
+        {
+          "id": "c07_s2",
+          "kind": "broll",
+          "who": "combine_line"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "combine",
+      "speaker": "CHET",
+      "vo": "Hi, yeah, Chet. I've never played, I bruise looking at things, and I have a note from my physician that just says no. But I've got a great attitude and I own my own helmet.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "chet",
+          "seed": 7373
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "combine",
+      "speaker": "COACH BODHI",
+      "vo": "I'm not feeling it, Chet. Too much pulse. A roster of the living is a roster of the afraid. Now — that barrel. That barrel has presence. The barrel stays.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "bodhi_serene",
+          "seed": 4200
+        },
+        {
+          "id": "c09_s2",
+          "kind": "broll",
+          "who": "steel_drum"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "combine",
+      "speaker": "RON",
+      "vo": "Bodhi, the barrel is a barrel. Does anyone out there have a pulse? It's optional! Pulse is now officially optional! ...I hear how that sounds. The requirement has been lowered.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "ron_fraying",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "ad",
+      "speaker": "SARGE",
+      "vo": "In the aftermath of the AI Wars, where strength is not a virtue but a lifeline — one fortress stands. Survival Strength Sanctum. We do not make survivors. We make warriors. Our clients have survived three of the four major collapses.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "broll",
+          "who": "sanctum_gym"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "ad",
+      "speaker": "SARGE",
+      "vo": "Confront the challenge. Five five five, two three six eight. One call is all it takes to forge the warrior within. That's the Sanctum guarantee.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "broll",
+          "who": "sanctum_tire"
+        },
+        {
+          "id": "c12_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "ad",
+      "speaker": "RON",
+      "vo": "Sanctum. Be honest. Can you build me eleven warriors by Friday? ...Can you build me one? ...Can you build me most of one?",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "ron_fraying",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "signing",
+      "speaker": "WALTER",
+      "vo": "Back at the combine, Coach Bodhi has finalized his evaluations.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "walter_dry",
+          "seed": 24601
+        },
+        {
+          "id": "c14_s2",
+          "kind": "broll",
+          "who": "combine_line_thin"
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "signing",
+      "speaker": "COACH BODHI",
+      "vo": "I've made my cuts. I'm releasing the men and keeping the barrel, the strong silent fella in the trench coat, and the good empty space by the third cone. The space tested well. Real stillness in it.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "bodhi_serene",
+          "seed": 4200
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "signing",
+      "speaker": "RON",
+      "vo": "That's not a roster, Bodhi, that's a yard sale! ...No. No. I know what we do. We need a frame. We need heart. We need something that shows up every single night and never leaves.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "ron_idea",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "signing",
+      "speaker": "RON",
+      "vo": "Effective immediately, the Sector Nine Slags sign — Brenda. She starts at left tackle. Look at that frame. Look at that wheelbase. That is a competitor.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "ron_proud",
+          "seed": 77777
+        },
+        {
+          "id": "c17_s2",
+          "kind": "broll",
+          "who": "brenda_team"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "signing",
+      "speaker": "WALTER",
+      "vo": "Ron. That is my car.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "walter_deadpan",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "signing",
+      "speaker": "GARY",
+      "vo": "We're IN, Brenda! Baby, we made the TEAM! I told you — I told you we'd find our people!",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "broll",
+          "who": "brenda_team"
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "line",
+      "speaker": "WALTER",
+      "vo": "With Sector Nine fielding one car and a quantity of strong empty space, the book has taken the Crater Bowl off the board entirely. There is no line. They could not price it.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "walter_deadpan",
+          "seed": 24601
+        },
+        {
+          "id": "c20_s2",
+          "kind": "title",
+          "asset": "scoreboard_noline"
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "line",
+      "speaker": "RON",
+      "vo": "Then put my house on the Slags. And Walter's house. And the car — wait, the car's playing. Just the houses.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "ron_bet",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "line",
+      "speaker": "WALTER",
+      "vo": "Ron, it is Wednesday.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "walter_monday",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "line",
+      "speaker": "RON",
+      "vo": "And I'll do it again Thursday. We're building something.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "ron_consistency",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "line",
+      "speaker": "GARY",
+      "vo": "She'll need a number. And a little jersey. Does Brenda get a jersey? She's asking.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "broll",
+          "who": "brenda_scarf"
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "line",
+      "speaker": "WALTER",
+      "vo": "We'll see, Gary.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "walter_wind",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "glowboys",
+      "speaker": "CRATER CARL",
+      "vo": "And across town, the Glowboys posted their combine numbers — the forty-yard dash in zero-point-four seconds. Folks, that's a new record, and also possibly a sin!",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "carl_manic",
+          "seed": 6161
+        },
+        {
+          "id": "c26_s2",
+          "kind": "broll",
+          "who": "glowboys_blur"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "glowboys",
+      "speaker": "RON",
+      "vo": "Zero-point-four — no man runs that, Walter. That's not a time, that's a machine time. That's the reactor. Those aren't players, those are the same thing they put in the war—",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "ron_alarmed",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "glowboys",
+      "speaker": "WALTER",
+      "vo": "Marvelous athletes. Weather.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "walter_breezy",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "Friday's forecast for the Big Hole: ashfall, a chance of structural collapse, a light metallic drizzle, and a fifty percent chance of glow — up ten. Conditions: mild. Perfect Crater Bowl weather.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "walter_weather",
+          "seed": 24601
+        },
+        {
+          "id": "c29_s2",
+          "kind": "title",
+          "asset": "macu_weather"
+        },
+        {
+          "id": "c29_s3",
+          "kind": "broll",
+          "who": "weather_map"
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. We have a roster again — a car, a barrel, and the quiet space by the third cone. It's a young team. It's a brave team. It has heart. More heart than forty glowing—",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "ron_proud",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "The barrel rolled into the crater during the weather, Ron.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "walter_deadpan",
+          "seed": 24601
+        },
+        {
+          "id": "c31_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "...Then it's down there waiting for them. That's strategy. Goodnight, MACU.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "ron_recover",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "signoff",
+      "speaker": "GARY",
+      "vo": "Night, fellas. Night, Brenda. Big day tomorrow. First practice. We're gonna stretch.",
+      "shots": [
+        {
+          "id": "c33_s1",
+          "kind": "broll",
+          "who": "brenda_dim"
+        }
+      ]
+    }
+  ],
+  "season": 2,
+  "episode_num": 3
+}
