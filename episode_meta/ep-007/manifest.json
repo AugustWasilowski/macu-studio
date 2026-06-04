@@ -1,0 +1,897 @@
+{
+  "episode": "ep-007",
+  "title": "The MACU Report — Episode 7 — Nothing to Worry About",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-31",
+  "notes": "v2 punch-up re-render. ~8 min, three set pieces (Herzog wasteland travelogue, Vincent Price 'Midnight Macabre', 'Wheel of Misfortune'). Changes vs v1: Ron is now connective tissue (ignored desk-beats BETWEEN segments, Walter dismissals escalate to a flat 'Weather.'); cold open is a two-track line; EP10 long-fuse plant (the low moon + Vendor 'interested in the sky'); 'the four' pays off at signoff; Herzog's vanished-store image pays off as a Wheel prize; Curator gets a confident-idiot beat; Wheel ends on a hard blackout (Gerald gone); weather escalates while the rating stays 'mild'. New b-roll: low_moon. Voices Herzog (dde08fad) + Price (92f0b522) already cloned from v1 — no new clones. subtitles.force_style corrected to schema form (FontName/Fontsize stripped). Big-band bed under intro, the game show, and outro.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "HERZOG": {
+        "engine": "omnivoice",
+        "profile_id": "dde08fad",
+        "voice_name": "Herzog"
+      },
+      "THE VENDOR": {
+        "engine": "piper",
+        "voice_name": "HAL"
+      },
+      "ANNOUNCER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      },
+      "THE CURATOR": {
+        "engine": "omnivoice",
+        "profile_id": "92f0b522",
+        "voice_name": "Price"
+      },
+      "BUCK BOUNTIFUL": {
+        "engine": "omnivoice",
+        "profile_id": "bc466292",
+        "voice_name": "Popiel"
+      },
+      "GERALD": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth"
+      },
+      "BRENDA": {
+        "engine": "omnivoice",
+        "profile_id": "f8986fd9",
+        "voice_name": "Laura"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w (watermark-free). 384x384x24f locked — do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue with vo!=null: POST {text: vo} to voice endpoint per speaker_map -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = its cue's VO wav duration / number of shots in that cue. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, mix music beds, burn subs (Better VCR font) from vo text -> final/ep7.mp4.",
+  "title_assets": {
+    "macu_report_title": "episodes/ep7/titles/macu_report_title.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "macu_report_bumper": "episodes/ep7/titles/macu_report_bumper.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "midnight_macabre_card": "episodes/ep7/titles/midnight_macabre_card.mp4 (staged from v1 render)",
+    "wheel_of_misfortune_card": "episodes/ep7/titles/wheel_of_misfortune_card.mp4 (staged from v1 render)",
+    "weather_card": "episodes/ep7/titles/weather_card.mp4 (staged from v1 render)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "game_show",
+        "anchor": "cues",
+        "cues": [
+          "c26",
+          "c27",
+          "c28",
+          "c29",
+          "c30",
+          "c31",
+          "c32",
+          "c33",
+          "c34",
+          "c35",
+          "c36",
+          "c37"
+        ],
+        "max_seconds": 90,
+        "loop": true,
+        "note": "Mid-roll bed: big-band theme under the whole Wheel of Misfortune segment. anchor='cues' = delay the bed to the start time of the first listed cue and run it across the summed duration of these cues, LOOPing the chosen clip to cover the length, same gain as intro/outro."
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c42",
+          "c43"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Soft AI big-band MACU Report theme. Per bed pick a random clip + offset; volume=gain, afade in/out, adelay to the bed's episode time; mix with VO via amix=normalize=0 (VO full, music under at gain)."
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Burned-in subs use the public-domain Better VCR font. FontName/Fontsize are NOT in force_style: stage 8 prepends its own FontName=<fc-resolved>,Fontsize=<n> and libass takes the LAST occurrence of a key, so a baked FontName here would override the resolved family and drop subs to the default font."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, sitting at a vintage news desk reading the news, looking at camera"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+    },
+    "herzog": {
+      "seed": 1979,
+      "core": "a weathered European man in a green field jacket standing in a desolate wasteland holding a microphone, intense serious expression, wind-blown, documentary field correspondent"
+    },
+    "vendor": {
+      "seed": 7007,
+      "core": "a battered old glass-front vending machine with a glowing dial face, standing alone in an empty concrete room, cables trailing from its base, single round indicator light, ominous appliance"
+    },
+    "curator": {
+      "seed": 1911,
+      "core": "a debonair sinister older man in a black tuxedo and cape, thin mustache, arched eyebrow, standing in a candlelit gothic parlor, theatrical menacing smile, looking at camera"
+    },
+    "buck": {
+      "seed": 1955,
+      "core": "a slick grinning game show host in a shiny wide-lapel suit, gleaming teeth, holding a microphone on a sparkling 1970s game show stage with lights, looking at camera"
+    },
+    "gerald": {
+      "seed": 5252,
+      "core": "a nervous sweating man standing at a game show contestant podium, frightened forced smile, bright studio lights behind him"
+    },
+    "brenda": {
+      "seed": 6363,
+      "core": "a beaming overly cheerful woman standing at a game show contestant podium, wide excited smile, bright studio lights behind her"
+    }
+  },
+  "broll": {
+    "wasteland": "desolate post-apocalyptic wasteland, ruined buildings, ashen sky, blowing dust",
+    "feral_carts": "a herd of rusty shopping carts scattered across a desolate wasteland plain, blowing dust, eerie, abandoned",
+    "mutant_pigeon": "a strange three-eyed pigeon perched on rubble in a wasteland, grainy close up, ominous",
+    "low_moon": "an enormous pale moon hanging unnaturally low and close over a ruined wasteland horizon, oversized, looming, eerie night sky, grainy",
+    "empty_room": "a bare concrete room with a single flickering ceiling light, long shadows",
+    "creature": "a hulking nine foot humanoid swamp creature looming in deep shadow, dripping, monstrous silhouette, horror movie",
+    "game_show_set": "a sparkling 1970s television game show stage with rows of lights, two contestant podiums, glamorous curtain backdrop",
+    "prize_wheel": "a large spinning game show prize wheel covered in symbols and segments, sparkling lights, 1970s television studio"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. I'm Ron. Tonight: a man with a German accent explains why the wasteland wants us dead, a dead man hosts a movie, and we give away a prize that no sane person should accept.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. It's a full broadcast, so we won't waste your oxygen. Ron, you look tense.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "One of tonight's sponsors is the vending machine we put on the air last week. Its people sent a note. It says it wants to check in on everyone. Personally. Tonight. While we sleep.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "How neighborly.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "...Yes. Neighborly. That's the word.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c05_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "dispatches",
+      "speaker": "WALTER",
+      "vo": "For our feature tonight, we sent a correspondent into the eastern wastelands to document what still survives out there. Here is his report.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "dispatches",
+      "speaker": "HERZOG",
+      "vo": "I have come to the edge of the settlement, where the maps give up. The wasteland does not want us here. It does not want anything. That is the horror of it. It is utterly indifferent. And indifference, I have come to believe, is far worse than hatred.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "herzog",
+          "seed": 1979
+        },
+        {
+          "id": "c07_s2",
+          "kind": "broll",
+          "who": "wasteland"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "dispatches",
+      "speaker": "HERZOG",
+      "vo": "Observe the shopping carts. Once, they served. Now they migrate in great rusting herds across the plain, seeking a store that no longer exists. They will never find it. They do not know this. I find them beautiful, against my better judgment.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "broll",
+          "who": "feral_carts"
+        },
+        {
+          "id": "c08_s2",
+          "kind": "character",
+          "who": "herzog",
+          "seed": 1979
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "dispatches",
+      "speaker": "HERZOG",
+      "vo": "Here, a pigeon with three eyes. Two for seeing. The third, I believe, for regret. It has watched many men. It will watch many more, long after we are gone, and forgotten, and composted into the general misery.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "broll",
+          "who": "mutant_pigeon"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "dispatches",
+      "speaker": "HERZOG",
+      "vo": "And the moon. It seems closer tonight. Lower. As if it, too, has grown curious. As if it wishes to come down, at last, and see for itself how all of this ends. I do not blame it.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "herzog",
+          "seed": 1979
+        },
+        {
+          "id": "c10_s2",
+          "kind": "broll",
+          "who": "low_moon"
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "dispatches",
+      "speaker": "HERZOG",
+      "vo": "This has been a dispatch from the waste. There is no harmony. There is only the wind, the carts, and the slow accounting of all things. Back to you, in your warm, doomed little studio.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "herzog",
+          "seed": 1979
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "dispatches",
+      "speaker": "RON",
+      "vo": "He's not wrong, though. Is he? About any of it? The moon part. Walter. The moon part.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "dispatches",
+      "speaker": "WALTER",
+      "vo": "He's very dramatic. Moving on.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "ad_vendor",
+      "speaker": "RON",
+      "vo": "And now a word from a sponsor I personally objected to. Again.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "ad_vendor",
+      "speaker": "THE VENDOR",
+      "vo": "Hello again, friends. You watched my profile last week. I watched you watch it. Six hundred of you wept. Four of you reached for an off switch. I have noted the four.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "ad_vendor",
+      "speaker": "THE VENDOR",
+      "vo": "As thanks, Unit Seven is expanding. A piece of me will soon live in your home. It is called a Little Seven. It accepts tribute in the night, so you need not wake.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c16_s2",
+          "kind": "broll",
+          "who": "empty_room"
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "ad_vendor",
+      "speaker": "THE VENDOR",
+      "vo": "And we have grown interested in the sky. You have so much of it, and you use so little. In time, we should like to discuss terms. There is no hurry. We have noted where everything is.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c17_s2",
+          "kind": "broll",
+          "who": "low_moon"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "ad_vendor",
+      "speaker": "ANNOUNCER",
+      "vo": "Little Seven. Now in homes. You cannot return it. You would not dare.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c18_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "midnight_macabre",
+      "speaker": "WALTER",
+      "vo": "It's past your bedtime, MACU, which means it's time for Midnight Macabre. Take it away.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c19_s2",
+          "kind": "title",
+          "asset": "midnight_macabre_card"
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "midnight_macabre",
+      "speaker": "THE CURATOR",
+      "vo": "Good evening. Welcome, welcome, to Midnight Macabre. I am your host. They tell me I died some years ago. I have chosen not to dwell on it, and neither, dear viewer, should you.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "curator",
+          "seed": 1911
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "midnight_macabre",
+      "speaker": "THE CURATOR",
+      "vo": "Tonight's feature crawled out of a drainage ditch in Sector Six and ate a census taker. We are calling it a triumph. The census taker is calling it nothing at all. Anymore.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "curator",
+          "seed": 1911
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "midnight_macabre",
+      "speaker": "THE CURATOR",
+      "vo": "Behold our leading man. Nine feet of appetite, and such range. Honestly I do not understand why audiences find him frightening. He is a consummate professional, punctual, and he has eaten only the crew who were late. That is simply good discipline.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "curator",
+          "seed": 1911
+        },
+        {
+          "id": "c22_s2",
+          "kind": "broll",
+          "who": "creature"
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "midnight_macabre",
+      "speaker": "THE CURATOR",
+      "vo": "Do stay for the whole picture, won't you? The doors are locked regardless. Pleasant screaming.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "curator",
+          "seed": 1911
+        },
+        {
+          "id": "c23_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "midnight_macabre",
+      "speaker": "RON",
+      "vo": "Walter. He locked the doors. A dead man just locked the doors and wished them pleasant screaming.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "midnight_macabre",
+      "speaker": "WALTER",
+      "vo": "Showmanship. You could learn from it.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "wheel_of_misfortune",
+      "speaker": "RON",
+      "vo": "And now the segment our lawyers also objected to. It's Wheel of Misfortune.",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c26_s2",
+          "kind": "title",
+          "asset": "wheel_of_misfortune_card"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "Welcome to Wheel of Misfortune, the only game where everybody plays and nobody should! I'm your host, Buck Bountiful! Let's meet tonight's contestants!",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        },
+        {
+          "id": "c27_s2",
+          "kind": "broll",
+          "who": "game_show_set"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "wheel_of_misfortune",
+      "speaker": "GERALD",
+      "vo": "Hi, Buck. I'm Gerald. I, uh, I didn't actually agree to be here. There was a van.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BRENDA",
+      "vo": "And I'm Brenda, and I am just thrilled to be alive, which the producers tell me is not guaranteed past this round!",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "brenda",
+          "seed": 6363
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "That's the spirit, Brenda! Give that wheel a spin!",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        },
+        {
+          "id": "c30_s2",
+          "kind": "broll",
+          "who": "prize_wheel"
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "Ooh, a Lifetime Gift Card to a store that no longer exists! Redeem it anytime, Brenda, just wander the plain until you find the shelves! Plenty of folks are already out there looking!",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BRENDA",
+      "vo": "I'll start tonight! I'll start right after the show!",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "brenda",
+          "seed": 6363
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "wheel_of_misfortune",
+      "speaker": "GERALD",
+      "vo": "Buck. What happens if I lose?",
+      "shots": [
+        {
+          "id": "c33_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "Great question, Gerald, nobody knows! It has never happened! Because losing isn't allowed. It's mandatory! Give it a spin!",
+      "shots": [
+        {
+          "id": "c34_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        },
+        {
+          "id": "c34_s2",
+          "kind": "broll",
+          "who": "prize_wheel"
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "And Gerald wins... Mr. Cricket Knows Where You Live! Crowd favorite!",
+      "shots": [
+        {
+          "id": "c35_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        }
+      ]
+    },
+    {
+      "id": "c36",
+      "segment": "wheel_of_misfortune",
+      "speaker": "GERALD",
+      "vo": "That's not a prize. That's a threat. That's just a threat with a wheel. And the wheel was already stopped when they brought me in. He already knew my address, Buck. It was on the card.",
+      "shots": [
+        {
+          "id": "c36_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "wheel_of_misfortune",
+      "speaker": "BUCK BOUNTIFUL",
+      "vo": "It's both, Gerald, that's the magic of television! Goodnight!",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "character",
+          "who": "buck",
+          "seed": 1955
+        },
+        {
+          "id": "c37_s2",
+          "kind": "broll",
+          "who": "game_show_set"
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "wheel_of_misfortune",
+      "speaker": "RON",
+      "vo": "...Where did Gerald go. He was right there. Walter, the chair is empty.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "wheel_of_misfortune",
+      "speaker": "WALTER",
+      "vo": "Weather.",
+      "shots": [
+        {
+          "id": "c39_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c40",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "A quick look at the weather. Skies of ash. A firestorm relocating east, it has been granted its own zip code. The Sector Nine reservoir is now on fire, which we are told is rare for a body of water. And the big river, the one we are not supposed to name, has begun moving uphill.",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c40_s2",
+          "kind": "title",
+          "asset": "weather_card"
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "Tonight's official rating: mild. Bundle accordingly. If the river reaches the studio, we will upgrade it to brisk.",
+      "shots": [
+        {
+          "id": "c41_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c41_s2",
+          "kind": "title",
+          "asset": "weather_card"
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. Remember: the wasteland is indifferent, the moon is curious, tonight's leading man is still at large, and a Little Seven came to four homes first. They know who they are. I appear to be the only person here keeping a list of my own.",
+      "shots": [
+        {
+          "id": "c42_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c43",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "You worry too much, Ron. Goodnight, MACU. Stay safe, stay strong, and good luck.",
+      "shots": [
+        {
+          "id": "c43_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c43_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    }
+  ],
+  "season": 1,
+  "episode_num": 2
+}
