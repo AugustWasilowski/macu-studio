@@ -68,8 +68,15 @@ export function useSfx(slug: string) {
     for (const key of order) {
       const grp = buckets.get(key);
       if (!grp) continue;
+      // Auto-stagger only SEEDS a delay for entries that don't have one yet
+      // (freshly dropped). Entries with an explicit delay (incl. user-edited)
+      // are preserved — manual delay nudges survive subsequent commits.
       let cum = 0;
-      for (const e of grp) { out.push({ ...e, delay: round2(cum) }); cum += durOf[e.file] ?? 0.5; }
+      for (const e of grp) {
+        const delay = e.delay == null ? round2(cum) : e.delay;
+        out.push({ ...e, delay });
+        cum += durOf[e.file] ?? 0.5;
+      }
       buckets.delete(key);
     }
     for (const grp of buckets.values()) out.push(...grp);
@@ -98,6 +105,7 @@ export function useSfx(slug: string) {
   };
   const del = (idx: number) => commit(sfx.filter((_, i) => i !== idx));
   const setGain = (idx: number, g: number) => { const next = [...sfx]; next[idx] = { ...next[idx], gain: g }; commit(next); };
+  const setDelay = (idx: number, d: number) => { const next = [...sfx]; next[idx] = { ...next[idx], delay: d }; commit(next); };
   const onDropGap = (afterId: string | null) => {
     if (!drag) return;
     if (drag.type === "lib" && drag.file) addToGap(afterId, drag.file);
@@ -139,16 +147,17 @@ export function useSfx(slug: string) {
   return {
     sfx, cueIds, durOf,
     gapsOrder: [null, ...cueIds] as (string | null)[],
-    entriesByGap, addToGap, moveEntry, del, setGain, onDropGap, buildPlaylist, precacheUrls,
+    entriesByGap, addToGap, moveEntry, del, setGain, setDelay, onDropGap, buildPlaylist, precacheUrls,
   };
 }
 
 // ---- one gap (dropzone + its SFX rows), rendered inside a table <td> ----
-export function GapZone({ entries, onDrop, onDelete, onGain, onPlay, previewUrl }: {
+export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, previewUrl }: {
   entries: { x: SfxEntry; i: number }[];
   onDrop: () => void;
   onDelete: (idx: number) => void;
   onGain: (idx: number, g: number) => void;
+  onDelay: (idx: number, d: number) => void;
   onPlay: (file: string) => void;
   previewUrl: string | null;
 }) {
@@ -174,9 +183,16 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onPlay, previewUrl 
               <span className="text-cyan">▸</span>
               <PlayBtn playing={previewUrl === url} onClick={() => onPlay(x.file)} />
               <span className="font-mono text-cyan flex-1 truncate" title={x.file}>{x.file}</span>
-              <span className="text-txt-faint text-[10px]" title="delay within the gap">+{(x.delay ?? 0).toFixed(2)}s</span>
-              <input className="input w-20 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
-                title="gain (0–1 linear)" onChange={(e) => onGain(i, parseFloat(e.target.value))} />
+              <label className="flex items-center gap-1 text-txt-faint text-[10px]" title="delay nudge — seconds, signed (− earlier / + later from the anchor cue)">
+                Δs
+                <input className="input w-16 text-[11px] py-0" type="number" step="0.1" value={x.delay ?? 0}
+                  onChange={(e) => { const v = parseFloat(e.target.value); onDelay(i, Number.isFinite(v) ? round2(v) : 0); }} />
+              </label>
+              <label className="flex items-center gap-1 text-txt-faint text-[10px]" title="gain — 0–1 linear">
+                g
+                <input className="input w-20 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
+                  onChange={(e) => onGain(i, parseFloat(e.target.value))} />
+              </label>
               <button className="btn p-0.5" title="remove" onClick={() => onDelete(i)}><IX /></button>
             </div>
           );

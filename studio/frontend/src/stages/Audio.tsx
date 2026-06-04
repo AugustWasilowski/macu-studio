@@ -205,6 +205,7 @@ export function Audio({ slug }: { slug: string }) {
           onDrop={() => sfx.onDropGap(afterId)}
           onDelete={sfx.del}
           onGain={sfx.setGain}
+          onDelay={sfx.setDelay}
           onPlay={(file) => preview.toggle(libraryApi.audioUrl("sfx", file))}
           previewUrl={preview.previewUrl}
         />
