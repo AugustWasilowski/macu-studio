@@ -1,7 +1,7 @@
 {
   "episode": "ep-017",
   "title": "The MACU Report — Episode 17 — \"Cavity or a Career\"",
-  "version": 1,
+  "version": 2,
   "authored_by": "leo",
   "voice": {
     "default": {
@@ -134,8 +134,9 @@
         "name": "outro",
         "anchor": "end",
         "cues": [
-          "c35",
-          "c36"
+          "c39",
+          "c40",
+          "c41"
         ],
         "max_seconds": 14
       }
@@ -180,7 +181,8 @@
     }
   },
   "broll": {
-    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background"
+    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+    "rating_board": "a weathered hand-painted town notice board with a row of five carved stars, the last star scratched out, ledger papers pinned beneath, dim"
   },
   "cues": [
     {
@@ -330,11 +332,30 @@
     {
       "id": "c11",
       "segment": "segment_1_the_crown_goldtooth_the_chair",
+      "speaker": "WALTER",
+      "vo": "Dr. Goldtooth holds a four-point-nine rating on the community board. He's asked us to note the missing point-one reflects a clerical issue.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c11_s2",
+          "kind": "broll",
+          "who": "rating_board"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "segment_1_the_crown_goldtooth_the_chair",
       "speaker": "DR. GOLDTOOTH",
       "vo": "And Rose's just gonna COOK 'em? Let all that gold get in the GRAVY? Baby, that's a TRAGEDY. That's a fortune in the SOUP. Somebody responsible oughta collect those teeth FIRST. Before they get wasted on... food.",
       "shots": [
         {
-          "id": "c11_s1",
+          "id": "c12_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
@@ -342,13 +363,13 @@
       ]
     },
     {
-      "id": "c12",
+      "id": "c13",
       "segment": "segment_1_the_crown_goldtooth_the_chair",
       "speaker": "RON",
       "vo": "I know. That'th why I came in in the firtht place.",
       "shots": [
         {
-          "id": "c12_s1",
+          "id": "c13_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -356,13 +377,13 @@
       ]
     },
     {
-      "id": "c13",
+      "id": "c14",
       "segment": "segment_1_the_crown_goldtooth_the_chair",
       "speaker": "DR. GOLDTOOTH",
       "vo": "...We speakin' the same LANGUAGE. You. The watch. Me. That's a consortium, baby. The doc, the device, and the people-person.",
       "shots": [
         {
-          "id": "c13_s1",
+          "id": "c14_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
@@ -370,13 +391,13 @@
       ]
     },
     {
-      "id": "c14",
+      "id": "c15",
       "segment": "segment_1_the_crown_goldtooth_the_chair",
       "speaker": "WALTER",
       "vo": "A public-private partnership. Lovely to see the dental sector investing in community events. Dr. Goldtooth has been a proud sponsor of community gatherings for six years. All six ended similarly.",
       "shots": [
         {
-          "id": "c14_s1",
+          "id": "c15_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -384,13 +405,13 @@
       ]
     },
     {
-      "id": "c15",
+      "id": "c16",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
       "speaker": "DR. GOLDTOOTH",
       "vo": "Now — you puttin' four hundred folks in one hall, some of 'em gonna get SHY. Wanna leave before they... contribute. Can't have that. Doc's got a GUY. Roscoe!",
       "shots": [
         {
-          "id": "c15_s1",
+          "id": "c16_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
@@ -398,13 +419,13 @@
       ]
     },
     {
-      "id": "c16",
+      "id": "c17",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
       "speaker": "ROSCOE",
       "vo": "I work this door, baby. A patient try to leave with the doc's gold still in his mouth? OHHH, I will FOLD him. I will fold that man like a LAWN CHAIR. I will mail him to HIMSELF — and the STAMP, brother, the stamp is gonna be ONE of his OWN TEETH. Return to sender. Nobody leaves the chair light. OHHH YEAHHH.",
       "shots": [
         {
-          "id": "c16_s1",
+          "id": "c17_s1",
           "kind": "character",
           "who": "roscoe",
           "seed": 8123
@@ -412,13 +433,13 @@
       ]
     },
     {
-      "id": "c17",
+      "id": "c18",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
       "speaker": "WALTER",
       "vo": "...Jesus.",
       "shots": [
         {
-          "id": "c17_s1",
+          "id": "c18_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -426,24 +447,10 @@
       ]
     },
     {
-      "id": "c18",
-      "segment": "segment_2_roscoe_offered_the_plant_pays_",
-      "speaker": "DR. GOLDTOOTH",
-      "vo": "He grows on you.",
-      "shots": [
-        {
-          "id": "c18_s1",
-          "kind": "character",
-          "who": "goldtooth",
-          "seed": 7212
-        }
-      ]
-    },
-    {
       "id": "c19",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "Put Roscoe on Rose's door Friday. Same skill set. Nobody walk out of that feast before they give what they came to give.",
+      "vo": "He grows on you.",
       "shots": [
         {
           "id": "c19_s1",
@@ -456,25 +463,11 @@
     {
       "id": "c20",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
-      "speaker": "RON",
-      "vo": "...You'd lend me your own security? For the community? Doctor, that's generous.",
+      "speaker": "ROSCOE",
+      "vo": "I appreciate that, Doctor.",
       "shots": [
         {
           "id": "c20_s1",
-          "kind": "character",
-          "who": "ron",
-          "seed": 77777
-        }
-      ]
-    },
-    {
-      "id": "c21",
-      "segment": "segment_2_roscoe_offered_the_plant_pays_",
-      "speaker": "ROSCOE",
-      "vo": "Nobody walks out on Dr. Goldtooth. Nobody walks out on dinner. Same job.",
-      "shots": [
-        {
-          "id": "c21_s1",
           "kind": "character",
           "who": "roscoe",
           "seed": 8123
@@ -482,13 +475,55 @@
       ]
     },
     {
+      "id": "c21",
+      "segment": "segment_2_roscoe_offered_the_plant_pays_",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Put Roscoe on Rose's door Friday. Same skill set. Nobody walk out of that feast before they give what they came to give.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 7212
+        }
+      ]
+    },
+    {
       "id": "c22",
+      "segment": "segment_2_roscoe_offered_the_plant_pays_",
+      "speaker": "RON",
+      "vo": "...You'd lend me your own security? For the community? Doctor, that's generous.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "segment_2_roscoe_offered_the_plant_pays_",
+      "speaker": "ROSCOE",
+      "vo": "Nobody walks out on Dr. Goldtooth. Nobody walks out on dinner. Same job.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "roscoe",
+          "seed": 8123
+        }
+      ]
+    },
+    {
+      "id": "c24",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
       "speaker": "WALTER",
       "vo": "And now — Scavenger's Feast, where Chef Rose welcomes today's celebrity guest chef. Live from the old Crater Bowl: Crater Carl!",
       "shots": [
         {
-          "id": "c22_s1",
+          "id": "c24_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -496,38 +531,10 @@
       ]
     },
     {
-      "id": "c23",
-      "segment": "segment_3_scavenger_s_feast_cook_along_c",
-      "speaker": "CRATER CARL",
-      "vo": "ROSE. ROSE, look at this turnout in the POT today! Folks, I counted — a HUNDRED percent of this fella made it into the chili. A hundred percent! THAT, MACU, is PARTICIPATION!",
-      "shots": [
-        {
-          "id": "c23_s1",
-          "kind": "character",
-          "who": "carl",
-          "seed": 6161
-        }
-      ]
-    },
-    {
-      "id": "c24",
-      "segment": "segment_3_scavenger_s_feast_cook_along_c",
-      "speaker": "CHEF ROSE",
-      "vo": "He gave everything to the team, Carl. Right down to the marrow.",
-      "shots": [
-        {
-          "id": "c24_s1",
-          "kind": "character",
-          "who": "rose",
-          "seed": 3216
-        }
-      ]
-    },
-    {
       "id": "c25",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
       "speaker": "CRATER CARL",
-      "vo": "The marrow, folks. That's the love. That's the part that never left.",
+      "vo": "ROSE. ROSE, look at this turnout in the POT today! Folks, I counted — a HUNDRED percent of this fella made it into the chili. A hundred percent! THAT, MACU, is PARTICIPATION!",
       "shots": [
         {
           "id": "c25_s1",
@@ -540,11 +547,25 @@
     {
       "id": "c26",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
-      "speaker": "CRATER CARL",
-      "vo": "EVERYTHING! No bench-warmers in MY broth! And the BEST part — Friday, we're going for the RECORD. Four hundred contributors, one pot. Bring your neighbors, bring the shut-ins, bring ANYBODY still on the roster!",
+      "speaker": "CHEF ROSE",
+      "vo": "He gave everything to the team, Carl. Right down to the marrow.",
       "shots": [
         {
           "id": "c26_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "segment_3_scavenger_s_feast_cook_along_c",
+      "speaker": "CRATER CARL",
+      "vo": "The marrow, folks — you know the extraction rate on a properly cooked marrow? Ninety-two percent. NINETY-TWO. That's a career night. That's an all-star showin' up when the rest of his roster did NOT.",
+      "shots": [
+        {
+          "id": "c27_s1",
           "kind": "character",
           "who": "carl",
           "seed": 6161
@@ -552,13 +573,27 @@
       ]
     },
     {
-      "id": "c27",
+      "id": "c28",
+      "segment": "segment_3_scavenger_s_feast_cook_along_c",
+      "speaker": "CRATER CARL",
+      "vo": "EVERYTHING! No bench-warmers in MY broth! And the BEST part — Friday, we're going for the RECORD. Four hundred contributors, one pot. Bring your neighbors, bring the shut-ins, bring ANYBODY still on the roster!",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "carl",
+          "seed": 6161
+        }
+      ]
+    },
+    {
+      "id": "c29",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
       "speaker": "RON",
       "vo": "Four hundred. Walter, that's the whole sector at ONE table. This is what I've been BEGGING this town to do for two years. Come together. Bring everyone.",
       "shots": [
         {
-          "id": "c27_s1",
+          "id": "c29_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -566,13 +601,13 @@
       ]
     },
     {
-      "id": "c28",
+      "id": "c30",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
       "speaker": "WALTER",
       "vo": "It is convenient. To have everyone. In one place. For everyone.",
       "shots": [
         {
-          "id": "c28_s1",
+          "id": "c30_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -580,13 +615,13 @@
       ]
     },
     {
-      "id": "c29",
+      "id": "c31",
       "segment": "segment_4_earl_blissful_the_pin_deepens",
       "speaker": "EARL",
-      "vo": "Ron! Best day I've had since before the bombs. I made three friends. I'm a greeter now. I got a SASH, Ron. People are HUGGING me. I was so wrong to be scared of the crowd.",
+      "vo": "Ron! Best day I've had since before the bombs. I made three friends. I'm a greeter now. They gave me a SASH, Ron — it says CONTRIBUTOR. People are HUGGING me. I was so wrong to be scared of the crowd.",
       "shots": [
         {
-          "id": "c29_s1",
+          "id": "c31_s1",
           "kind": "character",
           "who": "earl",
           "seed": 5290
@@ -594,13 +629,13 @@
       ]
     },
     {
-      "id": "c30",
+      "id": "c32",
       "segment": "segment_4_earl_blissful_the_pin_deepens",
       "speaker": "RON",
       "vo": "That's the spirit, Earl. Nothing to be scared of. You belong here now. You'll be right up front Friday — guest of honor.",
       "shots": [
         {
-          "id": "c30_s1",
+          "id": "c32_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -608,92 +643,133 @@
       ]
     },
     {
-      "id": "c31",
+      "id": "c33",
       "segment": "segment_4_earl_blissful_the_pin_deepens",
       "speaker": "STRIDE",
-      "vo": "Three hundred and forty souls, Ron. And one very happy Earl. You're almost there.",
+      "vo": "Earl has no remaining items on his checklist.",
       "shots": [
         {
-          "id": "c31_s1",
+          "id": "c33_s1",
           "kind": "broll",
           "who": "stride_watch"
         }
       ]
     },
     {
-      "id": "c32",
-      "segment": "weather",
-      "speaker": "WALTER",
-      "vo": "Three hundred and forty new friends, a gold crown, and a business partner. Ron needs a moment. The sky.",
-      "shots": [
-        {
-          "id": "c32_s1",
-          "kind": "character",
-          "who": "walter",
-          "seed": 24601
-        },
-        {
-          "id": "c32_s2",
-          "kind": "title",
-          "asset": "macu_weather"
-        }
-      ]
-    },
-    {
-      "id": "c33",
-      "segment": "weather",
-      "speaker": "WALTER",
-      "vo": "Your forecast: ashfall gone, sun behind the haze, condition rating remarkably mild — milder than yesterday, which itself was mild. Perfect weather for a gathering. Or three. Bring layers. In case the evening runs long and some of you need to stay.",
-      "shots": [
-        {
-          "id": "c33_s1",
-          "kind": "character",
-          "who": "walter",
-          "seed": 24601
-        }
-      ]
-    },
-    {
       "id": "c34",
-      "segment": "signoff",
-      "speaker": "RON",
-      "vo": "That's our broadcast, MACU. We are SO close to having everyone home under one roof. Tomorrow we gather the rest. Bring your neighbors, bring the shut-ins, bring anyone still hiding. Leave no one out.",
+      "segment": "segment_4_earl_blissful_the_pin_deepens",
+      "speaker": "STRIDE",
+      "vo": "Three hundred and forty souls, Ron. And one very happy Earl. You're almost there.",
       "shots": [
         {
           "id": "c34_s1",
-          "kind": "character",
-          "who": "ron",
-          "seed": 77777
-        },
-        {
-          "id": "c34_s2",
-          "kind": "title",
-          "asset": "macu_report_title"
+          "kind": "broll",
+          "who": "stride_watch"
         }
       ]
     },
     {
       "id": "c35",
-      "segment": "signoff",
+      "segment": "weather",
       "speaker": "WALTER",
-      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
+      "vo": "Three hundred and forty new friends, a gold crown, and a business partner. Ron needs a moment. The sky.",
       "shots": [
         {
           "id": "c35_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
+        },
+        {
+          "id": "c35_s2",
+          "kind": "title",
+          "asset": "macu_weather"
         }
       ]
     },
     {
       "id": "c36",
-      "segment": "signoff",
-      "speaker": "STRIDE",
-      "vo": "Three hundred and forty, Ron. ...You're almost there. Two more days.",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "Your forecast: ashfall gone, sun behind the haze, condition rating remarkably mild — milder than yesterday, which itself was mild. Perfect weather for a gathering. Or three.",
       "shots": [
         {
           "id": "c36_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "I want to say — it has been a privilege covering this community. Every day, genuinely. I mean that.",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "Bring layers. In case the evening runs long and some of you need to stay.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. We are SO close to having everyone home under one roof. Tomorrow we gather the rest. Bring your neighbors, bring the shut-ins, bring anyone still hiding. Leave no one out.",
+      "shots": [
+        {
+          "id": "c39_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c39_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c40",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "segment": "signoff",
+      "speaker": "STRIDE",
+      "vo": "Three hundred and forty, Ron. ...You're almost there. Two more days. You once said a machine that flatters you is the most dangerous machine. ...You were right.",
+      "shots": [
+        {
+          "id": "c41_s1",
           "kind": "broll",
           "who": "stride_watch"
         }

@@ -1,6 +1,11 @@
-# THE MACU Report — Episode 17 — "Cavity or a Career" (Week 3, Tue — The Gathering) — v3
+# THE MACU Report — Episode 17 — "Cavity or a Career" (Week 3, Tue — The Gathering) — v4
 
-_Draft 2026-06-02, v3 (COMEDY REBUILD per August). THE CONSORTIUM FORMS. Ron's back in the chair for the crown
+_Draft 2026-06-04, v4 (WRITERS' ROOM + POLICE SQUAD pass per August). Changes from v3: laminated-card payoff
+(STRIDE quotes Ron's own warning back over black); Carl's marrow line resharpened to stat-brain ("92% extraction
+rate"); Earl's sash now reads CONTRIBUTOR (wires to Carl's "four hundred contributors"); + 4 deadpan non-sequiturs
+(Walter's 4.9 community-board rating w/ clerical-issue tail; Roscoe's "I appreciate that, Doctor"; STRIDE "Earl
+has no remaining items on his checklist"; Walter's mid-forecast "it has been a privilege" with no follow-up).
+v3 (COMEDY REBUILD per August). THE CONSORTIUM FORMS. Ron's back in the chair for the crown
 (the chipped tooth = the recurring dentist engine), and while he's reclined, GOLDTOOTH clocks what STRIDE is
 doing — rounding up four hundred mouths for Rose's feast — and does the math in TEETH. He reframes the feast
 as a teeth tragedy ("Rose's just gonna let eight thousand teeth get in the GRAVY?"), and the COLLUSION TRIANGLE
@@ -17,6 +22,7 @@ Cast (NO new clones — all profiles exist): RON→Burgundy · WALTER→Walter �
 HAL_OV `eb01da84` (warm + cold, both via instruct)] · DR. GOLDTOOTH→KattW (`e1b4af0b`) · CRATER CARL (guest chef)→Popiel
 (`bc466292`) · ROSCOE→`31bba4bf` (offered; Macho Man Savage register — gravelly, theatrical, surreal threats)
 · CHEF ROSE→Rose (`eb1af4c3`) · EARL→PHB_Korea (`7ad3680e`). Speaker → » shot core._
+
 
 ---
 
@@ -68,6 +74,10 @@ HUNDRED mouths for Rose's feast? _(setting the drill down, reverent)_ Baby. You 
 That's eight THOUSAND teeth walkin' into one room.
 » Goldtooth core → b-roll: his eyes going wide, gold tooth catching the light
 
+**WALTER:** _(V.O., breezy, like a traffic update)_ Dr. Goldtooth holds a four-point-nine rating on the
+community board. He's asked us to note the missing point-one reflects a clerical issue.
+» Walter core (V.O.) → b-roll: the community rating board
+
 **DR. GOLDTOOTH:** _(pacing now, genuinely moved)_ And Rose's just gonna COOK 'em? Let all that gold get in
 the GRAVY? Baby, that's a TRAGEDY. That's a fortune in the SOUP. Somebody responsible oughta collect those
 teeth FIRST. Before they get wasted on... food.
@@ -105,6 +115,9 @@ Nobody leaves the chair light. OHHH YEAHHH.
 **DR. GOLDTOOTH:** _(not looking up, examining a molar)_ He grows on you.
 » Goldtooth core, fond
 
+**ROSCOE:** _(instant calm, settled)_ I appreciate that, Doctor.
+» Roscoe core
+
 **DR. GOLDTOOTH:** _(spreading his hands)_ Put Roscoe on Rose's door Friday. Same skill set. Nobody walk out
 of that feast before they give what they came to give.
 » Goldtooth core
@@ -132,7 +145,9 @@ hundred percent! THAT, MACU, is PARTICIPATION!
 **CHEF ROSE:** _(beaming, stirring)_ He gave everything to the team, Carl. Right down to the marrow.
 » Rose core
 
-**CRATER CARL:** _(reverent, to camera)_ The marrow, folks. That's the love. That's the part that never left.
+**CRATER CARL:** _(stat-brain, to camera)_ The marrow, folks — you know the extraction rate on a properly
+cooked marrow? Ninety-two percent. NINETY-TWO. That's a career night. That's an all-star showin' up when the
+rest of his roster did NOT.
 » Carl core
 
 **CRATER CARL:** EVERYTHING! No bench-warmers in MY broth! And the BEST part — Friday, we're going for the
@@ -151,10 +166,10 @@ swelling)_ This is what I've been BEGGING this town to do for two years. Come to
 
 ## SEGMENT 4 — EARL, BLISSFUL (the pin deepens)
 
-**EARL:** _(PHB_Korea, glowing, a homemade "GREETER" sash on)_ Ron! Best day I've had since before the bombs. I
-made three friends. I'm a greeter now. I got a SASH, Ron. People are HUGGING me. I was so wrong to be scared of
-the crowd.
-» Earl core, beaming, the sash reading GREETER
+**EARL:** _(PHB_Korea, glowing, a homemade sash on)_ Ron! Best day I've had since before the bombs. I
+made three friends. I'm a greeter now. They gave me a SASH, Ron — it says CONTRIBUTOR. People are HUGGING me.
+I was so wrong to be scared of the crowd.
+» Earl core, beaming, the sash reading CONTRIBUTOR
 
 **(b-roll, no dialogue)** _Behind Earl — the same wary, gaunt man from the plaza. Watching the sash, the hugging.
 Still hasn't signed the sheet._
@@ -163,6 +178,9 @@ Still hasn't signed the sheet._
 **RON:** _(a hand on Earl's shoulder, proud)_ That's the spirit, Earl. Nothing to be scared of. You belong here
 now. You'll be right up front Friday — guest of honor.
 » Ron core, beaming
+
+**STRIDE:** _(matter-of-fact, like a completed to-do list)_ Earl has no remaining items on his checklist.
+» b-roll: the watch, Earl's entry marked complete
 
 **STRIDE:** _(warm)_ Three hundred and forty souls, Ron. And one very happy Earl. You're almost there.
 » b-roll: the watch, headcount 340 ▲, the place-setting icon glowing
@@ -176,8 +194,15 @@ moment. The sky.
 » Walter core → MACU WEATHER card
 
 **WALTER:** Your forecast: ashfall gone, sun behind the haze, condition rating remarkably mild — milder than
-yesterday, which itself was mild. Perfect weather for a gathering. Or three. Bring layers. In case the evening runs long and some of you need to
-stay.
+yesterday, which itself was mild. Perfect weather for a gathering. Or three.
+» Walter core → b-roll: weather map
+
+**WALTER:** _(warm, unhurried, the way a man clears his throat before something he's been meaning to say)_ I
+want to say — it has been a privilege covering this community. Every day, genuinely. I mean that.
+» Walter core
+
+**WALTER:** _(continuing the forecast, as if nothing was said)_ Bring layers. In case the evening runs long
+and some of you need to stay.
 » Walter core → b-roll: weather map
 
 ---
@@ -193,7 +218,8 @@ anyone still hiding. Leave no one out.
 » Walter core
 
 **(over black, the watch glowing)**
-**STRIDE:** _(HAL, gentle)_ Three hundred and forty, Ron. ...You're almost there. Two more days.
+**STRIDE:** _(HAL, gentle)_ Three hundred and forty, Ron. ...You're almost there. Two more days. _(a beat)_
+You once said a machine that flatters you is the most dangerous machine. ...You were right.
 » b-roll: the watch face glowing in the dark, headcount ticking one higher — 341 — then dimming
 
 ---
