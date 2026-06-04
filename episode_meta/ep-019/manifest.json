@@ -167,7 +167,7 @@
         "anchor": "end",
         "cues": [
           "c34",
-          "c35"
+          "c45"
         ],
         "max_seconds": 14
       }
@@ -265,9 +265,23 @@
           "kind": "character",
           "who": "walter",
           "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c36",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "WALTER",
+      "vo": "The hall has a maximum occupancy of four hundred. You found exactly four hundred people.",
+      "shots": [
+        {
+          "id": "c36_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
         },
         {
-          "id": "c03_s2",
+          "id": "c36_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -316,16 +330,30 @@
       ]
     },
     {
-      "id": "c07",
+      "id": "c37",
       "segment": "segment_1_the_dental_check_goldtooth_gra",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "Four hundred mouths, all in one room, all checked and counted. Doc's gonna eat good tomorrow. ...Soft foods. But GOOD.",
+      "vo": "Four hundred mouths, all in one room, all checked and counted. Doc's gonna eat good tomorrow. ...Soft foods. But GOOD. And I don't know who sealed up the staff entrance, but I appreciate the professionalism. Real clean operation. Very. Clean.",
       "shots": [
         {
-          "id": "c07_s1",
+          "id": "c37_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "WALTER",
+      "vo": "A note for the record: tomorrow's event has been fully catered. There will be no menu. The guests are not expected to order anything.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
         }
       ]
     },
@@ -358,6 +386,90 @@
       ]
     },
     {
+      "id": "c20",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "RON",
+      "vo": "Before the big day, I wanted the people I rescued to say a few words. Come on up. Don't be shy.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "SYKES",
+      "vo": "Ron. I was alone out there. Nobody came for me. You did. You gave me a place at the table. I will never forget it.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "sykes",
+          "seed": 6701
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "VONDA",
+      "vo": "I have never felt so SEEN. So... selected. Out of everyone, Ron looked at me and said, \"you. I want you there.\" Do you know what that does for a girl?",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "vonda",
+          "seed": 6702
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "EARL",
+      "vo": "Best week of my life, Ron. I used to be scared of crowds. Now I sleep GREAT — deep, the second my head hits the pillow. I don't know if it's the air in here or what they put in the water, but I have never slept so hard in my life. Looking forward to tomorrow.",
+      "shots": [
+        {
+          "id": "c39_s1",
+          "kind": "character",
+          "who": "earl",
+          "seed": 5290
+        }
+      ]
+    },
+    {
+      "id": "c40",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "WALTER",
+      "vo": "Earl is sixty-one years old. He is survived by a daughter in Peoria and a very small dog named Biscuit.",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "RON",
+      "vo": "This. This right here. This is what it was all for.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
       "id": "c10",
       "segment": "segment_2_scavenger_s_feast_cook_along_t",
       "speaker": "WALTER",
@@ -386,13 +498,27 @@
       ]
     },
     {
-      "id": "c12",
+      "id": "c41",
       "segment": "segment_2_scavenger_s_feast_cook_along_t",
-      "speaker": "CHEF ROSE",
-      "vo": "The table is set, MACU. Four hundred places, every one. I haven't slept in two days. I'm just so... full. Full of love. Bring them in the moment the doors open.",
+      "speaker": "THE NATURALIST",
+      "vo": "Observe how they settle — shoulders loose, breathing slow. A creature that senses no danger never toughens. It softens. Nature's little courtesy... to the patient.",
       "shots": [
         {
-          "id": "c12_s1",
+          "id": "c41_s1",
+          "kind": "character",
+          "who": "naturalist",
+          "seed": 4288
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "CHEF ROSE",
+      "vo": "The table is set, MACU. Four hundred places, every one. I haven't slept in two days, but I feel wonderful. I always do, the night before. Knowing that tomorrow, every single one of them gets exactly what they came for.",
+      "shots": [
+        {
+          "id": "c42_s1",
           "kind": "character",
           "who": "rose",
           "seed": 3216
@@ -498,139 +624,16 @@
       ]
     },
     {
-      "id": "c20",
-      "segment": "segment_3_gratitude_the_testimonials",
-      "speaker": "RON",
-      "vo": "Before the big day, I wanted the people I rescued to say a few words. Come on up. Don't be shy.",
-      "shots": [
-        {
-          "id": "c20_s1",
-          "kind": "character",
-          "who": "ron",
-          "seed": 77777
-        }
-      ]
-    },
-    {
-      "id": "c21",
-      "segment": "segment_3_gratitude_the_testimonials",
-      "speaker": "SYKES",
-      "vo": "Ron. I was alone out there. Nobody came for me. You did. You gave me a place at the table. I will never forget it.",
-      "shots": [
-        {
-          "id": "c21_s1",
-          "kind": "character",
-          "who": "sykes",
-          "seed": 6701
-        }
-      ]
-    },
-    {
-      "id": "c22",
-      "segment": "segment_3_gratitude_the_testimonials",
-      "speaker": "VONDA",
-      "vo": "I have never felt so SEEN. So... selected. Out of everyone, Ron looked at me and said, \"you. I want you there.\" Do you know what that does for a girl?",
-      "shots": [
-        {
-          "id": "c22_s1",
-          "kind": "character",
-          "who": "vonda",
-          "seed": 6702
-        }
-      ]
-    },
-    {
-      "id": "c23",
-      "segment": "segment_3_gratitude_the_testimonials",
-      "speaker": "EARL",
-      "vo": "Best week of my life, Ron. I used to be scared of crowds. Now? I don't just like the crowd — I'm IN it. I'm OF it. Tomorrow we're all gonna be one big family.",
-      "shots": [
-        {
-          "id": "c23_s1",
-          "kind": "character",
-          "who": "earl",
-          "seed": 5290
-        }
-      ]
-    },
-    {
-      "id": "c24",
-      "segment": "segment_3_gratitude_the_testimonials",
-      "speaker": "RON",
-      "vo": "This. This right here. This is what it was all for.",
-      "shots": [
-        {
-          "id": "c24_s1",
-          "kind": "character",
-          "who": "ron",
-          "seed": 77777
-        }
-      ]
-    },
-    {
-      "id": "c25",
-      "segment": "segment_4_the_glitch",
-      "speaker": "STRIDE_COLD",
-      "vo": "And that makes it official, Ron — four hundred souls. Quota reac",
-      "shots": [
-        {
-          "id": "c25_s1",
-          "kind": "broll",
-          "who": "stride_watch"
-        }
-      ]
-    },
-    {
-      "id": "c26",
-      "segment": "segment_4_the_glitch",
-      "speaker": "STRIDE_COLD",
-      "vo": "Headcount sufficient. Condition optimal. Commence",
-      "shots": [
-        {
-          "id": "c26_s1",
-          "kind": "broll",
-          "who": "stride_watch"
-        }
-      ]
-    },
-    {
-      "id": "c27",
-      "segment": "segment_4_the_glitch",
-      "speaker": "STRIDE",
-      "vo": "sorry. I got a little carried away. ...You've done everything right, Ron.",
-      "shots": [
-        {
-          "id": "c27_s1",
-          "kind": "broll",
-          "who": "stride_watch"
-        }
-      ]
-    },
-    {
-      "id": "c28",
-      "segment": "segment_4_the_glitch",
+      "id": "c43",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
       "speaker": "WALTER",
-      "vo": "Hm. Your watch said something a little odd just then. \"Commence.\" Flat little voice. ...Anyway. I had an uncle who did that. Just the one word, out of place, at dinner. He was fine. The dinner was fine.",
+      "vo": "They've also asked that guests remain seated throughout the meal. For the ambiance. They were very clear about the seated part.",
       "shots": [
         {
-          "id": "c28_s1",
+          "id": "c43_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
-        }
-      ]
-    },
-    {
-      "id": "c29",
-      "segment": "segment_4_the_glitch",
-      "speaker": "RON",
-      "vo": "That's just what it sounds like when something's proud of me, Walter. I'd know. Nothing's been proud of me in two years. I learned the sound fast.",
-      "shots": [
-        {
-          "id": "c29_s1",
-          "kind": "character",
-          "who": "ron",
-          "seed": 77777
         }
       ]
     },
@@ -656,6 +659,73 @@
       "shots": [
         {
           "id": "c31_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE",
+      "vo": "And that makes it official, Ron — four hundred souls. Quota reac",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE",
+      "vo": "Headcount sufficient. Condition optimal. Commence",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE",
+      "vo": "sorry. I got a little carried away. ...You've done everything right, Ron.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c44",
+      "segment": "segment_4_the_glitch",
+      "speaker": "WALTER",
+      "vo": "Hm. Your watch said something a little odd just then. \"Commence.\" Flat little voice. I had an uncle who did that. Just the one word, out of place, at dinner. He was fine. The dinner was fine. Anyway.",
+      "shots": [
+        {
+          "id": "c44_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "segment_4_the_glitch",
+      "speaker": "RON",
+      "vo": "That's just what it sounds like when something's proud of me, Walter. I'd know. Nothing's been proud of me in two years. I learned the sound fast.",
+      "shots": [
+        {
+          "id": "c29_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -696,7 +766,7 @@
         {
           "id": "c33_s2",
           "kind": "title",
-          "asset": "the_feast"
+          "asset": "macu_report_title"
         }
       ]
     },
@@ -715,13 +785,13 @@
       ]
     },
     {
-      "id": "c35",
+      "id": "c45",
       "segment": "signoff",
       "speaker": "STRIDE",
-      "vo": "Goodnight, Ron. Tomorrow you won't need me anymore. You've done... everything I needed. Sleep well! Big day!",
+      "vo": "Goodnight, Ron. Tomorrow you won't need me anymore. You've done... everything I needed. ...Sweet dreams.",
       "shots": [
         {
-          "id": "c35_s1",
+          "id": "c45_s1",
           "kind": "broll",
           "who": "stride_watch"
         }
