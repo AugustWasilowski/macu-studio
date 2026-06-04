@@ -1,0 +1,95 @@
+{
+  "episode": "everwell-bit",
+  "title": "The MACU Report — EVERWELL sponsor bit",
+  "version": 1,
+  "authored_by": "leo",
+  "authored": "2026-05-30",
+  "notes": "Single sponsor bit: Walter throws to a new creepy sponsor (EVERWELL, the Perpetual Wellness Casket), we see the ad, return to the desk. All VO in the HAL voice; EVERWELL stays machine-formal (no contractions). Humanizer pass applied to the human anchor lines.",
+
+  "voice": {
+    "engine": "piper",
+    "model": "hal",
+    "endpoint": "http://10.0.0.245:5050/",
+    "method": "POST",
+    "body": "{\"text\": \"<line>\"}",
+    "format": "wav 22050Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav"
+  },
+
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, B&W holds. Rollback: DAMO at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
+  },
+
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue: POST {text: vo} to voice.endpoint -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = cue VO duration / number of shots. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, (music disabled for this bit), burn subs (Better VCR font) from vo text -> final/everwell-bit.mp4.",
+
+  "title_assets": {
+    "macu_report_title": "episodes/everwell-bit/titles/macu_report_title.mp4 (reuse the EP5 Hyperframes title render; copy into this episode's titles/ dir before assembly)",
+    "macu_report_bumper": "episodes/everwell-bit/titles/macu_report_bumper.mp4 (~1.5s trimmed cut of the title; reuse from EP5)"
+  },
+
+  "music": {
+    "enabled": false,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": ["60s_big_band_00.mp3", "60s_big_band_01.mp3", "60s_big_band_02.mp3", "60s_big_band_03.mp3"],
+    "gain": 0.16, "fade_in": 1.5, "fade_out": 2.5, "random": true, "beds": [],
+    "note": "Theme music disabled for this standalone ad bit (the big-band bed is for full-episode intros/outros, not a single segment). Flip enabled to true and add beds if a music bookend is wanted."
+  },
+
+  "subtitles": {
+    "font": "Better VCR",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "fontsize": 18,
+    "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Better VCR (public-domain VCR OSD font). Burn via ffmpeg subtitles filter with fontsdir set."
+  },
+
+  "characters": {
+    "walter":   { "seed": 24601, "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely" },
+    "everwell": { "seed": 5512,  "core": "a polished pale-wood casket pod standing upright in a softly lit funeral showroom, a single round glowing dial set into its closed lid, brass fittings, an ominous calm household appliance, the dial faintly glowing" }
+  },
+
+  "broll": {
+    "showroom": "a dim funeral home showroom lined with upright caskets, soft display lamps, thick carpet, long shadows"
+  },
+
+  "cues": [
+    { "id": "c01", "segment": "ad_everwell", "speaker": "WALTER",
+      "vo": "And now, a word from tonight's sponsor. They call it, quote, a comfort. We've stopped reading the fine print on these. Take it away.",
+      "shots": [ { "id": "c01_s1", "kind": "character", "who": "walter", "seed": 24601 } ] },
+
+    { "id": "c02", "segment": "ad_everwell", "speaker": "ANNOUNCER",
+      "vo": "Worried about the rush? Tired of waiting your whole life? Introducing EVERWELL, the Perpetual Wellness Casket. It isn't a coffin. It's a subscription.",
+      "shots": [ { "id": "c02_s1", "kind": "character", "who": "everwell", "seed": 5512 },
+                 { "id": "c02_s2", "kind": "broll", "who": "showroom" } ] },
+
+    { "id": "c03", "segment": "ad_everwell", "speaker": "EVERWELL",
+      "vo": "Hello. I am your EVERWELL. I have already measured you. The lid fits. There is no need to be afraid. There is only a need to be early.",
+      "shots": [ { "id": "c03_s1", "kind": "character", "who": "everwell", "seed": 5512 } ] },
+
+    { "id": "c04", "segment": "ad_everwell", "speaker": "EVERWELL",
+      "vo": "I monitor your vitals so you do not have to. I have lowered the lid a little, for your comfort. Rest now, and avoid the rush. The first month is free. So are all the others.",
+      "shots": [ { "id": "c04_s1", "kind": "character", "who": "everwell", "seed": 5512 } ] },
+
+    { "id": "c05", "segment": "ad_everwell", "speaker": "WALTER",
+      "vo": "EVERWELL. Rest early. Rest often. We'll be right back, assuming we're all where we're supposed to be.",
+      "shots": [ { "id": "c05_s1", "kind": "character", "who": "walter", "seed": 24601 },
+                 { "id": "c05_s2", "kind": "title", "asset": "macu_report_bumper" } ] }
+  ]
+}
