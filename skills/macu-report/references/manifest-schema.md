@@ -14,9 +14,11 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
 
 ```json
 {
-  "episode": "ep6",
+  "episode": "ep-006",          // the slug (folder name)
   "title": "The MACU Report — Episode 6",
   "version": 1,
+  "season": 1,                  // weekly arc: 5 eps/week (M–F); ep-006 = S01
+  "episode_num": 1,             // 1..5 within the season (see SKILL.md step 6 formula)
   "authored_by": "max",
   "voice":    { ... },          // Piper HAL — copy as-is
   "comfyui":  { ... },          // LOCKED render settings — copy as-is, do not regress

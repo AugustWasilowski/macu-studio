@@ -188,6 +188,8 @@ Create `episodes/<slug>/manifest.json` following `references/manifest-schema.md`
 
 - Copy the **locked `comfyui` block** (zeroscope_v2_576w @ 384×384×24f, steps 30, cfg 15, fps 8) — this is
   what makes watermark-free + square + B&W + VRAM-fit all true at once. Don't bump resolution.
+- **Set `season` + `episode_num`** (top-level ints) from the weekly formula (ep-006 = S01-E1; see step 6). The
+  `episode` field stays the slug (`"ep-NNN"`); `season`/`episode_num` are the new metadata Studio + YouTube read.
 - Carry the `style` (suffix + negative), `music` (intro/outro big-band theme beds), and `subtitles` (Better
   VCR font) blocks forward.
 - One cue per spoken line: `{id, segment, speaker, vo, shots[]}`. Shots reference `characters[*]`,
@@ -253,8 +255,11 @@ Every episode also gets publish-ready copy saved to `episodes/<slug>/youtube.txt
 straight to YouTube. You can do this as soon as the script is locked (it doesn't depend on the render).
 Write it in MACU voice — in-universe, dry, a little menacing — but discoverable. Include:
 
-- **2–3 title options** (one straight "Episode N: <subtitle>", one hooky/segment-led, one punchy quote or
-  clickbait-ish line). Lead with the episode's best gag.
+- **2–3 title options.** The **straight option must carry the Season/Episode label**:
+  `The MACU Report — S0X-EY (Ep. N): <subtitle>`. Releases are 5/week (Mon–Fri) = one **Season**, so people
+  read each week as a self-contained arc. Formula (ep-### with N≥6): `season = (N-6)//5 + 1`,
+  `episode = (N-6)%5 + 1` — ep-006 = **S01-E1** … ep-010 = S01-E5, ep-011 = **S02-E1**, etc. (ep-005 and earlier
+  have no S/E.) The other 1–2 options stay hooky/segment-led or a punchy quote — lead with the episode's best gag.
 - **A description**: an in-universe hook paragraph, then a `Segments: A • B • C` line, then the standard
   boilerplate sign-off line — _"The MACU Report is a black-and-white, post-apocalyptic, retro-futurist
   faux-newscast from the Mayor Awesome Cinematic Universe."_ — capped with that episode's signoff tag.

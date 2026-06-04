@@ -21,10 +21,32 @@ class EpisodeSummary:
     title: str
     modified_iso: str
     done_stages: int  # 0..5 (UI tab stages, not pipeline stages)
+    season: int | None = None
+    episode_num: int | None = None
+    se_label: str | None = None  # "S01-E1" or None (pre-series / non-ep slugs)
 
 
 def _utc_iso(ts: float) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat(timespec="seconds")
+
+
+def season_episode(slug: str) -> tuple[int, int] | None:
+    """Derive (season, episode) from an ep-### slug. Releases are 5/week (M–F) = a
+    Season, anchored at ep-006 = S01-E1. Returns None for non-ep slugs or N<6
+    (ep-005 and earlier are pre-series)."""
+    if not slug.startswith("ep-"):
+        return None
+    try:
+        n = int(slug.split("-", 1)[1])
+    except (ValueError, IndexError):
+        return None
+    if n < 6:
+        return None
+    return (n - 6) // 5 + 1, (n - 6) % 5 + 1
+
+
+def se_label(season: int, episode: int) -> str:
+    return f"S{season:02d}-E{episode}"
 
 
 def list_episodes() -> list[EpisodeSummary]:
@@ -42,12 +64,23 @@ def list_episodes() -> list[EpisodeSummary]:
         except Exception:
             continue
         title = data.get("title") or entry.name
+        # Prefer the manifest's stored season/episode_num; fall back to the slug formula.
+        season = data.get("season")
+        episode_num = data.get("episode_num")
+        if season is None or episode_num is None:
+            derived = season_episode(entry.name)
+            if derived:
+                season, episode_num = derived
+        label = se_label(season, episode_num) if season and episode_num else None
         out.append(
             EpisodeSummary(
                 slug=entry.name,
                 title=str(title),
                 modified_iso=_utc_iso(manifest.stat().st_mtime),
                 done_stages=_done_stages(entry, data),
+                season=season,
+                episode_num=episode_num,
+                se_label=label,
             )
         )
     return out

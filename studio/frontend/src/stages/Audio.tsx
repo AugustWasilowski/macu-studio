@@ -7,7 +7,7 @@ import { Waveform } from "../components/Waveform";
 import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
 import { VersionArrows } from "../components/VersionArrows";
-import { IRegen } from "../components/Icons";
+import { IRegen, IPlay, IPause } from "../components/Icons";
 import { SfxSection } from "./AudioSfx";
 import type { Cue, PipelineEvent } from "../types";
 
@@ -46,6 +46,11 @@ export function Audio({ slug }: { slug: string }) {
   });
 
   const [playing, setPlaying] = useState<string | null>(null);
+  // "single" = play this one clip and stop; "sequential" = auto-advance to the next cue.
+  const [playMode, setPlayMode] = useState<"single" | "sequential">("single");
+  const playModeRef = useRef(playMode);
+  playModeRef.current = playMode;
+  const cueListRef = useRef<Cue[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Per-cue version-preview override URL (null = canonical cue audio).
   const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
@@ -61,7 +66,16 @@ export function Audio({ slug }: { slug: string }) {
     const src = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId);
     const a = new window.Audio(src);
     audioRef.current = a;
-    a.onended = () => setPlaying(null);
+    a.onended = () => {
+      if (playModeRef.current === "sequential") {
+        const list = cueListRef.current;
+        const i = list.findIndex((c) => c.id === cueId);
+        for (let j = i + 1; j < list.length; j++) {
+          if (list[j].wav_exists) { setPlaying(`cue:${list[j].id}`); return; }
+        }
+      }
+      setPlaying(null);
+    };
     // Surface failures instead of silently resetting — MediaError codes:
     // 2 = NETWORK (connection/proxy), 4 = SRC_NOT_SUPPORTED (got HTML/redirect
     // instead of audio, e.g. a Cloudflare Access login bounce). Tells glitch from bug.
@@ -81,6 +95,7 @@ export function Audio({ slug }: { slug: string }) {
   }, [playing, slug]);
 
   const togglePlay = (cueId: string) => {
+    setPlayMode("single"); // a single-row click plays just that clip, then stops
     setPlaying((p) => (p === `cue:${cueId}` ? null : `cue:${cueId}`));
   };
 
@@ -148,9 +163,19 @@ export function Audio({ slug }: { slug: string }) {
   }, [manifest.data]);
 
   const cueList = cues.data?.cues ?? [];
+  cueListRef.current = cueList;
   const genCount = cueList.filter((c) => c.status === "generated").length;
   const totalRuntime = cueList.reduce((a, c) => a + (c.duration_s ?? 0), 0);
   const selCue = selectedCueId ? cueList.find((c) => c.id === selectedCueId) : null;
+  const sequentialPlaying = !!playing && playMode === "sequential";
+
+  const playAll = () => {
+    if (sequentialPlaying) { setPlaying(null); return; } // toggle off
+    const first = cueList.find((c) => c.wav_exists);
+    if (!first) { push("No playable VO clips", "info"); return; }
+    setPlayMode("sequential");
+    setPlaying(`cue:${first.id}`);
+  };
 
   return (
     <div className="grid grid-cols-[1fr_368px] gap-3 h-full min-h-0">
@@ -166,6 +191,9 @@ export function Audio({ slug }: { slug: string }) {
               <span className="seg-readout cyan">
                 {totalRuntime.toFixed(1)}<span className="text-txt-faint">s</span> RUNTIME
               </span>
+              <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop sequential playback" : "Play all cues in sequence"}>
+                {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
+              </button>
               <button className="btn btn-amber" onClick={regenAllMissing}>
                 <IRegen /> Regenerate all missing
               </button>

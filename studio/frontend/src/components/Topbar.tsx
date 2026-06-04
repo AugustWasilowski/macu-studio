@@ -70,6 +70,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       <div className="relative">
         <button className="btn btn-amber" onClick={() => setOpen((o) => !o)}>
           <span style={{ color: "var(--amber)", fontWeight: 700 }}>{slug || "—"}</span>
+          {cur?.se_label && <span className="seg-readout cyan text-[10px]">{cur.se_label}</span>}
           <span className="text-txt-dim">{cur ? cur.title.replace(/^The MACU Report\s*—\s*/, "") : ""}</span>
           <IChevron />
         </button>
@@ -82,6 +83,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
                 onClick={() => { setOpen(false); onPick(e.slug); }}
               >
                 <span className="text-amber font-bold w-12">{e.slug}</span>
+                <span className="seg-readout cyan text-[10px] w-[52px] text-center">{e.se_label ?? ""}</span>
                 <span className="flex-1 truncate text-txt-dim">{e.title}</span>
                 <span className="seg-readout">{e.done_stages}/5</span>
               </button>

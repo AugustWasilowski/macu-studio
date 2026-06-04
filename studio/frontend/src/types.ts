@@ -36,6 +36,9 @@ export interface EpisodeSummary {
   title: string;
   modified_iso: string;
   done_stages: number;
+  season?: number | null;
+  episode_num?: number | null;
+  se_label?: string | null; // "S01-E1" or null (pre-series / non-ep)
 }
 
 export interface Cue {

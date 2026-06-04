@@ -99,9 +99,11 @@ class TitleAssetObj(BaseModel):
 
 class Manifest(BaseModel):
     model_config = _CFG
-    episode: Optional[str] = None
+    episode: Optional[str] = None  # the slug, e.g. "ep-006"
     title: Optional[str] = None
     version: Optional[int] = None
+    season: Optional[int] = None       # weekly arc (5 eps/week); ep-006 = S01
+    episode_num: Optional[int] = None  # 1..5 within the season
     voice: Optional[Voice] = None
     comfyui: Optional[Comfyui] = None
     style: Optional[Style] = None
@@ -112,7 +114,9 @@ class Manifest(BaseModel):
     characters: dict[str, Union[CharacterDef, str]] = {}
     broll: dict[str, Any] = {}
     cues: list[Cue] = []
-    sfx: list[dict[str, Any]] = []
+    # sfx is normally a list of pinned one-shots, but ep-010..015 carry a legacy
+    # config-dict schema; stay lenient (the Studio coerces non-lists to []).
+    sfx: Optional[Any] = None
 
 
 def parse(data: dict[str, Any]) -> Manifest:

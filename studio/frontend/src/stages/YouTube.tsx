@@ -46,7 +46,10 @@ export function YouTube() {
                 style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", background: "var(--bg-2)" } : {}}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[12px]">{e.slug}</span>
+                  <span className="font-mono text-[12px]">
+                    {e.slug}
+                    {e.se_label && <span className="text-cyan ml-1.5">{e.se_label}</span>}
+                  </span>
                   {m && <span className="label-tiny text-green" title="matched YouTube upload">● YT</span>}
                 </div>
                 <div className="text-[12px] text-txt-dim truncate">{e.title}</div>
