@@ -1,0 +1,663 @@
+{
+  "episode": "ep-018",
+  "title": "The MACU Report — Episode 18 — \"Nobody Leaves the Chair\"",
+  "version": 1,
+  "authored_by": "leo",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "CHEF ROSE": {
+        "engine": "omnivoice",
+        "profile_id": "eb1af4c3",
+        "voice_name": "GG_Rose",
+        "speed": 1.0,
+        "guidance_scale": 1.6,
+        "seed": 4014
+      },
+      "DR. GOLDTOOTH": {
+        "engine": "omnivoice",
+        "profile_id": "e1b4af0b",
+        "voice_name": "KattW",
+        "speed": 1.18,
+        "guidance_scale": 1.4,
+        "seed": 4016
+      },
+      "EARL": {
+        "engine": "omnivoice",
+        "profile_id": "7ad3680e",
+        "voice_name": "PHB_Korea",
+        "speed": 1.0,
+        "guidance_scale": 2.5,
+        "seed": 4018
+      },
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy",
+        "speed": 1.05,
+        "guidance_scale": 1.7,
+        "seed": 4011
+      },
+      "ROSCOE": {
+        "engine": "omnivoice",
+        "profile_id": "31bba4bf",
+        "voice_name": "PHB_IceT",
+        "speed": 0.95,
+        "guidance_scale": 1.7,
+        "seed": 4017,
+        "instruct": "male, low pitch"
+      },
+      "SETH": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth",
+        "speed": 1.05,
+        "guidance_scale": 1.8,
+        "seed": 4022
+      },
+      "STRIDE": {
+        "engine": "omnivoice",
+        "profile_id": "eb01da84",
+        "voice_name": "HAL_OV",
+        "speed": 1.08,
+        "guidance_scale": 2.0,
+        "seed": 4013
+      },
+      "THE GOURMAND": {
+        "engine": "omnivoice",
+        "profile_id": "bd39e0e6",
+        "voice_name": "PHB_Silky",
+        "speed": 0.9,
+        "guidance_scale": 2.4,
+        "seed": 4020
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter",
+        "speed": 0.93,
+        "guidance_scale": 2.6,
+        "seed": 4012
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "out_pattern": "clips/<shot_id>.webp"
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Cold-start fire-and-poll. For each cue with non-empty vo: POST the line (multipart form-data -F, NOT JSON) to the speaker_map voice -> vo/<cue_id>.wav. HOLD cues (empty vo + hold_seconds): silent wav of hold_seconds, no subtitle; hold_style 'play' = PLAY the clip (animate), do NOT first-frame. Per-shot screen time = cue duration / number of shots. Jank filtergraph, RIFE 3x, concat, mux VO, mix music beds, mix sfx, burn subs -> final/<slug>.mp4.",
+  "title_assets": {
+    "macu_report_title": "auto-resolves from shared assets/titles",
+    "macu_report_bumper": "auto-resolves from shared assets/titles",
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "the_feast": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "duration_seconds": 5.5,
+      "resolution": "1024x1024",
+      "render_args": {
+        "fps": 8,
+        "quality": "high"
+      },
+      "fields": {
+        "kicker": "TONIGHT'S BULLETIN",
+        "title_line_1": "NOBODY LEAVES",
+        "title_line_2": "THE CHAIR",
+        "sub": "A FEAST. A LIST. A LOCK.",
+        "idtag": "EP 18 • MACU"
+      }
+    }
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c30",
+          "c31"
+        ],
+        "max_seconds": 14
+      }
+    ]
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Do NOT put FontName=/Fontsize= in force_style; stage 8 prepends its own. HOLD cues have empty vo => no subtitle by design."
+  },
+  "characters": {
+    "earl": {
+      "seed": 5290,
+      "core": "a hopeful wary ordinary man in a patched coat, nervous hopeful smile"
+    },
+    "goldtooth": {
+      "seed": 7212,
+      "core": "a flashy wasteland dentist in a fur-collared coat over dental scrubs, a single gold front tooth, gold rings, lounging on a reclined dental chair like a throne, big grin"
+    },
+    "gourmand": {
+      "seed": 6644,
+      "core": "a sleek sinister chef in a dark apron at a kitchen counter, holding one long knife, thin cold smile"
+    },
+    "ron": {
+      "seed": 77777,
+      "core": "an earnest disheveled 1970s television news anchor in a rumpled suit at a news desk, studio lights"
+    },
+    "roscoe": {
+      "seed": 8123,
+      "core": "a hulking wasteland bouncer in a tight muscle shirt and dark sunglasses, arms crossed in front of a chained doorway, gold chain, theatrical posing"
+    },
+    "rose": {
+      "seed": 3216,
+      "core": "a sweet elderly woman with soft white hair in a floral apron and pearls, beaming, stirring an enormous pot in a ruined concrete bunker kitchen"
+    },
+    "seth": {
+      "seed": 5151,
+      "core": "a nervous sweating gaunt man in a frayed coat, gap-toothed, glancing fearfully to the side, dim"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "a calm distinguished elderly 1970s television news co-anchor at a news desk, measured gravitas"
+    }
+  },
+  "broll": {
+    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. Day three, and the community has never been bigger. Three hundred and forty souls, all in one place, all on my list.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "STRIDE",
+      "vo": "Three hundred and forty, Ron. You've been at three forty since lunch. The record is four hundred. The biggest gathering in MACU history. You're so close. Don't you want to be the man who did that?",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "RON",
+      "vo": "...Four hundred. I can get four hundred.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "WALTER",
+      "vo": "Or you could stop at a pleasant three hundred and forty and go home, Ron.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "WALTER",
+      "vo": "Some of them would also like to go home, Ron.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "RON",
+      "vo": "Pleasant doesn't make history, Walter. Pleasant doesn't bring a whole town home. To the hall!",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c06_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "segment_1_the_merge_the_door_closes",
+      "speaker": "RON",
+      "vo": "I was up all night on this, MACU. Here's the play: effective immediately, I'm consolidating. The community drive and Chef Rose's feast are now ONE operation. The feast hall is headquarters. One roof, one list. Rose — here. Three days, every door, every name, in my own hand. Take it. They're our people now.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "segment_1_the_merge_the_door_closes",
+      "speaker": "CHEF ROSE",
+      "vo": "Oh, Ron. The whole list? Every single name? You've made an old cook so happy. Bring them all to the table. Every last one. There's always room. I've never had a full house before. I'm going to need a bigger pot.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "segment_1_the_merge_the_door_closes",
+      "speaker": "WALTER",
+      "vo": "You've given the cook a list of everyone you could find and locked them in her hall. Very organized, Ron.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "RON",
+      "vo": "A real operation needs a door. Though — chaining folks in, at a feast, I don't know if that's",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "STRIDE",
+      "vo": "It's protection, Ron. You know what it's like when people scatter. You don't want to lose everyone again.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "RON",
+      "vo": "...No. No, I don't. Dr. Goldtooth lent me his man. Roscoe — front of house. Lock it down. Keep our people safe inside where I can look after them.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "ROSCOE",
+      "vo": "These doors are CLOSED, brother. You try the handle — the handle tries YOU. The last fella who reached for an exit on Roscoe's watch? He is now PART of the WALL. Say hi on your way to your seat — THAT'S him, that's the load-bearing one. He holds up the EAST SIDE now. He found a PURPOSE. Snap into your chair. OHHH yeahhh.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "roscoe",
+          "seed": 8123
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "RON",
+      "vo": "Same security Dr. Goldtooth trusts with his gold. That's how serious we are about keeping everybody together.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "EARL",
+      "vo": "...Jesus. ...Cozy, though! Honestly — why would I ever leave? Best week of my life, Ron. I'm exactly where I'm supposed to be.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "earl",
+          "seed": 5290
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "WALTER",
+      "vo": "With the doors secured, it's time for Scavenger's Feast — and today's celebrity guest chef, a man of exquisite taste.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "THE GOURMAND",
+      "vo": "Thank you, Walter. People think you want them afraid first. The fear tenderizes nothing — it's a myth. No. You want them HAPPY. Grateful. Gathered willingly. A man who walks in on his own two feet is the finest cut there is.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "gourmand",
+          "seed": 6644
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "CHEF ROSE",
+      "vo": "Today's centerpiece came to us so willingly. A Mr. Dwyer. Volunteered for the community. We're doing him as a roast — Dwyer was always warm.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "RON",
+      "vo": "...Oh, Dwyer. That's — Walter, you can TASTE how willing he was. THIS is what generosity tastes like, MACU. Give of yourself. Look what we make together.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "WALTER",
+      "vo": "He really did give of himself. Right down to the dish. Mr. Dwyer had a very good attitude about things, right to the end. We'll miss his column.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "segment_4_goldtooth_works_the_room",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Doors LOCKED? Baby, that is PERFECT for business — nobody's goin' anywhere, so let's talk VOLUME. Bulk rate on molars, today only. Come see Dr. Goldtooth and leave a little lighter. Lighter than you think. Doc's got a gift for the guest of honor, too. Something personal. Something you don't walk away from with. Free of charge.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 7212
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "segment_4_goldtooth_works_the_room",
+      "speaker": "RON",
+      "vo": "Three-sixty. Three-seventy. Walter, we're going to break it.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "SETH",
+      "vo": "Ron. Ron, listen — I counted. Three days, three hundred people, and you know what's NOT arrived? Food. No crops. No cans. Nothing's coming IN. The only thing showing up is people. Ron — the feast isn't FOR us. The feast IS",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "seth",
+          "seed": 5151
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "RON",
+      "vo": "I KNOW. I know something's wrong out there, friend — I've known for two years. That's exactly why we're all in here TOGETHER, where it's safe. You're one of us now. Sign in. Stick close. Don't wander. You're protected here.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "SETH",
+      "vo": "...They didn't even ask anybody.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "seth",
+          "seed": 5151
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "STRIDE",
+      "vo": "Step count: six hundred and twelve, Ron. Busy day!",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "A heavy thought from Seth there. Anyway — the weather.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c27_s2",
+          "kind": "title",
+          "asset": "macu_weather"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "Your forecast: the haze has lifted entirely, a warmth on the wind, condition rating exceptionally mild. Lovely weather to stay indoors. With the doors locked.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. As of tonight the community and the feast are one. Three hundred and ninety souls, one roof, doors secured. Tomorrow we hit four hundred — a record — and not one person left behind. We have never been safer. We have never been closer.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c29_s2",
+          "kind": "title",
+          "asset": "the_feast"
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "signoff",
+      "speaker": "STRIDE",
+      "vo": "Three hundred and ninety, Ron. Ten to go. You're going to break the record. ...One more day.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    }
+  ],
+  "sfx": [],
+  "season": 3,
+  "episode_num": 3
+}
