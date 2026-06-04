@@ -243,92 +243,134 @@ export function Library({ slug, previewUrl, onPreview }: {
         )}
       </div>
       <AddSfxDialog open={addOpen} onClose={() => setAddOpen(false)} slug={slug} cueIds={cueIds}
-        onAdded={() => { qc.invalidateQueries({ queryKey: ["manifest", slug] }); qc.invalidateQueries({ queryKey: ["assets", "sfx"] }); }} />
+        initialSource={tab === "music" ? "music" : "freesound"}
+        onAdded={() => {
+          qc.invalidateQueries({ queryKey: ["manifest", slug] });
+          qc.invalidateQueries({ queryKey: ["assets", "sfx"] });
+          qc.invalidateQueries({ queryKey: ["assets", "music"] });
+        }} />
     </section>
   );
 }
 
-export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded }: {
+type AddSource = "freesound" | "generate" | "music";
+
+export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded, initialSource = "freesound" }: {
   open: boolean;
   onClose: () => void;
   slug: string;
   cueIds: string[];
   onAdded: () => void;
+  initialSource?: AddSource;
 }) {
   const push = useStore((s) => s.pushToast);
-  const [source, setSource] = useState<"freesound" | "generate">("freesound");
+  const [source, setSource] = useState<AddSource>(initialSource);
   const [query, setQuery] = useState("");
   const [duration, setDuration] = useState("4");
   const [seed, setSeed] = useState("");
+  const [engine, setEngine] = useState<"music" | "riff">("music"); // music-gen model
   const [cue, setCue] = useState(cueIds[0] ?? "");
   const [at, setAt] = useState("start");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   useEffect(() => { if (cueIds.length && !cue) setCue(cueIds[0]); }, [cueIds, cue]);
-  useEffect(() => { if (!open) { setQuery(""); setSeed(""); setResult(null); setBusy(false); } }, [open]);
+  // Reset on open; default the source/duration to the tab that opened it.
+  useEffect(() => {
+    if (open) {
+      setSource(initialSource);
+      setQuery(""); setSeed(""); setResult(null); setBusy(false);
+      setDuration(initialSource === "music" ? "20" : "4");
+    }
+  }, [open, initialSource]);
 
-  const gen = source === "generate";
+  const isMusic = source === "music";
+  const isGen = source === "generate";
+
+  const pickSource = (s: AddSource) => {
+    setSource(s); setResult(null);
+    if (s === "music" && (duration === "4" || !duration)) setDuration("20");
+    if (s !== "music" && duration === "20") setDuration("4");
+  };
 
   const submit = async () => {
     if (!query.trim()) return;
     setBusy(true); setResult(null);
+    const verb = isMusic ? "music gen" : isGen ? "generate" : "fetch";
     try {
-      const url = gen ? `/api/episodes/${slug}/sfx/gen` : `/api/episodes/${slug}/sfx/fetch`;
-      const body = gen
-        ? { prompt: query, duration: parseFloat(duration) || 3, seed: seed ? parseInt(seed, 10) : null, cue_id: cue || null, at }
-        : { query, duration_max: parseFloat(duration) || 4, cue_id: cue || null, at };
+      let url: string, body: any;
+      if (isMusic) {
+        url = `/api/episodes/${slug}/music/gen`;
+        body = { prompt: query, engine, duration: parseFloat(duration) || 20, seed: seed ? parseInt(seed, 10) : null };
+      } else if (isGen) {
+        url = `/api/episodes/${slug}/sfx/gen`;
+        body = { prompt: query, duration: parseFloat(duration) || 3, seed: seed ? parseInt(seed, 10) : null, cue_id: cue || null, at };
+      } else {
+        url = `/api/episodes/${slug}/sfx/fetch`;
+        body = { query, duration_max: parseFloat(duration) || 4, cue_id: cue || null, at };
+      }
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await r.json();
       setResult(data);
       if (r.status === 409) {
         push("GPU busy — a render is active. Try again when idle.", "err");
       } else if (data.ok) {
-        push(gen ? "SFX generated and pinned" : "SFX fetched and pinned", "ok");
+        push(isMusic ? "music bed generated" : isGen ? "SFX generated and pinned" : "SFX fetched and pinned", "ok");
         onAdded();
       } else {
-        push(`${gen ? "generate" : "fetch"}: ${data.hint ?? data.detail ?? "no match"}`, "info");
+        push(`${verb}: ${data.hint ?? data.detail ?? "no match"}`, "info");
       }
     } catch (e: any) {
-      push((gen ? "generate" : "fetch") + " failed: " + e.message, "err");
+      push(`${verb} failed: ` + e.message, "err");
     }
     setBusy(false);
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="GENERATE / FETCH SOUND EFFECT" width={520}
+    <Modal open={open} onClose={onClose} title="GENERATE / FETCH AUDIO" width={520}
       footer={
         <>
           <button className="btn" onClick={onClose}>Close</button>
           <button className="btn btn-cyan" disabled={busy || !query.trim()} onClick={submit}>
-            {busy ? (gen ? "Generating…" : "Fetching…") : (gen ? "Generate (agen)" : "Search Freesound")}
+            {busy
+              ? (isMusic || isGen ? "Generating…" : "Fetching…")
+              : (isMusic ? "Generate music" : isGen ? "Generate (agen)" : "Search Freesound")}
           </button>
         </>
       }>
       <div className="flex flex-col gap-2">
         <div className="flex gap-1">
-          {(["freesound", "generate"] as const).map((s) => (
-            <button key={s} onClick={() => { setSource(s); setResult(null); }}
+          {([["freesound", "Freesound SFX"], ["generate", "Generate SFX"], ["music", "Generate Music"]] as const).map(([s, label]) => (
+            <button key={s} onClick={() => pickSource(s)}
               className={"tab px-3 h-[28px] hairline-soft rounded-[3px] text-[11px] uppercase tracking-wider " + (source === s ? "active" : "")}
               style={source === s ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}>
-              {s === "freesound" ? "Freesound CC0" : "Generate (agen)"}
+              {label}
             </button>
           ))}
         </div>
-        <Field label={gen ? "agen prompt (AudioGen foley)" : "freesound query"} value={query} onChange={setQuery}
-          placeholder={gen ? "e.g. ‘heavy iron door slam, dry, close mic’" : "e.g. ‘old radio transmitter hum’"} />
+        <Field
+          label={isMusic ? "music prompt (MusicGen/Riffusion)" : isGen ? "agen prompt (AudioGen foley)" : "freesound query"}
+          value={query} onChange={setQuery}
+          placeholder={isMusic ? "e.g. ‘sickly lo-fi big-band waltz, tape hiss, mono’"
+            : isGen ? "e.g. ‘heavy iron door slam, dry, close mic’"
+            : "e.g. ‘old radio transmitter hum’"} />
         <div className="grid grid-cols-2 gap-2">
-          <Field label={gen ? "duration" : "duration max"} value={duration} onChange={setDuration} type="number" suffix="s" />
-          {gen
-            ? <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />
-            : <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          {gen && <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          <Field label="cue pin" value={cue} onChange={setCue} options={cueIds.length ? cueIds : [""]} />
+          <Field label={isMusic || isGen ? "duration" : "duration max"} value={duration} onChange={setDuration} type="number" suffix="s" />
+          {isMusic
+            ? <Field label="model" value={engine} onChange={(v) => setEngine(v as "music" | "riff")} options={["music", "riff"]} />
+            : isGen
+              ? <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />
+              : <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
+          {isMusic && <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />}
+          {isGen && <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
+          {!isMusic && <Field label="cue pin" value={cue} onChange={setCue} options={cueIds.length ? cueIds : [""]} />}
         </div>
         <div className="text-[11px] text-txt-faint">
-          {gen
-            ? <>Local AudioGen → 24 kHz/−3 dBFS into the kit · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>
-            : <>CC0 clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>}
+          {isMusic
+            ? <>Local {engine === "riff" ? "Riffusion (grittier lo-fi)" : "MusicGen"} → a bed added to <span className="text-cyan">music.clips[]</span> · won't run during a render</>
+            : isGen
+              ? <>Local AudioGen → 24 kHz/−3 dBFS into the kit · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>
+              : <>CC0 clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>}
         </div>
         {result && (
           <pre className="logtail" style={{ height: 140 }}>{result.ok
