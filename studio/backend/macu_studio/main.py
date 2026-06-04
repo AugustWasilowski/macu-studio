@@ -22,6 +22,7 @@ from . import regen as regen_mod
 from . import sfx as sfx_mod
 from . import agen as agen_mod
 from . import assets as assets_mod
+from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
@@ -48,6 +49,12 @@ app.add_middleware(
 @app.get("/api/health")
 def health():
     return {"ok": True, "episodes_dir": str(EPISODES), "render_url": pipeline_mod.RENDER_URL}
+
+
+@app.get("/api/sysstat")
+async def get_sysstat():
+    """CPU % + GPU % + GPU RAM for the topbar readout (poll ~every 2s)."""
+    return await sysstat_mod.snapshot()
 
 
 # ---------- Episodes ----------

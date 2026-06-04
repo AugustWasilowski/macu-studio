@@ -4,6 +4,7 @@ import { IBrace, IChevron } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
+import { SysStat } from "./SysStat";
 
 interface Props {
   episodes: EpisodeSummary[];
@@ -123,6 +124,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
         })}
       </nav>
       <div className="ml-auto flex items-center gap-3">
+        <SysStat />
         <button
           className="btn"
           onClick={onSync}
