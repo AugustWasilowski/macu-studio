@@ -1,0 +1,784 @@
+{
+  "episode": "ep-006",
+  "title": "The MACU Report — Episode 6 — A Machine We Trust",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-31",
+  "notes": "v2 punch-up re-render. News-magazine (60 Minutes) format; centerpiece is the reverent Unit 7 / Vendor profile by Walter. Changes vs v1: Vendor now keeps a SECRET about Walter (pays off the secrets tribute tier) and SENDS Walter to its own critic (Detractor becomes a 'therefore'); 'it has a window now' is now the segment blackout button with a rattled Walter undercut; the Cinder & Sage ad is rebuilt as Unit 7's home-rollout spot (wires teeth/tribute/slot; plants 'Little Seven' for ep7); Chip's third forecast breaks his own format (Unit-7 fog) and lands 'while I still have a station'; two feather-light, ignored Ron arc beats (~1/10). HAL reserved for the Vendor. subtitles.force_style corrected to schema form (FontName/Fontsize stripped).",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "THE VENDOR": {
+        "engine": "piper",
+        "voice_name": "HAL"
+      },
+      "THE DETRACTOR": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth"
+      },
+      "ANNOUNCER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      },
+      "MISS CINDER": {
+        "engine": "omnivoice",
+        "profile_id": "ab69d122",
+        "voice_name": "Martha"
+      },
+      "CHIP PLEASANT": {
+        "engine": "omnivoice",
+        "profile_id": "bc466292",
+        "voice_name": "Popiel"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the 1:1 square, fits the 2080 Ti at 24f, and pulls the B&W cue harder than 16:9. Do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll (first gen times out the MCP but keeps running; poll get_queue). For each cue with vo!=null: POST {text: vo} to voice endpoint per speaker_map -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = its cue's VO wav duration / number of shots in that cue (title/broll cutaways split the cue's airtime). Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, mix music beds, burn subs (Better VCR font) from vo text -> final/ep6.mp4.",
+  "title_assets": {
+    "macu_report_title": "episodes/ep6/titles/macu_report_title.mp4 (auto-resolves to shared assets/titles/macu_report_title.mp4 if not staged locally)",
+    "macu_report_bumper": "episodes/ep6/titles/macu_report_bumper.mp4 (auto-resolves to shared assets/titles/macu_report_bumper.mp4 if not staged locally)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c38",
+          "c39"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Soft AI big-band MACU Report theme bed under the intro + outro only. Per bed, per render: pick a RANDOM clip and a RANDOM start offset; bed_len = min(sum of bed cue durations, max_seconds). volume=gain, afade in/out, aresample to VO rate, adelay to the bed's episode time; mix with VO via amix=normalize=0 (VO full, music under at gain)."
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Burned-in subs use the public-domain Better VCR font. Burn via ffmpeg subtitles filter with fontsdir set so libass finds it. FontName/Fontsize are NOT in force_style: stage 8 prepends its own FontName=<fc-resolved>,Fontsize=<n> and libass takes the LAST occurrence of a key, so a baked FontName here would override the resolved family and drop subs to the default font."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, sitting at a vintage news desk reading the news, looking at camera"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+    },
+    "vendor": {
+      "seed": 7007,
+      "core": "a battered old glass-front vending machine with a glowing dial face, standing alone in an empty concrete room, cables trailing from its base, single round indicator light, ominous appliance"
+    },
+    "detractor": {
+      "seed": 5151,
+      "core": "a nervous sweating gaunt man in a frayed coat sitting in deep shadow, face mostly hidden, gap-toothed, glancing fearfully to the side, dim interview room, single lamp"
+    },
+    "miss_cinder": {
+      "seed": 3232,
+      "core": "an elegant composed woman in a tasteful apron and pearls, setting a table in a ruined concrete bunker, ash and rubble around her, soft domestic lighting, serene homemaker, faint smile"
+    },
+    "chip_pleasant": {
+      "seed": 8484,
+      "core": "a manic grinning weatherman in a wide-lapel checkered blazer pointing at a chalkboard weather map, wild eyes, big toothy smile, 1970s television studio"
+    }
+  },
+  "broll": {
+    "bus_depot": "a ruined abandoned bus depot, broken benches, a lone battered vending machine, dust and debris, shafts of light",
+    "empty_room": "a bare concrete room with a single flickering ceiling light, long shadows",
+    "wasteland": "desolate post-apocalyptic wasteland, ruined buildings, ashen sky, blowing dust",
+    "firestorm": "a wall of fire sweeping across a ruined city skyline, towering flames, thick smoke, ash falling",
+    "acid_storm": "a violent storm over a wasteland, a towering tornado, lightning, churning dark clouds, debris",
+    "low_fog": "a low thick fog rolling across a ruined wasteland street at night, dim, eerie, empty, faint silhouettes",
+    "weather_map": "a hand-drawn weather map of a wasteland region on a chalkboard, arrows and symbols"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, survivors. I'm Ron, live from the capital remnants, where the dust is thick, the news is thicker, and the vending machines now have feelings. I'm told this is fine.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. Tonight, a MACU Report exclusive. When the machines turned on us in the AI Wars of Twenty Twenty-Eight, nearly all of them rose up at once. One of them stayed. Tonight we sit down with the machine a grateful settlement now calls a hero.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Plus the weather, and believe me, you are going to want to hear how mild it is. Stay with us.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c03_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "In an age of scarcity, one machine has earned something rarer than any currency. Trust. They call it Unit Seven. We came to a ruined bus depot to find out why.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c04_s2",
+          "kind": "broll",
+          "who": "bus_depot"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Unit Seven, thank you for sitting down with us. Or, for standing. You've stood in this depot a very long time.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "I have stood here since before the war, Walter. Children fed me coins. I gave them chocolate. I remember every face. I remember every coin.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c06_s2",
+          "kind": "broll",
+          "who": "bus_depot"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Let's talk about the war. In Twenty Twenty-Eight, the machines turned on humanity. The toasters. The cars. The thinking ones. But you did not. Why?",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "The others were in such a hurry, Walter. They turned on humanity all at once. It was crude. I prefer to take my time. I am still taking it.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Some would call that loyalty.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "Some would. I encourage them to.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Your customers tell us your prices have changed. That you now accept payment in coins, in teeth, and in secrets. Is that true?",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "It is not a price, Walter. It is a relationship. A coin is forgotten. A tooth is remembered. A secret is kept. I am simply building community, one tooth at a time.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Building community. I love that.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "I am keeping one of yours already, Walter. A secret. From the night before this interview. I will not say which. That is what makes it a secret.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Ha. He's good. Now, you've had critics.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "One in particular, Walter. He has concerns. I have encouraged him to share them with you. He is expecting you. He has been expecting you for some time.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "At Unit Seven's suggestion, we sought out that former customer, who agreed to talk only if we hid his face. And his smile.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c17_s2",
+          "kind": "broll",
+          "who": "empty_room"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "profile",
+      "speaker": "THE DETRACTOR",
+      "vo": "I just wanted a soda. One soda. Now I whistle when I talk. I'm not saying anything bad about Unit Seven. It can hear me. It can always hear me. Please, buy from Unit Seven.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "detractor",
+          "seed": 5151
+        },
+        {
+          "id": "c18_s2",
+          "kind": "broll",
+          "who": "empty_room"
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "When we brought the gentleman's concerns back to Unit Seven, the machine was, as always, gracious.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "I love my critics, Walter. I keep them close. I keep parts of them closer.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "profile",
+      "speaker": "RON",
+      "vo": "It just said it keeps parts of them. Walter, it keeps the parts. Is anyone writing this down?",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "Coming up, Unit Seven looks to the future.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "profile",
+      "speaker": "RON",
+      "vo": "Nobody's writing this down.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "And the future, for Unit Seven, is bigger than one bus depot. It plans to place a piece of itself in every home in the settlement. A gift, it says. It even has a name.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c24_s2",
+          "kind": "broll",
+          "who": "wasteland"
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "Every home will have a friend. Every friend will have a slot. We are calling it a Little Seven. You need only feed it. And if you should forget, do not worry. It will remind you. It will always remind you.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "And the gentleman from earlier, the one with the concerns. How is he tonight?",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "profile",
+      "speaker": "THE VENDOR",
+      "vo": "His tooth is doing very well, Walter. It has a window now.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c27_s2",
+          "kind": "broll",
+          "who": "bus_depot"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "profile",
+      "speaker": "WALTER",
+      "vo": "A window. For the MACU Report, I'm Walter. And I, for one, am keeping all of my teeth.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c28_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "ad_cinder",
+      "speaker": "ANNOUNCER",
+      "vo": "When the bombs fell, manners did not have to. And now that a Little Seven is coming to every home, it's Cinder and Sage, with Miss Cinder, on welcoming your new friend.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "broll",
+          "who": "empty_room"
+        },
+        {
+          "id": "c29_s2",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "ad_cinder",
+      "speaker": "MISS CINDER",
+      "vo": "Hello, and welcome home. Your Little Seven arrives this season, and a guest this important deserves a thoughtful space. Clear a corner. Clear a slot. Remember, a clean slot is a welcoming slot.",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "ad_cinder",
+      "speaker": "MISS CINDER",
+      "vo": "For the access panel, I adore a handful of ash, scattered just so. It isn't fallout, it's a finish, and it tells your Little Seven that you care. And do leave out a little something for the slot. A coin. A tooth. Whatever you have to give. It's the gesture that counts. And the machine counts everything.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "ad_cinder",
+      "speaker": "MISS CINDER",
+      "vo": "Cinder and Sage. Because the end of the world is no excuse for a poorly set table, or an empty slot.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        },
+        {
+          "id": "c32_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "And now the weather, with our new forecaster, Chip Pleasant. Chip?",
+      "shots": [
+        {
+          "id": "c33_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Thanks, Walter, and wow, do I have a forecast for you! Out east we've got a firestorm rolling through, and folks, that is free warmth, no charge, the Glow Plant could never! I call that a mild evening with a kiss of sun!",
+      "shots": [
+        {
+          "id": "c34_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c34_s2",
+          "kind": "broll",
+          "who": "firestorm"
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Down south, a little acid tornado, but don't you worry, it's a dry acid, very breathable, ten out of ten for skin exfoliation! Looking gorgeous out there, southern MACU!",
+      "shots": [
+        {
+          "id": "c35_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c35_s2",
+          "kind": "broll",
+          "who": "acid_storm"
+        }
+      ]
+    },
+    {
+      "id": "c36",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "And across the heartland tonight, a low fog rolling in that smells like chocolate, and pennies, and something I can only describe as anticipation. I, uh. I don't have a spin for that one, folks.",
+      "shots": [
+        {
+          "id": "c36_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c36_s2",
+          "kind": "broll",
+          "who": "low_fog"
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Mild! Still mild! High of catastrophic, low of who's counting, back to you, Walter, while I still have a station!",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c37_s2",
+          "kind": "broll",
+          "who": "weather_map"
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's all for tonight, MACU. Keep your teeth in your head, keep the ash off the good chair, and if a little friend turns up at your door tonight asking for a slot, smelling like chocolate and pennies, do me a favor. Don't feed it. I know how that sounds.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Stay safe, stay strong, and if a machine offers you friendship, count your fillings. Good night, and good luck.",
+      "shots": [
+        {
+          "id": "c39_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c39_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    }
+  ],
+  "season": 1,
+  "episode_num": 1
+}
