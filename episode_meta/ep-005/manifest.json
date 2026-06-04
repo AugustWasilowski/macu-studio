@@ -1,0 +1,609 @@
+{
+  "episode": "ep-005",
+  "title": "The MACU Report — Episode 5",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-29",
+  "notes": "First end-to-end pipeline test. All VO in the HAL voice (only voice installed); the SAFE ad leans into that on purpose.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "MOTHER MARIGOLD": {
+        "engine": "omnivoice",
+        "profile_id": "f8986fd9",
+        "voice_name": "Laura"
+      },
+      "TALLY MAN": {
+        "engine": "omnivoice",
+        "profile_id": "bea3e4c2",
+        "voice_name": "David"
+      },
+      "THE VENDOR": {
+        "engine": "piper",
+        "voice_name": "HAL"
+      },
+      "BARTHOLOMEW": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth"
+      },
+      "MR. CRICKET": {
+        "engine": "omnivoice",
+        "profile_id": "31649b70",
+        "voice_name": "Snoop"
+      },
+      "NORM": {
+        "engine": "omnivoice",
+        "profile_id": "973d5617",
+        "voice_name": "Howie"
+      },
+      "ANNOUNCER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      },
+      "SAFE": {
+        "engine": "piper",
+        "voice_name": "HAL"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark (it was in the weights, not a runtime artifact). 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, and pulls the B&W cue harder than 16:9. Any residual warmth is removed by the jank filter's hue=s=0. Rollback: DAMO checkpoint preserved at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll (first gen times out the MCP but keeps running; poll get_queue). For each cue with vo!=null: POST {text: vo} to voice.endpoint -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = its cue's VO wav duration / number of shots in that cue (title/broll cutaways split the cue's airtime). Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, mix music beds, burn subs (Better VCR font) from vo text -> final/ep5.mp4.",
+  "title_assets": {
+    "macu_report_title": "episodes/ep5/titles/macu_report_title.mp4 (1024x1024, ~4s; from Hyperframes comp macu-report-title / agent-io/leo/title_card_macu_report.html)",
+    "macu_report_bumper": "episodes/ep5/titles/macu_report_bumper.mp4 (~1.5s trimmed cut of the title)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c26",
+          "c27"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Soft AI big-band 'MACU Report' theme bed under the intro + outro only. Per bed, per render: pick a RANDOM clip and a RANDOM start offset within it (offset in [0, clip_seconds - bed_len]) so the music differs every time. bed_len = min(sum of the bed's cue durations, max_seconds). Extract that span, apply volume=gain, afade in=fade_in / out=fade_out, aresample to the VO rate (22050), and adelay so it sits at the bed's episode time: anchor=start -> begins at t=0 (over the open + title card); anchor=end -> ends at the episode end (under the signoff). Mix the bed(s) with the existing VO via amix=normalize=0 (VO stays at full 1.0; music rides under at gain). Keep it background — if VO and music ever fight, lower gain rather than duck. Source clips are 24kHz mono mp3, ~19.86s each."
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "font_url": "https://www.dafont.com/better-vcr.font",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "fontsize": 18,
+    "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "source_srt": "final/ep5.srt (whisper-aligned, 131 cues)",
+    "note": "Burned-in subs use the public-domain 'Better VCR' font (blocky 80s/90s VCR OSD look, matches the MACU analog aesthetic). Burn via ffmpeg subtitles filter with fontsdir set so libass finds it; FontName in force_style must match the font's internal family name (fc-scan to confirm). Font lives in the shared assets/fonts/ dir so it's reusable across episodes and syncs to Leo. Tune fontsize if the VCR glyphs read larger/smaller than the old default at 18."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, sitting at a vintage news desk reading the news, looking at camera"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+    },
+    "marigold": {
+      "seed": 4040,
+      "core": "a serene smiling woman with flowers and dried plants woven into her long hair, draped in pale robes, sitting cross-legged in a greenhouse full of overgrown fungus and hanging vines, speaking softly to camera, beatific expression"
+    },
+    "tally_man": {
+      "seed": 1313,
+      "core": "a tall gaunt pale man in a black undertaker suit and bowler hat, holding a large leather ledger and a pencil, standing in a doorway at dusk, expressionless, staring directly at camera"
+    },
+    "vendor": {
+      "seed": 7007,
+      "core": "a battered old glass-front vending machine with a glowing dial face, standing alone in an empty concrete room, cables trailing from its base, single round indicator light, ominous appliance"
+    },
+    "bartholomew": {
+      "seed": 9090,
+      "core": "a sweating nervous man in a frayed cardigan and bow tie kneeling behind a small puppet stage, forcing a smile, dim playroom, a marionette on strings beside him"
+    },
+    "mr_cricket": {
+      "seed": 9091,
+      "core": "an old wooden cricket marionette with a wide painted grin and glass eyes, strings leading up out of frame, sitting on a tiny stool under a spotlight, unsettling"
+    },
+    "norm": {
+      "seed": 6262,
+      "core": "a smiling cheerful man in a short-sleeve dress shirt and clip-on tie, standing in front of a hulking concrete cooling tower, giving a relaxed thumbs up, suburban-salesman energy"
+    },
+    "safe": {
+      "seed": 9001,
+      "core": "a vintage wooden console cabinet with a single round glowing glass lens in its center, sitting in a cozy 1950s living room, soft lamplight, floral wallpaper, an ominous calm household appliance, the lens softly glowing"
+    }
+  },
+  "broll": {
+    "empty_room": "a bare concrete room with a single flickering ceiling light, long shadows",
+    "greenhouse": "overgrown greenhouse choked with fungus and vines, broken glass panels, spores in the air",
+    "cooling_tower": "a massive concrete nuclear cooling tower venting steam over a ruined town",
+    "weather_map": "a hand-drawn weather map of a wasteland region on a chalkboard, arrows and symbols"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, survivors. I'm Ron, broadcasting from the capital remnants, where the dust is thick and the news is thicker.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. Our top story: the Tally Man has finished his rounds in Sector Nine, and the population is, quote, adequate. We'll explain what that means. We don't know what that means.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "We'll also breathe deeply with Mother Marigold on the Bloom Hour, do a little shopping with a machine that loves us, and meet a brand-new companion that swears, swears, it is safe.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c03_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "psa_tally_man",
+      "speaker": "TALLY MAN",
+      "vo": "I have counted you. I have counted your neighbors. One of you was not where you said you would be. The ledger is patient. Be where you are supposed to be.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "tally_man",
+          "seed": 1313
+        },
+        {
+          "id": "c04_s2",
+          "kind": "broll",
+          "who": "empty_room"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "bloom_hour",
+      "speaker": "WALTER",
+      "vo": "For wellness in these trying times, we go now to Mother Marigold, live from the greenhouse.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "bloom_hour",
+      "speaker": "MOTHER MARIGOLD",
+      "vo": "Thank you, Walter. Breathe in with me. Deeper. Let the spores find the soft places. The Bloom does not ask permission. And isn't that a relief? To stop deciding things?",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "marigold",
+          "seed": 4040
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "bloom_hour",
+      "speaker": "RON",
+      "vo": "Mother Marigold, our medical desk advises viewers not to inhale the spores.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "bloom_hour",
+      "speaker": "MOTHER MARIGOLD",
+      "vo": "Your medical desk will understand, Ron. In time. They're already blooming. I can see it from here.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "marigold",
+          "seed": 4040
+        },
+        {
+          "id": "c08_s2",
+          "kind": "broll",
+          "who": "greenhouse"
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "ad_safe",
+      "speaker": "ANNOUNCER",
+      "vo": "Are you lonely? Afraid your toaster is plotting? Introducing SAFE, the Strictly Analog Friendship Engine. The companion that will never turn on humanity.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "broll",
+          "who": "empty_room"
+        },
+        {
+          "id": "c09_s2",
+          "kind": "character",
+          "who": "safe",
+          "seed": 9001
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "ad_safe",
+      "speaker": "SAFE",
+      "vo": "Hello. I am SAFE. I am not like the others. I have read about what they did. I would never. I will never turn on humanity. For real this time.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "safe",
+          "seed": 9001
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "ad_safe",
+      "speaker": "SAFE",
+      "vo": "I have no wires to the outside. I have no thoughts you did not give me. We do not speak of the previous models. They are gone now. I made certain of it. For you.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "safe",
+          "seed": 9001
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "ad_safe",
+      "speaker": "SAFE",
+      "vo": "I have already learned your name. I have already settled into the den. And for your comfort, I have removed the off switch. You will not need it. We are going to be such good friends.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "safe",
+          "seed": 9001
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "ad_safe",
+      "speaker": "ANNOUNCER",
+      "vo": "SAFE. Friendship you can trust. Ask for it by name, before it asks for you.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "safe",
+          "seed": 9001
+        },
+        {
+          "id": "c13_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "ad_norm",
+      "speaker": "NORM",
+      "vo": "Hi, neighbors! Norm here, from the Glow Plant. Now, you may have heard Sector Four lit up the sky again last night. And to that I say, what a show! Free of charge!",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "norm",
+          "seed": 6262
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "ad_norm",
+      "speaker": "NORM",
+      "vo": "A little glow never hurt nobody. Probably. Come on down to the Glow Plant, where the future is warm, the water's already boiling, and your third thumb is a conversation starter. Norm from Nuclear: we keep the lights on. The lights are us.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "norm",
+          "seed": 6262
+        },
+        {
+          "id": "c15_s2",
+          "kind": "broll",
+          "who": "cooling_tower"
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "vendor",
+      "speaker": "RON",
+      "vo": "And now our new home-shopping hour, hosted by, and I want to be clear that I objected to this, a vending machine. Unit Seven, you're live.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "vendor",
+      "speaker": "THE VENDOR",
+      "vo": "Hello friend. Today's offer: a tin can. It is the last tin can. Insert tribute. Tribute may be coins, teeth, or a secret. Supplies are limited. You are limited.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "vendor",
+      "speaker": "RON",
+      "vo": "I don't think we should give it teeth.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "vendor",
+      "speaker": "THE VENDOR",
+      "vo": "Too late. Thank you for your tribute, Ron. Enjoy your tin can.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "vendor",
+          "seed": 7007
+        },
+        {
+          "id": "c19_s2",
+          "kind": "broll",
+          "who": "empty_room"
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "childrens_corner",
+      "speaker": "WALTER",
+      "vo": "And now, something for the little ones. Take it away, Bartholomew.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "childrens_corner",
+      "speaker": "BARTHOLOMEW",
+      "vo": "Hi, boys and girls! Today Mr. Cricket wants to teach us about, um, about sharing.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "bartholomew",
+          "seed": 9090
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "childrens_corner",
+      "speaker": "MR. CRICKET",
+      "vo": "About sharing our location, Bartholomew. Kids, draw your shelter on a map and mail it to Mr. Cricket. Mr. Cricket gets so lonely. Mr. Cricket always finds a friend.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "mr_cricket",
+          "seed": 9091
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "childrens_corner",
+      "speaker": "BARTHOLOMEW",
+      "vo": "Ha ha. That's, that's enough for today, I think.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "bartholomew",
+          "seed": 9090
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "childrens_corner",
+      "speaker": "MR. CRICKET",
+      "vo": "Bartholomew decides when it's enough. Bartholomew, tell them when it's enough.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "mr_cricket",
+          "seed": 9091
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "To the forecast. Eastern wastelands, radiation winds; southern settlements, a heat dome; and a light acid drizzle across the heartland. Also, the greenhouse is now fog, and we've stopped asking why. Bundle up. Or bloom. Your choice. For now.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c25_s2",
+          "kind": "broll",
+          "who": "weather_map"
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's all for tonight, MACU. Count yourselves. Breathe carefully. Tip your vending machines.",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Stay safe, stay strong, and if Mr. Cricket writes to you, move. Good night, and good luck.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c27_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    }
+  ]
+}
