@@ -195,10 +195,20 @@ burns no subtitle. Two modes — set `hold_style`:
   since freeze is the default.
 
 **SFX one-shots**: a top-level `sfx` block (sibling to `music`) — `{ "cue", "file", "gain", "at": "start|end" }`
-entries mixed at a cue's timestamp via the same stage-5 adelay→amix chain as music beds. Files live in the
-shared `assets/sfx/` dir (CC0, reusable). Missing file → skipped gracefully. Tonal SFX (dings, sweeps, hums,
-clicks) can be synthesized with ffmpeg into `assets/sfx/`; realistic ones (coins, etc.) are sourced CC0 from
-freesound. (Both `hold` cues and the `sfx` block were added to Max's pipeline in the ep10 work.)
+entries mixed at a cue's timestamp via the same stage-5 adelay→amix chain as music beds. `file` is the bare
+basename (no path), resolved as `assets/sfx/<file>`. Missing file → skipped gracefully. **Three ways to get a
+file into `assets/sfx/`** (all normalize to 24 kHz mono s16 / −3 dBFS): (1) **`agen` generation** — bespoke
+text-to-foley for any sound the script calls for (bonk, car engine, door slam): `python3
+pipeline/agen_sfx.py "<prompt>" <basename>` or the Studio Audio-panel "Generate (agen)" toggle; (2) **freesound
+CC0** via `pipeline/freesound_fetch.py "<query>" <basename>`; (3) **ffmpeg lavfi synth** for tonal sounds.
+agen output is public-domain (de novo) and reproducible (prompt + seed logged). (Both `hold` cues and the `sfx`
+block were added in the ep10 work; `agen` generation added 2026-06.)
+
+**Generated music beds**: `music.clips[]` isn't limited to the big-band theme — generate a bed from a prompt
+with `python3 pipeline/agen_music.py "<prompt>" <basename> [--engine music|riff]` (or the Studio music-gen
+endpoint), then add `<basename>.wav` to `music.clips[]`. `music` = MusicGen (warbly, drifts past ~15–20s);
+`riff` = Riffusion (tape-degraded lo-fi). Both land in `assets/music/` and fit the jank — use them for sickly
+jazz, broken-broadcast stings, ominous drones, etc. Same GPU gate as SFX (won't run during a render).
 
 ## Episode bookends — the animated open & the next-episode bumper
 

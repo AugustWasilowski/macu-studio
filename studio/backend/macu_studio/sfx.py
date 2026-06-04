@@ -64,10 +64,11 @@ async def fetch_and_pin(
         # so any non-error returning is suspect — surface the log
         return {"ok": False, "returncode": proc.returncode, "log": out, "hint": "expected wav not found"}
 
-    # Append to manifest.sfx[]
+    # Append to manifest.sfx[]. NOTE: file is the bare basename (no "sfx/" prefix) —
+    # stage_5_music.py resolves it as <assets/sfx>/<file>, per assets/sfx/README.md.
     m = manifest_mod.load(slug)
     entry = {
-        "file": f"sfx/{basename}.wav",
+        "file": f"{basename}.wav",
         "cue": cue_id,
         "at": at,
         "gain": gain_db,

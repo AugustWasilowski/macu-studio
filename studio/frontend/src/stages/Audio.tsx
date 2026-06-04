@@ -437,40 +437,45 @@ function AddSfxDialog({ open, onClose, slug, cueIds, onAdded }: {
   onAdded: () => void;
 }) {
   const push = useStore((s) => s.pushToast);
+  const [source, setSource] = useState<"freesound" | "generate">("freesound");
   const [query, setQuery] = useState("");
   const [duration, setDuration] = useState("4");
+  const [seed, setSeed] = useState("");
   const [cue, setCue] = useState(cueIds[0] ?? "");
   const [at, setAt] = useState("start");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   useEffect(() => { if (cueIds.length && !cue) setCue(cueIds[0]); }, [cueIds, cue]);
-  useEffect(() => { if (!open) { setQuery(""); setResult(null); setBusy(false); } }, [open]);
+  useEffect(() => { if (!open) { setQuery(""); setSeed(""); setResult(null); setBusy(false); } }, [open]);
+
+  const gen = source === "generate";
 
   const submit = async () => {
     if (!query.trim()) return;
     setBusy(true); setResult(null);
     try {
-      const r = await fetch(`/api/episodes/${slug}/sfx/fetch`, {
+      const url = gen ? `/api/episodes/${slug}/sfx/gen` : `/api/episodes/${slug}/sfx/fetch`;
+      const body = gen
+        ? { prompt: query, duration: parseFloat(duration) || 3, seed: seed ? parseInt(seed, 10) : null, cue_id: cue || null, at }
+        : { query, duration_max: parseFloat(duration) || 4, cue_id: cue || null, at };
+      const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          duration_max: parseFloat(duration) || 4,
-          cue_id: cue || null,
-          at,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await r.json();
       setResult(data);
-      if (data.ok) {
-        push("SFX fetched and pinned", "ok");
+      if (r.status === 409) {
+        push("GPU busy — a render is active. Try again when idle.", "err");
+      } else if (data.ok) {
+        push(gen ? "SFX generated and pinned" : "SFX fetched and pinned", "ok");
         onAdded();
       } else {
-        push(`SFX fetch: ${data.hint ?? "no match"}`, "info");
+        push(`${gen ? "generate" : "fetch"}: ${data.hint ?? data.detail ?? "no match"}`, "info");
       }
     } catch (e: any) {
-      push("fetch failed: " + e.message, "err");
+      push((gen ? "generate" : "fetch") + " failed: " + e.message, "err");
     }
     setBusy(false);
   };
@@ -485,16 +490,37 @@ function AddSfxDialog({ open, onClose, slug, cueIds, onAdded }: {
         <>
           <button className="btn" onClick={onClose}>Close</button>
           <button className="btn btn-cyan" disabled={busy || !query.trim()} onClick={submit}>
-            {busy ? "Fetching…" : "Search Freesound"}
+            {busy ? (gen ? "Generating…" : "Fetching…") : (gen ? "Generate (agen)" : "Search Freesound")}
           </button>
         </>
       }
     >
       <div className="flex flex-col gap-2">
-        <Field label="freesound query" value={query} onChange={setQuery} placeholder="e.g. ‘old radio transmitter hum’" />
+        {/* source toggle: curated CC0 (freesound) vs local de-novo generation (agen) */}
+        <div className="flex gap-1">
+          {(["freesound", "generate"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => { setSource(s); setResult(null); }}
+              className={"tab px-3 h-[28px] hairline-soft rounded-[3px] text-[11px] uppercase tracking-wider " + (source === s ? "active" : "")}
+              style={source === s ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}
+            >
+              {s === "freesound" ? "Freesound CC0" : "Generate (agen)"}
+            </button>
+          ))}
+        </div>
+        <Field
+          label={gen ? "agen prompt (AudioGen foley)" : "freesound query"}
+          value={query}
+          onChange={setQuery}
+          placeholder={gen ? "e.g. ‘heavy iron door slam, dry, close mic’" : "e.g. ‘old radio transmitter hum’"}
+        />
         <div className="grid grid-cols-2 gap-2">
-          <Field label="duration max" value={duration} onChange={setDuration} type="number" suffix="s" />
-          <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />
+          <Field label={gen ? "duration" : "duration max"} value={duration} onChange={setDuration} type="number" suffix="s" />
+          {gen
+            ? <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />
+            : <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
+          {gen && <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
           <Field
             label="cue pin"
             value={cue}
@@ -503,12 +529,14 @@ function AddSfxDialog({ open, onClose, slug, cueIds, onAdded }: {
           />
         </div>
         <div className="text-[11px] text-txt-faint">
-          CC0-licensed clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> at -6 dB · 0.5s fade
+          {gen
+            ? <>Local AudioGen → 24 kHz/−3 dBFS into the kit · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · public-domain (de novo) · won't run during a render</>
+            : <>CC0-licensed clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> at -6 dB · 0.5s fade</>}
         </div>
         {result && (
           <pre className="logtail" style={{ height: 140 }}>{result.ok
-            ? `OK\n${result.log}`
-            : `FAILED rc=${result.returncode}\n${result.log}\n\nhint: ${result.hint ?? ""}`}</pre>
+            ? `OK\n${result.log ?? ""}`
+            : `FAILED${result.returncode != null ? ` rc=${result.returncode}` : ""}\n${result.log ?? result.detail ?? ""}\n\nhint: ${result.hint ?? ""}`}</pre>
         )}
       </div>
     </Modal>

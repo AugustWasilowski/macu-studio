@@ -196,6 +196,15 @@ Create `episodes/<slug>/manifest.json` following `references/manifest-schema.md`
 - **Bookend the episode** (step 3.5): a front `c00` open cue (Walter's gag VO over the animated `intro` card —
   `pad_seconds:2.0`, `no_subs:true`) and a closing bumper cue (Walter teases next over the `next` card). Put
   `intro` and `next` in `title_assets`; add `c00` to the intro bed and the bumper to the outro bed.
+- **Sound design is now first-class — write for it.** Beyond the big-band theme, we can **generate bespoke
+  music and SFX from text prompts** locally (the `agen` models: AudioGen for foley, MusicGen/Riffusion for
+  beds). So when the script wants a *specific* sound — a bonk, a car engine turning over, a door slam, an
+  ominous hum — or *background music* for a segment (sickly jazz under the weather, a lo-fi sting on a
+  reveal), **write it in** and spec it: a `sfx[]` one-shot pinned to the cue, or a generated bed in
+  `music.clips[]`. You don't have to limit yourself to the existing kit. See `references/manifest-schema.md`
+  for the `sfx`/`music` shapes and the three acquisition routes (freesound CC0 · `agen` generation · ffmpeg
+  synth); generated audio is public-domain and reproducible (prompt + seed logged). Lean into the jank —
+  MusicGen's drift and Riffusion's tape degradation *fit* the MACU aesthetic.
 
 Then **validate** it:
 

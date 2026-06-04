@@ -20,6 +20,7 @@ from . import pipeline as pipeline_mod
 from . import media as media_mod
 from . import regen as regen_mod
 from . import sfx as sfx_mod
+from . import agen as agen_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
@@ -268,6 +269,52 @@ async def post_sfx_fetch(slug: str, body: dict = Body(...)):
 @app.delete("/api/episodes/{slug}/sfx")
 async def del_sfx(slug: str, file: str):
     return sfx_mod.remove(slug, file)
+
+
+# ---------- agen (local music/SFX generation) ----------
+
+@app.get("/api/agen/status")
+def get_agen_status():
+    busy, free = agen_mod.gpu_busy()
+    return {"busy": busy, "gpu_free_mib": free, "min_free_mib": agen_mod.MIN_FREE_MIB}
+
+
+@app.post("/api/episodes/{slug}/sfx/gen")
+async def post_sfx_gen(slug: str, body: dict = Body(...)):
+    """Generate an SFX one-shot with agen (AudioGen), normalize to kit, pin to manifest.sfx[]."""
+    prompt = (body.get("prompt") or "").strip()
+    if not prompt:
+        raise HTTPException(400, "prompt required")
+    at = body.get("at") or "start"
+    if at not in ("start", "end"):
+        raise HTTPException(400, "at must be 'start' or 'end'")
+    res = await agen_mod.gen_sfx_and_pin(
+        slug, prompt, cue_id=body.get("cue_id"), at=at,
+        duration=float(body.get("duration") or 3.0),
+        seed=body.get("seed"), basename=body.get("basename") or None,
+        gain_db=float(body.get("gain_db") if body.get("gain_db") is not None else -6.0),
+        fade_s=float(body.get("fade_s") if body.get("fade_s") is not None else 0.5),
+    )
+    if res.get("busy"):
+        raise HTTPException(409, res.get("hint") or "GPU busy")
+    return res
+
+
+@app.post("/api/episodes/{slug}/music/gen")
+async def post_music_gen(slug: str, body: dict = Body(...)):
+    """Generate a music bed with agen (MusicGen/Riffusion) and add it to manifest.music.clips[]."""
+    prompt = (body.get("prompt") or "").strip()
+    if not prompt:
+        raise HTTPException(400, "prompt required")
+    res = await agen_mod.gen_music(
+        slug, prompt, engine=body.get("engine") or "music",
+        duration=float(body.get("duration") or 20.0),
+        seed=body.get("seed"), basename=body.get("basename") or None,
+        add_to_clips=bool(body.get("add_to_clips", True)),
+    )
+    if res.get("busy"):
+        raise HTTPException(409, res.get("hint") or "GPU busy")
+    return res
 
 
 @app.get("/api/jobs")
