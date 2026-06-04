@@ -5,11 +5,15 @@ All stage scripts accept <slug> as argv and read paths relative to
 """
 import os, json, socket, subprocess, time, glob, urllib.request, urllib.error
 
+# Data lives on the storage drive's MACU share (Windows-visible S:\MACU); the
+# pipeline CODE lives in this repo at /mnt/storage/macu-pipeline. They're separate
+# on purpose — episodes/assets are big binary data, the repo is code.
 SHARES = "/mnt/storage/shares/MACU"
-PIPELINE = f"{SHARES}/pipeline"
 ASSETS = f"{SHARES}/assets"
-COMFY_URL = "http://10.0.0.245:8188"
-PIPER_URL = "http://10.0.0.245:5050"
+# Services are all local on the box. Loopback (not the LAN IP) so this survives an
+# IP change like the .72 -> .245 host move.
+COMFY_URL = "http://127.0.0.1:8188"
+PIPER_URL = "http://127.0.0.1:5050"
 OMNIVOICE_URL = "http://127.0.0.1:3900"  # bound 127.0.0.1 only on max — stages run local
 OMNIVOICE_CONTAINER = "omnivoice"
 COMFY_OUT = "/mnt/storage/comfyui/output/macu"

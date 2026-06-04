@@ -3,13 +3,14 @@ Description=MACU Render HTTP Service (drives pipeline/run.py)
 Documentation=https://10.0.0.245:8002/projects/3 (SSA-90)
 After=network-online.target docker.service
 Wants=network-online.target
+RequiresMountsFor=/mnt/storage
 
 [Service]
 Type=simple
 User=mayorawesome
 Group=mayorawesome
-WorkingDirectory=/mnt/storage/shares/MACU/pipeline
-ExecStart=/usr/bin/python3 /mnt/storage/shares/MACU/pipeline/serve.py
+WorkingDirectory=/mnt/storage/macu-pipeline/pipeline
+ExecStart=/usr/bin/python3 /mnt/storage/macu-pipeline/pipeline/serve.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:/var/log/macu-render.log

@@ -10,20 +10,33 @@ faux-newscast in the Mayor Awesome Cinematic Universe. This one repo is the hub 
 | `docs/` | the canon — character bible, world lore, pipeline design, story arcs, weekly routine, OmniVoice voice roster/tips |
 | `studio/` | **MACU Studio** — the FastAPI + React web front end on `:8774` that drives the same pipeline from a browser |
 
-**Everything runs on Max** (the Linux home server, RTX 2080 Ti). This repo is the source of truth; the live
-deployment mirrors it:
+**Everything runs on Max** (the Linux home server, RTX 2080 Ti). The repo lives on the **storage drive**, next
+to the other app dirs (`/mnt/storage/{comfyui,hyperframes,...}`), so code + git history ride the same portable
+drive as the episode data. One source of truth — no more code-on-OS-disk + drifting-copy-on-storage split:
 
 ```
-~/work/macu-pipeline  (git, source of truth)
-├── pipeline/*.py ──▶ /mnt/storage/shares/MACU/pipeline/   (deployed copy; the share is the live working dir)
-├── docs/*.md     ──▶ /mnt/storage/shares/MACU/*.md
-├── skills/*      ──▶ ~/.claude/skills/*
-└── studio/       ── uvicorn :8774 ── Cloudflare ──▶ studio.mayorawesome.com
+/mnt/storage/macu-pipeline/        ← git repo (source of truth, on the storage drive)
+├── pipeline/        the 8-stage renderer (run.py, serve.py, stage_1..8, lib.py, …)
+├── skills/          macu-report, macu-render, comedy-writers-room  ←─symlinked─ ~/.claude/skills/
+├── docs/            the canon (bible, lore, voice roster/tips, …)
+├── studio/          MACU Studio (FastAPI :8774 + React)
+└── deploy/          systemd units
+
+/mnt/storage/shares/MACU/          ← episode DATA (Windows-visible as S:\MACU; gitignored)
+├── episodes/<slug>/   manifests + per-episode artifacts
+├── assets/{fonts,music,sfx,titles}/
+└── pipeline ──symlink──▶ /mnt/storage/macu-pipeline/pipeline   (back-compat for old absolute paths)
+
+~/work/macu-pipeline ──symlink──▶ /mnt/storage/macu-pipeline    (back-compat)
 ```
+
+The render service (`macu-render.service`) and MACU Studio (`macu-studio.service`) both run the code from
+`/mnt/storage/macu-pipeline/`; the units carry `RequiresMountsFor=/mnt/storage` so they wait for the drive.
 
 > **History:** this started as a Leo→Max split — August authored on Leo (Windows) and shipped renders to Max
-> over a Syncthing `macu` folder + Vikunja + n8n bridges. Authoring moved onto Max, so it's all local now: no
-> Syncthing wait, no cross-machine handoff. Services are reached on loopback (`127.0.0.1`).
+> over a Syncthing `macu` folder + Vikunja + n8n bridges. Authoring moved onto Max (all local now: no Syncthing
+> wait, no cross-machine handoff, services on loopback), and the code was consolidated onto the storage drive
+> 2026-06-03 so the whole project is one portable unit.
 
 ## Pipeline stages
 
@@ -64,7 +77,7 @@ Piper/ComfyUI bind `0.0.0.0`, and stage 1 hardcodes loopback for OmniVoice regar
 
 ```
 shares/MACU/
-├── pipeline/                 # deployed copy of this repo's pipeline/
+├── pipeline -> /mnt/storage/macu-pipeline/pipeline   # symlink (back-compat)
 ├── episodes/<slug>/
 │   ├── manifest.json         # source of truth for the episode
 │   ├── script.md

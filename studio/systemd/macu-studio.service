@@ -3,16 +3,17 @@ Description=MACU Studio (FastAPI + SPA on :8774, drives macu-render)
 Documentation=https://github.com/AugustWasilowski/macu-pipeline/tree/main/studio
 After=network-online.target macu-render.service
 Wants=network-online.target
+RequiresMountsFor=/mnt/storage
 
 [Service]
 Type=simple
 User=mayorawesome
 Group=mayorawesome
-WorkingDirectory=/home/mayorawesome/work/macu-pipeline/studio
+WorkingDirectory=/mnt/storage/macu-pipeline/studio
 Environment=MACU_RENDER_URL=http://127.0.0.1:8773
 Environment=MACU_EPISODES=/mnt/storage/shares/MACU/episodes
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/mayorawesome/work/macu-pipeline/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
+ExecStart=/mnt/storage/macu-pipeline/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:/var/log/macu-studio.log
