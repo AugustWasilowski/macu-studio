@@ -15,6 +15,7 @@ from . import episodes as ep_mod
 from . import manifest as manifest_mod
 from . import gen_manifest as genman_mod
 from . import script as script_mod
+from . import scriptdiff as scriptdiff_mod
 from . import srt as srt_mod
 from . import pipeline as pipeline_mod
 from . import media as media_mod
@@ -95,6 +96,18 @@ async def put_script(slug: str, request: Request):
         return script_mod.write(slug, body)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
+
+
+@app.get("/api/episodes/{slug}/script/versions")
+def get_script_versions(slug: str):
+    """Version history of script.md (git sync commits + live working copy)."""
+    return {"versions": scriptdiff_mod.versions(slug)}
+
+
+@app.get("/api/episodes/{slug}/script/diff")
+def get_script_diff(slug: str, base: str, target: str):
+    """Line-level diff between two script versions (base=older, target=newer)."""
+    return scriptdiff_mod.diff(slug, base, target)
 
 
 @app.post("/api/episodes/{slug}/manifest/from-script")

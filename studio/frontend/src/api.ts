@@ -15,6 +15,21 @@ export interface GenManifestSummary {
   warnings: string[];
   renumbered: boolean;
 }
+export interface ScriptVersion {
+  id: string;                 // commit hash, or "working"
+  kind: "working" | "commit";
+  label: string;
+  short?: string;
+  iso: string | null;
+}
+export interface ScriptDiffLine { tag: "add" | "del" | "ctx" | "hunk"; text: string; }
+export interface ScriptDiff {
+  base: string;
+  target: string;
+  added: number;
+  removed: number;
+  lines: ScriptDiffLine[];
+}
 export interface GenManifestResp {
   summary: GenManifestSummary;
   cues?: Cue[];
@@ -43,6 +58,11 @@ export const api = {
     fetch(`/api/episodes/${slug}/script`, {
       method: "PUT", headers: { "Content-Type": "text/markdown" }, body: text,
     }).then((r) => J<{ mtime: number; bytes: number }>(r)),
+  scriptVersions: (slug: string) =>
+    fetch(`/api/episodes/${slug}/script/versions`).then((r) => J<{ versions: ScriptVersion[] }>(r)),
+  scriptDiff: (slug: string, base: string, target: string) =>
+    fetch(`/api/episodes/${slug}/script/diff?base=${encodeURIComponent(base)}&target=${encodeURIComponent(target)}`)
+      .then((r) => J<ScriptDiff>(r)),
   genManifest: (slug: string, apply: boolean) =>
     fetch(`/api/episodes/${slug}/manifest/from-script`, {
       method: "POST", headers: { "Content-Type": "application/json" },
