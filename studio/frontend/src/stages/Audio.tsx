@@ -94,6 +94,11 @@ export function Audio({ slug }: { slug: string }) {
     return () => { a.pause(); audioRef.current = null; };
   }, [playing, slug]);
 
+  // Follow the playing clip in the Manifest Preview pane (esp. during sequential play).
+  useEffect(() => {
+    if (playing && playing.startsWith("cue:")) selectCue(playing.slice(4));
+  }, [playing, selectCue]);
+
   const togglePlay = (cueId: string) => {
     setPlayMode("single"); // a single-row click plays just that clip, then stops
     setPlaying((p) => (p === `cue:${cueId}` ? null : `cue:${cueId}`));
