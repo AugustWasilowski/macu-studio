@@ -1,0 +1,537 @@
+{
+  "episode": "ep-009",
+  "title": "The MACU Report — Episode 9 — Perfectly Normal",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-31",
+  "notes": "v2 punch-up (~5-6 min), loose/barely-simmering calm before the ep10 blowup. Fresh segments: MACU Markets + the Medical Desk (Dr. Bright LOOKS like a beaming TV doctor but is voiced by Herzog — bleak dread as warm health advice). Changes vs v1: Dr. Bright 'walk into the wind' detonates in Chip's weather (cross-segment but/therefore); Dusty's 'secrets are down' pays off when Walter casually admits selling a secret; 'heritage' escalates in the signoff; Dr. Bright buttoned ('sends a card every year'); Chip confident-idiot 'I laminated it this time'; cold-open 'everyone agreed to move on'; NEW deadpan post-signoff UNIT 7 SPONSOR card (implication-only creep). Arc held to ONE ignored Ron beat (c04 'feed humming'); moon de-escalated. All voices reused. Three new cards: macu_markets_card, medical_desk_card, unit7_sponsor_card. Reuses ep7 weather_card. subtitles.force_style in schema form.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "DUSTY DECKER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      },
+      "MISS CINDER": {
+        "engine": "omnivoice",
+        "profile_id": "ab69d122",
+        "voice_name": "Martha"
+      },
+      "DR. BRIGHT": {
+        "engine": "omnivoice",
+        "profile_id": "dde08fad",
+        "voice_name": "Herzog"
+      },
+      "CHIP PLEASANT": {
+        "engine": "omnivoice",
+        "profile_id": "bc466292",
+        "voice_name": "Popiel"
+      },
+      "ANNOUNCER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w (watermark-free). 384x384x24f locked — do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue with vo!=null: POST {text: vo} to voice endpoint per speaker_map -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = its cue's VO wav duration / number of shots in that cue. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, mix music beds, burn subs (Better VCR font) from vo text -> final/ep9.mp4.",
+  "title_assets": {
+    "macu_report_title": "episodes/ep9/titles/macu_report_title.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "macu_report_bumper": "episodes/ep9/titles/macu_report_bumper.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "macu_markets_card": "episodes/ep9/titles/macu_markets_card.mp4 (NEW — Hyperframes comp 'macu-markets-card'; Max: copy the latest render here)",
+    "medical_desk_card": "episodes/ep9/titles/medical_desk_card.mp4 (NEW — Hyperframes comp 'medical-desk-card'; Max: copy the latest render here)",
+    "unit7_sponsor_card": "episodes/ep9/titles/unit7_sponsor_card.mp4 (NEW — Hyperframes comp 'unit7-sponsor'; a flat, plain B&W sponsor card reading 'THIS BROADCAST SUPPORTED IN PART BY UNIT 7'. Deliberately mundane — the creep is the implication. Max: render + copy here.)",
+    "weather_card": "episodes/ep9/titles/weather_card.mp4 (REUSED — copy episodes/ep7/titles/weather_card.mp4 here, or auto-resolves from shared assets/titles if promoted)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03",
+          "c04"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "markets",
+        "anchor": "cues",
+        "cues": [
+          "c06",
+          "c07",
+          "c08"
+        ],
+        "max_seconds": 36,
+        "gain": 0.2,
+        "loop": true,
+        "note": "Frantic big-band bed under the chaotic MACU Markets trading floor (mid-roll, anchor='cues'). Loop the clip to cover the segment. Slightly hotter than ambient beds for trading-floor energy."
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c19",
+          "c20",
+          "c21"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Soft AI big-band MACU Report theme. Per bed pick a random clip + offset; volume=gain, afade in/out, adelay to the bed's episode time; mix with VO via amix=normalize=0 (VO full, music under at gain)."
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Better VCR burned-in subs. FontName/Fontsize NOT in force_style — stage 8 prepends fc-resolved FontName + Fontsize; a baked FontName would override the resolved family and drop subs to default."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, sitting at a vintage news desk reading the news, looking at camera"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+    },
+    "dusty": {
+      "seed": 3400,
+      "core": "a frantic stock market reporter in shirtsleeves and a loosened tie, shouting and gesturing on a chaotic trading floor, a big board of numbers behind him, 1970s television"
+    },
+    "miss_cinder": {
+      "seed": 3232,
+      "core": "an elegant composed woman in a tasteful apron and pearls, setting a table in a ruined concrete bunker, ash and rubble around her, soft domestic lighting, serene homemaker, faint smile"
+    },
+    "dr_bright": {
+      "seed": 4747,
+      "core": "a smiling kindly doctor in a white coat with a round head mirror, cheerful reassuring bedside manner, standing on a 1970s television medical set, anatomical chart behind him"
+    },
+    "chip_pleasant": {
+      "seed": 8484,
+      "core": "a manic grinning weatherman in a wide-lapel checkered blazer pointing at a chalkboard weather map, wild eyes, big toothy smile, 1970s television studio"
+    }
+  },
+  "broll": {
+    "trading_floor": "a chaotic 1970s stock exchange trading floor, men in shirtsleeves waving slips of paper, a big board of numbers, frantic motion, smoke",
+    "medical_set": "a 1970s television medical set, an anatomical chart and a plastic skeleton, an examination table, sterile lighting",
+    "weather_map": "a hand-drawn weather map of a wasteland region on a chalkboard, arrows and symbols"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. I'm Ron, and it is, against all odds, another quiet night. No incidents. One near-incident, but it resolved itself in a direction we were not expecting, and everyone agreed to move on.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. A full and pleasant broadcast ahead. Nothing ominous. For once.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Tonight: the markets, teeth are up four hundred percent, and the Medical Desk returns.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Is anyone else's feed humming tonight? That low hum, underneath everything? No? Just me. Anyway, to the money.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c04_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "markets",
+      "speaker": "WALTER",
+      "vo": "We begin with the markets, where our correspondent Dusty Decker is standing by on the floor of the Exchange. Dusty?",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c05_s2",
+          "kind": "title",
+          "asset": "macu_markets_card"
+        },
+        {
+          "id": "c05_s3",
+          "kind": "broll",
+          "who": "trading_floor"
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "markets",
+      "speaker": "DUSTY DECKER",
+      "vo": "Thanks, Walter, it's a frenzy down here! Teeth are up four hundred percent on heavy demand from a vending machine I am not allowed to name. Secrets are down. Nobody's keeping them anymore.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "dusty",
+          "seed": 3400
+        },
+        {
+          "id": "c06_s2",
+          "kind": "broll",
+          "who": "trading_floor"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "markets",
+      "speaker": "DUSTY DECKER",
+      "vo": "Batteries holding steady at one goat. And clean water hit a record high this morning. I want to stress that clean water remains completely unavailable, but the price is fantastic!",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "dusty",
+          "seed": 3400
+        },
+        {
+          "id": "c07_s2",
+          "kind": "broll",
+          "who": "trading_floor"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "markets",
+      "speaker": "DUSTY DECKER",
+      "vo": "In short: buy teeth, sell secrets, and do not, under any circumstances, look directly at the Exchange. Back to you!",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "dusty",
+          "seed": 3400
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "ad_cinder",
+      "speaker": "MISS CINDER",
+      "vo": "Hello, and welcome home. Company coming to the bunker this season? A few simple touches turn structural collapse into rustic. Drape a tarp. Light a ration tin. Call it a sconce.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "ad_cinder",
+      "speaker": "MISS CINDER",
+      "vo": "And if a guest asks what that smell is, smile, and say heritage. Cinder and Sage. Because the end of the world is no excuse to let yourself go.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "miss_cinder",
+          "seed": 3232
+        },
+        {
+          "id": "c10_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "medical_desk",
+      "speaker": "WALTER",
+      "vo": "And now, some good news for your health. It's the Medical Desk, with the always-reassuring Dr. Bright.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c11_s2",
+          "kind": "title",
+          "asset": "medical_desk_card"
+        },
+        {
+          "id": "c11_s3",
+          "kind": "broll",
+          "who": "medical_set"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "medical_desk",
+      "speaker": "DR. BRIGHT",
+      "vo": "Good evening. Drink eight glasses of water each day. You will still die. But you will die hydrated, which is something. It is not very much. But it is something.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "dr_bright",
+          "seed": 4747
+        },
+        {
+          "id": "c12_s2",
+          "kind": "broll",
+          "who": "medical_set"
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "medical_desk",
+      "speaker": "DR. BRIGHT",
+      "vo": "I am told teeth are a wise investment, so keep yours. The crater will take them regardless. And remember the old wisdom, an apple a day keeps nothing away. There are no apples. There is no away.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "dr_bright",
+          "seed": 4747
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "medical_desk",
+      "speaker": "DR. BRIGHT",
+      "vo": "For your mental wellness, I recommend a brisk daily walk, into the wind, until you can no longer see the settlement, and then a little farther. You will feel nothing. That is the goal. Stay well.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "dr_bright",
+          "seed": 4747
+        },
+        {
+          "id": "c14_s2",
+          "kind": "broll",
+          "who": "medical_set"
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "medical_desk",
+      "speaker": "RON",
+      "vo": "Thank you, Dr. Bright. He's very popular. He sends a card every year.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Thanks, Ron! And great news, MACU, after last night's unpleasantness, tonight's official condition rating is back to mild! We did it! I have my card again! I laminated it this time.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c16_s2",
+          "kind": "title",
+          "asset": "weather_card"
+        },
+        {
+          "id": "c16_s3",
+          "kind": "broll",
+          "who": "weather_map"
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Light ashfall, a friendly breeze, and conditions are perfect for a brisk walk. Head out, keep going until you can't see the settlement, then a little farther. Dr. Bright recommends it, and honestly? So do I.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Oh, and the moon has returned to its usual distance. No follow-up questions. Anyway, back to you!",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU, a perfectly normal night. Buy teeth, walk into the wind, and tell your guests the smell is heritage. If they don't believe you, Cinder and Sage has a forty-five-minute seminar on that. Sleep well.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Couldn't have said it better. Oh, I had a secret last week. Sold it. Got a fair price. Good night, MACU, stay safe, stay strong, and good luck.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c20_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "signoff",
+      "speaker": "ANNOUNCER",
+      "vo": "This broadcast was supported in part by Unit Seven.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "title",
+          "asset": "unit7_sponsor_card"
+        }
+      ]
+    }
+  ],
+  "season": 1,
+  "episode_num": 4
+}
