@@ -6,10 +6,9 @@ import { Badge } from "../components/Badge";
 import { Waveform } from "../components/Waveform";
 import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
-import { Modal } from "../components/Modal";
-import { Field } from "../components/Field";
 import { VersionArrows } from "../components/VersionArrows";
-import { IRegen, IPlus, IX } from "../components/Icons";
+import { IRegen } from "../components/Icons";
+import { SfxSection } from "./AudioSfx";
 import type { Cue, PipelineEvent } from "../types";
 
 interface SpeakerInfo {
@@ -262,8 +261,8 @@ export function Audio({ slug }: { slug: string }) {
           </div>
         </section>
 
-        {/* SFX panel — read-only in v0.2; Add wired in v0.7 */}
-        <SfxPanel slug={slug} />
+        {/* SFX timeline + library */}
+        <SfxSection slug={slug} />
       </div>
 
       {/* Right inspector */}
@@ -340,205 +339,5 @@ function CueInspector({
         <span className="label-tiny">shots</span><span>{cue.shots.length}</span>
       </div>
     </>
-  );
-}
-
-function SfxPanel({ slug }: { slug: string }) {
-  const qc = useQueryClient();
-  const push = useStore((s) => s.pushToast);
-  const manifest = useQuery({
-    queryKey: ["manifest", slug],
-    queryFn: () => api.manifest(slug),
-  });
-  const cues = useQuery({
-    queryKey: ["cues", slug],
-    queryFn: () => api.cues(slug),
-  });
-  const m = manifest.data as any;
-  const sfx: any[] = Array.isArray(m?.sfx) ? m.sfx : [];
-  const cueIds = cues.data?.cues.map((c) => c.id) ?? [];
-
-  const [open, setOpen] = useState(false);
-
-  const remove = useMutation({
-    mutationFn: (file: string) =>
-      fetch(`/api/episodes/${slug}/sfx?file=${encodeURIComponent(file)}`, { method: "DELETE" })
-        .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))),
-    onSuccess: () => {
-      push("SFX entry removed", "ok");
-      qc.invalidateQueries({ queryKey: ["manifest", slug] });
-    },
-    onError: (e: Error) => push("delete failed: " + e.message, "err"),
-  });
-
-  return (
-    <section className="panel flex flex-col" style={{ maxHeight: 280 }}>
-      <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-        <div className="panel-title">SOUND EFFECTS <span className="text-txt-faint">/ manifest.sfx[]</span></div>
-        <div className="flex items-center gap-2">
-          <span className="seg-readout">{sfx.length} PINNED</span>
-          <button className="btn btn-cyan" onClick={() => setOpen(true)}>
-            <IPlus /> Add SFX
-          </button>
-        </div>
-      </header>
-      <div className="overflow-y-auto flex-1">
-        {sfx.length === 0 ? (
-          <div className="p-3 text-txt-faint text-[12px]">
-            No SFX pinned in this manifest. Click <span className="text-cyan">+ Add SFX</span> to search Freesound and pin a CC0 clip.
-          </div>
-        ) : (
-          <table className="w-full text-[12px]">
-            <thead>
-              <tr className="label-tiny text-left border-b hairline-soft">
-                <th className="px-2 py-1">FILE</th>
-                <th className="px-2 py-1">PIN</th>
-                <th className="px-2 py-1">AT</th>
-                <th className="px-2 py-1">GAIN</th>
-                <th className="px-2 py-1">FADE</th>
-                <th className="px-2 py-1">QUERY</th>
-                <th className="px-2 py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sfx.map((x, i) => (
-                <tr key={i} className="border-b border-[var(--line-soft)]">
-                  <td className="px-2 py-1 font-mono">{x.file}</td>
-                  <td className="px-2 py-1 text-cyan">@{x.cue ?? "—"}</td>
-                  <td className="px-2 py-1">{x.at}</td>
-                  <td className="px-2 py-1">{x.gain}dB</td>
-                  <td className="px-2 py-1">{x.fade}s</td>
-                  <td className="px-2 py-1 text-txt-dim text-[11px] max-w-[300px] truncate" title={x.query}>{x.query ?? ""}</td>
-                  <td className="px-2 py-1">
-                    <button className="btn p-1" onClick={() => remove.mutate(x.file)} title="Remove from manifest"><IX /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <AddSfxDialog
-        open={open}
-        onClose={() => setOpen(false)}
-        slug={slug}
-        cueIds={cueIds}
-        onAdded={() => qc.invalidateQueries({ queryKey: ["manifest", slug] })}
-      />
-    </section>
-  );
-}
-
-function AddSfxDialog({ open, onClose, slug, cueIds, onAdded }: {
-  open: boolean;
-  onClose: () => void;
-  slug: string;
-  cueIds: string[];
-  onAdded: () => void;
-}) {
-  const push = useStore((s) => s.pushToast);
-  const [source, setSource] = useState<"freesound" | "generate">("freesound");
-  const [query, setQuery] = useState("");
-  const [duration, setDuration] = useState("4");
-  const [seed, setSeed] = useState("");
-  const [cue, setCue] = useState(cueIds[0] ?? "");
-  const [at, setAt] = useState("start");
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<any>(null);
-
-  useEffect(() => { if (cueIds.length && !cue) setCue(cueIds[0]); }, [cueIds, cue]);
-  useEffect(() => { if (!open) { setQuery(""); setSeed(""); setResult(null); setBusy(false); } }, [open]);
-
-  const gen = source === "generate";
-
-  const submit = async () => {
-    if (!query.trim()) return;
-    setBusy(true); setResult(null);
-    try {
-      const url = gen ? `/api/episodes/${slug}/sfx/gen` : `/api/episodes/${slug}/sfx/fetch`;
-      const body = gen
-        ? { prompt: query, duration: parseFloat(duration) || 3, seed: seed ? parseInt(seed, 10) : null, cue_id: cue || null, at }
-        : { query, duration_max: parseFloat(duration) || 4, cue_id: cue || null, at };
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await r.json();
-      setResult(data);
-      if (r.status === 409) {
-        push("GPU busy — a render is active. Try again when idle.", "err");
-      } else if (data.ok) {
-        push(gen ? "SFX generated and pinned" : "SFX fetched and pinned", "ok");
-        onAdded();
-      } else {
-        push(`${gen ? "generate" : "fetch"}: ${data.hint ?? data.detail ?? "no match"}`, "info");
-      }
-    } catch (e: any) {
-      push((gen ? "generate" : "fetch") + " failed: " + e.message, "err");
-    }
-    setBusy(false);
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="ADD SOUND EFFECT"
-      width={520}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>Close</button>
-          <button className="btn btn-cyan" disabled={busy || !query.trim()} onClick={submit}>
-            {busy ? (gen ? "Generating…" : "Fetching…") : (gen ? "Generate (agen)" : "Search Freesound")}
-          </button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-2">
-        {/* source toggle: curated CC0 (freesound) vs local de-novo generation (agen) */}
-        <div className="flex gap-1">
-          {(["freesound", "generate"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => { setSource(s); setResult(null); }}
-              className={"tab px-3 h-[28px] hairline-soft rounded-[3px] text-[11px] uppercase tracking-wider " + (source === s ? "active" : "")}
-              style={source === s ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}
-            >
-              {s === "freesound" ? "Freesound CC0" : "Generate (agen)"}
-            </button>
-          ))}
-        </div>
-        <Field
-          label={gen ? "agen prompt (AudioGen foley)" : "freesound query"}
-          value={query}
-          onChange={setQuery}
-          placeholder={gen ? "e.g. ‘heavy iron door slam, dry, close mic’" : "e.g. ‘old radio transmitter hum’"}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Field label={gen ? "duration" : "duration max"} value={duration} onChange={setDuration} type="number" suffix="s" />
-          {gen
-            ? <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />
-            : <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          {gen && <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          <Field
-            label="cue pin"
-            value={cue}
-            onChange={setCue}
-            options={cueIds.length ? cueIds : [""]}
-          />
-        </div>
-        <div className="text-[11px] text-txt-faint">
-          {gen
-            ? <>Local AudioGen → 24 kHz/−3 dBFS into the kit · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · public-domain (de novo) · won't run during a render</>
-            : <>CC0-licensed clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> at -6 dB · 0.5s fade</>}
-        </div>
-        {result && (
-          <pre className="logtail" style={{ height: 140 }}>{result.ok
-            ? `OK\n${result.log ?? ""}`
-            : `FAILED${result.returncode != null ? ` rc=${result.returncode}` : ""}\n${result.log ?? result.detail ?? ""}\n\nhint: ${result.hint ?? ""}`}</pre>
-        )}
-      </div>
-    </Modal>
   );
 }

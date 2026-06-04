@@ -21,6 +21,7 @@ from . import media as media_mod
 from . import regen as regen_mod
 from . import sfx as sfx_mod
 from . import agen as agen_mod
+from . import assets as assets_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
@@ -269,6 +270,60 @@ async def post_sfx_fetch(slug: str, body: dict = Body(...)):
 @app.delete("/api/episodes/{slug}/sfx")
 async def del_sfx(slug: str, file: str):
     return sfx_mod.remove(slug, file)
+
+
+@app.put("/api/episodes/{slug}/sfx")
+async def put_sfx(slug: str, body: dict = Body(...)):
+    """Replace manifest.sfx[] wholesale — the single mutation for the Audio-page
+    timeline (add-from-library / reorder / move / delay-recompute)."""
+    sfx = body.get("sfx")
+    if not isinstance(sfx, list):
+        raise HTTPException(400, "sfx must be a list")
+    m = manifest_mod.load(slug)
+    m["sfx"] = sfx
+    manifest_mod.save(slug, m)
+    return {"ok": True, "count": len(sfx)}
+
+
+# ---------- Asset library (assets/sfx, assets/music) ----------
+
+@app.get("/api/assets/{kind}")
+def get_assets(kind: str):
+    if kind not in assets_mod.KINDS:
+        raise HTTPException(404, f"unknown asset kind: {kind}")
+    return {"assets": assets_mod.list_assets(kind)}
+
+
+@app.get("/api/assets/{kind}/{file}/audio")
+def get_asset_audio(kind: str, file: str, request: Request):
+    p = assets_mod.asset_path(kind, file)
+    if not p:
+        raise HTTPException(404, "asset not found")
+    ctype = "audio/mpeg" if p.suffix.lower() == ".mp3" else "audio/wav"
+    return media_mod.stream_file(request, p, content_type=ctype)
+
+
+@app.post("/api/episodes/{slug}/music/add-bed")
+async def post_music_add_bed(slug: str, body: dict = Body(...)):
+    """Add a library music file to manifest.music.clips[] (a bed)."""
+    file = (body.get("file") or "").strip()
+    if not file:
+        raise HTTPException(400, "file required")
+    m = manifest_mod.load(slug)
+    music = m.get("music")
+    if not isinstance(music, dict):
+        music = {}
+    clips = music.get("clips")
+    if not isinstance(clips, list):
+        clips = []
+    added = file not in clips
+    if added:
+        clips.append(file)
+    music["clips"] = clips
+    music.setdefault("source_dir", str(assets_mod.KINDS["music"]))
+    m["music"] = music
+    manifest_mod.save(slug, m)
+    return {"ok": True, "added": added, "clips": clips}
 
 
 # ---------- agen (local music/SFX generation) ----------
