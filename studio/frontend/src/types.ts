@@ -75,6 +75,7 @@ export interface TitleAsset {
   status: AssetStatus;
   exists: boolean;
   mtime: number | null;
+  configured?: boolean; // object-form HyperFrames entry → regennable directly
 }
 
 export interface PipelineStage {

@@ -26,7 +26,7 @@ from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
-from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN
+from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
 
 @asynccontextmanager
@@ -183,7 +183,11 @@ def get_shot_preview(slug: str, key: str, request: Request):
 
 @app.get("/api/episodes/{slug}/title/{key}/preview")
 def get_title_preview(slug: str, key: str, request: Request):
+    if "/" in key or ".." in key:
+        raise HTTPException(400, "bad key")
     p = ep_mod.episode_dir(slug) / "titles" / f"{key}.mp4"
+    if not p.exists():
+        p = SHARES / "assets" / "titles" / f"{key}.mp4"  # shared fallback (stage-4 resolution)
     return media_mod.stream_file(request, p, content_type="video/mp4")
 
 

@@ -34,13 +34,22 @@ export function Graphics({ slug }: { slug: string }) {
   const templateOptions = hfTemplates.data?.templates ?? [];
 
   // ---- New title card modal ----
+  const DEFAULT_FIELDS = '{\n  "kicker": "",\n  "title_line_1": "",\n  "title_line_2": "",\n  "sub": ""\n}';
   const [newOpen, setNewOpen] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newComp, setNewComp] = useState("");
-  const [newFields, setNewFields] = useState('{\n  "kicker": "",\n  "title_line_1": "",\n  "title_line_2": "",\n  "sub": ""\n}');
+  const [newFields, setNewFields] = useState(DEFAULT_FIELDS);
   useEffect(() => {
     if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
   }, [templateOptions, newComp]);
+  // Open the New-title modal pre-filled for an existing (string/shared) entry so it
+  // becomes object-form HyperFrames and can render. Used for non-configured titles.
+  const openNewFor = (key: string) => {
+    setNewKey(key);
+    setNewComp((c) => c || templateOptions[0] || "");
+    setNewFields(DEFAULT_FIELDS);
+    setNewOpen(true);
+  };
 
   // ---- YouTube thumbnail ----
   const [thumbOpen, setThumbOpen] = useState(false);
@@ -156,7 +165,7 @@ export function Graphics({ slug }: { slug: string }) {
 
   const renderAllMissing = () => {
     const ts = (titles.data?.titles ?? []).filter(
-      (t) => t.scope === "local" && (t.status === "missing" || t.status === "stale")
+      (t) => t.configured && (t.status === "missing" || t.status === "stale")
     );
     if (!ts.length) { push("No missing or stale titles", "info"); return; }
     push(`Queuing ${ts.length} title renders`, "run");
@@ -203,7 +212,7 @@ export function Graphics({ slug }: { slug: string }) {
                 style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)" } : {}}
               >
                 <div className="bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
-                  {t.scope === "local" && t.exists ? (
+                  {t.exists ? (
                     <video
                       key={mediaUrl.titlePreview(slug, t.key) + (t.mtime ?? "")}
                       src={mediaUrl.titlePreview(slug, t.key)}
@@ -217,7 +226,9 @@ export function Graphics({ slug }: { slug: string }) {
                     <div className="text-center">
                       <Badge status={isBusy ? "running" : t.status} />
                       <div className="label-tiny mt-1">
-                        {t.scope === "shared" ? "shared assets/titles/" : `${t.key}.mp4`}
+                        {t.scope === "shared"
+                          ? (t.status === "missing" ? "shared — not found" : "shared assets/titles/")
+                          : `${t.key}.mp4`}
                       </div>
                     </div>
                   )}
@@ -227,11 +238,11 @@ export function Graphics({ slug }: { slug: string }) {
                   <span onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
                     <button
                       className="btn p-1"
-                      title="Regen via HyperFrames"
+                      title={t.configured ? "Regen via HyperFrames" : "Configure + generate (pick a composition)"}
                       disabled={isBusy}
-                      onClick={() => regen.mutate(t.key)}
+                      onClick={() => (t.configured ? regen.mutate(t.key) : openNewFor(t.key))}
                     ><IRegen /></button>
-                    <RegenNotes onSubmit={() => regen.mutate(t.key)} />
+                    {t.configured && <RegenNotes onSubmit={() => regen.mutate(t.key)} />}
                   </span>
                 </div>
               </button>
@@ -271,7 +282,7 @@ export function Graphics({ slug }: { slug: string }) {
         </div>
         {cur ? (
           <>
-            {cur.scope === "local" && cur.exists ? (
+            {cur.exists ? (
               <video
                 key={mediaUrl.titlePreview(slug, cur.key) + (cur.mtime ?? "")}
                 src={mediaUrl.titlePreview(slug, cur.key)}
@@ -289,8 +300,8 @@ export function Graphics({ slug }: { slug: string }) {
                   <Badge status={cur.status} />
                   <div className="label-tiny mt-2 break-all">
                     {cur.scope === "shared"
-                      ? "title resolves from shared assets/titles/"
-                      : `episodes/${slug}/titles/${cur.key}.mp4 (missing)`}
+                      ? "shared assets/titles/ — file not found"
+                      : `episodes/${slug}/titles/${cur.key}.mp4 (not built)`}
                   </div>
                 </div>
               </div>
@@ -304,15 +315,24 @@ export function Graphics({ slug }: { slug: string }) {
               <span className="label-tiny">manifest hint</span>
               <p className="whitespace-pre-wrap text-[12px]">{cur.hint || "—"}</p>
             </div>
-            <div className="hairline-soft p-2 rounded bg-bg-2 text-[12px]">
-              <div className="label-tiny mb-1">to rebuild a per-episode title</div>
-              <p className="text-txt-dim">
-                Build a HyperFrames composition (see the <code>hyperframes</code>
-                {" "}skill) in <code>episodes/{slug}/titles/{cur.key}.html</code>, render
-                to mp4, drop it next to the html. Studio v0.7 will wire the regen
-                button to do this automatically.
-              </p>
+            <div className="flex items-center gap-2">
+              {cur.configured ? (
+                <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]} onClick={() => regen.mutate(cur.key)}>
+                  <IRegen /> Regen
+                </button>
+              ) : (
+                <button className="btn btn-cyan" onClick={() => openNewFor(cur.key)}>
+                  <IRegen /> Configure + generate
+                </button>
+              )}
             </div>
+            <p className="text-txt-faint text-[11px]">
+              {cur.scope === "shared"
+                ? "Reused from shared assets/titles/. ‘Configure + generate’ builds a per-episode HyperFrames version instead."
+                : cur.configured
+                  ? "Rendered via HyperFrames from its composition + fields."
+                  : "New per-episode title — pick a composition + fields to generate it (writes the object form to the manifest)."}
+            </p>
           </>
         ) : (
           <div className="text-txt-faint">No title selected.</div>

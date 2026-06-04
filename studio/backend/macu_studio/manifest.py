@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .episodes import episode_dir, manifest_path
+from .config import SHARES
 from . import models
 
 
@@ -196,39 +197,43 @@ def derive_titles(slug: str, manifest: dict | None = None) -> list[dict]:
     titles_dir = ep / "titles"
     manifest_mtime = manifest_path(slug).stat().st_mtime
 
+    shared_titles = SHARES / "assets" / "titles"
     rows: list[dict] = []
     for key, val in (m.get("title_assets") or {}).items():
         # title_assets[key] is either:
         #  - a string (legacy free-form hint; shared if it looks shared, otherwise local)
         #  - an object {source, composition, ...}; source="hyperframes" => locally rendered
         local = titles_dir / f"{key}.mp4"
+        shared = shared_titles / f"{key}.mp4"
         is_object = isinstance(val, dict)
         source = (val.get("source") if is_object else None) or ""
+        configured = is_object and source == "hyperframes"  # regennable via HyperFrames
         if is_object:
             is_local = source == "hyperframes" or "episodes/" in str(val.get("path") or "")
             hint = val.get("path") or f"hyperframes:{val.get('composition') or key}"
-            scope = "local" if is_local else "shared"
         else:
             is_local = isinstance(val, str) and ("episodes/" in val or val.startswith("titles/") or "(NEW" in val)
             hint = str(val) if val else ""
-            scope = "local" if is_local else "shared"
+        scope = "local" if is_local else "shared"
 
         if is_local:
-            if not local.exists():
-                status = "missing"
-            elif local.stat().st_mtime < manifest_mtime:
-                status = "stale"
-            else:
-                status = "rendered"
+            # existence-based — don't mtime-false-stale an already-rendered title
+            status = "rendered" if local.exists() else "missing"
+            exists = local.exists()
+            mtime = local.stat().st_mtime if local.exists() else None
         else:
-            status = "shared"
+            # shared: stage 4 resolves these from assets/titles/<key>.mp4
+            exists = shared.exists()
+            status = "shared" if exists else "missing"
+            mtime = shared.stat().st_mtime if exists else None
         row = {
             "key": key,
             "hint": hint,
             "scope": scope,
             "status": status,
-            "exists": local.exists() if is_local else True,
-            "mtime": local.stat().st_mtime if local.exists() else None,
+            "exists": exists,
+            "mtime": mtime,
+            "configured": configured,
         }
         if is_object:
             row["composition"] = val.get("composition")
