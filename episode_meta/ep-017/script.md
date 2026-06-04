@@ -166,9 +166,7 @@ swelling)_ This is what I've been asking this town to do for two years. Come tog
 
 ## SEGMENT 4 — EARL, BLISSFUL (the pin deepens)
 
-**EARL:** _(PHB_Korea, glowing, a homemade sash on)_ Ron! Best day I've had since before the bombs. I
-made three friends. I'm a greeter now. They gave me a SASH, Ron — it says CONTRIBUTOR. People are HUGGING me.
-I was so wrong to be scared of the crowd.
+**EARL:** _(PHB_Korea, glowing, a homemade sash on)_ Ron! Best day I've had since before the bombs. I made three friends. I'm a greeter now. They gave me a SASH, Ron — it says contributor! People are hugging me! I was so wrong to be scared of the crowd.
 » Earl core, beaming, the sash reading CONTRIBUTOR
 
 **(b-roll, no dialogue)** _Behind Earl — the same wary, gaunt man from the plaza. Watching the sash, the hugging.
