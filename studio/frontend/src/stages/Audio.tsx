@@ -48,6 +48,9 @@ export function Audio({ slug }: { slug: string }) {
   const [playing, setPlaying] = useState<string | null>(null);
   // "single" = play this one clip and stop; "sequential" = auto-advance to the next cue.
   const [playMode, setPlayMode] = useState<"single" | "sequential">("single");
+  // When on (default), a per-row play button plays continuously from that clip onward;
+  // when off, it plays just that one clip (oneshot).
+  const [continuous, setContinuous] = useState(true);
   const playModeRef = useRef(playMode);
   playModeRef.current = playMode;
   const cueListRef = useRef<Cue[]>([]);
@@ -100,7 +103,8 @@ export function Audio({ slug }: { slug: string }) {
   }, [playing, selectCue]);
 
   const togglePlay = (cueId: string) => {
-    setPlayMode("single"); // a single-row click plays just that clip, then stops
+    // Continuous (default): a row click plays from there onward; otherwise oneshot.
+    setPlayMode(continuous ? "sequential" : "single");
     setPlaying((p) => (p === `cue:${cueId}` ? null : `cue:${cueId}`));
   };
 
@@ -199,6 +203,10 @@ export function Audio({ slug }: { slug: string }) {
               <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop sequential playback" : "Play all cues in sequence"}>
                 {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
               </button>
+              <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play buttons continue to the next clip (off = play one clip only)">
+                <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} />
+                Continuous
+              </label>
               <button className="btn btn-amber" onClick={regenAllMissing}>
                 <IRegen /> Regenerate all missing
               </button>
