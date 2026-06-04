@@ -54,8 +54,22 @@ export function Audio({ slug }: { slug: string }) {
     const cueId = playing.split(":")[1];
     const a = new window.Audio(mediaUrl.cueAudio(slug, cueId));
     audioRef.current = a;
-    a.play().catch(() => setPlaying(null));
     a.onended = () => setPlaying(null);
+    // Surface failures instead of silently resetting — MediaError codes:
+    // 2 = NETWORK (connection/proxy), 4 = SRC_NOT_SUPPORTED (got HTML/redirect
+    // instead of audio, e.g. a Cloudflare Access login bounce). Tells glitch from bug.
+    a.onerror = () => {
+      const code = a.error?.code;
+      const why = code === 2 ? "network/connection"
+        : code === 4 ? "bad response (auth redirect?) — try reloading"
+        : code === 3 ? "decode error" : `error ${code ?? "?"}`;
+      push(`audio ${cueId} failed: ${why}`, "err");
+      setPlaying(null);
+    };
+    a.play().catch((e: any) => {
+      push(`audio ${cueId} didn't start: ${e?.name || e?.message || "blocked"}`, "err");
+      setPlaying(null);
+    });
     return () => { a.pause(); audioRef.current = null; };
   }, [playing, slug]);
 

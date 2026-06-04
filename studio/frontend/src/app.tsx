@@ -40,7 +40,7 @@ function Shell() {
   // Default to a slug once we know what's available
   useEffect(() => {
     if (!route.slug && episodes.data?.episodes.length) {
-      const pick = episodes.data.episodes.find((e) => e.slug === "ep18")
+      const pick = episodes.data.episodes.find((e) => e.slug === "ep-018")
         ?? episodes.data.episodes[episodes.data.episodes.length - 1];
       go({ slug: pick.slug, stage: route.stage });
     }

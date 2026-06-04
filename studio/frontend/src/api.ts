@@ -3,6 +3,24 @@ import type {
   PipelineStage, Shot, SrtEntry, SrtResp, TitleAsset,
 } from "./types";
 
+export interface GenManifestSummary {
+  old_cue_count: number;
+  new_cue_count: number;
+  cues_added: number;
+  cues_reshot: number;
+  changes: { id: string; type: "added" | "reshot"; speaker: string; vo: string }[];
+  speakers: string[];
+  unmapped_speakers: string[];
+  segments: string[];
+  warnings: string[];
+  renumbered: boolean;
+}
+export interface GenManifestResp {
+  summary: GenManifestSummary;
+  cues?: Cue[];
+  saved?: { path: string; mtime: number; bytes: number };
+}
+
 async function J<T>(r: Response): Promise<T> {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${await r.text().catch(() => "")}`);
   return r.json() as Promise<T>;
@@ -25,6 +43,11 @@ export const api = {
     fetch(`/api/episodes/${slug}/script`, {
       method: "PUT", headers: { "Content-Type": "text/markdown" }, body: text,
     }).then((r) => J<{ mtime: number; bytes: number }>(r)),
+  genManifest: (slug: string, apply: boolean) =>
+    fetch(`/api/episodes/${slug}/manifest/from-script`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apply }),
+    }).then((r) => J<GenManifestResp>(r)),
   cues: (slug: string) =>
     fetch(`/api/episodes/${slug}/cues`).then((r) => J<{ cues: Cue[] }>(r)),
   shots: (slug: string) =>

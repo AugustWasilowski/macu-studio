@@ -13,13 +13,16 @@ from fastapi.staticfiles import StaticFiles
 
 from . import episodes as ep_mod
 from . import manifest as manifest_mod
+from . import gen_manifest as genman_mod
 from . import script as script_mod
 from . import srt as srt_mod
 from . import pipeline as pipeline_mod
 from . import media as media_mod
 from . import regen as regen_mod
 from . import sfx as sfx_mod
-from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS
+from . import hyperframes as hf_mod
+from . import chat as chat_mod
+from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN
 
 
 @asynccontextmanager
@@ -84,19 +87,43 @@ async def put_script(slug: str, request: Request):
         raise HTTPException(404, str(e))
 
 
+@app.post("/api/episodes/{slug}/manifest/from-script")
+async def post_manifest_from_script(slug: str, body: dict = Body(default={})):
+    """Regenerate manifest.cues from script.md, merging into the existing manifest.
+
+    Default is a dry run returning {summary, cues}. With {"apply": true} it writes
+    the merged manifest (after a timestamped manifest.json.bak)."""
+    try:
+        if bool(body.get("apply")):
+            return genman_mod.apply(slug)
+        prev = genman_mod.preview(slug)
+        return {"summary": prev["summary"], "cues": prev["cues"]}
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
 @app.get("/api/episodes/{slug}/cues")
 def get_cues(slug: str):
-    return {"cues": manifest_mod.derive_cues(slug)}
+    try:
+        return {"cues": manifest_mod.derive_cues(slug)}
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 @app.get("/api/episodes/{slug}/shots")
 def get_shots(slug: str):
-    return {"shots": manifest_mod.derive_shots(slug)}
+    try:
+        return {"shots": manifest_mod.derive_shots(slug)}
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 @app.get("/api/episodes/{slug}/titles")
 def get_titles(slug: str):
-    return {"titles": manifest_mod.derive_titles(slug)}
+    try:
+        return {"titles": manifest_mod.derive_titles(slug)}
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 @app.get("/api/episodes/{slug}/pipeline")
@@ -188,9 +215,31 @@ async def post_shot_regen(slug: str, key: str):
 
 @app.post("/api/episodes/{slug}/title/{key}/regen")
 async def post_title_regen(slug: str, key: str):
-    raise HTTPException(501,
-        "title regen not implemented in v0; build the HyperFrames composition "
-        "with `npx hyperframes render` and drop the mp4 in titles/")
+    """Queue a HyperFrames render for title_assets[key]. Returns {job_id}."""
+    try:
+        job_id = await hf_mod.submit(slug, key)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    return {"job_id": job_id, "queued": True,
+            "events_url": f"/api/hf/jobs/{job_id}/stream",
+            "status_url": f"/api/hf/jobs/{job_id}"}
+
+
+@app.get("/api/hf/jobs/{job_id}")
+def get_hf_job(job_id: str):
+    s = hf_mod.status(job_id)
+    if not s:
+        raise HTTPException(404, "hyperframes job not found")
+    return s
+
+
+@app.get("/api/hf/jobs/{job_id}/stream")
+async def get_hf_job_stream(job_id: str, since: int = 0):
+    return StreamingResponse(
+        hf_mod.stream(job_id, since=since),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/episodes/{slug}/sfx/fetch")
@@ -243,19 +292,36 @@ async def get_job_stream(job_id: str, since: int = 0):
     )
 
 
-# ---------- Stub chat (v0) ----------
+# ---------- Chat (ss-chat-channel → always-on Max session) ----------
 
 @app.post("/api/episodes/{slug}/chat")
 async def post_chat(slug: str, body: dict = Body(...)):
     msg = (body.get("message") or "").strip()
     if not msg:
         raise HTTPException(400, "empty message")
-    return {
-        "reply": "Max here. The chat bridge isn't wired up yet in v0 — your "
-                 "message was received but no real model saw it. "
-                 f"(slug={slug}, len={len(msg)})",
-        "stub": True,
-    }
+    session_id = body.get("session_id") or None
+    try:
+        result = await chat_mod.send(slug, msg, session_id=session_id)
+    except TimeoutError as e:
+        raise HTTPException(504, str(e))
+    except RuntimeError as e:
+        raise HTTPException(502, str(e))
+    return result
+
+
+@app.post("/api/chat/reply")
+async def post_chat_reply(request: Request, body: dict = Body(...)):
+    """Callback hit by ss-chat-channel when Max calls ss_chat_reply. Token-gated
+    by the same SS_CHAT_WEBHOOK_TOKEN the channel signs outbound replies with."""
+    presented = (request.headers.get("x-webhook-token") or "").strip()
+    if not CHAT_WEBHOOK_TOKEN or presented != CHAT_WEBHOOK_TOKEN:
+        raise HTTPException(403, "forbidden")
+    request_id = body.get("request_id")
+    text = body.get("text")
+    if not request_id or not isinstance(text, str):
+        raise HTTPException(400, "request_id and text required")
+    delivered = chat_mod.deliver(str(request_id), text)
+    return {"ok": delivered, "request_id": request_id}
 
 
 # ---------- SPA static mount (last, after API routes) ----------

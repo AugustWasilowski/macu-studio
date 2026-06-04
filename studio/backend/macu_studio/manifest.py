@@ -16,10 +16,12 @@ def save(slug: str, data: dict[str, Any]) -> dict[str, Any]:
     path = manifest_path(slug)
     # Validate that it's serializable round-trip.
     blob = json.dumps(data, indent=2, ensure_ascii=False)
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o664
     fd, tmp = tempfile.mkstemp(prefix=".manifest.", suffix=".json.tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w") as f:
             f.write(blob)
+        os.chmod(tmp, mode)
         os.replace(tmp, path)
     except Exception:
         try:
@@ -175,10 +177,21 @@ def derive_titles(slug: str, manifest: dict | None = None) -> list[dict]:
 
     rows: list[dict] = []
     for key, val in (m.get("title_assets") or {}).items():
-        # Per-episode custom titles live at episodes/<slug>/titles/<key>.mp4 .
-        # Shared/auto titles live in the shared assets/titles dir.
+        # title_assets[key] is either:
+        #  - a string (legacy free-form hint; shared if it looks shared, otherwise local)
+        #  - an object {source, composition, ...}; source="hyperframes" => locally rendered
         local = titles_dir / f"{key}.mp4"
-        is_local = isinstance(val, str) and ("episodes/" in val or val.startswith("titles/") or "(NEW" in val)
+        is_object = isinstance(val, dict)
+        source = (val.get("source") if is_object else None) or ""
+        if is_object:
+            is_local = source == "hyperframes" or "episodes/" in str(val.get("path") or "")
+            hint = val.get("path") or f"hyperframes:{val.get('composition') or key}"
+            scope = "local" if is_local else "shared"
+        else:
+            is_local = isinstance(val, str) and ("episodes/" in val or val.startswith("titles/") or "(NEW" in val)
+            hint = str(val) if val else ""
+            scope = "local" if is_local else "shared"
+
         if is_local:
             if not local.exists():
                 status = "missing"
@@ -188,14 +201,20 @@ def derive_titles(slug: str, manifest: dict | None = None) -> list[dict]:
                 status = "rendered"
         else:
             status = "shared"
-        rows.append({
+        row = {
             "key": key,
-            "hint": str(val) if val else "",
-            "scope": "local" if is_local else "shared",
+            "hint": hint,
+            "scope": scope,
             "status": status,
             "exists": local.exists() if is_local else True,
             "mtime": local.stat().st_mtime if local.exists() else None,
-        })
+        }
+        if is_object:
+            row["composition"] = val.get("composition")
+            row["resolution"] = val.get("resolution")
+            row["duration_seconds"] = val.get("duration_seconds")
+            row["fields"] = val.get("fields")
+        rows.append(row)
 
     # Augment with any .html HyperFrames compositions present
     if titles_dir.exists():
