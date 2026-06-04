@@ -36,7 +36,7 @@ export function Audio({ slug }: { slug: string }) {
   const selectedCueId = useStore((s) => s.selectedCueId);
   const selectCue = useStore((s) => s.selectCue);
 
-  const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug) });
+  const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug), refetchInterval: 4000 });
   const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
 
   const sfx = useSfx(slug);

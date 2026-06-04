@@ -23,6 +23,7 @@ export function Video({ slug }: { slug: string }) {
   const shots = useQuery({
     queryKey: ["shots", slug],
     queryFn: () => api.shots(slug),
+    refetchInterval: 4000, // self-refresh so renders show up without navigating away
   });
   const manifest = useQuery({
     queryKey: ["manifest", slug],

@@ -23,6 +23,7 @@ export function Graphics({ slug }: { slug: string }) {
   const titles = useQuery({
     queryKey: ["titles", slug],
     queryFn: () => api.titles(slug),
+    refetchInterval: 4000, // self-refresh so renders show up without navigating away
   });
 
   const [logLines, setLogLines] = useState<string[]>([]);
