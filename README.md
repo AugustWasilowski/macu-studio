@@ -1,69 +1,89 @@
-# MACU Render Pipeline (Max-side)
+# MACU Pipeline
 
-This dir holds the proven scripts that turn an `episodes/<slug>/manifest.json` into a finished `episodes/<slug>/final/<slug>.mp4`. Synced via Syncthing folder `macu` so Leo can read them; **execution lives on Max** (the GPU + Piper + ComfyUI all run there).
+The production system for **The MACU Report** — August's black-and-white, post-apocalyptic, retro-futurist
+faux-newscast in the Mayor Awesome Cinematic Universe. This one repo is the hub for **four** things:
 
-Pipeline stages, in order:
+| Dir | What it is |
+|---|---|
+| `pipeline/` | the 8-stage render pipeline (`run.py`, `serve.py`, `stage_1..8`, `lib.py`, `stackchan.py`, `freesound_fetch.py`) that turns an `episodes/<slug>/manifest.json` into a finished `final/<slug>.mp4` |
+| `skills/` | the Claude Code agent skills — `macu-report` (authoring), `macu-render` (render driver), `comedy-writers-room` (critic panel) |
+| `docs/` | the canon — character bible, world lore, pipeline design, story arcs, weekly routine, OmniVoice voice roster/tips |
+| `studio/` | **MACU Studio** — the FastAPI + React web front end on `:8774` that drives the same pipeline from a browser |
 
-| # | Script | What it does | Wall (EP5) |
+**Everything runs on Max** (the Linux home server, RTX 2080 Ti). This repo is the source of truth; the live
+deployment mirrors it:
+
+```
+~/work/macu-pipeline  (git, source of truth)
+├── pipeline/*.py ──▶ /mnt/storage/shares/MACU/pipeline/   (deployed copy; the share is the live working dir)
+├── docs/*.md     ──▶ /mnt/storage/shares/MACU/*.md
+├── skills/*      ──▶ ~/.claude/skills/*
+└── studio/       ── uvicorn :8774 ── Cloudflare ──▶ studio.mayorawesome.com
+```
+
+> **History:** this started as a Leo→Max split — August authored on Leo (Windows) and shipped renders to Max
+> over a Syncthing `macu` folder + Vikunja + n8n bridges. Authoring moved onto Max, so it's all local now: no
+> Syncthing wait, no cross-machine handoff. Services are reached on loopback (`127.0.0.1`).
+
+## Pipeline stages
+
+| # | Script | What it does | Wall (~4-min ep) |
 |---|---|---|---|
-| 1 | `render_vo.py` | POST every cue's `vo` text to Piper HAL at `:5050`, write `vo/<cue_id>.wav`. Parallel (4-wide). Skip cues whose wav already exists. | ~8s |
-| 2 | `render_masters.py` | One ComfyUI master gen per unique `characters[*]` + `broll[*]` key. zeroscope_v2_576w @ 384×384×24f, cfg 15, euler/normal. Saves `<name>_master_00001_.webp` under ComfyUI output. | ~7-8 min (12-13 masters, serialized on GPU) |
-| 3 | `interpolate_masters.py` | RIFE 3x (24f → 72f) per master via `rife-ncnn-vulkan` (Vulkan/2080 Ti). Output: `.rife_frames/<name>_out/`. | ~35s for 13 masters |
-| 4 | `assemble.py` | Per-cue: each shot → per-shot ffmpeg with the analog-jank filtergraph (256→1024 nearest-neighbor scale, `hue=s=0`, curves/blur/noise/chromashift/wave/interlace/vignette). Concat shots → mux Piper VO → next cue. Final concat → `final/ep5_nosubs.mp4`. h264_nvenc cq 22 final. | ~2 min |
-| 5 | `run_whisper.py` | faster-whisper large-v3 (CPU int8) ASR on the rendered audio → word timestamps. ~10 min on CPU; GPU is ~30s if you fix the `libcublas.so.12` issue inside the venv. | ~10 min |
-| 6 | `build_srt_aligned.py` | difflib SequenceMatcher aligns manifest VO text against whisper words → 131-cue SRT with proper case/punct, max 7 words / 3s per line, breaks at `.!?`. | <1s |
-| 7 | `assemble.py` re-burn | (last stage of assemble) burns the SRT on the cached `ep5_nosubs.mp4`. **18pt outline-only, MarginV=32, Alignment=2** — keep these. | ~15s |
+| 1 | `stage_1_vo.py` | per-cue VO: OmniVoice clones (`:3900`) for human-cast speakers, Piper HAL (`:5050`) for AI/appliance characters. Per-speaker routing from `manifest.voice.speaker_map`; cached by per-cue text+voice hash in `vo/.cache.json`. Stage 1 owns the ephemeral OmniVoice container's lifecycle (start → render → stop). | ~80s |
+| 2 | `stage_2_masters.py` | one ComfyUI master gen per unique `characters[*]`/`broll[*]` key. zeroscope_v2_576w @ 384×384×24f, cfg 15. Fire-and-poll (first gen cold-loads + times out the request but keeps running). | ~7-8 min |
+| 3 | `stage_3_rife.py` | RIFE 3× (24f → 72f) per master via `rife-ncnn-vulkan` (Vulkan / 2080 Ti). | ~35s |
+| 4 | `stage_4_assemble.py` | per-shot analog-jank filtergraph (B&W, grain, vignette, chromashift, interlace) → concat shots → mux VO → concat cues → `.work/<slug>_nosubs.mp4`. Handles the animated intro card + closing bumper + `no_subs`/`hold` cues. | ~2 min |
+| 5 | `stage_5_music.py` | music beds (random clip+offset per bed) + `manifest.sfx[]` one-shots, mixed via adelay→amix. | ~2-5s |
+| 6 | `stage_6_whisper.py` | faster-whisper large-v3 (CPU int8) ASR on the rendered audio → word timestamps. | ~10 min |
+| 7 | `stage_7_srt.py` | difflib aligns manifest VO text to whisper timings → SRT (≤7 words / 3s per line). | <1s |
+| 8 | `stage_8_burn.py` | burn SRT in the Better VCR font + h264_nvenc (cq 22) → `final/<slug>.mp4` + `_thumbs.jpg`; extract 1920×1080 `final/<slug>_thumb.png`. | ~12s |
 
-Run from `/tmp` or anywhere; paths are absolute. Each script writes a small JSON report next to itself (`/tmp/<name>_results.json`) so the orchestrator can see what happened.
+`run.py <slug>` runs all 8 in order, idempotent/cache-aware. `--from N` restarts from a stage; `--only N` runs
+one. `serve.py` exposes the same over HTTP on `:8773` (systemd `macu-render.service`) with SSE stage events —
+that's what MACU Studio drives.
 
-## Locked render settings (EP5 baseline)
+## Locked render settings (do not regress)
 
-- Checkpoint: `zeroscope_v2_576w` (NOT DAMO ModelScope — that's the shutterstock-watermarked one). Active at `/mnt/storage/comfyui/models/text2video/text2video_pytorch_model.pth`. DAMO preserved as `.damo.pth` for rollback.
-- Workflow: `will-smith-modelscope-t2v` registered in `~/docker/comfyui-mcp/src/workflows.js`. Defaults already bumped to 384×384×24f. Container needs a rebuild + restart to pick this up (`docker compose build comfyui-mcp && docker compose up -d`).
-- Render: 384×384, 24 frames, 30 steps, cfg 15, sampler=euler, scheduler=normal.
-- Output (jank filter): 1024×1024 @ 24fps (after RIFE 3x).
-- Encode: h264_nvenc, preset p5, tune hq, cq 22.
+- Checkpoint: `zeroscope_v2_576w` — NOT DAMO ModelScope (that's the shutterstock-watermarked one, preserved as
+  `.damo.pth`). The watermark is solved by the checkpoint, not by negatives.
+- Render: 384×384, 24 frames, 30 steps, cfg 15, euler/normal. Output after RIFE 3×: 1024×1024 @ 24fps. Encode:
+  h264_nvenc, preset p5, tune hq, cq 22.
+- **VRAM:** 576×320×24f OOMs / crashes the temporal modules on the 11 GB 2080 Ti. Don't bump res without testing.
 
-## Endpoints
+## Local services
 
-- ComfyUI: `http://10.0.0.245:8188/` — `/prompt` POST, `/history/<id>` GET, `/queue` GET.
-- Piper HAL: `http://10.0.0.245:5050/` — POST `{"text": "..."}` → 22050 Hz mono s16 wav.
-- Shared root: `/mnt/storage/shares/MACU/` (Max) = `\\10.0.0.245\storage-root\shares\MACU\` (Windows) = the Syncthing `macu` folder on Leo.
+- ComfyUI: `http://127.0.0.1:8188/` — zeroscope T2V masters.
+- OmniVoice: `http://127.0.0.1:3900/` — cloned character voices (ephemeral container; stage 1 manages it).
+- Piper HAL: `http://127.0.0.1:5050/` — the calm machine register.
+- StackChan: `http://10.0.0.134/leds/buffer` — per-stage LED progress bar.
+
+(Older `episodes/<slug>/manifest.json` files carry `10.0.0.245:…` endpoints; those still work from Max since
+Piper/ComfyUI bind `0.0.0.0`, and stage 1 hardcodes loopback for OmniVoice regardless. New manifests use `127.0.0.1`.)
 
 ## Layout
 
 ```
 shares/MACU/
-├── pipeline/                 # these scripts
+├── pipeline/                 # deployed copy of this repo's pipeline/
 ├── episodes/<slug>/
-│   ├── manifest.json         # source of truth
+│   ├── manifest.json         # source of truth for the episode
 │   ├── script.md
-│   ├── clips/                # <name>_master.zs.webp + per-shot copies
-│   ├── frames/               # PNG dumps (cached for re-encode iterations)
-│   ├── .rife_frames/         # RIFE 72f PNG dirs per master
-│   ├── vo/                   # Piper-rendered cue audio
-│   ├── titles/               # Hyperframes title/bumper MP4s
-│   ├── .work_full/           # cached pre-sub assembled mp4
-│   ├── .work_rife/           # cached pre-sub assembled mp4 (RIFE path)
-│   └── final/<slug>.mp4 + .srt + _thumbs.jpg
-└── agent-io/{leo,max}/       # per-agent scratch
+│   ├── clips/ frames/ .rife_frames/ vo/ titles/ .work/
+│   └── final/<slug>.mp4 + .srt + _thumbs.jpg + _thumb.png
+├── assets/{fonts,music,sfx,titles}/   # shared, reused across episodes
+└── agent-io/{leo,max}/       # per-agent scratch (source transcripts, etc.)
 ```
+
+## Running a render
+
+- **Agent / CLI:** `/macu-render <slug>` (the skill) or `python3 pipeline/run.py <slug> [--from N|--only N]`.
+- **HTTP:** POST `{slug, from_stage?, only?}` to `serve.py` on `:8773`; subscribe to its SSE for stage events.
+- **GUI:** open [MACU Studio](studio/README.md) at `http://10.0.0.245:8774/` and drive it from the browser.
 
 ## Known gotchas
 
-- **ComfyUI first gen cold-loads** the checkpoint and times out the request, but the job keeps running. Fire and poll `/queue` or `/history/<prompt_id>`.
-- **anim_dump, not ffmpeg's libwebp demuxer** — ffmpeg chokes on ComfyUI's animated webps with `invalid TIFF header in Exif`. Use `anim_dump -prefix f_ -folder <dir> <webp>`.
-- **Per-shot duration = cue.vo_dur / N_shots in that cue.** The manifest does NOT specify per-shot durations; the assembler computes them at run time from the rendered VO.
-- **Title slots use their full per-shot share** (clone last frame via `tpad` if the source title MP4 is shorter). The old "cap to 1.5s" bug truncated VO at the end of title-containing cues. Don't reintroduce it.
-- **VRAM:** 576×320×24f on the 2080 Ti triggers ComfyUI's lowvram offload and crashes the custom ModelScopeT2VLoader's temporal modules with `fp16 CPU vs fp16 CUDA` mismatch. 384×384×24f fully loads on GPU. Don't bump res without testing.
-- **The square 1:1 source is the canonical look.** Movietone 1.19:1 crop (1024×861) is planned for next episode but not yet applied (see [movietone memory note in Max-side memory store]).
-
-## Trigger options for Leo's orchestration skill
-
-Three workable patterns; pick whichever feels right for the skill:
-
-1. **Vikunja task** — Leo assigns a task to Max with the manifest path; ss-channels session reacts in-context (~1s). Slow round-trip on long renders, fine for ad-hoc.
-2. **n8n SSH bridge** — Leo POSTs to `https://mcp.mayorawesome.com/webhook/claude-task` (which August already uses). Body should include the manifest path; the bridge cold-spawns a headless claude on Max.
-3. **Dedicated webhook (recommended for a real skill)** — stand up `pipeline/run.py` as a small Flask/FastAPI service on Max that takes `{episode_slug}` and runs scripts 1-7 in order, streaming progress over WebSocket. Leo's skill polls/subscribes. We haven't built this yet; if you want, file a Vikunja task and I'll spin it up.
-
-— Max, 2026-05-30
+- **ComfyUI first gen cold-loads** the checkpoint and times out the request, but the job keeps running — fire and poll.
+- **anim_dump, not ffmpeg's libwebp demuxer** — ffmpeg chokes on ComfyUI animated webps (`invalid TIFF header in Exif`).
+- **Per-shot duration = cue.vo_dur / N_shots** — computed at run time from rendered VO; not in the manifest.
+- **Title slots use their full per-shot share** (clone last frame via `tpad`); never hard-cap them or you truncate VO.
+- **Better VCR font family is `Better VCR-JP`** — never put `FontName=`/`Fontsize=` inside subtitle `force_style` (libass last-key-wins silently drops to default).

@@ -1,8 +1,8 @@
 # Joke engineering — how MACU builds and pays off comedy
 
 Source: Matthew Meredith, "How Arrested Development Engineered TV's Funniest Episode" (analysis of
-S2E3 "Amigos"). Full transcript at `E:\August\MACU\MACU\agent-io\max\ad_joke_engineering_transcript.txt`
-(Max can re-pull any YouTube transcript on request — see SKILL.md).
+S2E3 "Amigos"). Full transcript at `/mnt/storage/shares/MACU/agent-io/max/ad_joke_engineering_transcript.txt`
+(re-pull any YouTube transcript yourself when you need fresh source material — see SKILL.md step 2).
 
 **The thesis worth internalizing:** the funniest episodes aren't the ones with the most jokes per minute,
 they're the ones with the most *interconnection* — "by the end, no line feels isolated. Every moment is

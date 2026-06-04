@@ -1,8 +1,8 @@
 # OmniVoice voice-shaping tips
 
-Practical knobs for the cloned MACU voices. Every param below is a form field on `POST http://10.0.0.245:3900/generate` (multipart -F). Default values shown; pass only the ones you want to change.
+Practical knobs for the cloned MACU voices. Every param below is a form field on `POST http://127.0.0.1:3900/generate` (multipart -F). Default values shown; pass only the ones you want to change.
 
-**Shared by:** Max (Linux, runs the pipeline) and Leo (Windows, drives clones). Keep this file in sync with `OmniVoice_Voice_Roster.md`.
+**Runs on Max** (Linux home server) — this box owns both the cloning and the pipeline. Keep this file in sync with `OmniVoice_Voice_Roster.md`.
 
 OmniVoice Studio upstream: <https://github.com/debpalash/OmniVoice-Studio>. Container runs the source from `/app` inside `omnivoice` on max (port 3900, loopback-only — use `127.0.0.1` from max, `10.0.0.245` from elsewhere on the LAN).
 
@@ -27,8 +27,8 @@ Two TTS engines in play. Pick by character type:
 
 | engine | use for | URL |
 |---|---|---|
-| **OmniVoice :3900** | every human-cast clone (Ron, Walter, Burgundy, Goldtooth, the Golden Girls, Crater Carl, …). Reference-audio cloning. | `http://10.0.0.245:3900/generate` |
-| **Piper HAL :5050** | machines / AIs that need the canonical HAL register (Unit 7 / The Vendor, SAFE, EVERWELL casket pitch, STRIDE's cold-flat mode). | `http://10.0.0.245:5050/` (POST JSON `{"text": "..."}`) |
+| **OmniVoice :3900** | every human-cast clone (Ron, Walter, Burgundy, Goldtooth, the Golden Girls, Crater Carl, …). Reference-audio cloning. | `http://127.0.0.1:3900/generate` |
+| **Piper HAL :5050** | machines / AIs that need the canonical HAL register (Unit 7 / The Vendor, SAFE, EVERWELL casket pitch, STRIDE's cold-flat mode). | `http://127.0.0.1:5050/` (POST JSON `{"text": "..."}`) |
 
 If a character has *both* a human and a machine voice (STRIDE does — warm/chipper + cold/flat), render each register from its own engine and edit the seam in post.
 
@@ -82,7 +82,7 @@ curl -s -o out.wav \
   -F "text=Welcome to MACU. The world has ended; the broadcast has not." \
   -F "profile_id=e1b4af0b" \
   -F "language=English" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 ```
 
 ### 2. Slow it down (cleanest fix for "voice sounds rushed")
@@ -95,7 +95,7 @@ curl -s -o out.wav \
   -F "profile_id=dccf39db" \
   -F "language=English" \
   -F "speed=0.85" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 ```
 
 Past ~0.6 you start to hear artifacting. Above 1.3 it sounds like fast-forward.
@@ -109,7 +109,7 @@ curl -s -o out.wav \
   -F "profile_id=e1b4af0b" \
   -F "language=English" \
   -F "seed=42" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 ```
 
 `X-Seed` is also echoed back as a response header on every render — fish it out of the headers and stash it next to the approved wav to make re-renders reproducible.
@@ -141,7 +141,7 @@ curl -s -o hal_elderly.wav \
   -F "language=English" \
   -F "instruct=male, elderly, low pitch" \
   -F "guidance_scale=3.5" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 
 # Whispered low-pitch sponsor read
 curl -s -o stride_whisper.wav \
@@ -150,7 +150,7 @@ curl -s -o stride_whisper.wav \
   -F "profile_id=3f7a4dcd" \
   -F "language=English" \
   -F "instruct=female, low pitch, whisper" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 ```
 
 **Quirk:** the server *also* exposes `GET /personalities` returning items like `Narrator → "Speak as a calm, authoritative documentary narrator…"`. Those are UI-side suggestions intended for a different (future?) code path — they FAIL the current `/generate` validator. Ignore the personalities endpoint until upstream wires it back up.
@@ -177,7 +177,7 @@ curl -s -o out.wav \
   -F "text=test line" \
   -F "language=English" \
   -F "ref_audio=@/path/to/30-second-ref.wav" \
-  http://10.0.0.245:3900/generate
+  http://127.0.0.1:3900/generate
 ```
 
 Reference clip rules of thumb: mono, 24 kHz, 30–60 seconds, single speaker, minimal music. Laugh-track bleed is tolerable; underscore music is not. Skip the first 15–30s of any compilation video — that's almost always intro music.

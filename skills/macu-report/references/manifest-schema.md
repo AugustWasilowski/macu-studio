@@ -17,7 +17,7 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
   "episode": "ep6",
   "title": "The MACU Report — Episode 6",
   "version": 1,
-  "authored_by": "leo",
+  "authored_by": "max",
   "voice":    { ... },          // Piper HAL — copy as-is
   "comfyui":  { ... },          // LOCKED render settings — copy as-is, do not regress
   "style":    { "suffix": "...", "negative": "..." },   // from the bible
@@ -35,8 +35,8 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
 
 ```json
 "voice": {
-  "default":   { "engine": "piper", "endpoint": "http://10.0.0.245:5050/" },
-  "endpoints": { "piper": "http://10.0.0.245:5050/", "omnivoice": "http://10.0.0.245:3900" },
+  "default":   { "engine": "piper", "endpoint": "http://127.0.0.1:5050/" },
+  "endpoints": { "piper": "http://127.0.0.1:5050/", "omnivoice": "http://127.0.0.1:3900" },
   "format": "wav 24000Hz mono s16",
   "out_pattern": "vo/<cue_id>.wav",
   "speaker_map": {
@@ -47,11 +47,16 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
 "comfyui": {
   "workflow": "will-smith-modelscope-t2v",
   "checkpoint": "zeroscope_v2_576w",
-  "endpoint": "http://10.0.0.245:8188/",
+  "endpoint": "http://127.0.0.1:8188/",
   "frames": 24, "width": 384, "height": 384, "steps": 30, "cfg": 15, "extract_fps": 8,
   "out_pattern": "clips/<shot_id>.webp"
 }
 ```
+> **Endpoints are local on Max.** The services run on this box, so the canonical host is `127.0.0.1`
+> (OmniVoice in particular binds loopback-only, and stage 1 hardcodes `http://127.0.0.1:3900` in `lib.py`
+> regardless of what the manifest says). Older episodes carry `http://10.0.0.245:...` here — that still works
+> from Max (Piper/ComfyUI bind `0.0.0.0`), so you don't need to rewrite existing manifests; just use
+> `127.0.0.1` in new ones.
 **Why locked:** zeroscope_v2_576w (not DAMO ModelScope) removes the baked-in shutterstock watermark; 384×384
 keeps the required 1:1 square, fits the 2080 Ti's 11 GB at 24 frames, and pulls the B&W cue harder than 16:9.
 Bumping to 576×320×24f triggers ComfyUI lowvram offload and crashes the temporal modules — don't.
@@ -119,8 +124,9 @@ Characters have distinct voices now (via the OmniVoice TTS), not one HAL for eve
 | Snoop | `31649b70` | Snoop Dogg — laid-back drawl (weaker clone, short ref) |
 | **HAL** (piper) | — | calm, formal, faintly menacing machine — **reserve for AI/appliance characters** |
 
-Need a voice that isn't here? Clone one on Max: `/mnt/storage/shares/MACU/voices/clone_one.sh <Name> <ref.mp3>`,
-which prints a new persistent `profile_id`. (That's a Max-side step — ask via the render handoff.)
+Need a voice that isn't here? Clone one locally: `/mnt/storage/shares/MACU/voices/clone_one.sh <Name> <ref.mp3>`,
+which prints a new persistent `profile_id`. (`docker start omnivoice` first — the container is stopped between
+renders; stop it again afterward to keep the GPU clean for ComfyUI.)
 
 ### EP5 casting (worked example)
 
@@ -128,12 +134,15 @@ RON→Burgundy, WALTER→Walter, MOTHER MARIGOLD→Laura, TALLY MAN→David, BAR
 NORM→Howie, ANNOUNCER→Announcer, and the two machines — **THE VENDOR→HAL, SAFE→HAL** (Piper). HAL on the
 appliances is the joke; everyone else gets a real voice.
 
-### Voice gotchas (encode in the handoff if relevant)
+### Voice gotchas
 
-- **Stage 1 (VO) must run on Max** — OmniVoice binds to `127.0.0.1:3900` (loopback-only); there's no remote path.
+- **Stage 1 (VO) runs on Max** — OmniVoice binds to `127.0.0.1:3900` (loopback-only), which is exactly where
+  you are; there's no remote path and none is needed.
 - **Serial**: ~3 s per OmniVoice cue, ~0.5 s per Piper cue (OmniVoice asserts under concurrency).
 - **VO-only iteration**: change `voice.speaker_map` or a cue's text, delete just the affected `vo/<cue>.wav`,
-  `touch` the rest forward past the manifest mtime, then re-render `from_stage: 1`. Stages 4-8 cascade.
+  then re-render `--from 1`. Stages 4-8 cascade. (The stage-1 cache is now keyed by per-cue text+voice hash in
+  `vo/.cache.json`, so a manifest edit that doesn't touch a cue's own inputs no longer forces its wav to
+  regen — see the `macu-render` skill.)
 
 ## cues[] — one per spoken line
 
@@ -245,6 +254,6 @@ shots (put them in `title_assets`); `thumb_wide.mp4` is not.
 
 ## Worked reference
 
-`E:\August\MACU\MACU\episodes\ep5\manifest.json` is the canonical, validated example — read it when in doubt.
+`/mnt/storage/shares/MACU/episodes/ep-005/manifest.json` is the canonical, validated example — read it when in doubt.
 Copy its `voice`, `comfyui`, `style`, `render_rule`, `music`, `subtitles` blocks into a new episode and only
 change `episode`/`title`/`characters`/`broll`/`cues` and the music bed cue ids.

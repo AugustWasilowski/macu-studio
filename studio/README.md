@@ -99,9 +99,9 @@ Static media (used by `<audio>`/`<video>` directly):
 | `/api/episodes/{slug}/final/video`             | `final/<slug>.mp4` (Range-aware)               |
 | `/api/episodes/{slug}/final/thumb`             | `final/<slug>_thumbs.jpg`                      |
 
-## Cloudflare Access (deferred)
+## Cloudflare Access
 
-LAN-only for v0. To expose later: add a Cloudflare Access app gated by the
-existing "August" policy (`4f76c12b-71ad-42e0-8216-a86de3c66828`), tunnel the
-hostname through `n8n-mcp` to `localhost:8774` — same pattern as
-`memos.mayorawesome.com` / `jellyfin.mayorawesome.com`.
+Public at <https://studio.mayorawesome.com> — tunneled through `n8n-mcp` to `localhost:8774`, gated by the
+Cloudflare Access app `2ace1626` (references the reusable "August" policy `4f76c12b-71ad-42e0-8216-a86de3c66828`),
+same pattern as `memos.mayorawesome.com` / `jellyfin.mayorawesome.com`. Added 2026-06-03. LAN access stays at
+`http://10.0.0.245:8774/`.

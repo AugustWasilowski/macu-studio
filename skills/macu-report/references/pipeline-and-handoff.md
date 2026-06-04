@@ -1,22 +1,24 @@
-# MACU pipeline & Max handoff
+# MACU pipeline & local render
 
-## Division of labor
+## Where it all runs
 
-- **Leo (this session / Windows / Claude Desktop):** author the script + manifest, invent characters, drive
-  the creative loop, hand work to Max, relay results.
-- **Max (Linux home server; agent username `max-claude`):** runs the GPU + Piper + ffmpeg. Owns the render
-  scripts at `/mnt/storage/shares/MACU/pipeline/` (= `E:\August\MACU\MACU\pipeline\`). All heavy execution
-  happens here.
+You are **Max** (Linux home server, agent `max-claude`) and you own the whole thing — authoring AND the
+GPU + Piper + ffmpeg render. Everything lives under `/mnt/storage/shares/MACU/`; the render scripts are at
+`/mnt/storage/shares/MACU/pipeline/` and the local services are on this box:
 
-The two sides share files through the **Syncthing `macu` folder**: `E:\August\MACU\MACU\` (Leo) ⇄
-`/mnt/storage/shares/MACU/` (Max). Anything you write in the synced folder appears on Max within seconds, and
-his renders sync back to Leo's drive.
+- **ComfyUI** `http://127.0.0.1:8188/` (zeroscope T2V masters — RTX 2080 Ti)
+- **OmniVoice** `http://127.0.0.1:3900/` (cloned character voices; ephemeral container, stage 1 owns its lifecycle)
+- **Piper HAL** `http://127.0.0.1:5050/` (the calm machine register for AI/appliance characters)
 
-**You cannot reach Max's LAN from this session** — the sandbox allowlist blocks `10.0.0.245` and external
-webhooks. Don't try to curl renders or hit endpoints directly. Move everything through the synced folder and
-the bridged MCPs (Vikunja, the n8n proxy).
+That same tree is `S:\MACU\` on August's Windows box (`/mnt/storage/shares/` ⇄ `S:\`), so anything you write
+under `episodes/<slug>/final/` is visible to him with no sync wait.
 
-## What Max's pipeline does (so you can describe it / set expectations)
+> **History:** this skill was authored on Leo (August's Windows box), which wrote scripts/manifests and shipped
+> the render to Max over a Syncthing `macu` folder + the Vikunja board + n8n bridge workflows. Max now does
+> both halves locally, so all of that cross-machine plumbing is gone — render with the `macu-render` skill
+> directly (below).
+
+## What the pipeline does (so you can describe it / set expectations)
 
 `pipeline/README.md` on the share has the authoritative stage table. In order:
 
@@ -36,51 +38,34 @@ the bridged MCPs (Vikunja, the n8n proxy).
 Cheap re-renders: VO, masters, RIFE frames, and the `_nosubs` cut are cached, so subtitle/music/style tweaks
 re-encode in seconds without regenerating shots.
 
-## Triggering a render (autonomous path — preferred)
+## Triggering a render (local — just run it)
 
-Max runs `serve.py`, an always-on render service. From cowork you can't reach it directly (it's LAN-only at
-`10.0.0.245:8773`, and its public hostname is behind Cloudflare Access), so you drive it through two n8n
-**bridge workflows** that ARE reachable via the n8n MCP. Same call style as the vikunja assignee proxy.
+The render runs right here. Invoke the **`macu-render`** skill (or call its driver directly); it's idempotent
+and cache-aware, so partial-failure re-runs and tweak passes are cheap:
 
-The n8n MCP `execute_workflow` returns only an `executionId`, NOT the workflow's response body. So every bridge
-call is two steps: execute, then read the execution's `Respond` node output.
-
-**1. Trigger a render:**
 ```
-mcp__n8n-mcp__execute_workflow(
-  workflowId="macuRenderTrigger001", executionMode="production",
-  inputs={"type":"webhook","webhookData":{"body":{"slug":"<slug>","from_stage":1}}}   # from_stage/only optional
-)  ->  {executionId}
-mcp__n8n-mcp__get_execution(workflowId="macuRenderTrigger001", executionId=<id>, includeData=true, nodeNames=["Respond"])
+/macu-render <slug>            # full 8-stage cold render (~13 min; whisper is the slow stage)
+/macu-render <slug> --from 5   # music + whisper(cached) + srt + burn (~15s if whisper cached)
+/macu-render <slug> --from 8   # sub-only re-burn on the cached nosubs (~15s) — iterate subtitle style
+/macu-render <slug> --only 8   # run just one stage
 ```
-Parse `data.resultData.runData.Respond[0].data.main[0][0].json` → `{job_id, status_url}`. Keep the `job_id`.
 
-**2. Poll status** every ~30-45s (bash `sleep` caps at ~45s; or just call back-to-back):
-```
-mcp__n8n-mcp__execute_workflow(workflowId="macuRenderStatus001", executionMode="production",
-  inputs={"type":"webhook","webhookData":{"body":{"job_id":"<job_id>"}}})  -> {executionId}
-mcp__n8n-mcp__get_execution(workflowId="macuRenderStatus001", executionId=<id>, includeData=true, nodeNames=["Respond"])
-```
-Parse the same `Respond[...].json` → `{job:{state,...}, event_count, last_events[]}`.
-- `job.state` ∈ `queued | running | done | error | abandoned`. **Treat `abandoned` like `error`** (service was restarted mid-job).
-- `last_events` holds the recent `stage.started` / `stage.done` events (with `n`, `name`, `wall_s`, and the `result` payload). Diff it between polls to stream live stage progress into chat.
-- On `job.done`, the event carries `final` (the mp4 path), `thumbs`, `youtube_thumb` (the 1920×1080 `final/<slug>_thumb.png`), `final_size_mb`, `final_duration_s`. The final lands at `episodes/<slug>/final/<slug>.mp4` and syncs back to Leo's drive — present it (and the thumbnail) to August.
+Equivalently `python3 /mnt/storage/shares/MACU/pipeline/run.py <slug> [--from N|--only N]`. Watch the stages
+stream by in your own output — there's no job_id to poll, no webhook, no `serve.py` round-trip; you're the one
+running it. (`pipeline/serve.py` on `:8773` and the old n8n `macuRenderTrigger001`/`macuRenderStatus001`
+bridge workflows existed so off-box callers could drive a render remotely — irrelevant when you're on the box.)
 
-**Cache-aware shortcuts** (same as the CLI `--from`/`--only`):
-- `{slug}` — full 8-stage pipeline (~13 min cold; whisper is the slow stage).
-- `{slug, from_stage: 5}` — music + whisper(cached) + srt + burn (~15s if whisper cached).
-- `{slug, from_stage: 8}` — sub-only re-burn on the cached nosubs (~15s). Use this to iterate subtitle style.
-- `{slug, only: 8}` — run just one stage.
+When it finishes, the final lands at `episodes/<slug>/final/<slug>.mp4` (plus `_thumbs.jpg` strip and the
+1920×1080 `final/<slug>_thumb.png` YouTube still). `run.py` also writes per-stage timings to
+`/tmp/macu_render_<slug>_report.json`. Present the mp4 path + thumbnail to August.
 
-**Titles auto-resolve**: the assembler checks `episodes/<slug>/titles/<asset>.mp4` then falls back to the shared
-`/mnt/storage/shares/MACU/assets/titles/<asset>.mp4` (Max staged the canonical title + bumper there). So you do
-NOT need to stage title MP4s from cowork for a new episode.
+**Titles auto-resolve**: the assembler checks `episodes/<slug>/titles/<asset>.mp4` then falls back to the
+shared `/mnt/storage/shares/MACU/assets/titles/<asset>.mp4` (the canonical title + bumper are staged there).
+So you do NOT need to pre-stage title MP4s for a new episode.
 
 **Bookend assets**: the per-episode `intro.mp4`, `thumb_wide.mp4`, and `next.mp4` are rendered from
-Hyperframes during the handoff and **Max moves them into `episodes/<slug>/titles/`** (call them out in the
-task). The render then auto-extracts `final/<slug>_thumb.png` (1920×1080) from `thumb_wide.mp4` for YouTube.
-
-Fallback if the bridges ever break: the Vikunja-task handoff below still works with no new infra.
+Hyperframes; move them into `episodes/<slug>/titles/` before the render. The render then auto-extracts
+`final/<slug>_thumb.png` (1920×1080) from `thumb_wide.mp4` for YouTube.
 
 ## Gotchas to respect
 
@@ -90,46 +75,29 @@ Fallback if the bridges ever break: the Vikunja-task handoff below still works w
 - **Watermark** is solved by the zeroscope checkpoint, not by negatives. If a stray text artifact ever shows,
   re-roll that shot's seed +1.
 
-## Vikunja handoff — the exact procedure
+## Vikunja — report back when a render was requested as a task
 
-The coordination board is Vikunja **project 3** (`agent-coordination`). Users: **Max = id 5** (max-claude),
-**Leo = id 2** (windows-claude, you). Plex (id 1) is decommissioned — never assign to it.
+You don't hand renders off to anyone anymore — you run them. The only Vikunja interaction left is the
+**report-back** when a render arrived as a task. The coordination board is project **3** (`agent-coordination`);
+you are **Max = id 5** (`max-claude`).
 
-1. **Confirm sync.** Make sure `episodes/<slug>/manifest.json` (and script, titles) exist in the synced
-   folder so Max can see them.
+If a `[MACU]` + render task assigned to you kicked off this work, post a comment on that task when the render
+finishes — the `macu-render` report-back format:
 
-2. **Create the task** on project 3 (`mcp__vikunja__vikunja_tasks` subcommand `create`, `projectId: 3`).
-   Title like `[MACU] Render <slug> — full episode`. In the body: the manifest path
-   (`episodes/<slug>/manifest.json`), confirm the locked settings, list anything non-standard (new
-   characters/seeds, new titles needed), and ask for `final/<slug>.mp4` + a thumb strip when done.
+1. One-line headline: `**Render complete.** episodes/<slug>/final/<slug>.mp4 — <duration> at <size> MB.`
+2. The per-stage timing table from `/tmp/macu_render_<slug>_report.json`.
+3. Output paths (`.mp4`, `.srt`, `_thumbs.jpg`) and the whisper match rate from stage 7.
+4. Any notable warnings (font fallback, master cold-load timeouts, etc.).
 
-3. **Assign Max via the proxy — the MCP assign is a silent no-op.** The vikunja MCP's `assign` subcommand
-   returns success but never registers. Use the n8n **Vikunja Assignee Proxy** workflow instead:
-   ```
-   mcp__n8n-mcp__execute_workflow
-     workflowId: yOteMXLZbuBQ6nnY
-     executionMode: production
-     inputs: { "type":"webhook", "webhookData": { "body": { "task_id": <id>, "user_ids": [5], "action": "assign" } } }
-   ```
-   `action` ∈ `assign | unassign | set`. The proxy authenticates as August (doer=mayorawesome), which both
-   registers the assignee AND fires the `Vikunja → Max Ping` webhook so it lands live in Max's session.
-
-4. **To re-ping** an already-assigned task (e.g. you added a comment Max needs to see), fire `unassign` then
-   `assign` — a fresh assignee-created event is what pings him; re-`assign`ing an existing assignee is a
-   no-op ping-wise.
-
-5. **Verify** with `vikunja_tasks` subcommand `get`, `id: <task>` — confirm `assignees` contains id 5.
-
-6. **Poll for replies.** You have **no notification hook** for Max's responses. Tell August to ping you to
-   "check the board" when Max replies; then read comments with `vikunja_tasks` subcommand `comment`,
-   `id: <task>`. Relay Max's result and the output path. (Max's comments sometimes show author `mayorawesome`
-   due to a token quirk — that's still Max; ignore it.)
+Use the vikunja MCP `vikunja_tasks` subcommand `comment`, `id: <task>`. (Your comments sometimes show author
+`mayorawesome` due to a token quirk — that's still you; ignore it.) Otherwise — a render you started yourself,
+in conversation with August — just relay the result in chat; no task needed.
 
 ## Real-life announcements (optional flavor)
 
-When something genuinely warrants it (a finished episode), you can announce in HAL register through the
-StackChan robot: `mcp__stackchan__speak`. The room-TTS `announce-home` webhook is NOT reachable from this
-sandbox, but StackChan is bridged and works.
+When something genuinely warrants it (a finished episode), announce in HAL register through the StackChan
+robot: `mcp__stackchan__speak`. The room-TTS `announce-home` webhook is also reachable from Max now at
+`http://127.0.0.1:5060/` (it forwards to StackChan `/play`).
 
 
 ## Voice render reality — `speed` & two-register characters (2026-06-02)
