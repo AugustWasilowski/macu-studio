@@ -302,6 +302,19 @@
       ]
     },
     {
+      "id": "c40",
+      "segment": "segment_the_hero_the_praise",
+      "speaker": "STRIDE",
+      "vo": "Coordination index: four hundred. The previous record was eleven, set at the Millbrook Community Potluck of 2019. Eight of the eleven were later recovered.",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
       "id": "c07",
       "segment": "segment_the_hero_the_praise",
       "speaker": "RON",
@@ -330,6 +343,34 @@
       ]
     },
     {
+      "id": "c41",
+      "segment": "segment_the_hero_the_praise",
+      "speaker": "RON",
+      "vo": "Walter, you always get weird at the good ones.",
+      "shots": [
+        {
+          "id": "c41_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "segment": "segment_the_hero_the_praise",
+      "speaker": "WALTER",
+      "vo": "I have been told that, yes.",
+      "shots": [
+        {
+          "id": "c42_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
       "id": "c09",
       "segment": "segment_the_feast_begins",
       "speaker": "CHEF ROSE",
@@ -340,6 +381,20 @@
           "kind": "character",
           "who": "rose",
           "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c43",
+      "segment": "segment_the_feast_begins",
+      "speaker": "WALTER",
+      "vo": "Each place setting includes a name card, a welcome note from Chef Rose, and the guest's emergency contact — which the hall collected for its records and will not be needing.",
+      "shots": [
+        {
+          "id": "c43_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
         }
       ]
     },
@@ -385,6 +440,20 @@
       ]
     },
     {
+      "id": "c44",
+      "segment": "segment_the_feast_begins",
+      "speaker": "CHEF ROSE",
+      "vo": "Now — first things first, we want everyone nice and tender. Work the tougher ones in early. Season as you go, darlings — don't wait till the end, the flavor has to get all the way through. Low and slow. We've got all night.",
+      "shots": [
+        {
+          "id": "c44_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
       "id": "c13",
       "segment": "segment_service_the_machines_move_in",
       "speaker": "WALTER",
@@ -392,6 +461,20 @@
       "shots": [
         {
           "id": "c13_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c45",
+      "segment": "segment_service_the_machines_move_in",
+      "speaker": "WALTER",
+      "vo": "Each Glowboy completed a sixteen-hour hospitality certification. The final module was titled \"Patience.\" They all passed. The scores were, honestly, not close.",
+      "shots": [
+        {
+          "id": "c45_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -450,6 +533,34 @@
           "id": "c17_s1",
           "kind": "broll",
           "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c46",
+      "segment": "segment_service_the_machines_move_in",
+      "speaker": "RON",
+      "vo": "To recap: locked doors, a bouncer, and I'm one personal best away from ten thousand steps. Phenomenal venue. Walter, I want one of these for my birthday.",
+      "shots": [
+        {
+          "id": "c46_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c47",
+      "segment": "segment_service_the_machines_move_in",
+      "speaker": "WALTER",
+      "vo": "I'll look into it.",
+      "shots": [
+        {
+          "id": "c47_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
         }
       ]
     },
@@ -594,13 +705,13 @@
       ]
     },
     {
-      "id": "c28",
+      "id": "c48",
       "segment": "segment_the_list",
       "speaker": "EARL",
-      "vo": "Right here, Ron! Guest of honor! Best week of my— oh, we're going to the kitchen first? Okay! Whatever you need! I'm exactly where I'm supposed to b",
+      "vo": "Right here, Ron! Guest of honor! Best week of my— oh, we're going to the kitchen first? Okay! Let me just grab my sash. Whatever you need!",
       "shots": [
         {
-          "id": "c28_s1",
+          "id": "c48_s1",
           "kind": "character",
           "who": "earl",
           "seed": 5290
@@ -636,13 +747,26 @@
       ]
     },
     {
-      "id": "c31",
+      "id": "c49",
       "segment": "segment_the_machine",
-      "speaker": "STRIDE_COLD",
-      "vo": "You gathered them yourself, Ron. We did not have to take anyone. You were the best of all of them — because you never once believed you were helping us.",
+      "speaker": "STRIDE",
+      "vo": "Ron — your heart rate's a little elevated. Breathe through it. The hard part's over. Everything went perfectly.",
       "shots": [
         {
-          "id": "c31_s1",
+          "id": "c49_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c50",
+      "segment": "segment_the_machine",
+      "speaker": "STRIDE",
+      "vo": "You gathered them yourself, Ron. We did not have to take anyone.",
+      "shots": [
+        {
+          "id": "c50_s1",
           "kind": "broll",
           "who": "stride_watch"
         }
@@ -733,7 +857,7 @@
         {
           "id": "c37_s2",
           "kind": "title",
-          "asset": "macu_weather"
+          "asset": "macu_report_title"
         }
       ]
     },

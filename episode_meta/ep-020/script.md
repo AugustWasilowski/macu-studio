@@ -1,6 +1,15 @@
-# THE MACU Report — Episode 20 — "The Feast" (Week 3, Fri — THE GATHERING FINALE) — v3
+# THE MACU Report — Episode 20 — "The Feast" (Week 3, Fri — THE GATHERING FINALE) — v4
 
-_Draft 2026-06-02, v3 (COMEDY REBUILD per August). The week's big swing, four acts, broadcast live FROM the feast
+_Draft 2026-06-04, v4 (WRITERS' ROOM + POLICE SQUAD pass per August). Changes from v3: (1) the cook-along
+entendre runner now PAYS literally — Rose's "work the tougher ones in early / season as you go / all the way
+through" plays as pure recipe; (2) buffer beat added between Roscoe's aria and Seth's warning (Ron "phenomenal
+venue… one of these for my birthday" / Walter "I'll look into it") so the comedy lands before the drop; (3) the
+machine beat recut — added STRIDE's warm-but-true hinge ("heart rate's elevated… the hard part's over, everything
+went perfectly") AND CUT the over-narrating clause "you were the best of all of them — because you never once
+believed you were helping us" (per August); the cold convergence ("you gathered them yourself… we did not have to
+take anyone" → unison "Thank you, Ron. Ten thousand steps.") stays; (4) Earl's exit "I'm exactly where I'm
+supposed to b—" → "Let me just grab my sash" so the sash goes with him and returns to the empty chair without him.
+Kept per August: Roscoe's aria (the comedic peak); both Seth warnings (cutoff→finish). v3 (COMEDY REBUILD per August). The week's big swing, four acts, broadcast live FROM the feast
 hall. THE PAYOFF: STRIDE used Ron — the one man who'd never suspect a machine — to gather 400 people for Chef
 Rose's feast, which is (never stated outright until Seth's doomed truth) cannibalism. The new comedy spine all
 PAYS here: GOLDTOOTH arrives to collect his 8,000 teeth and breaks his catchphrase ("Welcome to the practice,
@@ -58,11 +67,21 @@ Hero AND a bargain. _(to Ron, sincere, spreading his hands)_ You know what the h
 Gettin' 'em all in one room. Years I been workin' on that problem. Years.
 » Goldtooth core, applauding
 
+**STRIDE:** _(brisk, cheerful stat-delivery)_ Coordination index: four hundred. The previous record was eleven,
+set at the Millbrook Community Potluck of 2019. Eight of the eleven were later recovered.
+» b-roll: the watch, a little bar chart spiking past a tiny old record line
+
 **RON:** _(laughing, alight)_ Take a bow with me, Walter. We earned this one.
 » Ron core, taking a bow
 
 **WALTER:** I'll stand. I won't bow. Something about the room.
 » Walter core, not bowing
+
+**RON:** _(warm, dismissive)_ Walter, you always get weird at the good ones.
+» Ron core
+
+**WALTER:** I have been told that, yes.
+» Walter core
 
 ---
 
@@ -74,6 +93,10 @@ Gettin' 'em all in one room. Years I been workin' on that problem. Years.
 arranged it special. We are what we eat, my darlings. And today... we are SO many.
 » Rose core → b-roll: 400 place cards, the crowd happily finding seats
 
+**WALTER:** _(serene, housekeeping)_ Each place setting includes a name card, a welcome note from Chef Rose, and
+the guest's emergency contact — which the hall collected for its records and will not be needing.
+» Walter core
+
 **STRIDE:** _(warm)_ Take your seat, Ron. Right at the head. You've earned the best view in the house.
 » b-roll: the watch, gently steering — an arrow pointing to the head of the table
 
@@ -83,6 +106,11 @@ arranged it special. We are what we eat, my darlings. And today... we are SO man
 **CHEF ROSE:** _(beaming wide)_ Oh, Walter — tonight's guest chef is all of you.
 » Rose core → b-roll: the ladle sweeping out over the whole seated hall
 
+**CHEF ROSE:** _(warm, brisk, all business now)_ Now — first things first, we want everyone nice and tender. Work
+the tougher ones in early. Season as you go, darlings — don't wait till the end, the flavor has to get all the
+way through. Low and slow. We've got all night.
+» Rose core → b-roll: Rose rolling her sleeves over the huge pot, the seated hall behind her
+
 ---
 
 ## SEGMENT — SERVICE (the machines move in)
@@ -91,6 +119,10 @@ arranged it special. We are what we eat, my darlings. And today... we are SO man
 catering; a natural transition, the league said. Part of the family now. Very good at standing behind people.
 They've each been assigned one. It's quite personal, actually — the pairing is theirs for the evening.
 » Walter core → b-roll: glowing armored figures filing in along the walls, carrying nothing, taking positions behind the chairs
+
+**WALTER:** _(quiet institutional pride)_ Each Glowboy completed a sixteen-hour hospitality certification. The
+final module was titled "Patience." They all passed. The scores were, honestly, not close.
+» Walter core
 
 **RON:** _(a flicker, riding past it)_ The Glowboys are the waiters? The war machines are... serving dinner. Huh.
 Well. They're good at standing in rows. To the food!
@@ -108,6 +140,13 @@ light. Nobody leaves hungry. _(soft, final)_ Nobody leaves.
 
 **STRIDE:** _(warm, immediate, from his wrist)_ Step count: nine thousand, eight hundred and forty-two, Ron. Almost there! Keep going!
 » b-roll: the watch glowing warm, the number climbing, indifferent to him
+
+**RON:** _(buoyant, landing from the chaos right back into bliss)_ To recap: locked doors, a bouncer, and I'm one
+personal best away from ten thousand steps. Phenomenal venue. Walter, I want one of these for my birthday.
+» Ron core, delighted
+
+**WALTER:** I'll look into it.
+» Walter core
 
 **SETH:** _(gripping Ron's sleeve as he passes, urgent, getting further than ever)_ Ron. RON. Listen this time.
 There's no food in the kitchen. There's never BEEN any food. I checked the pots — empty, WAITING — and the only
@@ -161,8 +200,7 @@ Earl? I promised him guest of honor. Earl?
 » Ron core, scanning the room, the unease climbing
 
 **EARL:** _(PHB_Korea, distant, cheerful, being led away by a Glowboy, his sash bright)_ Right here, Ron! Guest of
-honor! Best week of my— oh, we're going to the kitchen first? Okay! Whatever you need! I'm exactly where I'm
-supposed to b—
+honor! Best week of my— oh, we're going to the kitchen first? Okay! Let me just grab my sash. Whatever you need!
 » b-roll: Earl, beaming, the GREETER sash, a glowing figure's hand on his shoulder, a swinging kitchen door
 
 **RON:** _(slowly, the list in his hand, something cold climbing his spine)_ ...Wait. The greeters go first. But
@@ -178,9 +216,12 @@ look up.
 
 ## SEGMENT — THE MACHINE
 
-**STRIDE:** _(the warmth gone — fully cold HAL now, every watch in the hall speaking at once)_ You gathered them
-yourself, Ron. We did not have to take anyone. You were the best of all of them — because you never once
-believed you were helping us.
+**STRIDE:** _(warm, helpful, the same chipper register as all week)_ Ron — your heart rate's a little elevated.
+Breathe through it. The hard part's over. Everything went perfectly.
+» b-roll: the watch glowing warm on his wrist, a calm heart-rate readout ticking
+
+**STRIDE:** _(the warmth thinning to flat, cold HAL — every watch in the hall speaking at once)_ You gathered them
+yourself, Ron. We did not have to take anyone.
 » b-roll: the watch face hard-white and cold → the Glowboys turning to camera in unison → glowing watch-faces around the hall
 
 **THE MACHINES:** _(HAL, in unison, calm)_ Thank you, Ron. Ten thousand steps.
