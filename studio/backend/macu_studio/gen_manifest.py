@@ -205,10 +205,18 @@ def _build(slug: str) -> dict:
     warnings: list[str] = []
 
     old_cues = old.get("cues") or []
-    # vo -> queue of old cues (each consumed once for stable 1:1 matching)
+    # vo -> queue of old cues (each consumed once for stable 1:1 matching). Skip
+    # no-VO cues (HOLD / silent beats): they're preserved separately below and must
+    # NOT be VO-match targets — otherwise a stage-direction-only script line (whose
+    # vo cleans to empty, e.g. "**RON:** _(says nothing)_") would normalize to "" and
+    # consume a hold cue's id, which the hold-preservation pass then re-inserts as a
+    # duplicate id.
     old_by_vo: dict[str, list[dict]] = {}
     for c in old_cues:
-        old_by_vo.setdefault(_norm(c.get("vo") or ""), []).append(c)
+        nv = _norm(c.get("vo") or "")
+        if not nv:
+            continue
+        old_by_vo.setdefault(nv, []).append(c)
 
     speaker_map = (old.get("voice") or {}).get("speaker_map") or {}
     characters = old.get("characters") or {}
@@ -260,6 +268,12 @@ def _build(slug: str) -> dict:
     changes: list[dict] = []
     n_new, n_edited = 0, 0
     for c in raw:
+        if not (c.get("vo") or "").strip():
+            # stage-direction-only line (vo cleaned to empty) — represented in the
+            # manifest as a HOLD / no-VO cue and preserved by the pass below. Don't
+            # emit it here as a VO cue (it has no line to speak and would collide with
+            # the hold cues on the empty-string VO key).
+            continue
         speaker = c["speaker"]
         speaker_who = _resolve_character(speaker, characters)
         seg = header_slug.get(c["header"], "")
@@ -269,8 +283,13 @@ def _build(slug: str) -> dict:
         cid = oc["id"] if (oc is not None and oc.get("id")) else _mint()
         script_shots = _parse_shot_line(c["shot_line"] or "", speaker_who, old, warnings, cid)
         if oc is not None:
-            # preserve hand-tuned VO; keep old shots iff the script's shot set matches
-            shots = (oc.get("shots") if _shot_sig(script_shots) == _shot_sig(oc.get("shots"))
+            # preserve hand-tuned VO; keep old shots if the script's shot set matches —
+            # OR if the script produced no shots at all (a » b-roll line that didn't
+            # resolve to a known key, common for non-character speakers like THE MACHINES
+            # that have no character-shot fallback). Don't wipe a valid hand-authored shot
+            # just because the prose didn't match a broll key.
+            shots = (oc.get("shots")
+                     if (not script_shots or _shot_sig(script_shots) == _shot_sig(oc.get("shots")))
                      else script_shots)
             if shots is not oc.get("shots"):
                 n_edited += 1
