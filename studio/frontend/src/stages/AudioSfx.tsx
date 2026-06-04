@@ -191,6 +191,7 @@ export function Library({ slug, previewUrl, onPreview }: {
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const [tab, setTab] = useState<AssetKind>("sfx");
+  const [filter, setFilter] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const q = useQuery({ queryKey: ["assets", tab], queryFn: () => libraryApi.list(tab) });
   const cuesQ = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug) });
@@ -204,6 +205,13 @@ export function Library({ slug, previewUrl, onPreview }: {
     onError: (e: Error) => push("add bed failed: " + e.message, "err"),
   });
   const items = q.data ?? [];
+  const fq = filter.trim().toLowerCase();
+  const shown = fq
+    ? items.filter((a) =>
+        a.file.toLowerCase().includes(fq) ||
+        (a.notes ?? "").toLowerCase().includes(fq) ||
+        (a.source ?? "").toLowerCase().includes(fq))
+    : items;
 
   return (
     <section className="panel flex flex-col min-h-0 flex-1">
@@ -216,15 +224,23 @@ export function Library({ slug, previewUrl, onPreview }: {
           <button key={k} onClick={() => setTab(k)}
             className={"tab px-2 h-[24px] hairline-soft rounded-[3px] text-[10px] uppercase tracking-wider " + (tab === k ? "active" : "")}
             style={tab === k ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}>
-            {k} <span className="text-txt-faint">{tab === k ? items.length : ""}</span>
+            {k} <span className="text-txt-faint">{tab === k ? (fq ? `${shown.length}/${items.length}` : items.length) : ""}</span>
           </button>
         ))}
       </div>
+      <input
+        className="input mx-2 mt-2 text-[11px]"
+        placeholder={`filter ${tab}… (name / notes)`}
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+      />
       <div className="overflow-y-auto flex-1 p-2 text-[12px]">
-        {items.length === 0 ? (
-          <div className="text-txt-faint text-[11px] p-1">{q.isLoading ? "loading…" : "empty"}</div>
+        {shown.length === 0 ? (
+          <div className="text-txt-faint text-[11px] p-1">
+            {q.isLoading ? "loading…" : items.length === 0 ? "empty" : "no match"}
+          </div>
         ) : (
-          items.map((a) => {
+          shown.map((a) => {
             const url = libraryApi.audioUrl(tab, a.file);
             return (
               <div key={a.file} draggable={tab === "sfx"}
