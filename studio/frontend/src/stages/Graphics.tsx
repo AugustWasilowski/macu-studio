@@ -124,6 +124,7 @@ export function Graphics({ slug }: { slug: string }) {
             push("thumbnail rendered", "ok");
             setThumbOverride(null);
             setThumbBust((n) => n + 1);
+            qc.invalidateQueries({ queryKey: ["versions", "ythumb", slug, slug] });
             es.close();
           } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
             setBusy("ythumb", false);

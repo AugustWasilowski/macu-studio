@@ -122,6 +122,8 @@ export function Audio({ slug }: { slug: string }) {
       if (ev.kind === "stage.done" || ev.kind === "job.done") {
         setBusy(key, false);
         qc.invalidateQueries({ queryKey: ["cues", slug] });
+        // the regen archived the prior take → refresh the version arrows for this cue
+        qc.invalidateQueries({ queryKey: ["versions", "cue", slug, cueId] });
         push(`VO ${cueId} regenerated`, "ok");
         es.close();
       } else if (ev.kind === "stage.error" || ev.kind === "job.error") {

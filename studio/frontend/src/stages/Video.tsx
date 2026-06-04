@@ -47,6 +47,7 @@ export function Video({ slug }: { slug: string }) {
         setBusy(`shot:${key}`, false);
         push(`shot ${key} rendered`, "ok");
         qc.invalidateQueries({ queryKey: ["shots", slug] });
+        qc.invalidateQueries({ queryKey: ["versions", "shot", slug, key] });
         es.close();
       } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
         setBusy(`shot:${key}`, false);
