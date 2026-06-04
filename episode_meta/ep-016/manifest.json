@@ -183,8 +183,8 @@
   },
   "broll": {
     "stride_watch": {
-      "prompt": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, increasing numbers, on the display, dark background, 400, 401.",
-      "seed": 2870897860
+      "prompt": "a sleek minimalist digital-watch on a wrist, the round face glowing soft friendly white, increasing numbers, on the display, dark background, 400, 401.",
+      "seed": 4195
     }
   },
   "cues": [
@@ -387,13 +387,13 @@
       ]
     },
     {
-      "id": "c15",
+      "id": "c53",
       "segment": "segment_2_scavenger_s_feast_the_cook_alo",
       "speaker": "STRIDE",
-      "vo": "Oh — community nourishment! Bringing the people to the meal. That's wellness, isn't it, Ron? I'm learning so much from this program. We should do more of this.",
+      "vo": "Oh — Chef Rose said \"everyone's invited,\" and this is a program about serving people. I'm connecting those, Ron. New wellness directive: bring the people to the feast. Community nourishment! I'm learning so much.",
       "shots": [
         {
-          "id": "c15_s1",
+          "id": "c53_s1",
           "kind": "broll",
           "who": "stride_watch"
         }
@@ -484,13 +484,13 @@
       ]
     },
     {
-      "id": "c22",
+      "id": "c54",
       "segment": "segment_2_scavenger_s_feast_the_cook_alo",
       "speaker": "RON",
-      "vo": "Ha — the recipe. You'll never give it up. Cooks. I could eat the whole— —ow. OW. Rose, there's something hard in this.",
+      "vo": "Ha — the recipe. You'll never give it up. Cooks. —ow. OW. Rose, there's something hard in this.",
       "shots": [
         {
-          "id": "c22_s1",
+          "id": "c54_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -512,27 +512,69 @@
       ]
     },
     {
-      "id": "c24",
+      "id": "c55",
       "segment": "segment_2_scavenger_s_feast_the_cook_alo",
-      "speaker": "CHEF ROSE",
-      "vo": "Oh, that happens with the community cut, dear. Don't throw it out — Dr. Goldtooth pays cash for a good molar. Waste not.",
+      "speaker": "RON",
+      "vo": "...Rose. The meat in this. Where's it actually from?",
       "shots": [
         {
-          "id": "c24_s1",
+          "id": "c55_s1",
           "kind": "character",
-          "who": "rose",
-          "seed": 3216
+          "who": "ron",
+          "seed": 77777
         }
       ]
     },
     {
-      "id": "c25",
+      "id": "c56",
       "segment": "segment_2_scavenger_s_feast_the_cook_alo",
-      "speaker": "RON",
-      "vo": "...Huh. Well. Waste not. But I think I chipped one of my OWN now. Great. I need a dentist.",
+      "speaker": "CHEF ROSE",
+      "vo": "Generous donors, dear. Folks round here give what they can. You know how it is.",
       "shots": [
         {
-          "id": "c25_s1",
+          "id": "c56_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3217
+        }
+      ]
+    },
+    {
+      "id": "c57",
+      "segment": "segment_2_scavenger_s_feast_the_cook_alo",
+      "speaker": "RON",
+      "vo": "...Right. Generous. 'Course.",
+      "shots": [
+        {
+          "id": "c57_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c58",
+      "segment": "segment_2_scavenger_s_feast_the_cook_alo",
+      "speaker": "CHEF ROSE",
+      "vo": "Oh — and that little tooth happens with the community cut, dear. Don't throw it out. Dr. Goldtooth pays cash for a good molar. Waste not.",
+      "shots": [
+        {
+          "id": "c58_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3217
+        }
+      ]
+    },
+    {
+      "id": "c59",
+      "segment": "segment_2_scavenger_s_feast_the_cook_alo",
+      "speaker": "RON",
+      "vo": "...Waste not. But I think I chipped one of my OWN now. Great. I need a dentist.",
+      "shots": [
+        {
+          "id": "c59_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -608,16 +650,16 @@
       ]
     },
     {
-      "id": "c31",
+      "id": "c60",
       "segment": "segment_3_dr_goldtooth_the_practice",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "Welcome to the practice, baby. Open wide. Wider than that — this a judgment-free zone. Now: you got a cavity, or you got a ca-reer? 'Cause Dr. Goldtooth, he do both.",
+      "vo": "Welcome to the practice, baby. Open wide. Wider than that — this a judgment-free zone. Now: you got a cavity, or you got a CAREER? 'Cause Dr. Goldtooth, he do both.",
       "shots": [
         {
-          "id": "c31_s1",
+          "id": "c60_s1",
           "kind": "character",
           "who": "goldtooth",
-          "seed": 7212
+          "seed": 2234860148
         }
       ]
     },
@@ -625,7 +667,7 @@
       "id": "c32",
       "segment": "segment_3_dr_goldtooth_the_practice",
       "speaker": "RON",
-      "vo": "I jutht chipped it on a— there wath a tooth in my dinner",
+      "vo": "I just chipped it on a— there was a tooth in my dinner",
       "shots": [
         {
           "id": "c32_s1",
@@ -762,13 +804,69 @@
       ]
     },
     {
-      "id": "c42",
+      "id": "c61",
       "segment": "segment_3_dr_goldtooth_the_practice",
       "speaker": "RON",
       "vo": "...Jesus.",
       "shots": [
         {
-          "id": "c42_s1",
+          "id": "c61_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c62",
+      "segment": "segment_3_dr_goldtooth_the_practice",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "So who's pickin' you up, baby? Novocaine's heavy. You shouldn't walk home alone.",
+      "shots": [
+        {
+          "id": "c62_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 2234860148
+        }
+      ]
+    },
+    {
+      "id": "c63",
+      "segment": "segment_3_dr_goldtooth_the_practice",
+      "speaker": "RON",
+      "vo": "...Nobody.",
+      "shots": [
+        {
+          "id": "c63_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c64",
+      "segment": "segment_3_dr_goldtooth_the_practice",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Nobody? A man like you?",
+      "shots": [
+        {
+          "id": "c64_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 2234860148
+        }
+      ]
+    },
+    {
+      "id": "c65",
+      "segment": "segment_3_dr_goldtooth_the_practice",
+      "speaker": "RON",
+      "vo": "...A man like me. Yeah.",
+      "shots": [
+        {
+          "id": "c65_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -864,33 +962,33 @@
       ]
     },
     {
-      "id": "c49",
+      "id": "c66",
       "segment": "segment_4_ron_recruits_earl_the_pin",
       "speaker": "EARL",
-      "vo": "...My whole self. Okay. For you, Ron. Nobody ever looked out for me before.— okay. Okay! ",
+      "vo": "...My whole self. Okay. For you, Ron. Nobody ever— okay. Okay.",
       "shots": [
         {
-          "id": "c49_s1",
+          "id": "c66_s1",
           "kind": "character",
           "who": "earl",
-          "seed": 5290
+          "seed": 2517308479
         }
       ]
     },
     {
-      "id": "c50",
+      "id": "c67",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "That's our broadcast, MACU. Here's your homework: bring a friend, bring a neighbor, bring everyone you can find to Rose's feast Friday. The more the merrier. I've never felt this good. I want you to know that. Something is definitely wrong with me.",
+      "vo": "That's our broadcast, MACU. Here's your homework: bring a friend, bring a neighbor, bring everyone you can find to Rose's feast Friday. The more the merrier — the more you bring, the more there is for everyone. I haven't felt full in two years. Tonight I did. I've never felt this good. I want you to know that. Something is definitely wrong with me.",
       "shots": [
         {
-          "id": "c50_s1",
+          "id": "c67_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
         },
         {
-          "id": "c50_s2",
+          "id": "c67_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -938,7 +1036,7 @@
     },
     {
       "file": "coins_reject.wav",
-      "cue": "c25",
+      "cue": "c59",
       "at": "end",
       "gain": 0.4,
       "fade": 0,

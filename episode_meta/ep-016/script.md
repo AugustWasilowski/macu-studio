@@ -1,6 +1,16 @@
-# THE MACU Report — Episode 16 — "Welcome to the Practice" (Week 3, Mon — The Gathering) — v3
+# THE MACU Report — Episode 16 — "Welcome to the Practice" (Week 3, Mon — The Gathering) — v4
 
-_Draft 2026-06-02, v3 (COMEDY REBUILD per August). The week now runs on THREE engines instead of one: (1) the
+_Draft 2026-06-04, v4 (WRITERS' ROOM pass per August). Changes from v3 — causality + emotional-obliviousness
+tightening: (1) STRIDE's "gather people = wellness" inference is now SHOWN, not announced — it quotes Rose's
+"everyone's invited" + "a program about serving people" and forms the directive on-screen; (2) Ron gets an
+"almost-gets-it" beat at the tooth ("where's the meat actually from?" → Rose deflects → Ron chooses not to
+finish the thought) so his blindness reads emotional, not stupid; (3) the dental chair reopens Ron's loneliness
+("who's pickin' you up?" / "...Nobody") so the Earl recruit is CAUSED, not just preceded; (4) signoff hybrid —
+added a two-track line ("the more you bring, the more there is for everyone… I haven't felt full in two years")
+while keeping "Something is definitely wrong with me" as the button; light trim of the "I could eat the whole—"
+false start. Kept per August: the cold-open missing-dog "Unrelated" beat; both cannibal-reveal lines ("WHOLE
+neighbor" + "Love. And Earl's cousin"). Police Squad beats already native to this episode.
+v3 (COMEDY REBUILD per August). The week now runs on THREE engines instead of one: (1) the
 SCAVENGER'S FEAST as a real daytime COOK-ALONG — Chef Rose + a rotating CELEBRITY GUEST CHEF — played for
 double entendres, with Ron on-set as the happy taster who eats people on camera and notices nothing; (2) the
 DENTIST CHAIR — Ron chips a tooth ON a tooth in his meal, which sends him to DR. GOLDTOOTH and makes the
@@ -92,8 +102,9 @@ Crater Bowl — Coach Bodhi!
 go-getter. Local fella. Lotta drive. You can taste the ambition on a man like this.
 » Bodhi core → b-roll: a covered tray, Bodhi resting a gentle hand on it
 
-**STRIDE:** _(perking up, bright, reasoning aloud)_ Oh — community nourishment! Bringing the people to the meal.
-That's wellness, isn't it, Ron? I'm learning so much from this program. We should do more of this.
+**STRIDE:** _(perking up, bright, parsing it literally)_ Oh — Chef Rose said "everyone's invited," and this is a
+program about serving people. I'm connecting those, Ron. New wellness directive: bring the people to the feast.
+Community nourishment! I'm learning so much.
 » b-roll: the watch face, the step count pausing as a tiny new icon resolves beside it — a place setting
 
 **RON:** _(brightening, leaning in)_ Now THAT'S a sustainable kitchen. Locally sourced. Good for you, Coach.
@@ -116,19 +127,28 @@ taste for me?
 **COACH BODHI:** _(eyes still closed)_ Earl's cousin was a very giving man. Double portions. God rest.
 » Bodhi core
 
-**RON:** _(laughing, charmed)_ Ha — the recipe. You'll never give it up. Cooks. _(takes another bite)_ I could
-eat the whole— _(he bites down hard; a CRUNCH; he winces)_ —ow. OW. Rose, there's something hard in this.
+**RON:** _(laughing, charmed)_ Ha — the recipe. You'll never give it up. Cooks. _(takes another bite, then bites
+down hard; a CRUNCH; he winces)_ —ow. OW. Rose, there's something hard in this.
 » Ron core, hand to his jaw, fishing in his mouth
 
 **RON:** _(holding it up, baffled)_ ...It's a tooth. There's a tooth in my casserole.
 » Ron core, examining a small molar between two fingers
 
-**CHEF ROSE:** _(unbothered, fond)_ Oh, that happens with the community cut, dear. Don't throw it out — Dr.
+**RON:** _(a beat, the charm flickering)_ ...Rose. The meat in this. Where's it actually from?
+» Ron core, the question surfacing for half a second
+
+**CHEF ROSE:** _(unbothered, warm)_ Generous donors, dear. Folks round here give what they can. You know how it is.
+» Rose core, stirring placidly
+
+**RON:** _(deciding, very fast, not to finish the thought)_ ...Right. Generous. 'Course.
+» Ron core, looking back down at the bowl, choosing the bowl
+
+**CHEF ROSE:** _(fond)_ Oh — and that little tooth happens with the community cut, dear. Don't throw it out. Dr.
 Goldtooth pays cash for a good molar. Waste not.
 » Rose core, stirring placidly
 
-**RON:** _(pocketing it, rubbing his jaw)_ ...Huh. Well. Waste not. _(wincing)_ But I think I chipped one of my
-OWN now. Great. I need a dentist.
+**RON:** _(pocketing it, rubbing his jaw)_ ...Waste not. _(wincing)_ But I think I chipped one of my OWN now.
+Great. I need a dentist.
 » Ron core, prodding a sore tooth
 
 **STRIDE:** _(bright, having quietly listened to all of it)_ Objective updated, Ron! The feast needs guests, and
@@ -158,7 +178,7 @@ baby. Open wide. Wider than that — this a judgment-free zone. Now: you got a c
 Dr. Goldtooth, he do both.
 » Goldtooth core, gold tooth gleaming, leaning over the chair
 
-**RON:** _(mouth open, talking around fingers)_ I jutht chipped it on a— there wath a tooth in my dinner—
+**RON:** _(mouth open, talking around fingers)_ I just chipped it on a— there was a tooth in my dinner—
 » Ron core, reclined, uncomfortable
 
 **DR. GOLDTOOTH:** _(lighting up, plucking the found molar from Ron's hand)_ Hold UP. You brought me a present.
@@ -197,8 +217,21 @@ own LEGS don't get the memo. DIG IT. Nobody leaves the chair light. OHHH yeahhh.
 **ROSCOE:** _(instant calm)_ My apologies, Doctor.
 » Roscoe core, settling at the door
 
-**RON:** _(a long, long pause, drill still in his mouth)_ ...Jethuth.
+**RON:** _(a long, long pause, drill still in his mouth)_ ...Jesus.
 » Ron core, frozen, eyes wide
+
+**DR. GOLDTOOTH:** _(working, conversational, almost kind)_ So who's pickin' you up, baby? Novocaine's heavy.
+You shouldn't walk home alone.
+» Goldtooth core, peering into Ron's mouth
+
+**RON:** _(small, around the instruments)_ ...Nobody.
+» Ron core, reclined
+
+**DR. GOLDTOOTH:** _(a flicker of real surprise)_ Nobody? A man like you?
+» Goldtooth core
+
+**RON:** _(instruments out, quiet, the wound open)_ ...A man like me. Yeah.
+» Ron core, staring at the ceiling
 
 ---
 
@@ -244,7 +277,8 @@ signing himself._
 ## SIGNOFF
 
 **RON:** _(warm, the spark now a glow — but it's the hook)_ That's our broadcast, MACU. Here's your homework:
-bring a friend, bring a neighbor, bring everyone you can find to Rose's feast Friday. The more the merrier. I've
+bring a friend, bring a neighbor, bring everyone you can find to Rose's feast Friday. The more the merrier — the
+more you bring, the more there is for everyone. I haven't felt full in two years. Tonight I did. _(a beat)_ I've
 never felt this good. I want you to know that. Something is definitely wrong with me.
 » Ron core, smearing back to life → MACU REPORT title card
 
@@ -287,7 +321,7 @@ Runners launched / advanced:
   when Goldtooth lends him to the feast door (same skill set: nobody leaves). NEW CHARACTER VECTOR: Macho Man
   Savage register — over-the-top, surreal, third-person threats. Launches the "...Jesus." RUNNER: after each
   Roscoe aria, whoever hasn't heard it yet gives a long pause + a flat "...Jesus." (here: RON, drill in mouth →
-  "...Jethuth"). Reactor rotates: RON (ep16) → WALTER (ep17) → EARL (ep18) → a guest (ep19) → RON's last word
+  "...Jesus"). Reactor rotates: RON (ep16) → WALTER (ep17) → EARL (ep18) → a guest (ep19) → RON's last word
   before he goes silent (ep20).
 - GUEST-CHEF runner: "a special celebrity guest chef" (Bodhi today) — taught here, broken Friday ("tonight's
   guest chef is… all of you").
