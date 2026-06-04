@@ -1,0 +1,722 @@
+{
+  "episode": "ep-008",
+  "title": "The MACU Report — Episode 8 — A Quiet Night",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-31",
+  "notes": "v2 punch-up, finale lead-in (~6-7 min). Low-simmer setup for ep9->ep10. Crater Ball sports (now with the scoreboard-denial beat), Norm ad, Gerald person-on-street (ep7 Mr. Cricket payoff, extra dread beat), Chip weather where the 'mild' runner breaks on a NOT MILD card + emergency-tone SFX + a silent stare hold cue, stacked two-track signoff. Changes vs v1: causality spine (sports 'can't find the body' -> 'how we define good fortune' -> Gerald); multi-level lines; SFX track (emergency_tone, tv_static); two new cards (NOT MILD, GLOW PLANT button); new b-roll static_glitch (also the ep10 'Please Stand By' visual plant); one hold cue (c24). All voices reused. subtitles.force_style in schema form. Ron arc ~2/10, NOT cracked.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "NORM": {
+        "engine": "omnivoice",
+        "profile_id": "973d5617",
+        "voice_name": "Howie"
+      },
+      "GERALD": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth"
+      },
+      "CHIP PLEASANT": {
+        "engine": "omnivoice",
+        "profile_id": "bc466292",
+        "voice_name": "Popiel"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w (watermark-free). 384x384x24f locked — do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue with vo!=null: POST {text: vo} to voice endpoint per speaker_map -> vo/<cue_id>.wav. Hold cues (vo:'' + hold_seconds) get a silent wav of that length; hold_style 'freeze' locks the master's first frame. Sequence shots in cue order; per-shot screen duration = its cue's VO wav duration / number of shots in that cue. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, mix music beds + sfx one-shots, burn subs (Better VCR font) from vo text -> final/ep8.mp4.",
+  "title_assets": {
+    "macu_report_title": "episodes/ep8/titles/macu_report_title.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "macu_report_bumper": "episodes/ep8/titles/macu_report_bumper.mp4 (auto-resolves to shared assets/titles if not staged)",
+    "macu_sports_card": "episodes/ep8/titles/macu_sports_card.mp4 (NEW — Hyperframes comp 'macu-sports-card'; Max: copy the latest render here)",
+    "weather_card": "episodes/ep8/titles/weather_card.mp4 (REUSED from ep7 — Max: copy episodes/ep7/titles/weather_card.mp4 here, or promote to shared assets/titles)",
+    "not_mild_card": "episodes/ep8/titles/not_mild_card.mp4 (NEW — Hyperframes comp 'not-mild-card'; a card visibly built for the word MILD but reading 'NOT MILD', B&W, same family as the weather/condition cards. Max: render + copy here.)",
+    "glow_plant_button_card": "episodes/ep8/titles/glow_plant_button_card.mp4 (NEW — Hyperframes comp 'glow-plant-button'; a quick sponsor bumper reading 'BROUGHT TO YOU BY THE GLOW PLANT — a little glow never hurt nobody', B&W. Max: render + copy here.)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03",
+          "c04",
+          "c05"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "sports_sting",
+        "anchor": "cues",
+        "cues": [
+          "c07"
+        ],
+        "max_seconds": 6,
+        "gain": 0.22,
+        "note": "Comedic music button: a brief big-band swell under Ron's grim Crater Ball stat ('not a single player lost'). anchor='cues' mid-roll path, one cue. A hard cut-out at the end is the joke if easy; otherwise a quick fade. Slightly louder than ambient beds on purpose."
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c31",
+          "c32"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Soft AI big-band MACU Report theme. Per bed pick a random clip + offset; volume=gain, afade in/out, adelay to the bed's episode time; mix with VO via amix=normalize=0 (VO full, music under at gain)."
+  },
+  "sfx": [
+    {
+      "cue": "c02",
+      "file": "tv_static.wav",
+      "gain": 0.22,
+      "at": "start",
+      "note": "Brief analog TV-static blip under Walter's 'feed's been a touch glitchy' + the static_glitch b-roll. If assets/sfx/tv_static.wav is absent, Max can synthesize ~0.6s of filtered white noise (ffmpeg anoisesrc) into assets/sfx/. Missing file is skipped gracefully."
+    },
+    {
+      "cue": "c26",
+      "file": "emergency_tone.wav",
+      "gain": 0.4,
+      "at": "start",
+      "note": "EAS-style emergency-broadcast tone on Chip's '— not mild.' reveal (lands with the NOT MILD card). Synthesize ~1s two-tone (853/960 Hz, the SAME-header attention signal vibe) via ffmpeg sine sources into assets/sfx/emergency_tone.wav if absent. This is the episode's biggest button — keep it crisp."
+    },
+    {
+      "cue": "c31",
+      "file": "tv_static.wav",
+      "gain": 0.28,
+      "at": "start",
+      "note": "Static returns under Ron's 'something underneath the static' signoff line — callback to c02, and the ep10 'Please Stand By' plant. Reuses the same synthesized tv_static.wav."
+    }
+  ],
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Better VCR burned-in subs. FontName/Fontsize NOT in force_style — stage 8 prepends fc-resolved FontName + Fontsize; a baked FontName would override the resolved family and drop subs to default."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, sitting at a vintage news desk reading the news, looking at camera"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+    },
+    "norm": {
+      "seed": 6262,
+      "core": "a smiling cheerful man in a short-sleeve dress shirt and clip-on tie, standing in front of a hulking concrete cooling tower, giving a relaxed thumbs up, suburban-salesman energy"
+    },
+    "gerald": {
+      "seed": 5252,
+      "core": "a nervous sweating man in frayed clothes standing on a ruined settlement street, forced smile, glancing over his shoulder, dim daylight"
+    },
+    "chip_pleasant": {
+      "seed": 8484,
+      "core": "a manic grinning weatherman in a wide-lapel checkered blazer pointing at a chalkboard weather map, wild eyes, big toothy smile, 1970s television studio"
+    }
+  },
+  "broll": {
+    "crater_ball": "a chaotic post-apocalyptic sport played in a giant bomb crater, players in scrap-metal armor chasing a heavy ball, ruined concrete stadium, dust, crowd",
+    "cooling_tower": "a massive concrete nuclear cooling tower venting steam over a ruined town",
+    "settlement_street": "a ruined settlement street, makeshift shacks and rubble, a few ragged survivors milling about, ashen daylight",
+    "weather_map": "a hand-drawn weather map of a wasteland region on a chalkboard, arrows and symbols",
+    "static_glitch": "a glitching analog television screen full of rolling static and scanlines, faint distorted shapes in the noise, eerie, black and white CRT"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. I'm Ron, and for once it's a quiet night. No one has declared war on us since lunch, and the sky is only the normal amount of on fire.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. One small note before we begin: the feed's been a touch glitchy tonight. Probably the weather. Nothing to worry about.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c02_s2",
+          "kind": "broll",
+          "who": "static_glitch"
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Right. The weather. I've been blaming the weather for eleven years, Walter. It has never once been the weather.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "It's usually the weather.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Tonight: it's Crater Ball, where Sector Nine has not lost a player in three games. A word from our friend Norm at the Glow Plant. And we'll meet a local man who recently came into some good fortune.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c05_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "And now, sports! Live from the Big Hole, it's the Crater Ball semifinal, and I have been told I am too excited about this. They are correct.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c06_s2",
+          "kind": "title",
+          "asset": "macu_sports_card"
+        },
+        {
+          "id": "c06_s3",
+          "kind": "broll",
+          "who": "crater_ball"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "Sector Nine takes an early lead, and folks, what a season. Three games. Not a single player lost!",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c07_s2",
+          "kind": "broll",
+          "who": "crater_ball"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "sports",
+      "speaker": "WALTER",
+      "vo": "Ron, the other teams have lost players.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "Sector Nine doesn't count those, Walter. Their rule is, it isn't a loss if you can't find the body. It's a beautiful, beautiful game.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c09_s2",
+          "kind": "broll",
+          "who": "crater_ball"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "sports",
+      "speaker": "WALTER",
+      "vo": "Sector Eight lost four players to Sector Nine last week. It's on the board.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "I don't recognize that board. I've never seen that board in my life.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "sports",
+      "speaker": "WALTER",
+      "vo": "It's the only board, Ron.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "Speaking of good fortune — Walter, remind the people at home how we define that around here.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "ad_norm",
+      "speaker": "NORM",
+      "vo": "Hi, neighbors! Norm here, from the Glow Plant. Now, you may have felt Sector Four go a little warm last night, and to that I say, a little glow never hurt nobody!",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "norm",
+          "seed": 6262
+        },
+        {
+          "id": "c14_s2",
+          "kind": "broll",
+          "who": "cooling_tower"
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "ad_norm",
+      "speaker": "NORM",
+      "vo": "The whole family's got the glow now. We don't even use the lamps. You can read by Grandma! And Grandma reads by herself now, in the night, with her eyes closed. A little glow never hurt nobody. Come on down.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "norm",
+          "seed": 6262
+        },
+        {
+          "id": "c15_s2",
+          "kind": "title",
+          "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "street",
+      "speaker": "WALTER",
+      "vo": "For our community segment, we found a local man who recently won big right here on this network. Sir, congratulations.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "street",
+      "speaker": "GERALD",
+      "vo": "Thanks. Yeah. I won the home edition of Wheel of Misfortune. My prize was Mr. Cricket Knows Where You Live.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        },
+        {
+          "id": "c17_s2",
+          "kind": "broll",
+          "who": "settlement_street"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "street",
+      "speaker": "WALTER",
+      "vo": "Wonderful. And how has the prize changed your life?",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "street",
+      "speaker": "GERALD",
+      "vo": "He comes Tuesdays. He's usually already inside when I get home. He's redecorated. And he uses my name now, which is strange, because I never told him my name.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        },
+        {
+          "id": "c19_s2",
+          "kind": "broll",
+          "who": "settlement_street"
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "street",
+      "speaker": "GERALD",
+      "vo": "He's been teaching my kids a little song. I don't have kids.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "gerald",
+          "seed": 5252
+        },
+        {
+          "id": "c20_s2",
+          "kind": "broll",
+          "who": "settlement_street"
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "street",
+      "speaker": "RON",
+      "vo": "Walter, that man is being hunted by a puppet and we are calling it good fortune. Does that not strike anyone else as—",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "street",
+      "speaker": "WALTER",
+      "vo": "Weather.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Thanks, Ron! Big night out there, ashfall in the east, a light grease rain down south, and the moon is, uh. The moon is noticeably closer than it was this morning.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c23_s2",
+          "kind": "title",
+          "asset": "weather_card"
+        },
+        {
+          "id": "c23_s3",
+          "kind": "broll",
+          "who": "weather_map"
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "",
+      "hold_seconds": 1.6,
+      "hold_style": "freeze",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "And tonight's official condition rating is — give me a second here —",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "— not mild.",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c26_s2",
+          "kind": "title",
+          "asset": "not_mild_card"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "That's the first time I've ever said that, folks. I don't have a card for it. Get inside.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        },
+        {
+          "id": "c27_s2",
+          "kind": "title",
+          "asset": "glow_plant_button_card"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "weather",
+      "speaker": "CHIP PLEASANT",
+      "vo": "Anyway, back to you!",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "chip_pleasant",
+          "seed": 8484
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our quiet night, MACU. Sector Nine is still perfect, Norm's whole family is luminous, and somewhere out there a good man is waiting for a cricket.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "Some things know where you live. That's just the world now.",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "And one more thing. If your feed goes quiet tonight, if you hear something underneath the static, that is not the weather. You remember I said that.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c31_s2",
+          "kind": "broll",
+          "who": "static_glitch"
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "He's tired. A little glow never hurt nobody, MACU. We are verified. Good night, and good luck.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c32_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    }
+  ],
+  "season": 1,
+  "episode_num": 3
+}
