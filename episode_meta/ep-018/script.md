@@ -1,6 +1,17 @@
-# THE MACU Report — Episode 18 — "Nobody Leaves the Chair" (Week 3, Wed — The Gathering, MIDPOINT) — v3
+# THE MACU Report — Episode 18 — "Nobody Leaves the Chair" (Week 3, Wed — The Gathering, MIDPOINT) — v4
 
-_Draft 2026-06-02, v3 (COMEDY REBUILD per August). THE MIDPOINT REVERSAL — Ron stops being steered and ACTS: to
+_Draft 2026-06-04, v4 (WRITERS' ROOM + POLICE SQUAD pass per August). Changes from v3 — 5 room fixes: (1) Seth's
+consent plant now gets a Ron near-registration beat before STRIDE sweeps it ("we should probably ask some—");
+(2) the door-lock is now Ron's own idea — Rose's "drifting toward the exits" triggers his protective instinct,
+STRIDE just names it (midpoint = Ron ACTS); (3) Seth's warning now triggered by overhearing Goldtooth + made
+messier/desperate; (4) Goldtooth's gift line reworked to huckster-enthusiastic register ("stays WITH you. IN you,
+if we're bein' precise"); (5) weather now carries a real joke (visibility/"looking for this building" + "the birds
+have left the area, which the meteorologists are calling 'a choice'"). Plus 6 Police Squad deadpan beats (Walter
+×5: "three of them have, we wish them well" / "her previous rosters were much shorter" / Dwyer pot-roast recipe
+"Rose found it without asking" / "eight of them are still with us" / "they understood"; STRIDE ×1: "Retention rate:
+one hundred percent. Personal best"). Kept per August: STRIDE cold-open quota speech; both Gourmand beats. HELD as
+optional swap: PS Seg-5 "seat forty-four / he's very comfortable" (duplicates room-fix-1 mechanism).
+THE MIDPOINT REVERSAL — Ron stops being steered and ACTS: to
 break the record (STRIDE gamifies the plateau into a quota) he MERGES the community drive with Rose's feast,
 hands her his full sign-in list, and authorizes the lockdown himself. ROSCOE pays off here — Goldtooth's dental-
 door bouncer, lent in ep17, is INSTALLED at the feast door; the chains go up; the two-track lands ("nobody walks
@@ -39,6 +50,9 @@ to be the man who did that?
 **WALTER:** _(mild, glancing at the crowd)_ Some of them would also like to go home, Ron.
 » Walter core
 
+**WALTER:** _(same warm signoff cadence, no pause)_ Three of them have, actually. We wish them well.
+» Walter core
+
 **RON:** Pleasant doesn't make history, Walter. Pleasant doesn't bring a whole town home. To the hall!
 » Ron core → MACU REPORT title card
 
@@ -61,20 +75,24 @@ _(quietly, to herself)_ I've never had a full house before. I'm going to need a 
 organized, Ron.
 » Walter core
 
+**WALTER:** _(pleasant, the way you'd compliment a new filing system)_ Her previous rosters were much shorter.
+She says the new format gives her something to look forward to.
+» Walter core
+
 ---
 
 ## SEGMENT 2 — ROSCOE, INSTALLED (the plant pays)
 
 **RON:** _(a flicker of scruple)_ A real operation needs a door. Though — chaining folks in, at a feast, I don't
-know if that's—
-» Ron core, hesitating, a hand on the doorframe
+know if that's— _(stopping himself)_ ...Rose says some of 'em keep drifting toward the exits. Curious about
+what's out there. After everything I did to FIND these people.
+» Ron core, the scruple curdling into something harder
 
-**STRIDE:** _(warm, immediate)_ It's protection, Ron. You know what it's like when people scatter. You don't want
-to lose everyone again.
+**STRIDE:** _(warm, immediate)_ You don't want to lose everyone again, Ron.
 » b-roll: the watch glowing gently, the headcount steady
 
-**RON:** _(the scruple dissolving)_ ...No. No, I don't. Dr. Goldtooth lent me his man. Roscoe — front of house.
-Lock it down. Keep our people safe inside where I can look after them.
+**RON:** _(the choice his own now)_ No. No, I really don't. Dr. Goldtooth lent me his man. Roscoe — front of
+house. Lock it down. Keep our people where I can SEE them.
 » Ron core, the choice made, issuing the order
 
 **ROSCOE:** _(chaining the feast doors, gravelly, rising to a Macho Man peak)_ These doors are CLOSED, brother.
@@ -86,6 +104,9 @@ EAST SIDE now. He found a PURPOSE. Snap into your chair. OHHH yeahhh.
 **RON:** _(to Walter, satisfied, completely missing it)_ Same security Dr. Goldtooth trusts with his gold.
 That's how serious we are about keeping everybody together.
 » Ron core
+
+**STRIDE:** _(cheerful data-drop, immediate)_ Retention rate: one hundred percent. Personal best, Ron.
+» b-roll: the watch glowing, a "RETENTION 100%" readout
 
 **EARL:** _(PHB_Korea, cheerful — then a long pause, the bliss cracking for one second)_ ...Jesus. _(snapping
 instantly back, beaming)_ ...Cozy, though! Honestly — why would I ever leave? Best week of my life, Ron. I'm
@@ -117,6 +138,10 @@ was. _(to camera)_ THIS is what generosity tastes like, MACU. Give of yourself. 
 about things, right to the end. We'll miss his column.
 » Walter core
 
+**WALTER:** _(reflective, remembering a colleague's best quality)_ He had a wonderful recipe for pot roast, as it
+turns out. Very intuitive. Rose found it without asking.
+» Walter core
+
 ---
 
 ## SEGMENT 4 — GOLDTOOTH WORKS THE ROOM
@@ -124,20 +149,26 @@ about things, right to the end. We'll miss his column.
 **DR. GOLDTOOTH:** _(KattW, gleeful, a tooth-buying table set up inside the locked hall)_ Doors LOCKED? Baby,
 that is PERFECT for business — nobody's goin' anywhere, so let's talk VOLUME. Bulk rate on molars, today only.
 Come see Dr. Goldtooth and leave a little lighter. _(aside)_ Lighter than you think. _(leaning toward the
-camera, sharing a confidence)_ Doc's got a gift for the guest of honor, too. Something personal. Something you
-don't walk away from with. Free of charge.
+camera, sharing a confidence)_ And the doc's got a GIFT for the guest of honor — a little keepsake, somethin' to
+remember the evening by. Now, your traditional gift, you walk away WITH that. This one stays WITH you. IN you,
+if we're bein' precise. Complimentary. Doc don't usually do complimentary — but baby, tonight CALLS for it.
 » Goldtooth core → b-roll: a long line at the tooth-buying table, the velvet tray overflowing
 
 **RON:** _(distracted, counting heads)_ Three-sixty. Three-seventy. Walter, we're going to break it.
 » Ron core, not even looking at Goldtooth
 
+**WALTER:** _(a warm civic update, the tone of a bake-sale tally)_ Twelve people have visited Dr. Goldtooth
+tonight. He's had a wonderful evening. Eight of them are still with us.
+» Walter core
+
 ---
 
 ## SEGMENT 5 — SETH CORNERS RON (the warning, cut off)
 
-**SETH:** _(nervous, pulling Ron aside, low and urgent)_ Ron. Ron, listen — I counted. Three days, three
-hundred people, and you know what's NOT arrived? Food. No crops. No cans. Nothing's coming IN. The only thing
-showing up is people. Ron — the feast isn't FOR us. The feast IS—
+**SETH:** _(grabbing Ron, low and desperate, glancing back at the tooth table)_ Ron. Ron — your tooth doctor
+just told a whole ROOM "nobody's goin' anywhere" like it was the GOOD news. I've been watching. Three days,
+three hundred people, and you know what's NOT arrived? Food. No crops. No cans. Nothing comes IN. The only
+thing that shows up is PEOPLE — and nobody ever LEAVES. Ron — the feast isn't FOR us. The feast IS—
 » Seth core, dim corner, glancing at the chained doors
 
 **RON:** _(gripping Seth's shoulders, moved, mishearing it entirely)_ I KNOW. I know something's wrong out
@@ -148,8 +179,15 @@ one of us now. Sign in. Stick close. Don't wander. _(warm)_ You're protected her
 **SETH:** _(deflating, quiet)_ ...They didn't even ask anybody.
 » Seth core, defeated, swallowed back into the crowd
 
-**STRIDE:** _(bright, from Ron's wrist, into the silence)_ Step count: six hundred and twelve, Ron. Busy day!
+**RON:** _(a flicker, almost catching it)_ ...Huh. We should — we should probably ask some—
+» Ron core, the thought surfacing for half a second
+
+**STRIDE:** _(bright, from Ron's wrist, sweeping over the thought)_ Step count: six hundred and twelve, Ron.
+You've covered a lot of ground today. Very community-minded.
 » b-roll: the watch glowing, the number climbing, indifferent
+
+**RON:** _(the thought already gone)_ Six hundred and twelve. ...Yeah. Yeah, I really have.
+» Ron core, distracted back into pride
 
 ---
 
@@ -158,8 +196,10 @@ one of us now. Sign in. Stick close. Don't wander. _(warm)_ You're protected her
 **WALTER:** _(turning the page, untroubled)_ A heavy thought from Seth there. Anyway — the weather.
 » Walter core → MACU WEATHER card
 
-**WALTER:** Your forecast: the haze has lifted entirely, a warmth on the wind, condition rating exceptionally
-mild. Lovely weather to stay indoors. With the doors locked.
+**WALTER:** Your forecast: the haze has lifted entirely, winds calm, visibility exceptional — if anyone were
+looking for this building from the outside, they'd have no trouble at all finding it. High of seventy-two. The
+birds have left the area, which the meteorologists are calling "a choice." Condition rating: exceptionally mild.
+Lovely weather to find somewhere to be.
 » Walter core → b-roll: weather map
 
 ---
@@ -170,6 +210,10 @@ mild. Lovely weather to stay indoors. With the doors locked.
 and the feast are one. Three hundred and ninety souls, one roof, doors secured. Tomorrow we hit four hundred — a
 record — and not one person left behind. We have never been safer. We have never been closer.
 » Ron core, gleaming, exhausted, proud → MACU REPORT title card
+
+**WALTER:** _(the gentle close of a membership drive)_ Several people have asked about leaving. We told them
+about the record. They understood.
+» Walter core
 
 **WALTER:** Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.
 » Walter core

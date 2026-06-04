@@ -281,6 +281,20 @@
       ]
     },
     {
+      "id": "c32",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "WALTER",
+      "vo": "Three of them have, actually. We wish them well.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
       "id": "c06",
       "segment": "cold_open_anchor_desk",
       "speaker": "RON",
@@ -342,13 +356,27 @@
       ]
     },
     {
-      "id": "c10",
-      "segment": "segment_2_roscoe_installed_the_plant_pay",
-      "speaker": "RON",
-      "vo": "A real operation needs a door. Though — chaining folks in, at a feast, I don't know if that's",
+      "id": "c33",
+      "segment": "segment_1_the_merge_the_door_closes",
+      "speaker": "WALTER",
+      "vo": "Her previous rosters were much shorter. She says the new format gives her something to look forward to.",
       "shots": [
         {
-          "id": "c10_s1",
+          "id": "c33_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "RON",
+      "vo": "A real operation needs a door. Though — chaining folks in, at a feast, I don't know if that's— ...Rose says some of 'em keep drifting toward the exits. Curious about what's out there. After everything I did to FIND these people.",
+      "shots": [
+        {
+          "id": "c34_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -356,26 +384,26 @@
       ]
     },
     {
-      "id": "c11",
+      "id": "c35",
       "segment": "segment_2_roscoe_installed_the_plant_pay",
       "speaker": "STRIDE",
-      "vo": "It's protection, Ron. You know what it's like when people scatter. You don't want to lose everyone again.",
+      "vo": "You don't want to lose everyone again, Ron.",
       "shots": [
         {
-          "id": "c11_s1",
+          "id": "c35_s1",
           "kind": "broll",
           "who": "stride_watch"
         }
       ]
     },
     {
-      "id": "c12",
+      "id": "c36",
       "segment": "segment_2_roscoe_installed_the_plant_pay",
       "speaker": "RON",
-      "vo": "...No. No, I don't. Dr. Goldtooth lent me his man. Roscoe — front of house. Lock it down. Keep our people safe inside where I can look after them.",
+      "vo": "No. No, I really don't. Dr. Goldtooth lent me his man. Roscoe — front of house. Lock it down. Keep our people where I can SEE them.",
       "shots": [
         {
-          "id": "c12_s1",
+          "id": "c36_s1",
           "kind": "character",
           "who": "ron",
           "seed": 77777
@@ -407,6 +435,19 @@
           "kind": "character",
           "who": "ron",
           "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "segment_2_roscoe_installed_the_plant_pay",
+      "speaker": "STRIDE",
+      "vo": "Retention rate: one hundred percent. Personal best, Ron.",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "broll",
+          "who": "stride_watch"
         }
       ]
     },
@@ -495,13 +536,27 @@
       ]
     },
     {
-      "id": "c21",
-      "segment": "segment_4_goldtooth_works_the_room",
-      "speaker": "DR. GOLDTOOTH",
-      "vo": "Doors LOCKED? Baby, that is PERFECT for business — nobody's goin' anywhere, so let's talk VOLUME. Bulk rate on molars, today only. Come see Dr. Goldtooth and leave a little lighter. Lighter than you think. Doc's got a gift for the guest of honor, too. Something personal. Something you don't walk away from with. Free of charge.",
+      "id": "c38",
+      "segment": "segment_3_scavenger_s_feast_cook_along_t",
+      "speaker": "WALTER",
+      "vo": "He had a wonderful recipe for pot roast, as it turns out. Very intuitive. Rose found it without asking.",
       "shots": [
         {
-          "id": "c21_s1",
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "segment_4_goldtooth_works_the_room",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Doors LOCKED? Baby, that is PERFECT for business — nobody's goin' anywhere, so let's talk VOLUME. Bulk rate on molars, today only. Come see Dr. Goldtooth and leave a little lighter. Lighter than you think. And the doc's got a GIFT for the guest of honor — a little keepsake, somethin' to remember the evening by. Now, your traditional gift, you walk away WITH that. This one stays WITH you. IN you, if we're bein' precise. Complimentary. Doc don't usually do complimentary — but baby, tonight CALLS for it.",
+      "shots": [
+        {
+          "id": "c39_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
@@ -517,19 +572,33 @@
         {
           "id": "c22_s1",
           "kind": "character",
-          "who": "ron",
-          "seed": 77777
+          "who": "goldtooth",
+          "seed": 7212
         }
       ]
     },
     {
-      "id": "c23",
-      "segment": "segment_5_seth_corners_ron_the_warning_c",
-      "speaker": "SETH",
-      "vo": "Ron. Ron, listen — I counted. Three days, three hundred people, and you know what's NOT arrived? Food. No crops. No cans. Nothing's coming IN. The only thing showing up is people. Ron — the feast isn't FOR us. The feast IS",
+      "id": "c40",
+      "segment": "segment_4_goldtooth_works_the_room",
+      "speaker": "WALTER",
+      "vo": "Twelve people have visited Dr. Goldtooth tonight. He's had a wonderful evening. Eight of them are still with us.",
       "shots": [
         {
-          "id": "c23_s1",
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "SETH",
+      "vo": "Ron. Ron — your tooth doctor just told a whole ROOM \"nobody's goin' anywhere\" like it was the GOOD news. I've been watching. Three days, three hundred people, and you know what's NOT arrived? Food. No crops. No cans. Nothing comes IN. The only thing that shows up is PEOPLE — and nobody ever LEAVES. Ron — the feast isn't FOR us. The feast IS—",
+      "shots": [
+        {
+          "id": "c41_s1",
           "kind": "character",
           "who": "seth",
           "seed": 5151
@@ -565,15 +634,43 @@
       ]
     },
     {
-      "id": "c26",
+      "id": "c42",
       "segment": "segment_5_seth_corners_ron_the_warning_c",
-      "speaker": "STRIDE",
-      "vo": "Step count: six hundred and twelve, Ron. Busy day!",
+      "speaker": "RON",
+      "vo": "...Huh. We should — we should probably ask some—",
       "shots": [
         {
-          "id": "c26_s1",
+          "id": "c42_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c43",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "STRIDE",
+      "vo": "Step count: six hundred and twelve, Ron. You've covered a lot of ground today. Very community-minded.",
+      "shots": [
+        {
+          "id": "c43_s1",
           "kind": "broll",
           "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c44",
+      "segment": "segment_5_seth_corners_ron_the_warning_c",
+      "speaker": "RON",
+      "vo": "Six hundred and twelve. ...Yeah. Yeah, I really have.",
+      "shots": [
+        {
+          "id": "c44_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
         }
       ]
     },
@@ -597,13 +694,13 @@
       ]
     },
     {
-      "id": "c28",
+      "id": "c45",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "Your forecast: the haze has lifted entirely, a warmth on the wind, condition rating exceptionally mild. Lovely weather to stay indoors. With the doors locked.",
+      "vo": "Your forecast: the haze has lifted entirely, winds calm, visibility exceptional — if anyone were looking for this building from the outside, they'd have no trouble at all finding it. High of seventy-two. The birds have left the area, which the meteorologists are calling \"a choice.\" Condition rating: exceptionally mild. Lovely weather to find somewhere to be.",
       "shots": [
         {
-          "id": "c28_s1",
+          "id": "c45_s1",
           "kind": "character",
           "who": "walter",
           "seed": 24601
@@ -625,7 +722,21 @@
         {
           "id": "c29_s2",
           "kind": "title",
-          "asset": "the_feast"
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c46",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Several people have asked about leaving. We told them about the record. They understood.",
+      "shots": [
+        {
+          "id": "c46_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
         }
       ]
     },
