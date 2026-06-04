@@ -6,7 +6,7 @@ import { useStore } from "../store";
 import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
 import { PlayBtn } from "../components/PlayBtn";
-import { IPlus, IX, IChevron } from "../components/Icons";
+import { IPlus, IX } from "../components/Icons";
 
 // One item in the continuous-playback queue (VO cue or an SFX one-shot).
 export interface PlayItem { url: string; cueId?: string; label: string; }
@@ -95,14 +95,6 @@ export function useSfx(slug: string) {
     next.push({ ...e, cue, at: afterId ? "end" : "start" });
     commit(next);
   };
-  const reorder = (idx: number, dir: -1 | 1) => {
-    const a = afterCueOf(sfx[idx]);
-    const inGap = sfx.map((x, i) => ({ x, i })).filter((o) => afterCueOf(o.x) === a);
-    const pos = inGap.findIndex((o) => o.i === idx);
-    const swap = inGap[pos + dir]; if (!swap) return;
-    const next = [...sfx]; [next[idx], next[swap.i]] = [next[swap.i], next[idx]];
-    commit(next);
-  };
   const del = (idx: number) => commit(sfx.filter((_, i) => i !== idx));
   const setGain = (idx: number, g: number) => { const next = [...sfx]; next[idx] = { ...next[idx], gain: g }; commit(next); };
   const onDropGap = (afterId: string | null) => {
@@ -132,15 +124,14 @@ export function useSfx(slug: string) {
   return {
     sfx, cueIds, durOf,
     gapsOrder: [null, ...cueIds] as (string | null)[],
-    entriesByGap, addToGap, moveEntry, reorder, del, setGain, onDropGap, buildPlaylist,
+    entriesByGap, addToGap, moveEntry, del, setGain, onDropGap, buildPlaylist,
   };
 }
 
 // ---- one gap (dropzone + its SFX rows), rendered inside a table <td> ----
-export function GapZone({ entries, onDrop, onReorder, onDelete, onGain, onPlay, previewUrl }: {
+export function GapZone({ entries, onDrop, onDelete, onGain, onPlay, previewUrl }: {
   entries: { x: SfxEntry; i: number }[];
   onDrop: () => void;
-  onReorder: (idx: number, dir: -1 | 1) => void;
   onDelete: (idx: number) => void;
   onGain: (idx: number, g: number) => void;
   onPlay: (file: string) => void;
@@ -160,7 +151,7 @@ export function GapZone({ entries, onDrop, onReorder, onDelete, onGain, onPlay, 
           {over ? "drop SFX here" : ""}
         </div>
       ) : (
-        entries.map(({ x, i }, pos) => {
+        entries.map(({ x, i }) => {
           const url = libraryApi.audioUrl("sfx", x.file);
           return (
             <div key={i} draggable onDragStart={() => { drag = { type: "sfx", idx: i }; }}
@@ -169,12 +160,8 @@ export function GapZone({ entries, onDrop, onReorder, onDelete, onGain, onPlay, 
               <PlayBtn playing={previewUrl === url} onClick={() => onPlay(x.file)} />
               <span className="font-mono text-cyan flex-1 truncate" title={x.file}>{x.file}</span>
               <span className="text-txt-faint text-[10px]" title="delay within the gap">+{(x.delay ?? 0).toFixed(2)}s</span>
-              <input className="input w-12 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
+              <input className="input w-20 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
                 title="gain (0–1 linear)" onChange={(e) => onGain(i, parseFloat(e.target.value))} />
-              <button className="btn p-0.5" title="up" disabled={pos === 0} onClick={() => onReorder(i, -1)}>
-                <IChevron size={11} style={{ transform: "rotate(180deg)" }} /></button>
-              <button className="btn p-0.5" title="down" disabled={pos === entries.length - 1} onClick={() => onReorder(i, 1)}>
-                <IChevron size={11} /></button>
               <button className="btn p-0.5" title="remove" onClick={() => onDelete(i)}><IX /></button>
             </div>
           );

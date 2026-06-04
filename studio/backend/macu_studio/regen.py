@@ -70,4 +70,9 @@ async def regen_shot(slug: str, key: str) -> dict:
         for d in rife.iterdir():
             if d.is_dir() and (d.name == f"{key}_master_out" or d.name.startswith(f"broll_{key}_") or (key == "empty_room" and d.name == "c09_s1_out")):
                 shutil.rmtree(d, ignore_errors=True)
-    return await pipeline.submit(slug, from_stage=2)
+    # Render ONLY the masters stage (stage 2) and stop. Stage 2 skips cached
+    # masters, so just the one we deleted above re-renders. We deliberately do
+    # NOT run the downstream tail (rife/assemble/music/whisper/srt/burn) — a
+    # single-shot regen shouldn't trigger a full episode rebuild. The stale rife
+    # frames dropped above get re-interpolated whenever a full render is run.
+    return await pipeline.submit(slug, only=2)

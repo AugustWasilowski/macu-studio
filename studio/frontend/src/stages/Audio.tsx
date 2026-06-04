@@ -182,7 +182,6 @@ export function Audio({ slug }: { slug: string }) {
         <GapZone
           entries={sfx.entriesByGap(afterId)}
           onDrop={() => sfx.onDropGap(afterId)}
-          onReorder={sfx.reorder}
           onDelete={sfx.del}
           onGain={sfx.setGain}
           onPlay={(file) => preview.toggle(libraryApi.audioUrl("sfx", file))}
