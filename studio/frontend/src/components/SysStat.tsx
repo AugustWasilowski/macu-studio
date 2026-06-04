@@ -40,7 +40,7 @@ export function SysStat() {
       </span>
       <span className="seg-readout cyan">
         GPU <span style={hot(s?.gpu_pct)}>{pct(s?.gpu_pct)}</span>
-        <span className="text-txt-faint"> · {mem}</span>
+        <span className="text-txt-faint"> · </span><span className="text-amber">{mem}</span>
       </span>
       <span className="seg-readout" title={`storage drive (${s?.disk_dev ?? "?"}) read↓ / write↑ MB/s`}>
         DSK <span style={reading(s?.disk_read_mibps)}>{mbps(s?.disk_read_mibps)}↓</span>

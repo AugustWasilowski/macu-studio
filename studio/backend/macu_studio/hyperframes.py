@@ -313,9 +313,21 @@ async def _run_thumb(job: Job) -> None:
         if out_png.exists():
             shutil.copyfile(out_png, final_png)
         elif out_mp4.exists():
-            await job.emit("log", line="extracting single frame from mp4 → png")
+            # thumb_wide-style cards ANIMATE the title in, then HOLD it. Frame 0 is
+            # pre-resolve (empty title), so seek into the held tail (~85% of the clip)
+            # before grabbing the still — mirrors run.py's make_youtube_thumb -ss.
+            try:
+                pr = subprocess.run(
+                    ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                     "-of", "default=noprint_wrappers=1:nokey=1", str(out_mp4)],
+                    capture_output=True, text=True)
+                dur = float((pr.stdout or "0").strip() or 0)
+            except Exception:
+                dur = 0.0
+            seek = f"{max(0.0, dur * 0.85):.2f}"
+            await job.emit("log", line=f"extracting held frame (-ss {seek}) from mp4 → png")
             ff = await asyncio.create_subprocess_exec(
-                "ffmpeg", "-y", "-i", str(out_mp4), "-frames:v", "1", str(final_png),
+                "ffmpeg", "-y", "-ss", seek, "-i", str(out_mp4), "-frames:v", "1", str(final_png),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )

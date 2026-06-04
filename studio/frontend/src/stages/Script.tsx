@@ -17,7 +17,7 @@ export function Script({ slug }: { slug: string }) {
   });
 
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<"edit" | "preview" | "diff">("edit");
+  const [mode, setMode] = useState<"edit" | "preview" | "diff">("preview");
   const [saved, setSaved] = useState(true);
   const [gen, setGen] = useState<GenManifestSummary | null>(null);
 
