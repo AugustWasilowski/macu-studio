@@ -6,10 +6,20 @@ export interface Toast {
   text: string;
   kind: ToastKind;
 }
+export interface LogEntry {
+  id: number;
+  ts: number; // epoch ms
+  text: string;
+  kind: ToastKind;
+}
+
+const LOG_CAP = 300;
 
 interface State {
   drawerOpen: boolean;
+  logOpen: boolean;
   toasts: Toast[];
+  log: LogEntry[];
   activeSlug: string | null;
   selectedCueId: string | null;
   selectedShotKey: string | null;
@@ -22,6 +32,10 @@ interface Actions {
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
+  openLog: () => void;
+  closeLog: () => void;
+  toggleLog: () => void;
+  clearLog: () => void;
   setActiveSlug: (slug: string | null) => void;
   pushToast: (text: string, kind?: ToastKind) => void;
   dropToast: (id: number) => void;
@@ -36,7 +50,9 @@ let toastSeq = 1;
 
 export const useStore = create<State & Actions>((set) => ({
   drawerOpen: false,
+  logOpen: false,
   toasts: [],
+  log: [],
   activeSlug: null,
   selectedCueId: null,
   selectedShotKey: null,
@@ -44,13 +60,22 @@ export const useStore = create<State & Actions>((set) => ({
   playingKey: null,
   busy: {},
 
-  openDrawer: () => set({ drawerOpen: true }),
+  // Opening one right-hand drawer closes the other so they don't overlap.
+  openDrawer: () => set({ drawerOpen: true, logOpen: false }),
   closeDrawer: () => set({ drawerOpen: false }),
-  toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
+  toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen, logOpen: false })),
+  openLog: () => set({ logOpen: true, drawerOpen: false }),
+  closeLog: () => set({ logOpen: false }),
+  toggleLog: () => set((s) => ({ logOpen: !s.logOpen, drawerOpen: false })),
+  clearLog: () => set({ log: [] }),
   setActiveSlug: (slug) => set({ activeSlug: slug }),
   pushToast: (text, kind = "info") => {
     const id = toastSeq++;
-    set((s) => ({ toasts: [...s.toasts, { id, text, kind }] }));
+    const entry: LogEntry = { id, ts: Date.now(), text, kind };
+    set((s) => ({
+      toasts: [...s.toasts, { id, text, kind }],
+      log: [...s.log, entry].slice(-LOG_CAP),
+    }));
     setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), 3200);
   },
   dropToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),

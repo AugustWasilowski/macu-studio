@@ -5,11 +5,12 @@ upstream render service with --only or --from set so the rest of the pipeline
 isn't re-run unnecessarily.
 """
 from __future__ import annotations
-import json, shutil
+import json, random, shutil
 from pathlib import Path
 
 from .episodes import episode_dir
 from .manifest import _vo_cache_path
+from . import manifest as manifest_mod
 from . import pipeline
 from . import versions
 
@@ -39,7 +40,21 @@ async def regen_cue(slug: str, cue_id: str) -> dict:
 
 async def regen_shot(slug: str, key: str) -> dict:
     ep = episode_dir(slug)
-    versions.archive_current(slug, "shot", key)
+    versions.archive_current(slug, "shot", key)  # auto-stamps the outgoing seed
+    # Shuffle the seed so a regen actually differs. Character masters reuse the
+    # fixed seed stored in the manifest, so without this they'd re-render
+    # identically; broll already randomizes its seed per-render in stage 2.
+    m = manifest_mod.load(slug)
+    chars = m.get("characters") or {}
+    broll = m.get("broll") or {}
+    if isinstance(chars.get(key), dict):
+        chars[key]["seed"] = random.randrange(2**32)
+        manifest_mod.save(slug, m)
+    elif isinstance(broll.get(key), dict):
+        # Broll in {"prompt","seed"} form carries a fixed seed — shuffle it too.
+        # (Plain-string broll has no stored seed; stage 2 randomizes per render.)
+        broll[key]["seed"] = random.randrange(2**32)
+        manifest_mod.save(slug, m)
     # Be thorough — both character and broll path conventions
     candidates: list[Path] = [
         ep / "clips" / f"{key}_master.zs.webp",

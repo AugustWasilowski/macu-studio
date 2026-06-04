@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
-import { IBrace, IChevron } from "./Icons";
+import { IBrace, IChevron, IList } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
@@ -28,6 +28,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const toggleDrawer = useStore((s) => s.toggleDrawer);
+  const toggleLog = useStore((s) => s.toggleLog);
   const pushToast = useStore((s) => s.pushToast);
 
   async function onSync() {
@@ -51,6 +52,9 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
   }, []);
 
   const cur = episodes.find((e) => e.slug === slug);
+  const curIdx = episodes.findIndex((e) => e.slug === slug);
+  const prevEp = curIdx > 0 ? episodes[curIdx - 1] : null;
+  const nextEp = curIdx >= 0 && curIdx < episodes.length - 1 ? episodes[curIdx + 1] : null;
 
   return (
     <header
@@ -68,6 +72,14 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
         </button>
         <span className="label-tiny pl-1">CH·245</span>
       </div>
+      <button
+        className="btn p-0.5"
+        disabled={!prevEp}
+        onClick={() => prevEp && onPick(prevEp.slug)}
+        title={prevEp ? `Previous episode (${prevEp.slug})` : "No previous episode"}
+      >
+        <IChevron size={14} style={{ transform: "rotate(90deg)" }} />
+      </button>
       <div className="relative">
         <button className="btn btn-amber" onClick={() => setOpen((o) => !o)}>
           <span style={{ color: "var(--amber)", fontWeight: 700 }}>{slug || "—"}</span>
@@ -92,6 +104,14 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
           </div>
         )}
       </div>
+      <button
+        className="btn p-0.5"
+        disabled={!nextEp}
+        onClick={() => nextEp && onPick(nextEp.slug)}
+        title={nextEp ? `Next episode (${nextEp.slug})` : "No next episode"}
+      >
+        <IChevron size={14} style={{ transform: "rotate(-90deg)" }} />
+      </button>
       <nav className="flex gap-1 ml-3">
         {UI_STAGES.map((s) => {
           const active = page === "stage" && s.key === stage;
@@ -136,6 +156,9 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
           </span>
         </button>
         <span className="seg-readout cyan">{clock}</span>
+        <button className="btn" onClick={toggleLog} title="Open activity log">
+          <IList />
+        </button>
         <button className="btn" onClick={toggleDrawer} title="Open manifest drawer">
           <IBrace />
         </button>

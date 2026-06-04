@@ -36,6 +36,11 @@ export function Video({ slug }: { slug: string }) {
   const [shotOverrides, setShotOverrides] = useState<Record<string, string | null>>({});
   const setShotOverride = (key: string, u: string | null) =>
     setShotOverrides((s) => ({ ...s, [key]: u }));
+  // Per-shot seed shown while browsing a history version (undefined = live →
+  // fall back to the manifest seed; null = that version recorded no seed).
+  const [viewSeeds, setViewSeeds] = useState<Record<string, number | null | undefined>>({});
+  const setViewSeed = (key: string, seed: number | null | undefined) =>
+    setViewSeeds((s) => ({ ...s, [key]: seed }));
   const [addOpen, setAddOpen] = useState(false);
 
   const watchJob = (jobId: string, key: string) => {
@@ -61,7 +66,12 @@ export function Video({ slug }: { slug: string }) {
 
   const regen = useMutation({
     mutationFn: (key: string) => api.regenShot(slug, key),
-    onMutate: (key) => { setBusy(`shot:${key}`, true); push(`shot ${key} → ComfyUI queue`, "run"); },
+    onMutate: (key) => {
+      setBusy(`shot:${key}`, true);
+      setShotOverride(key, null);
+      setViewSeed(key, undefined);
+      push(`shot ${key} → ComfyUI queue`, "run");
+    },
     onSuccess: (r, key) => watchJob(r.job_id, key),
     onError: (e: Error, key) => { setBusy(`shot:${key}`, false); push(`regen failed: ${e.message}`, "err"); },
   });
@@ -164,6 +174,8 @@ export function Video({ slug }: { slug: string }) {
                 const active = selectedKey === s.key;
                 const seed = draftSeed[s.key] ?? s.seed ?? 0;
                 const dirty = draftSeed[s.key] != null && draftSeed[s.key] !== s.seed;
+                const vseed = viewSeeds[s.key];
+                const viewingVersion = vseed !== undefined;
                 return (
                   <tr
                     key={s.key}
@@ -185,14 +197,18 @@ export function Video({ slug }: { slug: string }) {
                     <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <input
                         className="input font-mono w-full"
-                        style={{ height: 24, padding: "0 4px" }}
-                        value={seed}
+                        style={{ height: 24, padding: "0 4px", ...(viewingVersion ? { opacity: 0.6 } : {}) }}
+                        value={viewingVersion ? (vseed ?? "") : seed}
+                        placeholder={viewingVersion ? "—" : undefined}
+                        readOnly={viewingVersion}
+                        title={viewingVersion ? "Seed of the version being viewed (read-only)" : undefined}
                         onChange={(e) => {
+                          if (viewingVersion) return;
                           const v = parseInt(e.target.value.replace(/\D/g, ""), 10) || 0;
                           setDraftSeed((d) => ({ ...d, [s.key]: v }));
                         }}
                         onBlur={() => {
-                          if (dirty) saveSeed.mutate({ key: s.key, kind: s.kind, seed });
+                          if (!viewingVersion && dirty) saveSeed.mutate({ key: s.key, kind: s.kind, seed });
                         }}
                       />
                     </td>
@@ -215,8 +231,14 @@ export function Video({ slug }: { slug: string }) {
                         slug={slug}
                         kind="shot"
                         vkey={s.key}
-                        onView={(u) => setShotOverride(s.key, u)}
-                        onChanged={() => qc.invalidateQueries({ queryKey: ["shots", slug] })}
+                        onView={(u, vs) => {
+                          setShotOverride(s.key, u);
+                          setViewSeed(s.key, u == null ? undefined : (vs ?? null));
+                        }}
+                        onChanged={() => {
+                          setViewSeed(s.key, undefined);
+                          qc.invalidateQueries({ queryKey: ["shots", slug] });
+                        }}
                       />
                     </td>
                   </tr>
@@ -256,7 +278,7 @@ export function Video({ slug }: { slug: string }) {
             <div className="grid grid-cols-2 gap-1 text-[12px]">
               <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
               <span className="label-tiny">kind</span><span>{cur.kind}</span>
-              <span className="label-tiny">seed</span><span className="text-cyan">{cur.seed ?? "—"}</span>
+              <span className="label-tiny">seed</span><span className="text-cyan">{viewSeeds[cur.key] !== undefined ? (viewSeeds[cur.key] ?? "—") : (cur.seed ?? "—")}</span>
               <span className="label-tiny">file</span><span className="break-all">clips/{cur.key}_master.zs.webp</span>
             </div>
             <div className="flex flex-col gap-1">

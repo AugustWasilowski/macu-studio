@@ -209,6 +209,7 @@ export interface VersionEntry {
   v: number;
   file: string;
   ts: number;
+  meta?: { seed?: number | null; [k: string]: unknown };
 }
 
 export interface VersionSummary {

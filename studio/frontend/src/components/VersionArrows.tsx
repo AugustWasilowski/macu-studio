@@ -6,14 +6,16 @@ import { IChevron } from "./Icons";
 
 /* Compact ← idx/total → version browser for a single asset, sized to live in a
    table cell. The Graphics page reuses this with kind="ythumb" — keep the prop
-   contract stable. `onView(null)` means "show the live/canonical asset". */
+   contract stable. `onView(null)` means "show the live/canonical asset". The
+   second arg is the seed that version was rendered with (shot kind only;
+   undefined for the live asset → caller falls back to the manifest seed). */
 export function VersionArrows({
   slug, kind, vkey, onView, onChanged,
 }: {
   slug: string;
   kind: "cue" | "shot" | "ythumb";
   vkey: string;
-  onView?: (mediaUrl: string | null) => void;
+  onView?: (mediaUrl: string | null, seed?: number | null) => void;
   onChanged?: () => void;
 }) {
   const qc = useQueryClient();
@@ -43,7 +45,10 @@ export function VersionArrows({
       if (n === 0) onView(null);
       else {
         const e = entries[n - 1];
-        onView(e ? versionsApi.mediaUrl(slug, kind, vkey, e.v) : null);
+        onView(
+          e ? versionsApi.mediaUrl(slug, kind, vkey, e.v) : null,
+          e?.meta?.seed ?? null,
+        );
       }
     }
   };
@@ -72,13 +77,13 @@ export function VersionArrows({
       className={"inline-flex items-center gap-1 text-[11px] " + (disabled ? "opacity-40 pointer-events-none" : "")}
       title={disabled ? "Only one version" : "Browse versions"}
     >
-      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped + 1)} title="Older">
+      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped - 1)} title="Newer">
         <IChevron size={12} style={{ transform: "rotate(90deg)" }} />
       </button>
       <span className="font-mono whitespace-nowrap tabular-nums" style={{ minWidth: 52, textAlign: "center" }}>
         {label} <span className="text-txt-faint">{clamped + 1}/{Math.max(1, total)}</span>
       </span>
-      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped - 1)} title="Newer">
+      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped + 1)} title="Older">
         <IChevron size={12} style={{ transform: "rotate(-90deg)" }} />
       </button>
       <button

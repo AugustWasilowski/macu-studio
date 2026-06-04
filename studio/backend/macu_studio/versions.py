@@ -115,14 +115,40 @@ def version_file(slug: str, kind: str, key: str, v: int) -> Optional[Path]:
     return None
 
 
-def archive_current(slug: str, kind: str, key: str) -> Optional[int]:
+def version_meta(slug: str, kind: str, key: str, v: int) -> dict:
+    """The per-version metadata stamped at archive time (e.g. {"seed": N})."""
+    for e in history(slug, kind, key):
+        if int(e["v"]) == int(v):
+            return dict(e.get("meta") or {})
+    return {}
+
+
+def _capture_meta(slug: str, kind: str, key: str) -> dict:
+    """Auto-stamp metadata for the canonical asset being archived. For shot/
+    character we record the seed it was rendered with (lives in the manifest) so
+    the UI can show the right seed when browsing back, and promote can restore it."""
+    if kind == "shot":
+        m = manifest_mod.load(slug)
+        cdef = (m.get("characters") or {}).get(key)
+        if isinstance(cdef, dict) and cdef.get("seed") is not None:
+            return {"seed": cdef["seed"]}
+        bdef = (m.get("broll") or {}).get(key)
+        if isinstance(bdef, dict) and bdef.get("seed") is not None:
+            return {"seed": bdef["seed"]}
+    return {}
+
+
+def archive_current(slug: str, kind: str, key: str, meta: Optional[dict] = None) -> Optional[int]:
     """Copy the current canonical file into history. Returns the new version
-    number, or None if there is no canonical file yet (first generation)."""
+    number, or None if there is no canonical file yet (first generation). `meta`
+    is stamped onto the history entry (defaults to auto-captured seed for shots)."""
     ep = episode_dir(slug)
     canonical_rel = canonical_for(slug, kind, key)
     canonical = ep / canonical_rel
     if not canonical.exists():
         return None
+    if meta is None:
+        meta = _capture_meta(slug, kind, key)
     data = _load(slug)
     ek = _ek(kind, key)
     rec = data.get(ek) or {}
@@ -134,7 +160,10 @@ def archive_current(slug: str, kind: str, key: str) -> Optional[int]:
     vfile_rel = f"{rec['archive_dir']}/{stem}.v{nextv}{suffix}"
     (ep / rec["archive_dir"]).mkdir(parents=True, exist_ok=True)
     shutil.copy2(canonical, ep / vfile_rel)
-    hist.append({"v": nextv, "file": vfile_rel, "ts": int(canonical.stat().st_mtime)})
+    entry = {"v": nextv, "file": vfile_rel, "ts": int(canonical.stat().st_mtime)}
+    if meta:
+        entry["meta"] = meta
+    hist.append(entry)
     data[ek] = rec
     _save(slug, data)
     return nextv

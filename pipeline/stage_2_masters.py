@@ -79,9 +79,16 @@ def main(slug):
             prompt = char["core"] + style_suffix
             seed = char["seed"]
             comfy_prefix = f"macu/{slug}/{key}_master"
-        else:  # broll
-            prompt = m["broll"][key] + style_suffix
-            seed = random.randrange(2**32)
+        else:  # broll — value is a plain prompt string OR {"prompt", "seed"}
+            bro = m["broll"][key]
+            if isinstance(bro, dict):
+                prompt = (bro.get("prompt") or "") + style_suffix
+                seed = bro.get("seed")
+                if seed is None:
+                    seed = random.randrange(2**32)
+            else:
+                prompt = bro + style_suffix
+                seed = random.randrange(2**32)
             comfy_prefix = f"macu/{slug}/broll_{key}"
         jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
                      "prefix": comfy_prefix, "target": target})

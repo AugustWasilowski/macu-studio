@@ -12,6 +12,7 @@ import { YouTube } from "./stages/YouTube";
 import { Docs } from "./stages/Docs";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
+import { LogDrawer } from "./components/LogDrawer";
 import { useRoute, Page } from "./route";
 import { useStore } from "./store";
 import { UIStage } from "./types";
@@ -84,6 +85,7 @@ function Shell() {
       {route.page === "stage" && slug && (
         <ManifestDrawer slug={slug} onJumpToStage={(s) => go({ page: "stage", stage: s as UIStage })} />
       )}
+      <LogDrawer />
     </div>
   );
 }

@@ -43,12 +43,27 @@ def version_promote(slug: str, kind: str, key: str, body: dict = Body(...)):
     v = body.get("v")
     if v is None:
         raise HTTPException(400, "missing 'v'")
+    target_meta = versions.version_meta(slug, kind, key, int(v))
     try:
         r = versions.promote(slug, kind, key, int(v))
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
     if kind == "cue":
         regen._drop_cue_from_vo_cache(slug, key)
+    elif kind == "shot":
+        # Restore the seed this version was rendered with so the manifest (and
+        # the seed shown on the page) tracks the promoted master.
+        seed = target_meta.get("seed")
+        if seed is not None:
+            m = manifest_mod.load(slug)
+            chars = m.get("characters") or {}
+            broll = m.get("broll") or {}
+            if isinstance(chars.get(key), dict):
+                chars[key]["seed"] = seed
+                manifest_mod.save(slug, m)
+            elif isinstance(broll.get(key), dict):
+                broll[key]["seed"] = seed
+                manifest_mod.save(slug, m)
     return r
 
 
