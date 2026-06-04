@@ -19,7 +19,7 @@
         "engine": "omnivoice",
         "profile_id": "eb1af4c3",
         "voice_name": "GG_Rose",
-        "speed": 1.0,
+        "speed": 1,
         "guidance_scale": 1.6,
         "seed": 4014
       },
@@ -43,7 +43,7 @@
         "engine": "omnivoice",
         "profile_id": "7ad3680e",
         "voice_name": "PHB_Korea",
-        "speed": 1.0,
+        "speed": 1,
         "guidance_scale": 2.5,
         "seed": 4018
       },
@@ -69,7 +69,7 @@
         "profile_id": "eb01da84",
         "voice_name": "HAL_OV",
         "speed": 1.08,
-        "guidance_scale": 2.0,
+        "guidance_scale": 2,
         "seed": 4013
       },
       "WALTER": {
@@ -289,13 +289,13 @@
       ]
     },
     {
-      "id": "c08",
+      "id": "c42",
       "segment": "segment_1_the_crown_goldtooth_the_chair",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "FLOSS? Floss? Baby, I don't sell floss — I sell FUTURES. You keep that pretty smile workin' for ME, and we both eat. Soft foods. But we eat. They call me a dentist. The taxman called me a dentist. But you and me — we know what this chair really IS.",
+      "vo": "FLOSS!? Floss. Baby, I don't sell floss — I sell FUTURES. You keep that pretty smile workin' for ME, and we both eat. Soft foods. But we eat. They call me a dentist. The tallyman called me a dentist. But you and me — we know what this chair really IS.",
       "shots": [
         {
-          "id": "c08_s1",
+          "id": "c42_s1",
           "kind": "character",
           "who": "goldtooth",
           "seed": 7212
@@ -422,7 +422,7 @@
       "id": "c17",
       "segment": "segment_2_roscoe_offered_the_plant_pays_",
       "speaker": "ROSCOE",
-      "vo": "I work this door, baby. A patient try to leave with the doc's gold still in his mouth? OHHH, I will FOLD him. I will fold that man like a LAWN CHAIR. I will mail him to HIMSELF — and the STAMP, brother, the stamp is gonna be ONE of his OWN TEETH. Return to sender. Nobody leaves the chair light. OHHH YEAHHH.",
+      "vo": "I work this door, baby. A patient try to leave with the doc's gold still in his mouth? OHHH, I will FOLD him. I will fold that man like a lawn chair! I will mail him to HIMSELF — and the STAMP, brother! The stamp is gonna be ONE of his OWN TEETH!! Return to sender. Nobody leaves the chair light. OHHH YEAHHH!!!",
       "shots": [
         {
           "id": "c17_s1",
@@ -590,7 +590,7 @@
       "id": "c29",
       "segment": "segment_3_scavenger_s_feast_cook_along_c",
       "speaker": "RON",
-      "vo": "Four hundred. Walter, that's the whole sector at ONE table. This is what I've been BEGGING this town to do for two years. Come together. Bring everyone.",
+      "vo": "Four hundred. Walter, that's the whole sector at ONE table. This is what I've been asking this town to do for two years. Come together. Bring everyone.",
       "shots": [
         {
           "id": "c29_s1",
@@ -779,6 +779,33 @@
   "season": 3,
   "episode_num": 2,
   "sfx": [
+    {
+      "file": "coins_reject.wav",
+      "cue": "c42",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    },
+    {
+      "file": "coins_reject.wav",
+      "cue": "c32",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    },
+    {
+      "file": "coins_reject.wav",
+      "cue": "c40",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    },
     {
       "file": "coins_reject.wav",
       "cue": "c08",

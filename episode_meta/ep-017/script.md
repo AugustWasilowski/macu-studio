@@ -156,7 +156,7 @@ the roster!
 » Carl core, jabbing a finger at the camera
 
 **RON:** _(on set, tasting, delighted)_ Four hundred. Walter, that's the whole sector at ONE table. _(to camera,
-swelling)_ This is what I've been BEGGING this town to do for two years. Come together. Bring everyone.
+swelling)_ This is what I've been asking this town to do for two years. Come together. Bring everyone.
 » Ron core, spoon in hand, moved
 
 **WALTER:** _(serene)_ It is convenient. To have everyone. In one place. For everyone.
