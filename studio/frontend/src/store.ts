@@ -18,6 +18,7 @@ const LOG_CAP = 300;
 interface State {
   drawerOpen: boolean;
   logOpen: boolean;
+  terminalOpen: boolean;
   toasts: Toast[];
   log: LogEntry[];
   activeSlug: string | null;
@@ -36,6 +37,9 @@ interface Actions {
   closeLog: () => void;
   toggleLog: () => void;
   clearLog: () => void;
+  openTerminal: () => void;
+  closeTerminal: () => void;
+  toggleTerminal: () => void;
   setActiveSlug: (slug: string | null) => void;
   pushToast: (text: string, kind?: ToastKind) => void;
   dropToast: (id: number) => void;
@@ -51,6 +55,7 @@ let toastSeq = 1;
 export const useStore = create<State & Actions>((set) => ({
   drawerOpen: false,
   logOpen: false,
+  terminalOpen: false,
   toasts: [],
   log: [],
   activeSlug: null,
@@ -60,14 +65,17 @@ export const useStore = create<State & Actions>((set) => ({
   playingKey: null,
   busy: {},
 
-  // Opening one right-hand drawer closes the other so they don't overlap.
-  openDrawer: () => set({ drawerOpen: true, logOpen: false }),
+  // Opening one right-hand drawer closes the others so they don't overlap.
+  openDrawer: () => set({ drawerOpen: true, logOpen: false, terminalOpen: false }),
   closeDrawer: () => set({ drawerOpen: false }),
-  toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen, logOpen: false })),
-  openLog: () => set({ logOpen: true, drawerOpen: false }),
+  toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen, logOpen: false, terminalOpen: false })),
+  openLog: () => set({ logOpen: true, drawerOpen: false, terminalOpen: false }),
   closeLog: () => set({ logOpen: false }),
-  toggleLog: () => set((s) => ({ logOpen: !s.logOpen, drawerOpen: false })),
+  toggleLog: () => set((s) => ({ logOpen: !s.logOpen, drawerOpen: false, terminalOpen: false })),
   clearLog: () => set({ log: [] }),
+  openTerminal: () => set({ terminalOpen: true, drawerOpen: false, logOpen: false }),
+  closeTerminal: () => set({ terminalOpen: false }),
+  toggleTerminal: () => set((s) => ({ terminalOpen: !s.terminalOpen, drawerOpen: false, logOpen: false })),
   setActiveSlug: (slug) => set({ activeSlug: slug }),
   pushToast: (text, kind = "info") => {
     const id = toastSeq++;

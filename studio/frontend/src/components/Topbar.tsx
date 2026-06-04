@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
-import { IBrace, IChevron, IList } from "./Icons";
+import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
@@ -29,6 +29,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
   const [syncing, setSyncing] = useState(false);
   const toggleDrawer = useStore((s) => s.toggleDrawer);
   const toggleLog = useStore((s) => s.toggleLog);
+  const toggleTerminal = useStore((s) => s.toggleTerminal);
   const pushToast = useStore((s) => s.pushToast);
 
   async function onSync() {
@@ -156,6 +157,9 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
           </span>
         </button>
         <span className="seg-readout cyan">{clock}</span>
+        <button className="btn" onClick={toggleTerminal} title="Open terminal (tmux into Max)">
+          <ITerminal />
+        </button>
         <button className="btn" onClick={toggleLog} title="Open activity log">
           <IList />
         </button>

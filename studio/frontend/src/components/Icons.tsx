@@ -18,3 +18,4 @@ export const IX = (p: P) => <Svg {...p}><path d="M4 4l8 8M12 4l-8 8"/></Svg>;
 export const IDL = (p: P) => <Svg {...p}><path d="M8 2v9M4.5 7.5L8 11l3.5-3.5"/><path d="M3 13.5h10"/></Svg>;
 export const IFolder = (p: P) => <Svg {...p}><path d="M2.5 4.5v8h11v-7H7.5L6 4.5z"/></Svg>;
 export const IList = (p: P) => <Svg {...p}><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><path d="M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></Svg>;
+export const ITerminal = (p: P) => <Svg {...p}><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M4 6l2.5 2L4 10M8.5 10.5H12"/></Svg>;

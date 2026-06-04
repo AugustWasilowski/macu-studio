@@ -13,6 +13,7 @@ import { Docs } from "./stages/Docs";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
 import { LogDrawer } from "./components/LogDrawer";
+import { TerminalDrawer } from "./components/TerminalDrawer";
 import { useRoute, Page } from "./route";
 import { useStore } from "./store";
 import { UIStage } from "./types";
@@ -86,6 +87,7 @@ function Shell() {
         <ManifestDrawer slug={slug} onJumpToStage={(s) => go({ page: "stage", stage: s as UIStage })} />
       )}
       <LogDrawer />
+      <TerminalDrawer />
     </div>
   );
 }
