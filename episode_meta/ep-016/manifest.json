@@ -103,7 +103,23 @@
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
     "macu_weather": "REUSE — auto-resolves from shared assets/titles",
-    "the_feast": "episodes/<slug>/titles/the_feast.mp4 (NEW — Hyperframes house-style SCAVENGER'S FEAST card; flag for build)"
+    "the_feast": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "duration_seconds": 5.5,
+      "resolution": "1024x1024",
+      "render_args": {
+        "fps": 8,
+        "quality": "high"
+      },
+      "fields": {
+        "kicker": "CAVITY OR A CAREER?",
+        "title_line_1": "WELCOME TO",
+        "title_line_2": "THE PRACTICE",
+        "sub": "A WATCH. A FEAST. A FRIEND.",
+        "idtag": "EP 16 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -1036,6 +1052,15 @@
     },
     {
       "file": "coins_reject.wav",
+      "cue": "c14",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    },
+    {
+      "file": "coins_reject.wav",
       "cue": "c59",
       "at": "end",
       "gain": 0.4,
@@ -1064,6 +1089,15 @@
     {
       "file": "coins_reject.wav",
       "cue": "c44",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    },
+    {
+      "file": "coins_reject.wav",
+      "cue": "c51",
       "at": "end",
       "gain": 0.4,
       "fade": 0,
