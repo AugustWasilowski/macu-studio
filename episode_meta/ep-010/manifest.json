@@ -1,0 +1,1022 @@
+{
+  "episode": "ep-010",
+  "title": "The MACU Report — Episode 10 — Exact Change",
+  "version": 2,
+  "authored_by": "leo",
+  "authored": "2026-05-31",
+  "notes": "FULL REWRITE (but/therefore, comedy-forward). Unit 7 takes the moon as tribute; Ron destroys himself bargaining it back; oblivious Walter accidentally pays with a secret and the moon returns. Ron's breakdown is the spine; Walter oblivious; full reset. NO new clones (all reused). MAX CLIP VARIETY: nearly every line is its own unique master (consistent face via per-character seed, unique core/key) — ~44 unique masters, minimal reuse, on purpose. SILENT BEATS are HOLD-PLAY (hold_style:'play' — ANIMATE, do NOT first-frame): c14,c17,c27,c36,c44. New tonal SFX synthesized into assets/sfx/ (vend_powerdown/up, bulb_click, coins_reject); a few realistic ones to be acquired CC0 by Max (coins_insert, metal_clink, tooth_click, whistle_faint). CUT from prior version: Chaz/Spicoli, Vela/Sagan, Signal monologues, the bonus, the PLEASE STAND BY/OBSERVATORY cards.",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy"
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter"
+      },
+      "THE VENDOR": {
+        "engine": "piper",
+        "voice_name": "HAL"
+      },
+      "GERALD": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth"
+      },
+      "MR. CRICKET": {
+        "engine": "omnivoice",
+        "profile_id": "31649b70",
+        "voice_name": "Snoop"
+      },
+      "ANNOUNCER": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w (watermark-free). 384x384x24f locked - do not bump resolution."
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Cold-start fire-and-poll. For each cue with non-empty vo: POST {text: vo} to the speaker_map voice -> vo/<cue_id>.wav. HOLD cues (empty vo + hold_seconds): generate a silent wav of hold_seconds, no subtitle. hold_style 'freeze' = first-frame still (double-take); hold_style 'play' = PLAY THE CLIP (animate) - ep10's holds are ALL 'play'. Per-shot screen time = cue duration / number of shots. Apply jank filtergraph, RIFE 3x, concat, mux VO, mix music beds, mix sfx one-shots, burn subs -> final/ep10.mp4.",
+  "title_assets": {
+    "macu_report_title": "auto-resolves from shared assets/titles",
+    "macu_report_bumper": "auto-resolves from shared assets/titles"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c43",
+          "c44"
+        ],
+        "max_seconds": 14
+      }
+    ],
+    "note": "Intro + outro big-band beds only this episode; the bargaining plays dry for tension."
+  },
+  "sfx": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/sfx",
+    "note": "One-shots mixed at each cue's start via the stage-5 adelay->amix chain (VO stays full). vend_powerdown/vend_powerup/bulb_click/coins_reject were synthesized into assets/sfx/ already; cricket_chirp exists in the kit. ACQUIRE (Max, CC0 freesound, exact filenames): coins_insert.wav, metal_clink.wav, tooth_click.wav, whistle_faint.wav. Missing file -> skip gracefully.",
+    "acquire_needed": [
+      "coins_insert.wav",
+      "metal_clink.wav",
+      "tooth_click.wav",
+      "whistle_faint.wav"
+    ],
+    "cues": [
+      {
+        "cue": "c16",
+        "file": "vend_powerdown.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c17",
+        "file": "bulb_click.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c22",
+        "file": "coins_insert.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c23",
+        "file": "coins_reject.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c24",
+        "file": "metal_clink.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c26",
+        "file": "tooth_click.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c27",
+        "file": "whistle_faint.wav",
+        "gain": 0.4,
+        "at": "start"
+      },
+      {
+        "cue": "c29",
+        "file": "cricket_chirp.wav",
+        "gain": 0.55,
+        "at": "start"
+      },
+      {
+        "cue": "c35",
+        "file": "vend_powerup.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c36",
+        "file": "bulb_click.wav",
+        "gain": 0.6,
+        "at": "start"
+      },
+      {
+        "cue": "c44",
+        "file": "whistle_faint.wav",
+        "gain": 0.4,
+        "at": "start"
+      }
+    ]
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Do NOT put FontName=/Fontsize= in force_style; stage 8 prepends its own from font/fontsize (fc-scan resolves 'Better VCR' -> 'Better VCR-JP'). HOLD cues have empty vo => no subtitle by design."
+  },
+  "characters": {
+    "ron_open": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, exhausted and twitchy with dark circles, at a vintage news desk under a single lamp"
+    },
+    "walter_warm": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, warm reassuring smile, news desk in front of a bookshelf"
+    },
+    "ron_dread": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, wide-eyed with dread, gripping the edge of the news desk"
+    },
+    "walter_breezy": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, breezy, gesturing toward the camera, pleasant"
+    },
+    "vendor_roots": {
+      "seed": 7007,
+      "core": "a battered vending machine with a glowing round dial face, thick cables trailing from its base like roots, dim concrete room"
+    },
+    "ron_point_up": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, looking up at the studio ceiling, alarmed, half rising"
+    },
+    "walter_gesture_monitor": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, gesturing toward a television monitor, pleasant"
+    },
+    "gerald_kitchen": {
+      "seed": 5252,
+      "core": "a nervous gap-toothed man with a frayed collar in a dim kitchen, forced calm smile"
+    },
+    "gerald_shadow": {
+      "seed": 5252,
+      "core": "a nervous gap-toothed man not turning around, a marionette's shadow cast on the wall behind him, dim kitchen"
+    },
+    "ron_point_monitor": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, half standing and pointing at a television monitor, alarmed"
+    },
+    "walter_unbothered": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, folding his hands on the desk, serene and unbothered"
+    },
+    "ron_lunge": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, scrambling out of his chair, lunging toward a vending machine"
+    },
+    "walter_armbar": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, medium wide shot at the news desk, extending one arm horizontally across his body as a barrier, reading from notes, not looking to the side, calm deadpan"
+    },
+    "walter_firm": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, firm and serene, one hand raised"
+    },
+    "vendor_flare": {
+      "seed": 7007,
+      "core": "a battered vending machine, its round dial flaring bright white, ominous, dim room"
+    },
+    "walter_papers": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, cheerful, shuffling papers at the news desk"
+    },
+    "ron_window": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, gesturing wildly at a dark studio window, frantic"
+    },
+    "ron_bargain": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, leaning close to a vending machine, pleading, sweating"
+    },
+    "vendor_slot_lit": {
+      "seed": 7007,
+      "core": "a vending machine with a single illuminated coin slot glowing, waiting, dark room"
+    },
+    "ron_coins": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, frantically jamming fistfuls of coins into a vending machine slot"
+    },
+    "vendor_reject": {
+      "seed": 7007,
+      "core": "a vending machine slot spitting coins back out, a few sparks, dim room"
+    },
+    "ron_watch": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, wrenching a wristwatch off his wrist and feeding it into a machine slot"
+    },
+    "vendor_unimpressed": {
+      "seed": 7007,
+      "core": "a battered vending machine, dim dial, a single steady indicator light, unimpressed"
+    },
+    "ron_tooth": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, hand to his mouth, eyes watering, holding out something small and bloody"
+    },
+    "gerald_monitor_nod": {
+      "seed": 5252,
+      "core": "a nervous gap-toothed man on a television monitor, nodding slowly with grim solidarity"
+    },
+    "vendor_dim": {
+      "seed": 7007,
+      "core": "a battered vending machine, its dial dimming low, long shadow"
+    },
+    "cricket_bulb": {
+      "seed": 9091,
+      "core": "an old wooden cricket marionette, strings leading up to the ceiling, lazy painted grin, under a bare bulb"
+    },
+    "cricket_tilt": {
+      "seed": 9091,
+      "core": "an old wooden cricket marionette, head tilting on its strings toward the camera, glass eyes"
+    },
+    "ron_horror": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, dawning horror on his face, hand over his mouth"
+    },
+    "gerald_shadow_big": {
+      "seed": 5252,
+      "core": "a nervous gap-toothed man, gentle, a large marionette shadow looming on the wall behind him"
+    },
+    "ron_crumpled": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, crumpled on his knees at the anchor desk, empty trouser pockets turned out"
+    },
+    "walter_smalltalk": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, relaxed, making small talk directly to the camera lens"
+    },
+    "vendor_blaze": {
+      "seed": 7007,
+      "core": "a battered vending machine, its round dial blazing bright, the coin slot lighting up"
+    },
+    "walter_window": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, glancing mildly out a studio window"
+    },
+    "ron_wild": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, wild-eyed, leaning across the news desk, shouting"
+    },
+    "ron_closeup": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, face too close to the camera lens, lamp-lit, unblinking"
+    },
+    "walter_pat": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, kindly patting the shoulder of the man beside him"
+    },
+    "cricket_wave": {
+      "seed": 9091,
+      "core": "an old wooden cricket marionette giving a slow wave on its strings, under a bare bulb"
+    },
+    "gerald_toast": {
+      "seed": 5252,
+      "core": "a nervous gap-toothed man raising a soda can in a small toast, faint sad smile, dim"
+    },
+    "walter_serene": {
+      "seed": 24601,
+      "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, serene, signing off, hands folded"
+    },
+    "ron_alone": {
+      "seed": 77777,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, alone at the news desk, moonlight on his face, mouth slightly open"
+    },
+    "ron_strain": {
+      "seed": 31415,
+      "core": "Will Ferrell as a 1970s television news anchor, thick brown mustache, side-parted brown hair, wide-lapel grey suit and tie, medium shot, pressed chest-first against a horizontal arm crossing the frame, leaning forward straining, mouth open in protest, frustrated"
+    }
+  },
+  "broll": {
+    "vendor_set": "a battered glass-front vending machine on a tinsel-draped 1970s home shopping set, glowing dial, studio lights",
+    "moon_out": "the full moon in a black night sky over a ruined city, flickering and going dark like a dying lightbulb",
+    "moon_on": "a dark empty night sky over a ruined city, the moon flickering back on, bright and round"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. I'm Ron. I've slept four hours this month and I'd like that on the record.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron_open",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. We'll get to the weekend team's segment later, or we won't, we'll see. First, wonderful news: by overwhelming popular demand, tonight's broadcast is brought to you by our most beloved sponsor, Unit Seven.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter_warm",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "No. No, we agreed. We said never again. Walter, we shook on it.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron_dread",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "We did no such thing. To the home shopping hour!",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter_breezy",
+          "seed": 24601
+        },
+        {
+          "id": "c04_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "ad",
+      "speaker": "ANNOUNCER",
+      "vo": "It's the Unit Seven Home Shopping Hour! Your favorite machine, your favorite tributes, your favorite slot!",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "broll",
+          "who": "vendor_set"
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "ad",
+      "speaker": "THE VENDOR",
+      "vo": "Hello again, friends. Tonight, a celebration. From each of you I have taken a coin. From many of you, a tooth. From the weak, a secret. Three currencies. I lack only one final tribute: something round, and bright, and far away.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "vendor_roots",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "ad",
+      "speaker": "RON",
+      "vo": "A secret, sure, whatever. Walter. Walter, it just described the moon.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "ron_point_up",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "ad",
+      "speaker": "WALTER",
+      "vo": "It's a sponsor read, Ron, they get poetic. And to show you how rewarding tribute can be, let's hear from a satisfied customer.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "walter_gesture_monitor",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "testimonial",
+      "speaker": "GERALD",
+      "vo": "Hi. I'm Gerald. Last year I gave Unit Seven one tooth for one soda. Now I whistle when I talk. It's fine. I deal with it.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "gerald_kitchen",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "testimonial",
+      "speaker": "GERALD",
+      "vo": "Mr. Cricket visits Tuesdays to collect the interest. We've made our peace. He's punctual. He's already here, actually. He's behind me right now. Don't look. It's fine.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "gerald_shadow",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "testimonial",
+      "speaker": "RON",
+      "vo": "That is not a testimonial, Walter, that is a hostage tape. That man is a warning!",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "ron_point_monitor",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "testimonial",
+      "speaker": "WALTER",
+      "vo": "He seems to have made his peace. Unit Seven, please, continue.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "walter_unbothered",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "transaction",
+      "speaker": "RON",
+      "vo": "Absolutely not. I'm pulling the plug. I am unplugging the sponsor.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "ron_lunge",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c14a",
+      "segment": "transaction",
+      "speaker": "WALTER",
+      "vo": "You're overreacting, Ron.",
+      "hold_seconds": null,
+      "hold_style": null,
+      "shots": [
+        {
+          "id": "c14a_s1",
+          "kind": "character",
+          "who": "walter_armbar",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c14b",
+      "segment": "transaction",
+      "speaker": "RON",
+      "vo": "Unit Seven took the moon!",
+      "hold_seconds": null,
+      "hold_style": null,
+      "shots": [
+        {
+          "id": "c14b_s1",
+          "kind": "character",
+          "who": "ron_strain",
+          "seed": 31415
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "transaction",
+      "speaker": "WALTER",
+      "vo": "I'm sure it's fine, Ron.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "walter_firm",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "transaction",
+      "speaker": "THE VENDOR",
+      "vo": "Tribute accepted. Thank you.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "vendor_flare",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "transaction",
+      "vo": "",
+      "hold_seconds": 3,
+      "hold_style": "play",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "broll",
+          "who": "moon_out"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "transaction",
+      "speaker": "WALTER",
+      "vo": "And Unit Seven thanks you for your generous tribute! What a deal. Now, the news.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "walter_papers",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "bargain",
+      "speaker": "RON",
+      "vo": "It took the moon. It took the actual moon. As a door prize. Does no one—",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "ron_window",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "bargain",
+      "speaker": "RON",
+      "vo": "Okay. Okay. Unit Seven. Buddy. Give it back. Give the moon back, right now, and we'll forget this happened.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "ron_bargain",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "bargain",
+      "speaker": "THE VENDOR",
+      "vo": "The moon may be redeemed. Insert tribute.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "vendor_slot_lit",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "bargain",
+      "speaker": "RON",
+      "vo": "Fine. Coins. I have coins.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "ron_coins",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "bargain",
+      "speaker": "THE VENDOR",
+      "vo": "Insufficient.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "vendor_reject",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "bargain",
+      "speaker": "RON",
+      "vo": "My watch. Take the watch, it was my father's. He stole it, but still. Take it.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "ron_watch",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "bargain",
+      "speaker": "THE VENDOR",
+      "vo": "Insufficient.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "vendor_unimpressed",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "bargain",
+      "speaker": "RON",
+      "vo": "A tooth. You want a tooth. I've seen the brochure. There. There's a tooth. We're square. Give me the moon.",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "ron_tooth",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "bargain",
+      "vo": "",
+      "hold_seconds": 2,
+      "hold_style": "play",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "gerald_monitor_nod",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "bargain",
+      "speaker": "THE VENDOR",
+      "vo": "Insufficient. Coins, teeth, surface. These you hand me. The final tribute is the third currency. It cannot be handed. It must be a secret, and it must be given freely, not bought.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "vendor_dim",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "cricket",
+      "speaker": "MR. CRICKET",
+      "vo": "Yeah, see, Ron, here's the thing. The debt went spiritual. Coins, teeth, that's surface-level, my guy. Mr. Cricket handles the spiritual accounts now.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "cricket_bulb",
+          "seed": 9091
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "cricket",
+      "speaker": "MR. CRICKET",
+      "vo": "I'll be swingin' by Tuesdays till it's square. Bring a chair. Mr. Cricket always finds a friend. Mr. Cricket found you, Ron.",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "cricket_tilt",
+          "seed": 9091
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "cricket",
+      "speaker": "RON",
+      "vo": "Oh my god. I'm becoming Gerald.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "ron_horror",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "cricket",
+      "speaker": "GERALD",
+      "vo": "It's not so bad, Ron. You get used to the whistle. You stop hearing the cricket around month three.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "gerald_shadow_big",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "fix",
+      "speaker": "RON",
+      "vo": "I have nothing left. I gave it everything. There's nothing personal left to give.",
+      "shots": [
+        {
+          "id": "c33_s1",
+          "kind": "character",
+          "who": "ron_crumpled",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "segment": "fix",
+      "speaker": "WALTER",
+      "vo": "Well, while Ron collects himself, you know, MACU, just between us: I never did care for the weekend anchor. Every Monday I think, one good weekend and he's gone. Never said it out loud. There. Feels good to finally—",
+      "shots": [
+        {
+          "id": "c34_s1",
+          "kind": "character",
+          "who": "walter_smalltalk",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "segment": "fix",
+      "speaker": "THE VENDOR",
+      "vo": "Tribute accepted. A secret. Freely given. Exact change.",
+      "shots": [
+        {
+          "id": "c35_s1",
+          "kind": "character",
+          "who": "vendor_blaze",
+          "seed": 7007
+        }
+      ]
+    },
+    {
+      "id": "c36",
+      "segment": "fix",
+      "vo": "",
+      "hold_seconds": 2,
+      "hold_style": "play",
+      "shots": [
+        {
+          "id": "c36_s1",
+          "kind": "broll",
+          "who": "moon_on"
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "fix",
+      "speaker": "WALTER",
+      "vo": "Oh, look at that. The moon's back. Was it gone? Anyway.",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "character",
+          "who": "walter_window",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "I gave it my teeth, Walter. My father's watch. And you, you gave it one unkind thought about Gary from the weekend, and it handed back the moon.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "character",
+          "who": "ron_wild",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's the exchange rate. A man's whole body for a soda, but a feeling, a feeling about Gary, buys back a celestial object. I understand the pricing now.",
+      "shots": [
+        {
+          "id": "c39_s1",
+          "kind": "character",
+          "who": "ron_closeup",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c40",
+      "segment": "signoff",
+      "speaker": "MR. CRICKET",
+      "vo": "See you Tuesday, Ron.",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "cricket_wave",
+          "seed": 9091
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "You worry too much, Ron. You always have.",
+      "shots": [
+        {
+          "id": "c41_s1",
+          "kind": "character",
+          "who": "walter_pat",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "segment": "signoff",
+      "speaker": "GERALD",
+      "vo": "Ron, you should move. Towns. Tonight.",
+      "shots": [
+        {
+          "id": "c42_s1",
+          "kind": "character",
+          "who": "gerald_toast",
+          "seed": 5252
+        }
+      ]
+    },
+    {
+      "id": "c43",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Anyway. That's our broadcast, MACU. Stay safe, stay strong, and, moon and all, good luck.",
+      "shots": [
+        {
+          "id": "c43_s1",
+          "kind": "character",
+          "who": "walter_serene",
+          "seed": 24601
+        },
+        {
+          "id": "c43_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c44",
+      "segment": "signoff",
+      "vo": "",
+      "hold_seconds": 3,
+      "hold_style": "play",
+      "shots": [
+        {
+          "id": "c44_s1",
+          "kind": "character",
+          "who": "ron_alone",
+          "seed": 77777
+        }
+      ]
+    }
+  ],
+  "season": 1,
+  "episode_num": 5
+}
