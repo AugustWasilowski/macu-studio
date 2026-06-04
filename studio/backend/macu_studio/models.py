@@ -97,6 +97,25 @@ class TitleAssetObj(BaseModel):
     render_args: Optional[dict[str, Any]] = None
 
 
+class Overlay(BaseModel):
+    """A title-card placement that spans a range of cues (the video twin of a
+    music bed). Cue-tethered (anchor_cue) + sub-cue offsets so a timeline can
+    drag/resize freely; render resolves to absolute seconds via the cumulative
+    cue-offset map (mirrors stage_5_music)."""
+    model_config = _CFG
+    id: Optional[str] = None          # stable id, minted ov_NNN by gen_manifest
+    asset: Optional[str] = None       # key into title_assets — the card to place
+    mode: Optional[str] = None        # "insert" (full-frame replace) | "overlay" (composite)
+    anchor_cue: Optional[str] = None  # cue the start is tethered to (validated like bed refs)
+    start_offset: Optional[float] = None  # seconds into anchor_cue where it begins
+    duration: Optional[float] = None      # seconds on screen
+    position: Optional[str] = None    # overlay-mode: lower_third|bug_tl|bug_tr|center|full
+    scale: Optional[float] = None
+    opacity: Optional[float] = None
+    fade_in: Optional[float] = None
+    fade_out: Optional[float] = None
+
+
 class Manifest(BaseModel):
     model_config = _CFG
     episode: Optional[str] = None  # the slug, e.g. "ep-006"
@@ -117,6 +136,9 @@ class Manifest(BaseModel):
     # sfx is normally a list of pinned one-shots, but ep-010..015 carry a legacy
     # config-dict schema; stay lenient (the Studio coerces non-lists to []).
     sfx: Optional[Any] = None
+    # overlays are spanning title-card placements (see Overlay). Absent on every
+    # existing episode; extra=allow round-trips it, so this is fully backward-compatible.
+    overlays: Optional[list[Overlay]] = None
 
 
 def parse(data: dict[str, Any]) -> Manifest:

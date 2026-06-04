@@ -309,6 +309,20 @@ async def put_sfx(slug: str, body: dict = Body(...)):
     return {"ok": True, "count": len(sfx)}
 
 
+@app.put("/api/episodes/{slug}/overlays")
+async def put_overlays(slug: str, body: dict = Body(...)):
+    """Replace manifest.overlays[] wholesale — the single mutation for the Graphics
+    dope sheet (drag-to-place) and the Video-page timeline (drag/resize/edit/delete
+    spanning title-card placements)."""
+    overlays = body.get("overlays")
+    if not isinstance(overlays, list):
+        raise HTTPException(400, "overlays must be a list")
+    m = manifest_mod.load(slug)
+    m["overlays"] = overlays
+    manifest_mod.save(slug, m)
+    return {"ok": True, "count": len(overlays)}
+
+
 # ---------- Asset library (assets/sfx, assets/music) ----------
 
 @app.get("/api/assets/{kind}")

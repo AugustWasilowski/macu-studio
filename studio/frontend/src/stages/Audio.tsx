@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api, mediaUrl, jobStreamUrl } from "../api";
 import { libraryApi } from "../api/library";
@@ -9,8 +9,9 @@ import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
 import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlay, IPause, IDL } from "../components/Icons";
-import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
+import { precacheMedia, isCached } from "../mediaCache";
 import { useSfx, usePreview, GapZone, Library, PlayItem } from "./AudioSfx";
+import { useCuePlayback } from "./useCuePlayback";
 import type { Cue, PipelineEvent } from "../types";
 
 interface SpeakerInfo {
@@ -43,62 +44,24 @@ export function Audio({ slug }: { slug: string }) {
   const sfx = useSfx(slug);
   const preview = usePreview();
 
-  // ---- playback: a queue of VO cues + interleaved SFX one-shots ----
-  const [queue, setQueue] = useState<PlayItem[]>([]);
-  const [qpos, setQpos] = useState<number | null>(null);
-  // When on (default), a per-row play button plays continuously from that clip onward
-  // (VO + the SFX pinned between cues); when off, it plays just that one clip.
-  const [continuous, setContinuous] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   // Per-cue version-preview override URL (null = canonical cue audio).
   const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
   const setCueOverride = (id: string, u: string | null) => setCueOverrides((s) => ({ ...s, [id]: u }));
   const overridesRef = useRef(cueOverrides);
   overridesRef.current = cueOverrides;
 
-  useEffect(() => {
-    if (qpos == null) return;
-    const item = queue[qpos];
-    if (!item) { setQpos(null); return; }
-    const a = new window.Audio(resolveMedia(item.url));
-    audioRef.current = a;
-    const next = () => setQpos((p) => (p != null && p + 1 < queue.length ? p + 1 : null));
-    a.onended = next;
-    a.onerror = () => { push(`audio failed: ${item.label}`, "err"); next(); };
-    a.play().catch(() => next());
-    return () => { a.pause(); audioRef.current = null; };
-  }, [qpos, queue, slug]);
-
-  // Follow the playing VO cue in the Manifest Preview pane (esp. during sequential play).
-  useEffect(() => {
-    if (qpos == null) return;
-    const item = queue[qpos];
-    if (item?.cueId) selectCue(item.cueId);
-  }, [qpos, queue, selectCue]);
-
-  const curCueId = qpos != null ? queue[qpos]?.cueId : undefined;
-  const sequentialPlaying = qpos != null;
-
-  const togglePlay = (cueId: string) => {
-    if (curCueId === cueId) { setQpos(null); return; }
-    if (continuous) {
-      const pl = sfx.buildPlaylist();
-      const idx = pl.findIndex((it) => it.cueId === cueId);
-      if (idx < 0) { push("no audio for this cue", "info"); return; }
-      setQueue(pl); setQpos(idx);
-    } else {
+  // ---- playback: a queue of VO cues + interleaved SFX one-shots (shared engine) ----
+  const playback = useCuePlayback({
+    buildPlaylist: () => sfx.buildPlaylist(),
+    resolveSingle: (cueId): PlayItem => {
       const c = cues.data?.cues.find((x) => x.id === cueId);
       const url = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId, c?.wav_mtime);
-      setQueue([{ url, cueId, label: cueId }]); setQpos(0);
-    }
-  };
-
-  const playAll = () => {
-    if (sequentialPlaying) { setQpos(null); return; } // toggle off
-    const pl = sfx.buildPlaylist();
-    if (!pl.length) { push("No playable clips", "info"); return; }
-    setQueue(pl); setQpos(0);
-  };
+      return { url, cueId, label: cueId };
+    },
+    onCueChange: selectCue,
+    notify: push,
+  });
+  const { continuous, setContinuous, curCueId, sequentialPlaying, togglePlay, playAll } = playback;
 
   // ---- pre-cache all of this episode's audio into the in-browser blob cache ----
   // (manual, button-driven — sidesteps Cloudflare revalidation lag on playback)

@@ -29,7 +29,8 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
   "subtitles":{ ... },          // Better VCR font
   "characters": { "<key>": { "seed": N, "core": "..." }, ... },
   "broll":      { "<key>": "<core prompt>", ... },
-  "cues": [ ... ]
+  "cues": [ ... ],
+  "overlays": [ ... ]            // optional — spanning title-card graphics (see Spanning graphics)
 }
 ```
 
@@ -211,6 +212,39 @@ with `python3 pipeline/agen_music.py "<prompt>" <basename> [--engine music|riff]
 endpoint), then add `<basename>.wav` to `music.clips[]`. `music` = MusicGen (warbly, drifts past ~15–20s);
 `riff` = Riffusion (tape-degraded lo-fi). Both land in `assets/music/` and fit the jank — use them for sickly
 jazz, broken-broadcast stings, ominous drones, etc. Same GPU gate as SFX (won't run during a render).
+
+## Spanning title-card graphics (`overlays[]`) — the video twin of music beds
+
+A title card can be placed **across a range of cues** (not just inside one cue's `shots[]`) via a top-level
+`overlays[]` block — the video analogue of `music.beds[]`. Each placement is **cue-tethered** so it survives
+retiming/regen (the same way bed refs do), with sub-cue offsets so the Studio timeline can drag/resize freely:
+
+```jsonc
+"overlays": [
+  {
+    "id": "ov_001",            // stable id, minted ov_NNN by gen_manifest (don't hand-set)
+    "asset": "the_feast",      // key into title_assets — the existing card IS the graphic
+    "mode": "insert",          // "insert" = full-frame card REPLACES footage; "overlay" = composited ON TOP
+    "anchor_cue": "c04",       // cue the start is tethered to (validated like a bed ref; stale → dropped+warned)
+    "start_offset": 0.0,       // seconds into anchor_cue where it begins
+    "duration": 23.0,          // seconds on screen
+    // overlay-mode only (ignored by insert):
+    "position": "lower_third", // lower_third | bug_tl | bug_tr | center | full
+    "scale": 1.0, "opacity": 1.0, "fade_in": 0.3, "fade_out": 0.3
+  }
+]
+```
+
+- **Timing** resolves to absolute seconds via the cumulative per-cue offset (`start_s = cum[anchor_cue] +
+  start_offset`), exactly mirroring stage 5. The render reads `.work/cue_durs.json`.
+- **`insert`** works with the existing opaque 1024² cards (cut-to-card across the span). **`overlay`** composites
+  the card over the moving footage; it prefers a true-alpha asset `titles/<asset>.webm` (set `render_args.alpha:
+  true` on the title to emit one from a transparent composition) and otherwise **keys black** out of the opaque
+  `<asset>.mp4` (MACU cards are white-on-black, so the text/graphics composite cleanly).
+- **Authoring**: drag a card onto a cue on the Studio **Graphics dope sheet**, then drag/resize the bar on the
+  **Video ▸ Timeline**. Persisted via `PUT /api/episodes/<slug>/overlays`. Empty/absent `overlays` = no-op.
+- Baked in by **stage 4b** (runs at the tail of stage 4 — see pipeline-and-handoff). Editing overlays re-runs
+  assemble (any manifest edit already invalidates its cache).
 
 ## Episode bookends — the animated open & the next-episode bumper
 

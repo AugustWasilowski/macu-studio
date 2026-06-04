@@ -27,9 +27,14 @@ under `episodes/<slug>/final/` is visible to him with no sync wait.
    serialized on the GPU. First gen cold-loads and times out the request but keeps running (fire-and-poll).
 3. `interpolate_masters.py` — RIFE 3× (24→72 frames) for smooth motion. ~35s for a dozen masters.
 4. `assemble.py` — per shot: anim_dump → jank filtergraph (B&W, grain, vignette, etc.) → concat shots → mux
-   VO → per cue; then concat cues → mix the music beds → `final/<slug>_nosubs` cache. The open cue plays the
+   VO → per cue; then concat cues → `final/<slug>_nosubs` cache. The open cue plays the
    animated `intro` card under Walter's announcement and clone-holds the title for the `pad_seconds` tail; the
    closing bumper plays the NEXT episode's `next` card; `no_subs` cues are spoken but not subtitled.
+   **At its tail it runs stage 4b (`stage_4b_graphics.py`)**: bakes any spanning title-card graphics
+   (`manifest.overlays[]`) onto the assembled video — `insert` mode cuts the card full-frame across its span,
+   `overlay` mode composites it over the footage (alpha `.webm` or keyed-black opaque). Audio is untouched, so
+   stage 5+ are unaffected; a clean `_nosubs_clean` snapshot lets overlay-only edits re-composite without a full
+   re-assemble. No-op when `overlays` is empty.
 5. `run_whisper.py` — faster-whisper aligns the rendered audio for subtitle timing. (~10 min on CPU.)
 6. `build_srt_aligned.py` — manifest text at whisper timings → SRT (short lines, ~7 words/3s max).
 7. final burn — burns the SRT in the Better VCR font + NVENC encode → `final/<slug>.mp4` + `_thumbs.jpg`.

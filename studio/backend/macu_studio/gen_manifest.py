@@ -368,6 +368,32 @@ def _build(slug: str) -> dict:
             dropped_refs.append(f"sfx/{label}:{ref}")
             warnings.append(f"sfx '{label}': cue ref '{ref}' no longer in script — review")
 
+    # overlays (spanning title-card placements) tether to a single anchor_cue. Same
+    # rule as music beds: a stale anchor means that cue's VO changed enough to become a
+    # new cue — drop the overlay + warn rather than render it at the wrong time. Mint a
+    # stable ov_NNN id for any overlay that lacks one.
+    overlays = merged.get("overlays")
+    if isinstance(overlays, list):
+        used_ov = {o.get("id") for o in overlays if o.get("id")}
+        ov_n = max((int(mo.group(1)) for o in overlays
+                    if (mo := re.match(r"ov_0*(\d+)", o.get("id") or ""))), default=0)
+        kept_overlays = []
+        for ov in overlays:
+            anchor = ov.get("anchor_cue")
+            if isinstance(anchor, str) and anchor and anchor not in valid_ids:
+                dropped_refs.append(f"overlay/{ov.get('id') or ov.get('asset') or '?'}:{anchor}")
+                warnings.append(f"overlay '{ov.get('id') or ov.get('asset')}': anchor cue "
+                                f"'{anchor}' no longer in script — dropped")
+                continue
+            if not ov.get("id"):
+                ov_n += 1
+                while f"ov_{ov_n:03d}" in used_ov:
+                    ov_n += 1
+                ov["id"] = f"ov_{ov_n:03d}"
+                used_ov.add(ov["id"])
+            kept_overlays.append(ov)
+        merged["overlays"] = kept_overlays
+
     summary = {
         "old_cue_count": len(old_cues),
         "new_cue_count": len(new_cues),

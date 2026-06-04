@@ -211,6 +211,33 @@ async def _run(job: Job) -> None:
         new_mtime = max(manifest_mtime + 1, time.time())
         os.utime(final_path, (new_mtime, new_mtime))
 
+        # Optional transparent (alpha) pass for graphics OVERLAY mode. When the title
+        # entry has render_args.alpha == true (a transparent-background composition),
+        # also emit titles/<key>.webm with a real alpha channel; stage_4b's overlay
+        # branch prefers it over the colorkey-on-black fallback. The opaque .mp4 above
+        # is still produced for the Graphics-page preview.
+        if render_args.get("alpha"):
+            out_webm = project_dir / "out" / f"{job.key}.webm"
+            await job.emit("log", line="alpha pass → webm (transparency)")
+            aproc = await asyncio.create_subprocess_exec(
+                NPX, "--userconfig", "/dev/null", "hyperframes", "render",
+                "--output", f"out/{job.key}.webm", "--format", "webm",
+                "--fps", fps, "--quality", quality,
+                cwd=str(project_dir), env=env,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+            )
+            assert aproc.stdout
+            async for line in aproc.stdout:
+                await job.emit("log", line=line.decode("utf-8", errors="replace").rstrip())
+            arc = await aproc.wait()
+            if arc == 0 and out_webm.exists():
+                webm_final = titles_dir / f"{job.key}.webm"
+                shutil.copyfile(out_webm, webm_final)
+                os.utime(webm_final, (new_mtime, new_mtime))
+                await job.emit("log", line=f"alpha asset → {webm_final}")
+            else:
+                await job.emit("log", line=f"alpha pass failed (rc={arc}) — overlay mode will key black instead")
+
         await job.emit("stage.done", n=1, name="render", wall_s=round(time.time() - job.started_at, 2),
                         result={"mp4_path": str(final_path), "bytes": final_path.stat().st_size})
         await job.emit("job.done", final=str(final_path), bytes=final_path.stat().st_size,

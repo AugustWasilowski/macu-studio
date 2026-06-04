@@ -160,8 +160,18 @@ def main(slug):
     with open(f"{p['work']}/cue_durs.json","w") as f:
         json.dump(cue_durs, f, indent=2)
     print(f"[stage 4 assemble] {nosubs} dur={total:.2f}s")
+    # Stage 4b: bake any spanning title-card graphics (manifest.overlays[]) onto the
+    # freshly-assembled video. refresh_clean snapshots this clean cut so an overlay-only
+    # edit can re-composite without a full re-assemble. No-op when overlays is empty.
+    gfx = {}
+    try:
+        import stage_4b_graphics
+        gfx = stage_4b_graphics.apply(slug, refresh_clean=True)
+    except Exception as e:
+        print(f"[stage 4b graphics] skipped: {e}")
+        gfx = {"error": str(e)}
     return {"cached": False, "nosubs": nosubs, "total_dur": total,
-            "cue_durs": cue_durs, "wall_s": round(time.time()-start,2)}
+            "cue_durs": cue_durs, "graphics": gfx, "wall_s": round(time.time()-start,2)}
 
 if __name__ == "__main__":
     main(sys.argv[1])

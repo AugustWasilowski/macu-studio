@@ -186,6 +186,27 @@ export interface TitleAssetObj {
   [k: string]: unknown;
 }
 
+export type OverlayMode = "insert" | "overlay";
+export type OverlayPosition = "lower_third" | "bug_tl" | "bug_tr" | "center" | "full";
+
+// A spanning title-card placement (the video twin of a music bed). Cue-tethered
+// via anchor_cue + start_offset so the timeline can drag/resize freely; the
+// renderer resolves it to absolute seconds against the cumulative cue-offset map.
+export interface Overlay {
+  id?: string;            // stable id, minted ov_NNN by gen_manifest
+  asset: string;          // key into title_assets
+  mode: OverlayMode;
+  anchor_cue: string;     // cue the start is tethered to
+  start_offset: number;   // seconds into anchor_cue
+  duration: number;       // seconds on screen
+  position?: OverlayPosition; // overlay-mode only
+  scale?: number;
+  opacity?: number;
+  fade_in?: number;
+  fade_out?: number;
+  [k: string]: unknown;
+}
+
 export interface Manifest {
   episode?: string;
   title?: string;
@@ -201,6 +222,7 @@ export interface Manifest {
   broll?: Record<string, unknown>;
   cues?: ManifestCue[];
   sfx?: Record<string, unknown>[];
+  overlays?: Overlay[];
   [k: string]: unknown;
 }
 

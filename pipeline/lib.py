@@ -87,6 +87,7 @@ def episode_paths(slug):
         "out_thumb_png": f"{base}/final/{slug}_thumb.png",
         "music_dir": f"{base}/.work/music",
         "nosubs": f"{base}/.work/{slug}_nosubs.mp4",
+        "nosubs_clean": f"{base}/.work/{slug}_nosubs_clean.mp4",
         "music_nosubs": f"{base}/.work/{slug}_music_nosubs.mp4",
     }
 

@@ -1,4 +1,4 @@
-import type { JobSubmitResp } from "../types";
+import type { JobSubmitResp, Overlay } from "../types";
 
 async function J<T>(r: Response): Promise<T> {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${await r.text().catch(() => "")}`);
@@ -30,4 +30,10 @@ export const graphicsApi = {
     }).then((r) => J<JobSubmitResp>(r)),
   ythumbPreviewUrl: (slug: string) =>
     `/api/episodes/${slug}/ythumb/preview`,
+  // Replace manifest.overlays[] wholesale (drag-to-place + timeline drag/resize/edit).
+  putOverlays: (slug: string, overlays: Overlay[]) =>
+    fetch(`/api/episodes/${slug}/overlays`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ overlays }),
+    }).then((r) => J<{ ok: boolean; count: number }>(r)),
 };
