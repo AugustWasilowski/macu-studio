@@ -9,9 +9,9 @@ service (`serve.py` on `:8773`).
 - **Renders:** the studio backend does **not** spawn `run.py`. It forwards
   `POST /pipeline/run` to the existing `macu-render` service at `:8773` and
   re-streams its SSE events so the UI can drive the per-stage progress.
-- **Source of truth for pipeline code:** `/mnt/storage/shares/MACU/pipeline/*`
-  (the live working copy; the in-repo `stage_*.py` are an older snapshot
-  Studio does **not** invoke).
+- **Source of truth for pipeline code:** this repo at `/mnt/storage/macu-pipeline/pipeline/`
+  (`/mnt/storage/shares/MACU/pipeline` is a back-compat symlink to it). Studio doesn't
+  invoke the scripts directly — it drives them through the `:8773` render service.
 - **Source of truth for episode data:** `/mnt/storage/shares/MACU/episodes/<slug>/`.
 
 The visual design lives at
@@ -37,8 +37,9 @@ Open follow-ups:
 
 ```sh
 ./scripts/install.sh
-# Then, manually:
-sudo ln -sf $(pwd)/systemd/macu-studio.service /etc/systemd/system/macu-studio.service
+# Then, manually (COPY the unit, don't symlink — the repo lives on /mnt/storage,
+# which isn't mounted when systemd loads units at early boot; the unit must be on /):
+sudo cp $(pwd)/systemd/macu-studio.service /etc/systemd/system/macu-studio.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now macu-studio
 sudo touch /var/log/macu-studio.log && sudo chown mayorawesome:mayorawesome /var/log/macu-studio.log
