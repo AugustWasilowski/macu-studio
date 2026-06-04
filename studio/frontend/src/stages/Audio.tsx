@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api, mediaUrl, jobStreamUrl } from "../api";
+import { libraryApi } from "../api/library";
 import { useStore } from "../store";
 import { Badge } from "../components/Badge";
 import { Waveform } from "../components/Waveform";
@@ -8,7 +9,7 @@ import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
 import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlay, IPause } from "../components/Icons";
-import { SfxSection } from "./AudioSfx";
+import { useSfx, usePreview, GapZone, Library, PlayItem } from "./AudioSfx";
 import type { Cue, PipelineEvent } from "../types";
 
 interface SpeakerInfo {
@@ -18,8 +19,7 @@ interface SpeakerInfo {
   voice_name?: string | null;
 }
 
-/* Deterministic color per speaker so the UI stays consistent across stages.
-   We never had a speaker palette in the manifest — derive from the name. */
+/* Deterministic color per speaker so the UI stays consistent across stages. */
 function colorForSpeaker(name: string): string {
   if (!name) return "#938d82";
   const palette = ["#f5a623", "#00e5ff", "#33ff66", "#c08bff", "#ff7a59", "#9ad6ff", "#ffd166", "#7cc97a"];
@@ -36,81 +36,70 @@ export function Audio({ slug }: { slug: string }) {
   const selectedCueId = useStore((s) => s.selectedCueId);
   const selectCue = useStore((s) => s.selectCue);
 
-  const cues = useQuery({
-    queryKey: ["cues", slug],
-    queryFn: () => api.cues(slug),
-  });
-  const manifest = useQuery({
-    queryKey: ["manifest", slug],
-    queryFn: () => api.manifest(slug),
-  });
+  const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug) });
+  const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
 
-  const [playing, setPlaying] = useState<string | null>(null);
-  // "single" = play this one clip and stop; "sequential" = auto-advance to the next cue.
-  const [playMode, setPlayMode] = useState<"single" | "sequential">("single");
-  // When on (default), a per-row play button plays continuously from that clip onward;
-  // when off, it plays just that one clip (oneshot).
+  const sfx = useSfx(slug);
+  const preview = usePreview();
+
+  // ---- playback: a queue of VO cues + interleaved SFX one-shots ----
+  const [queue, setQueue] = useState<PlayItem[]>([]);
+  const [qpos, setQpos] = useState<number | null>(null);
+  // When on (default), a per-row play button plays continuously from that clip onward
+  // (VO + the SFX pinned between cues); when off, it plays just that one clip.
   const [continuous, setContinuous] = useState(true);
-  const playModeRef = useRef(playMode);
-  playModeRef.current = playMode;
-  const cueListRef = useRef<Cue[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Per-cue version-preview override URL (null = canonical cue audio).
   const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
-  const setCueOverride = (id: string, u: string | null) =>
-    setCueOverrides((s) => ({ ...s, [id]: u }));
+  const setCueOverride = (id: string, u: string | null) => setCueOverrides((s) => ({ ...s, [id]: u }));
   const overridesRef = useRef(cueOverrides);
   overridesRef.current = cueOverrides;
 
-  // Bind <audio> events for play/pause/end to drive `playing` state
   useEffect(() => {
-    if (!playing || playing.split(":")[0] !== "cue") return;
-    const cueId = playing.split(":")[1];
-    const src = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId);
-    const a = new window.Audio(src);
+    if (qpos == null) return;
+    const item = queue[qpos];
+    if (!item) { setQpos(null); return; }
+    const a = new window.Audio(item.url);
     audioRef.current = a;
-    a.onended = () => {
-      if (playModeRef.current === "sequential") {
-        const list = cueListRef.current;
-        const i = list.findIndex((c) => c.id === cueId);
-        for (let j = i + 1; j < list.length; j++) {
-          if (list[j].wav_exists) { setPlaying(`cue:${list[j].id}`); return; }
-        }
-      }
-      setPlaying(null);
-    };
-    // Surface failures instead of silently resetting — MediaError codes:
-    // 2 = NETWORK (connection/proxy), 4 = SRC_NOT_SUPPORTED (got HTML/redirect
-    // instead of audio, e.g. a Cloudflare Access login bounce). Tells glitch from bug.
-    a.onerror = () => {
-      const code = a.error?.code;
-      const why = code === 2 ? "network/connection"
-        : code === 4 ? "bad response (auth redirect?) — try reloading"
-        : code === 3 ? "decode error" : `error ${code ?? "?"}`;
-      push(`audio ${cueId} failed: ${why}`, "err");
-      setPlaying(null);
-    };
-    a.play().catch((e: any) => {
-      push(`audio ${cueId} didn't start: ${e?.name || e?.message || "blocked"}`, "err");
-      setPlaying(null);
-    });
+    const next = () => setQpos((p) => (p != null && p + 1 < queue.length ? p + 1 : null));
+    a.onended = next;
+    a.onerror = () => { push(`audio failed: ${item.label}`, "err"); next(); };
+    a.play().catch(() => next());
     return () => { a.pause(); audioRef.current = null; };
-  }, [playing, slug]);
+  }, [qpos, queue, slug]);
 
-  // Follow the playing clip in the Manifest Preview pane (esp. during sequential play).
+  // Follow the playing VO cue in the Manifest Preview pane (esp. during sequential play).
   useEffect(() => {
-    if (playing && playing.startsWith("cue:")) selectCue(playing.slice(4));
-  }, [playing, selectCue]);
+    if (qpos == null) return;
+    const item = queue[qpos];
+    if (item?.cueId) selectCue(item.cueId);
+  }, [qpos, queue, selectCue]);
+
+  const curCueId = qpos != null ? queue[qpos]?.cueId : undefined;
+  const sequentialPlaying = qpos != null;
 
   const togglePlay = (cueId: string) => {
-    // Continuous (default): a row click plays from there onward; otherwise oneshot.
-    setPlayMode(continuous ? "sequential" : "single");
-    setPlaying((p) => (p === `cue:${cueId}` ? null : `cue:${cueId}`));
+    if (curCueId === cueId) { setQpos(null); return; }
+    if (continuous) {
+      const pl = sfx.buildPlaylist();
+      const idx = pl.findIndex((it) => it.cueId === cueId);
+      if (idx < 0) { push("no audio for this cue", "info"); return; }
+      setQueue(pl); setQpos(idx);
+    } else {
+      const url = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId);
+      setQueue([{ url, cueId, label: cueId }]); setQpos(0);
+    }
+  };
+
+  const playAll = () => {
+    if (sequentialPlaying) { setQpos(null); return; } // toggle off
+    const pl = sfx.buildPlaylist();
+    if (!pl.length) { push("No playable clips", "info"); return; }
+    setQueue(pl); setQpos(0);
   };
 
   // active regen jobs we're watching → cue ids
   const jobsRef = useRef<Record<string, string>>({});
-
   const watchJob = (jobId: string, cueId: string) => {
     const key = `cue:${cueId}`;
     jobsRef.current[jobId] = cueId;
@@ -122,7 +111,6 @@ export function Audio({ slug }: { slug: string }) {
       if (ev.kind === "stage.done" || ev.kind === "job.done") {
         setBusy(key, false);
         qc.invalidateQueries({ queryKey: ["cues", slug] });
-        // the regen archived the prior take → refresh the version arrows for this cue
         qc.invalidateQueries({ queryKey: ["versions", "cue", slug, cueId] });
         push(`VO ${cueId} regenerated`, "ok");
         es.close();
@@ -137,17 +125,9 @@ export function Audio({ slug }: { slug: string }) {
 
   const regen = useMutation({
     mutationFn: (cueId: string) => api.regenCue(slug, cueId),
-    onMutate: (cueId) => {
-      setBusy(`cue:${cueId}`, true);
-      push(`VO cue ${cueId} → pipeline`, "run");
-    },
-    onSuccess: (r, cueId) => {
-      watchJob(r.job_id, cueId);
-    },
-    onError: (e: Error, cueId) => {
-      setBusy(`cue:${cueId}`, false);
-      push(`regen failed: ${e.message}`, "err");
-    },
+    onMutate: (cueId) => { setBusy(`cue:${cueId}`, true); push(`VO cue ${cueId} → pipeline`, "run"); },
+    onSuccess: (r, cueId) => watchJob(r.job_id, cueId),
+    onError: (e: Error, cueId) => { setBusy(`cue:${cueId}`, false); push(`regen failed: ${e.message}`, "err"); },
   });
 
   const regenAllMissing = () => {
@@ -157,61 +137,55 @@ export function Audio({ slug }: { slug: string }) {
     missing.forEach((c, i) => setTimeout(() => regen.mutate(c.id), i * 250));
   };
 
-  // Build speaker map from the manifest for the inspector + dot colors
   const speakerMap: Record<string, SpeakerInfo> = useMemo(() => {
     const m = manifest.data as any;
     const map = (m?.voice?.speaker_map ?? {}) as Record<string, any>;
     const out: Record<string, SpeakerInfo> = {};
     Object.keys(map).forEach((k) => {
-      out[k] = {
-        color: colorForSpeaker(k),
-        engine: map[k]?.engine,
-        profile_id: map[k]?.profile_id,
-        voice_name: map[k]?.voice_name,
-      };
+      out[k] = { color: colorForSpeaker(k), engine: map[k]?.engine, profile_id: map[k]?.profile_id, voice_name: map[k]?.voice_name };
     });
     return out;
   }, [manifest.data]);
 
   const cueList = cues.data?.cues ?? [];
-  cueListRef.current = cueList;
   const genCount = cueList.filter((c) => c.status === "generated").length;
   const totalRuntime = cueList.reduce((a, c) => a + (c.duration_s ?? 0), 0);
   const selCue = selectedCueId ? cueList.find((c) => c.id === selectedCueId) : null;
-  const sequentialPlaying = !!playing && playMode === "sequential";
 
-  const playAll = () => {
-    if (sequentialPlaying) { setPlaying(null); return; } // toggle off
-    const first = cueList.find((c) => c.wav_exists);
-    if (!first) { push("No playable VO clips", "info"); return; }
-    setPlayMode("sequential");
-    setPlaying(`cue:${first.id}`);
-  };
+  // a full-width table row holding the SFX dropzone for the gap after `afterId` (null = before first cue)
+  const gapRow = (afterId: string | null) => (
+    <tr key={`gap:${afterId ?? "__head"}`}>
+      <td colSpan={8} className="p-0">
+        <GapZone
+          entries={sfx.entriesByGap(afterId)}
+          onDrop={() => sfx.onDropGap(afterId)}
+          onReorder={sfx.reorder}
+          onDelete={sfx.del}
+          onGain={sfx.setGain}
+          onPlay={(file) => preview.toggle(libraryApi.audioUrl("sfx", file))}
+          previewUrl={preview.previewUrl}
+        />
+      </td>
+    </tr>
+  );
 
   return (
     <div className="grid grid-cols-[1fr_368px] gap-3 h-full min-h-0">
       <div className="flex flex-col gap-3 min-h-0">
-        {/* VO panel */}
+        {/* VOICEOVER + interleaved SFX */}
         <section className="panel flex flex-col min-h-0">
           <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-            <div className="panel-title">VOICEOVER <span className="text-txt-faint">/ per cue</span></div>
+            <div className="panel-title">VOICEOVER <span className="text-txt-faint">/ per cue · drop SFX between cues</span></div>
             <div className="flex items-center gap-2">
-              <span className="seg-readout">
-                {String(genCount).padStart(2, "0")}<span className="text-txt-faint">/{cueList.length}</span> CUES
-              </span>
-              <span className="seg-readout cyan">
-                {totalRuntime.toFixed(1)}<span className="text-txt-faint">s</span> RUNTIME
-              </span>
-              <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop sequential playback" : "Play all cues in sequence"}>
+              <span className="seg-readout">{String(genCount).padStart(2, "0")}<span className="text-txt-faint">/{cueList.length}</span> CUES</span>
+              <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop playback" : "Play VO + SFX in sequence"}>
                 {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
               </button>
-              <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play buttons continue to the next clip (off = play one clip only)">
+              <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play continues to the next clip (off = one clip only)">
                 <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} />
                 Continuous
               </label>
-              <button className="btn btn-amber" onClick={regenAllMissing}>
-                <IRegen /> Regenerate all missing
-              </button>
+              <button className="btn btn-amber" onClick={regenAllMissing}><IRegen /> Regen missing</button>
             </div>
           </header>
           <div className="overflow-y-auto flex-1">
@@ -229,101 +203,76 @@ export function Audio({ slug }: { slug: string }) {
                 </tr>
               </thead>
               <tbody>
+                {gapRow(null)}
                 {cueList.map((c) => {
-                  const k = `cue:${c.id}`;
-                  const isPlaying = playing === k;
-                  const isBusy = busy[k];
+                  const isPlaying = curCueId === c.id;
+                  const isBusy = busy[`cue:${c.id}`];
                   const active = selectedCueId === c.id;
                   const spk = speakerMap[c.speaker] ?? { color: colorForSpeaker(c.speaker) };
                   return (
-                    <tr
-                      key={c.id}
-                      onClick={() => selectCue(c.id)}
-                      className={"border-b border-[var(--line-soft)] hover:bg-bg-3 cursor-pointer " + (active ? "bg-bg-3" : "")}
-                    >
-                      <td className="px-2 py-1.5 text-amber font-bold">{c.id}</td>
-                      <td className="px-2 py-1.5 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5" style={{ color: spk.color }}>
-                          <span className="led-dot" style={{ "--led-c": spk.color } as React.CSSProperties} />
-                          {c.speaker}
-                        </span>
-                      </td>
-                      <td className="px-2 py-1.5 max-w-[400px] truncate" title={c.text}>
-                        {c.is_hold ? <span className="text-txt-faint italic">[HOLD {c.hold_seconds}s]</span> : c.text}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <Waveform
-                          seed={(parseInt(c.id.replace(/\D/g, ""), 10) || 1) + 7}
-                          w={120}
-                          h={26}
-                          playing={isPlaying}
-                          dense={70}
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 text-cyan whitespace-nowrap">
-                        {c.duration_s != null ? `${c.duration_s.toFixed(1)}s` : "—"}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <Badge status={isBusy ? "running" : c.status} />
-                      </td>
-                      <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <PlayBtn
-                            playing={isPlaying}
-                            onClick={() => togglePlay(c.id)}
-                            title={c.wav_exists ? "Play" : "No wav yet"}
-                          />
-                          <button
-                            className="btn p-1"
-                            title="Regenerate"
-                            disabled={isBusy}
-                            onClick={() => regen.mutate(c.id)}
-                          >
-                            <IRegen />
-                          </button>
-                          <RegenNotes onSubmit={(_) => regen.mutate(c.id)} />
-                        </div>
-                      </td>
-                      <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
-                        <VersionArrows
-                          slug={slug}
-                          kind="cue"
-                          vkey={c.id}
-                          onView={(u) => setCueOverride(c.id, u)}
-                          onChanged={() => qc.invalidateQueries({ queryKey: ["cues", slug] })}
-                        />
-                      </td>
-                    </tr>
+                    <Fragment key={c.id}>
+                      <tr
+                        onClick={() => selectCue(c.id)}
+                        className={"border-b border-[var(--line-soft)] hover:bg-bg-3 cursor-pointer " + (active ? "bg-bg-3" : "")}
+                      >
+                        <td className="px-2 py-1.5 text-amber font-bold">{c.id}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5" style={{ color: spk.color }}>
+                            <span className="led-dot" style={{ "--led-c": spk.color } as React.CSSProperties} />
+                            {c.speaker}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 max-w-[400px] truncate" title={c.text}>
+                          {c.is_hold ? <span className="text-txt-faint italic">[HOLD {c.hold_seconds}s]</span> : c.text}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Waveform seed={(parseInt(c.id.replace(/\D/g, ""), 10) || 1) + 7} w={120} h={26} playing={isPlaying} dense={70} />
+                        </td>
+                        <td className="px-2 py-1.5 text-cyan whitespace-nowrap">{c.duration_s != null ? `${c.duration_s.toFixed(1)}s` : "—"}</td>
+                        <td className="px-2 py-1.5"><Badge status={isBusy ? "running" : c.status} /></td>
+                        <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <PlayBtn playing={isPlaying} onClick={() => togglePlay(c.id)} title={c.wav_exists ? "Play" : "No wav yet"} />
+                            <button className="btn p-1" title="Regenerate" disabled={isBusy} onClick={() => regen.mutate(c.id)}><IRegen /></button>
+                            <RegenNotes onSubmit={(_) => regen.mutate(c.id)} />
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                          <VersionArrows slug={slug} kind="cue" vkey={c.id}
+                            onView={(u) => setCueOverride(c.id, u)}
+                            onChanged={() => qc.invalidateQueries({ queryKey: ["cues", slug] })} />
+                        </td>
+                      </tr>
+                      {gapRow(c.id)}
+                    </Fragment>
                   );
                 })}
               </tbody>
             </table>
-            {cueList.length === 0 && (
-              <div className="p-4 text-txt-faint">No cues in manifest yet.</div>
-            )}
+            {cueList.length === 0 && <div className="p-4 text-txt-faint">No cues in manifest yet.</div>}
           </div>
         </section>
-
-        {/* SFX timeline + library */}
-        <SfxSection slug={slug} />
       </div>
 
-      {/* Right inspector */}
-      <aside className="panel p-3 flex flex-col gap-3 overflow-y-auto">
-        <div className="panel-title">MANIFEST PREVIEW</div>
-        {selCue ? (
-          <CueInspector
-            cue={selCue}
-            isPlaying={playing === `cue:${selCue.id}`}
-            isBusy={!!busy[`cue:${selCue.id}`]}
-            speaker={speakerMap[selCue.speaker] ?? { color: colorForSpeaker(selCue.speaker) }}
-            slug={slug}
-            onPlay={() => togglePlay(selCue.id)}
-            onRegen={() => regen.mutate(selCue.id)}
-          />
-        ) : (
-          <div className="text-txt-faint">Select a cue on the left to see its full metadata.</div>
-        )}
+      {/* Right column: inspector (top) + library (bottom) */}
+      <aside className="flex flex-col gap-3 min-h-0">
+        <div className="panel p-3 flex flex-col gap-3 overflow-y-auto" style={{ maxHeight: "55%" }}>
+          <div className="panel-title">MANIFEST PREVIEW</div>
+          {selCue ? (
+            <CueInspector
+              cue={selCue}
+              isPlaying={curCueId === selCue.id}
+              isBusy={!!busy[`cue:${selCue.id}`]}
+              speaker={speakerMap[selCue.speaker] ?? { color: colorForSpeaker(selCue.speaker) }}
+              slug={slug}
+              onPlay={() => togglePlay(selCue.id)}
+              onRegen={() => regen.mutate(selCue.id)}
+            />
+          ) : (
+            <div className="text-txt-faint">Select a cue on the left to see its full metadata.</div>
+          )}
+        </div>
+        <Library slug={slug} previewUrl={preview.previewUrl} onPreview={preview.toggle} />
       </aside>
     </div>
   );
@@ -352,19 +301,11 @@ function CueInspector({
         <Badge status={isBusy ? "running" : cue.status} />
       </div>
       <div className="bg-[#050505] hairline-soft p-2 rounded">
-        <Waveform
-          seed={(parseInt(cue.id.replace(/\D/g, ""), 10) || 1) + 7}
-          w={320}
-          h={72}
-          playing={isPlaying}
-          dense={160}
-        />
+        <Waveform seed={(parseInt(cue.id.replace(/\D/g, ""), 10) || 1) + 7} w={320} h={72} playing={isPlaying} dense={160} />
       </div>
       <div className="flex items-center gap-2">
         <PlayBtn playing={isPlaying} onClick={onPlay} />
-        <button className="btn" onClick={onRegen} disabled={isBusy}>
-          <IRegen /> Regen
-        </button>
+        <button className="btn" onClick={onRegen} disabled={isBusy}><IRegen /> Regen</button>
         <RegenNotes onSubmit={() => onRegen()} />
       </div>
       <div className="flex flex-col gap-1">
