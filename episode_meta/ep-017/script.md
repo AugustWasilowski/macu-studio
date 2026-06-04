@@ -118,7 +118,7 @@ Nobody leaves the chair light. OHHH YEAHHH.
 **ROSCOE:** _(instant calm, settled)_ I appreciate that, Doctor.
 » Roscoe core
 
-**DR. GOLDTOOTH:** _(spreading his hands)_ Put Roscoe on Rose's door Friday. Same skill set. Nobody walk out
+**DR. GOLDTOOTH:** _(spreading his hands)_ Whatever. Put Roscoe on Rose's door Friday. Same skill set. Nobody walk out
 of that feast before they give what they came to give.
 » Goldtooth core
 
