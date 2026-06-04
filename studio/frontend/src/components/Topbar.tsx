@@ -2,20 +2,25 @@ import { useEffect, useState } from "react";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron } from "./Icons";
 import { useStore } from "../store";
+import { Page, TopPage, TOP_PAGES } from "../route";
 
 interface Props {
   episodes: EpisodeSummary[];
   slug: string;
+  page: Page;
   stage: UIStage;
   onPick: (slug: string) => void;
   onStage: (stage: UIStage) => void;
+  onPage: (page: TopPage) => void;
 }
+
+const TOP_PAGE_LABELS: Record<TopPage, string> = { youtube: "YouTube", docs: "Docs" };
 
 function nowClock() {
   return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-export function Topbar({ episodes, slug, stage, onPick, onStage }: Props) {
+export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage }: Props) {
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const toggleDrawer = useStore((s) => s.toggleDrawer);
@@ -61,7 +66,7 @@ export function Topbar({ episodes, slug, stage, onPick, onStage }: Props) {
       </div>
       <nav className="flex gap-1 ml-3">
         {UI_STAGES.map((s) => {
-          const active = s.key === stage;
+          const active = page === "stage" && s.key === stage;
           const done = cur ? cur.done_stages >= s.n : false;
           return (
             <button
@@ -72,6 +77,20 @@ export function Topbar({ episodes, slug, stage, onPick, onStage }: Props) {
             >
               <span className={`tab-num ${done ? "done" : ""}`}>{done ? "✓" : s.n}</span>
               <span className="font-semibold tracking-wider uppercase text-[11px]">{s.label}</span>
+            </button>
+          );
+        })}
+        <span className="w-px self-stretch my-1 bg-[var(--line-soft)] mx-1" />
+        {TOP_PAGES.map((p) => {
+          const active = page === p;
+          return (
+            <button
+              key={p}
+              onClick={() => onPage(p)}
+              className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (active ? "active" : "")}
+              style={active ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}
+            >
+              <span className="font-semibold tracking-wider uppercase text-[11px]">{TOP_PAGE_LABELS[p]}</span>
             </button>
           );
         })}

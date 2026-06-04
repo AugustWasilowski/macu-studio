@@ -10,7 +10,8 @@ import { Video } from "./stages/Video";
 import { Graphics } from "./stages/Graphics";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
-import { useRoute } from "./route";
+import { useRoute, Page } from "./route";
+import { useStore } from "./store";
 import { UIStage } from "./types";
 
 const qc = new QueryClient({
@@ -35,40 +36,81 @@ export function App() {
 
 function Shell() {
   const [route, go] = useRoute();
+  const activeSlug = useStore((s) => s.activeSlug);
+  const setActiveSlug = useStore((s) => s.setActiveSlug);
   const episodes = useQuery({ queryKey: ["episodes"], queryFn: api.episodes });
 
-  // Default to a slug once we know what's available
+  // Keep the store's activeSlug in sync with the routed slug on stage pages.
   useEffect(() => {
-    if (!route.slug && episodes.data?.episodes.length) {
-      const pick = episodes.data.episodes.find((e) => e.slug === "ep-018")
-        ?? episodes.data.episodes[episodes.data.episodes.length - 1];
+    if (route.page === "stage" && route.slug && route.slug !== activeSlug) {
+      setActiveSlug(route.slug);
+    }
+  }, [route.page, route.slug, activeSlug, setActiveSlug]);
+
+  // Default to a slug once we know what's available (stage pages only).
+  useEffect(() => {
+    if (route.page === "stage" && !route.slug && episodes.data?.episodes.length) {
+      const pick =
+        episodes.data.episodes.find((e) => e.slug === "ep-018") ??
+        episodes.data.episodes[episodes.data.episodes.length - 1];
       go({ slug: pick.slug, stage: route.stage });
     }
-  }, [episodes.data, route.slug, route.stage, go]);
+  }, [episodes.data, route.page, route.slug, route.stage, go]);
 
   const eps = episodes.data?.episodes ?? [];
+  // On top-level pages, the active episode comes from the store.
+  const slug = route.page === "stage" ? route.slug : activeSlug ?? "";
 
   return (
     <div className="h-full flex flex-col">
       <Topbar
         episodes={eps}
-        slug={route.slug}
+        slug={slug}
+        page={route.page}
         stage={route.stage}
-        onPick={(slug) => go({ slug })}
-        onStage={(stage) => go({ stage })}
+        onPick={(s) => {
+          setActiveSlug(s);
+          go({ page: "stage", slug: s });
+        }}
+        onStage={(stage) => go({ page: "stage", slug, stage })}
+        onPage={(p) => go({ page: p })}
       />
       <main className="flex-1 p-3 min-h-0">
-        {!route.slug ? (
-          <div className="panel p-6 grid place-items-center h-full text-txt-dim">
-            {episodes.isLoading ? "Loading episodes…" : "No episodes available."}
-          </div>
-        ) : (
-          <StageView slug={route.slug} stage={route.stage} />
-        )}
+        <PageView page={route.page} slug={slug} stage={route.stage} loading={episodes.isLoading} go={go} />
       </main>
-      {route.slug && <ManifestDrawer slug={route.slug} onJumpToStage={(s) => go({ stage: s as any })} />}
+      {route.page === "stage" && slug && (
+        <ManifestDrawer slug={slug} onJumpToStage={(s) => go({ page: "stage", stage: s as UIStage })} />
+      )}
     </div>
   );
+}
+
+function PageView({
+  page,
+  slug,
+  stage,
+  loading,
+  go,
+}: {
+  page: Page;
+  slug: string;
+  stage: UIStage;
+  loading: boolean;
+  go: (r: any) => void;
+}) {
+  // Top-level pages (rendered by their own components once Phases F2/G land;
+  // Placeholder keeps the build green in the interim).
+  if (page === "youtube") return <Placeholder slug={slug} stage={"youtube" as any} />;
+  if (page === "docs") return <Placeholder slug={slug} stage={"docs" as any} />;
+
+  if (!slug) {
+    return (
+      <div className="panel p-6 grid place-items-center h-full text-txt-dim">
+        {loading ? "Loading episodes…" : "No episodes available."}
+      </div>
+    );
+  }
+  return <StageView slug={slug} stage={stage} />;
 }
 
 function StageView({ slug, stage }: { slug: string; stage: UIStage }) {

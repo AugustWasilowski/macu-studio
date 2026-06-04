@@ -5,15 +5,29 @@ from pathlib import Path
 from typing import Any
 
 from .episodes import episode_dir, manifest_path
+from . import models
 
 
 def load(slug: str) -> dict[str, Any]:
     return json.loads(manifest_path(slug).read_text())
 
 
-def save(slug: str, data: dict[str, Any]) -> dict[str, Any]:
-    """Atomic write: tmp file in same dir → rename."""
+def load_typed(slug: str) -> "models.Manifest":
+    """Typed view of the manifest (for new code that wants attribute access)."""
+    return models.parse(load(slug))
+
+
+def save(slug: str, data: dict[str, Any], validate: bool = True) -> dict[str, Any]:
+    """Atomic write: tmp file in same dir → rename.
+
+    When `validate` is true, the dict is structurally validated through the
+    pydantic models first (raises ValueError if malformed). The ORIGINAL raw
+    `data` dict is persisted — never `model_dump()` — so LOCKED blocks
+    (comfyui/subtitles) stay byte-identical.
+    """
     path = manifest_path(slug)
+    if validate:
+        models.validate(data)
     # Validate that it's serializable round-trip.
     blob = json.dumps(data, indent=2, ensure_ascii=False)
     mode = path.stat().st_mode & 0o777 if path.exists() else 0o664
