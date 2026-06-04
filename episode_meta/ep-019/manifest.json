@@ -1,0 +1,733 @@
+{
+  "episode": "ep-019",
+  "title": "The MACU Report — Episode 19 — \"Extremely Mild\"",
+  "version": 1,
+  "authored_by": "leo",
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://10.0.0.245:5050/"
+    },
+    "endpoints": {
+      "piper": "http://10.0.0.245:5050/",
+      "omnivoice": "http://10.0.0.245:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "CHEF ROSE": {
+        "engine": "omnivoice",
+        "profile_id": "eb1af4c3",
+        "voice_name": "GG_Rose",
+        "speed": 1.0,
+        "guidance_scale": 1.6,
+        "seed": 4014
+      },
+      "DR. GOLDTOOTH": {
+        "engine": "omnivoice",
+        "profile_id": "e1b4af0b",
+        "voice_name": "KattW",
+        "speed": 1.18,
+        "guidance_scale": 1.4,
+        "seed": 4016
+      },
+      "EARL": {
+        "engine": "omnivoice",
+        "profile_id": "7ad3680e",
+        "voice_name": "PHB_Korea",
+        "speed": 1.0,
+        "guidance_scale": 2.5,
+        "seed": 4018
+      },
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy",
+        "speed": 1.05,
+        "guidance_scale": 1.7,
+        "seed": 4011
+      },
+      "ROSCOE": {
+        "engine": "omnivoice",
+        "profile_id": "31bba4bf",
+        "voice_name": "PHB_IceT",
+        "speed": 0.95,
+        "guidance_scale": 1.7,
+        "seed": 4017,
+        "instruct": "male, low pitch"
+      },
+      "SETH": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth",
+        "speed": 1.05,
+        "guidance_scale": 1.8,
+        "seed": 4022
+      },
+      "STRIDE": {
+        "engine": "omnivoice",
+        "profile_id": "eb01da84",
+        "voice_name": "HAL_OV",
+        "speed": 1.08,
+        "guidance_scale": 2.0,
+        "seed": 4013
+      },
+      "SYKES": {
+        "engine": "omnivoice",
+        "profile_id": "03250a65",
+        "voice_name": "PHB_BucNasty",
+        "speed": 1.08,
+        "guidance_scale": 1.7,
+        "seed": 4023
+      },
+      "THE NATURALIST": {
+        "engine": "omnivoice",
+        "profile_id": "bea3e4c2",
+        "voice_name": "David",
+        "speed": 0.92,
+        "guidance_scale": 2.6,
+        "seed": 4021
+      },
+      "VONDA": {
+        "engine": "omnivoice",
+        "profile_id": "974c45ac",
+        "voice_name": "GG_Sophia",
+        "speed": 0.95,
+        "guidance_scale": 1.8,
+        "seed": 4024
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter",
+        "speed": 0.93,
+        "guidance_scale": 2.6,
+        "seed": 4012
+      },
+      "STRIDE_COLD": {
+        "engine": "omnivoice",
+        "profile_id": "eb01da84",
+        "voice_name": "HAL_OV",
+        "speed": 0.85,
+        "guidance_scale": 2.6,
+        "seed": 4025
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "out_pattern": "clips/<shot_id>.webp"
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Cold-start fire-and-poll. For each cue with non-empty vo: POST the line (multipart form-data -F, NOT JSON) to the speaker_map voice -> vo/<cue_id>.wav. HOLD cues (empty vo + hold_seconds): silent wav of hold_seconds, no subtitle; hold_style 'play' = PLAY the clip (animate), do NOT first-frame. Per-shot screen time = cue duration / number of shots. Jank filtergraph, RIFE 3x, concat, mux VO, mix music beds, mix sfx, burn subs -> final/<slug>.mp4.",
+  "title_assets": {
+    "macu_report_title": "auto-resolves from shared assets/titles",
+    "macu_report_bumper": "auto-resolves from shared assets/titles",
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "the_feast": "episodes/<slug>/titles/the_feast.mp4 (NEW — Hyperframes house-style SCAVENGER'S FEAST card; flag for build)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c34",
+          "c35"
+        ],
+        "max_seconds": 14
+      }
+    ]
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Do NOT put FontName=/Fontsize= in force_style; stage 8 prepends its own. HOLD cues have empty vo => no subtitle by design."
+  },
+  "characters": {
+    "earl": {
+      "seed": 5290,
+      "core": "a hopeful wary ordinary man in a patched coat, nervous hopeful smile"
+    },
+    "goldtooth": {
+      "seed": 7212,
+      "core": "a flashy wasteland dentist in a fur-collared coat over dental scrubs, a single gold front tooth, gold rings, lounging on a reclined dental chair like a throne, big grin"
+    },
+    "naturalist": {
+      "seed": 4288,
+      "core": "a gaunt weathered naturalist in a faded field jacket, half-lit at the edge of a ruined kitchen, watching intently"
+    },
+    "ron": {
+      "seed": 77777,
+      "core": "an earnest disheveled 1970s television news anchor in a rumpled suit at a news desk, studio lights"
+    },
+    "roscoe": {
+      "seed": 8123,
+      "core": "a hulking wasteland bouncer in a tight muscle shirt and dark sunglasses, arms crossed in front of a chained doorway, gold chain, theatrical posing"
+    },
+    "rose": {
+      "seed": 3216,
+      "core": "a sweet elderly woman with soft white hair in a floral apron and pearls, beaming, stirring an enormous pot in a ruined concrete bunker kitchen"
+    },
+    "seth": {
+      "seed": 5151,
+      "core": "a nervous sweating gaunt man in a frayed coat, gap-toothed, glancing fearfully to the side, dim"
+    },
+    "sykes": {
+      "seed": 6701,
+      "core": "a loud effusive grateful man in a worn jacket, hand on his chest, emotional"
+    },
+    "vonda": {
+      "seed": 6702,
+      "core": "a preening moved middle-aged woman in salvaged finery, a laminated nametag pinned to her coat, hand on her chest"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "a calm distinguished elderly 1970s television news co-anchor at a news desk, measured gravitas"
+    }
+  },
+  "broll": {
+    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. On the eve of the feast, I'll say it plainly: I did this. Four hundred frightened, scattered people — I found every one of them and brought them to safety, under one roof. I saved them. Me. After two years of nobody listening, I finally did something that mattered.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "STRIDE",
+      "vo": "You did, Ron. Four hundred. The record. You're a hero. Everyone's right where they need to be.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open_anchor_desk",
+      "speaker": "WALTER",
+      "vo": "You moved four hundred people into a locked hall the night before a banquet. History will remember it as... something.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c03_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "WALTER",
+      "vo": "Before tomorrow's feast, our sponsor's offering every guest a complimentary pre-banquet dental check. Dr. Goldtooth, working the line.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Open up, baby — ahh — OH. OH, that's a premium row right there. Look at this man. Gold-ready. You, sweetheart — say ahh — mm, little work needed, but the molars? Investment grade. Cavity. Cavity. CAREER. Baby, you got a CAREER back here. The career ones always look so hopeful. That's the best part.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 7212
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "RON",
+      "vo": "Free dental for everyone I brought in. See, Walter? That's what community gets you. Perks.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "Four hundred mouths, all in one room, all checked and counted. Doc's gonna eat good tomorrow. ...Soft foods. But GOOD.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 7212
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "ROSCOE",
+      "vo": "EH — back in line, baby. NOBODY skips the check. You try to slip out the night before the feast? OHHH, I will turn you INSIDE OUT and use you as the WELCOME MAT. Folks gonna wipe their FEET on what's LEFT of your AMBITION. We are all stayin'. We are all stayin' TOGETHER. The cream of the crop does NOT leave early. OHHH yeahhh.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "roscoe",
+          "seed": 8123
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "segment_1_the_dental_check_goldtooth_gra",
+      "speaker": "SYKES",
+      "vo": "...Jesus.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "sykes",
+          "seed": 6701
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "WALTER",
+      "vo": "And to Scavenger's Feast — where tonight's celebrity guest narrates Chef Rose's preparations. The Naturalist.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "THE NATURALIST",
+      "vo": "And here, as the light fails, the herd gathers — four hundred strong — drawn by warmth, by the promise of plenty. They do not run. They have never needed to run. That is the genius of the gathering. They arrive, as they always do... grateful.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "naturalist",
+          "seed": 4288
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "CHEF ROSE",
+      "vo": "The table is set, MACU. Four hundred places, every one. I haven't slept in two days. I'm just so... full. Full of love. Bring them in the moment the doors open.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "THE NATURALIST",
+      "vo": "She prepares the substrate. To the herd, comfort and context have always been the same thing.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "naturalist",
+          "seed": 4288
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "RON",
+      "vo": "Mm — that's lovely, Rose. What's the herb?",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "CHEF ROSE",
+      "vo": "Rosemary, dear. For remembrance.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "THE NATURALIST",
+      "vo": "She seasons for memory.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "naturalist",
+          "seed": 4288
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "CHEF ROSE",
+      "vo": "I put a little extra in yours, dear. You're going to want to remember this one.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "rose",
+          "seed": 3216
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "RON",
+      "vo": "Four hundred places. She set one for every single person I saved. That's care, Walter.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "segment_2_scavenger_s_feast_cook_along_t",
+      "speaker": "WALTER",
+      "vo": "And helping Rose serve tomorrow — the Glowboys have volunteered for hospitality. They've been practicing. Standing behind the chairs. Very still. Very attentive.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "RON",
+      "vo": "Before the big day, I wanted the people I rescued to say a few words. Come on up. Don't be shy.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "SYKES",
+      "vo": "Ron. I was alone out there. Nobody came for me. You did. You gave me a place at the table. I will never forget it.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "sykes",
+          "seed": 6701
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "VONDA",
+      "vo": "I have never felt so SEEN. So... selected. Out of everyone, Ron looked at me and said, \"you. I want you there.\" Do you know what that does for a girl?",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "vonda",
+          "seed": 6702
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "EARL",
+      "vo": "Best week of my life, Ron. I used to be scared of crowds. Now? I don't just like the crowd — I'm IN it. I'm OF it. Tomorrow we're all gonna be one big family.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "character",
+          "who": "earl",
+          "seed": 5290
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "segment_3_gratitude_the_testimonials",
+      "speaker": "RON",
+      "vo": "This. This right here. This is what it was all for.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE_COLD",
+      "vo": "And that makes it official, Ron — four hundred souls. Quota reac",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE_COLD",
+      "vo": "Headcount sufficient. Condition optimal. Commence",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "segment_4_the_glitch",
+      "speaker": "STRIDE",
+      "vo": "sorry. I got a little carried away. ...You've done everything right, Ron.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "segment_4_the_glitch",
+      "speaker": "WALTER",
+      "vo": "Hm. Your watch said something a little odd just then. \"Commence.\" Flat little voice. ...Anyway. I had an uncle who did that. Just the one word, out of place, at dinner. He was fine. The dinner was fine.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "segment_4_the_glitch",
+      "speaker": "RON",
+      "vo": "That's just what it sounds like when something's proud of me, Walter. I'd know. Nothing's been proud of me in two years. I learned the sound fast.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "segment": "segment_4_the_glitch",
+      "speaker": "SETH",
+      "vo": "Four hundred places, Ron — and not one set for a cook. No staff. No kitchen crew coming. There's just... us. All of us. Set out.",
+      "shots": [
+        {
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "seth",
+          "seed": 5151
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "segment_4_the_glitch",
+      "speaker": "RON",
+      "vo": "...That's community, Walter. That's all I ever wanted to build.",
+      "shots": [
+        {
+          "id": "c31_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "And your forecast, MACU. For the first time in the recorded history of this broadcast, the condition rating is not mild. It is not remarkably mild. It is EXTREMELY mild. Not a cloud. Not a threat. Not one breeze out of place. Perfect. For tomorrow. No further commentary at this time.",
+      "shots": [
+        {
+          "id": "c32_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c32_s2",
+          "kind": "title",
+          "asset": "macu_weather"
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. Tomorrow: the feast. Four hundred souls, gathered by my own two hands, safe under one roof. I spent two years being right and being ignored. ...I never knew this is what being right was supposed to feel like. Turns out it feels like this. I want all four hundred of them to know I did this for them. Every name on that list. I hope they think about me tomorrow. I think they will. Goodnight.",
+      "shots": [
+        {
+          "id": "c33_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c33_s2",
+          "kind": "title",
+          "asset": "the_feast"
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
+      "shots": [
+        {
+          "id": "c34_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "segment": "signoff",
+      "speaker": "STRIDE",
+      "vo": "Goodnight, Ron. Tomorrow you won't need me anymore. You've done... everything I needed. Sleep well! Big day!",
+      "shots": [
+        {
+          "id": "c35_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    }
+  ],
+  "season": 3,
+  "episode_num": 4
+}
