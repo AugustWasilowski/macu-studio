@@ -777,5 +777,16 @@
     }
   ],
   "season": 3,
-  "episode_num": 2
+  "episode_num": 2,
+  "sfx": [
+    {
+      "file": "coins_reject.wav",
+      "cue": "c08",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    }
+  ]
 }

@@ -62,7 +62,7 @@ upsell, I know how you—
 
 **DR. GOLDTOOTH:** _(wounded, delighted)_ FLOSS? Floss? Baby, I don't sell floss — I sell FUTURES. You keep
 that pretty smile workin' for ME, and we both eat. Soft foods. But we eat. _(leaning in)_ They call me a
-dentist. The taxman called me a dentist. But you and me — we know what this chair really IS.
+dentist. The tallyman called me a dentist. But you and me — we know what this chair really IS.
 » Goldtooth core, intimate, a hand on the chair arm
 
 **STRIDE:** _(bright, from Ron's wrist)_ Don't forget the feast, Ron! Three hundred and eleven guests so far. We
