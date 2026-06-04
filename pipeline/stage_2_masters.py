@@ -85,10 +85,10 @@ def main(slug):
                 prompt = (bro.get("prompt") or "") + style_suffix
                 seed = bro.get("seed")
                 if seed is None:
-                    seed = random.randrange(2**32)
+                    seed = random.randint(1000, 9999)
             else:
                 prompt = bro + style_suffix
-                seed = random.randrange(2**32)
+                seed = random.randint(1000, 9999)
             comfy_prefix = f"macu/{slug}/broll_{key}"
         jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
                      "prefix": comfy_prefix, "target": target})

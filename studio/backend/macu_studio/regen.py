@@ -48,12 +48,12 @@ async def regen_shot(slug: str, key: str) -> dict:
     chars = m.get("characters") or {}
     broll = m.get("broll") or {}
     if isinstance(chars.get(key), dict):
-        chars[key]["seed"] = random.randrange(2**32)
+        chars[key]["seed"] = random.randint(1000, 9999)
         manifest_mod.save(slug, m)
     elif isinstance(broll.get(key), dict):
         # Broll in {"prompt","seed"} form carries a fixed seed — shuffle it too.
         # (Plain-string broll has no stored seed; stage 2 randomizes per render.)
-        broll[key]["seed"] = random.randrange(2**32)
+        broll[key]["seed"] = random.randint(1000, 9999)
         manifest_mod.save(slug, m)
     # Be thorough — both character and broll path conventions
     candidates: list[Path] = [
