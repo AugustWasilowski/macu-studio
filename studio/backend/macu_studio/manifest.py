@@ -60,22 +60,37 @@ def _vo_cache(slug: str) -> dict[str, Any]:
         return {}
 
 
-def _cue_hash(cue: dict, speaker_map: dict) -> str:
-    spk = (cue.get("speaker") or "").strip()
-    voice = speaker_map.get(spk) or {}
-    payload = {
-        "text": (cue.get("vo") or "").strip(),
-        "speaker": spk,
-        "engine": voice.get("engine"),
-        "profile_id": voice.get("profile_id"),
-        "voice_name": voice.get("voice_name"),
-        "speed": voice.get("speed"),
-        "guidance_scale": voice.get("guidance_scale"),
-        "seed": voice.get("seed"),
-        "instruct": voice.get("instruct"),
-    }
-    blob = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()
-    return hashlib.sha256(blob).hexdigest()[:16]
+def _resolve_voice(voice: dict, speaker: str) -> dict:
+    """Mirror pipeline/stage_1_vo.py::_resolve_voice."""
+    vmap = (voice or {}).get("speaker_map") or {}
+    if speaker in vmap:
+        return vmap[speaker]
+    return (voice or {}).get("default", {"engine": "piper"})
+
+
+def _cue_hash(cue: dict, voice: dict) -> str:
+    """16-hex cue hash. MUST stay byte-for-byte identical to
+    pipeline/stage_1_vo.py::_cue_cache_key so the Studio recognizes the cache the
+    pipeline writes to vo/.cache.json. If you change one, change BOTH. (Note: keys
+    are 'vo'/'speaker' un-stripped — do not normalize, or hashes diverge.)"""
+    hold = cue.get("hold_seconds")
+    if hold is not None:
+        payload = {"hold_seconds": float(hold)}
+    else:
+        vcfg = _resolve_voice(voice, cue.get("speaker") or "")
+        payload = {
+            "vo": cue.get("vo") or "",
+            "speaker": cue.get("speaker") or "",
+            "engine": vcfg.get("engine"),
+            "profile_id": vcfg.get("profile_id"),
+            "voice_name": vcfg.get("voice_name"),
+            "speed": vcfg.get("speed"),
+            "guidance_scale": vcfg.get("guidance_scale"),
+            "seed": vcfg.get("seed"),
+            "instruct": vcfg.get("instruct"),
+        }
+    raw = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()[:16]
 
 
 def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
@@ -83,9 +98,8 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
     m = manifest or load(slug)
     ep = episode_dir(slug)
     vo_dir = ep / "vo"
-    cache = _vo_cache(slug)
-    speaker_map = (m.get("voice") or {}).get("speaker_map") or {}
-    manifest_mtime = manifest_path(slug).stat().st_mtime
+    voice_block = m.get("voice") or {}
+    speaker_map = voice_block.get("speaker_map") or {}
 
     rows: list[dict] = []
     for cue in m.get("cues") or []:
@@ -94,29 +108,23 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
         text = cue.get("vo") or ""
         is_hold = not text and "hold_seconds" in cue
         wav = vo_dir / f"{cid}.wav"
-        cur_hash = _cue_hash(cue, speaker_map)
-        cached = cache.get(cid) or {}
         status: str
         duration: float | None = None
         if is_hold:
-            # HOLD cues: silent placeholder; treat as 'generated' if a file exists OR
-            # we have hold_seconds set (stage 1 will synthesize silence on demand).
+            # HOLD cues: silent placeholder; 'generated' once a wav exists.
             status = "generated" if wav.exists() else "missing"
             duration = float(cue.get("hold_seconds") or 0.0)
-        elif not wav.exists():
-            status = "missing"
         else:
-            # check cache sidecar
-            cached_hash = cached.get("hash")
-            if cached_hash and cached_hash != cur_hash:
-                status = "stale"
-            elif not cached_hash and wav.stat().st_mtime < manifest_mtime:
-                # fallback for episodes pre-sidecar
-                status = "stale"
-            else:
-                status = "generated"
-            duration = cached.get("duration_s")
-        voice = speaker_map.get(speaker) or {}
+            # An existing wav is "generated". We deliberately do NOT hash-compare for
+            # staleness here: the pipeline's vo/.cache.json hashes were written by
+            # whatever hash scheme was current at render time (episodes 5-10 predate the
+            # speed/guidance/seed/instruct fields in _cue_cache_key), so comparing them
+            # to the current hash produces false "stale" for fully-generated assets. The
+            # pipeline still does correct hash-based regen at render time; Studio status
+            # just reflects existence. (_cue_hash is kept aligned for a future studio-owned
+            # fresh-hash sidecar that could restore edit-staleness — see plan.)
+            status = "generated" if wav.exists() else "missing"
+        voice = _resolve_voice(voice_block, speaker)
         rows.append({
             "id": cid,
             "speaker": speaker,
@@ -166,12 +174,11 @@ def _shot_row(slug: str, key: str, kind: str, val: Any, clips_dir: Path, manifes
     else:
         seed = None
         prompt = str(val) if val else ""
-    if not webp.exists():
-        status = "missing"
-    elif webp.stat().st_mtime < manifest_mtime:
-        status = "stale"
-    else:
-        status = "rendered"
+    # Stage 2 writes no per-shot hash sidecar, so we can't prove a shot is stale —
+    # an existing master is "rendered" (a manifest touch alone must not false-stale it,
+    # which was the old mtime bug). "missing" only when the master is absent. (True
+    # prompt/seed-edit staleness would need a studio-owned clips/.cache.json — deferred.)
+    status = "rendered" if webp.exists() else "missing"
     return {
         "key": key,
         "kind": kind,

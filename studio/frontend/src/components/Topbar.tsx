@@ -13,6 +13,7 @@ interface Props {
   onPick: (slug: string) => void;
   onStage: (stage: UIStage) => void;
   onPage: (page: TopPage) => void;
+  onHome: () => void;
 }
 
 const TOP_PAGE_LABELS: Record<TopPage, string> = { youtube: "YouTube", docs: "Docs" };
@@ -21,7 +22,7 @@ function nowClock() {
   return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage }: Props) {
+export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, onHome }: Props) {
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -57,7 +58,13 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage }:
     >
       <div className="flex items-center gap-2">
         <span className="led-dot pulse" style={{ "--led-c": "#ff4d4d" } as React.CSSProperties} />
-        <span className="panel-title">MACU STUDIO</span>
+        <button
+          className="panel-title hover:brightness-125 cursor-pointer"
+          onClick={onHome}
+          title="Home — current episode (Assembly)"
+        >
+          MACU STUDIO
+        </button>
         <span className="label-tiny pl-1">CH·245</span>
       </div>
       <div className="relative">

@@ -76,6 +76,7 @@ function Shell() {
         }}
         onStage={(stage) => go({ page: "stage", slug, stage })}
         onPage={(p) => go({ page: p })}
+        onHome={() => go({ page: "stage", slug, stage: "assembly" })}
       />
       <main className="flex-1 p-3 min-h-0">
         <PageView page={route.page} slug={slug} stage={route.stage} loading={episodes.isLoading} go={go} />
