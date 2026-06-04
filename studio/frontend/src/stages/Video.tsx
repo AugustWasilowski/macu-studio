@@ -8,7 +8,8 @@ import { RegenNotes } from "../components/RegenNotes";
 import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
 import { VersionArrows } from "../components/VersionArrows";
-import { IRegen, IPlus } from "../components/Icons";
+import { IRegen, IPlus, IDL } from "../components/Icons";
+import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
 import type { PipelineEvent, Shot } from "../types";
 
@@ -130,6 +131,27 @@ export function Video({ slug }: { slug: string }) {
     }).catch((e) => push("queue failed: " + e.message, "err"));
   };
 
+  // ---- pre-cache all rendered shot masters into the in-browser blob cache ----
+  // (manual, button-driven — sidesteps Cloudflare revalidation lag on preview)
+  const [precaching, setPrecaching] = useState<{ done: number; total: number } | null>(null);
+  const precache = async () => {
+    if (precaching) return;
+    const urls = (shots.data?.shots ?? [])
+      .filter((s) => s.webp_exists)
+      .map((s) => mediaUrl.shotPreview(slug, s.key, s.webp_mtime));
+    if (!urls.length) { push("No rendered masters to cache yet", "info"); return; }
+    const need = urls.filter((u) => !isCached(u));
+    if (!need.length) { push(`All ${urls.length} masters already cached`, "ok"); return; }
+    setPrecaching({ done: 0, total: need.length });
+    push(`Pre-caching ${need.length} shot masters…`, "run");
+    const r = await precacheMedia(urls, (p) => setPrecaching({ done: p.done, total: p.total }));
+    setPrecaching(null);
+    push(
+      `Video cached: ${r.done - r.failed}/${r.total}${r.failed ? ` · ${r.failed} failed` : ""}`,
+      r.failed ? "err" : "ok",
+    );
+  };
+
   const list = shots.data?.shots ?? [];
   const renderedCount = list.filter((s) => s.status === "rendered").length;
   const cur = useMemo(() => list.find((s) => s.key === selectedKey) ?? list[0], [list, selectedKey]);
@@ -151,6 +173,14 @@ export function Video({ slug }: { slug: string }) {
             </button>
             <button className="btn btn-amber" onClick={renderAllMissing}>
               <IRegen /> Render all missing/stale
+            </button>
+            <button
+              className="btn"
+              onClick={precache}
+              disabled={!!precaching}
+              title="Load all rendered shot masters into the browser so previews are instant over the Cloudflare proxy"
+            >
+              <IDL /> {precaching ? `Caching ${precaching.done}/${precaching.total}` : "Pre-cache video"}
             </button>
           </div>
         </header>
@@ -260,7 +290,7 @@ export function Video({ slug }: { slug: string }) {
             {(shotOverrides[cur.key] || cur.webp_exists) ? (
               <img
                 key={(shotOverrides[cur.key] || mediaUrl.shotPreview(slug, cur.key)) + (cur.webp_mtime ?? "")}
-                src={shotOverrides[cur.key] || mediaUrl.shotPreview(slug, cur.key)}
+                src={shotOverrides[cur.key] || resolveMedia(mediaUrl.shotPreview(slug, cur.key, cur.webp_mtime))}
                 alt={cur.key}
                 className="w-full hairline-soft bg-black"
                 style={{ aspectRatio: "1/1", objectFit: "contain" }}

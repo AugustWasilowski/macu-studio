@@ -79,10 +79,10 @@ export const api = {
 };
 
 export const mediaUrl = {
-  cueAudio: (slug: string, cueId: string) =>
-    `/api/episodes/${slug}/cue/${cueId}/audio`,
-  shotPreview: (slug: string, key: string) =>
-    `/api/episodes/${slug}/shot/${key}/preview`,
+  cueAudio: (slug: string, cueId: string, v?: number | null) =>
+    `/api/episodes/${slug}/cue/${cueId}/audio${v != null ? `?v=${Math.floor(v)}` : ""}`,
+  shotPreview: (slug: string, key: string, v?: number | null) =>
+    `/api/episodes/${slug}/shot/${key}/preview${v != null ? `?v=${Math.floor(v)}` : ""}`,
   titlePreview: (slug: string, key: string) =>
     `/api/episodes/${slug}/title/${key}/preview`,
   finalVideo: (slug: string) =>

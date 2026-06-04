@@ -8,7 +8,8 @@ import { Waveform } from "../components/Waveform";
 import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
 import { VersionArrows } from "../components/VersionArrows";
-import { IRegen, IPlay, IPause } from "../components/Icons";
+import { IRegen, IPlay, IPause, IDL } from "../components/Icons";
+import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { useSfx, usePreview, GapZone, Library, PlayItem } from "./AudioSfx";
 import type { Cue, PipelineEvent } from "../types";
 
@@ -59,7 +60,7 @@ export function Audio({ slug }: { slug: string }) {
     if (qpos == null) return;
     const item = queue[qpos];
     if (!item) { setQpos(null); return; }
-    const a = new window.Audio(item.url);
+    const a = new window.Audio(resolveMedia(item.url));
     audioRef.current = a;
     const next = () => setQpos((p) => (p != null && p + 1 < queue.length ? p + 1 : null));
     a.onended = next;
@@ -86,7 +87,8 @@ export function Audio({ slug }: { slug: string }) {
       if (idx < 0) { push("no audio for this cue", "info"); return; }
       setQueue(pl); setQpos(idx);
     } else {
-      const url = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId);
+      const c = cues.data?.cues.find((x) => x.id === cueId);
+      const url = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId, c?.wav_mtime);
       setQueue([{ url, cueId, label: cueId }]); setQpos(0);
     }
   };
@@ -96,6 +98,25 @@ export function Audio({ slug }: { slug: string }) {
     const pl = sfx.buildPlaylist();
     if (!pl.length) { push("No playable clips", "info"); return; }
     setQueue(pl); setQpos(0);
+  };
+
+  // ---- pre-cache all of this episode's audio into the in-browser blob cache ----
+  // (manual, button-driven — sidesteps Cloudflare revalidation lag on playback)
+  const [precaching, setPrecaching] = useState<{ done: number; total: number } | null>(null);
+  const precache = async () => {
+    if (precaching) return;
+    const urls = sfx.precacheUrls();
+    if (!urls.length) { push("No audio to cache yet", "info"); return; }
+    const need = urls.filter((u) => !isCached(u));
+    if (!need.length) { push(`All ${urls.length} clips already cached`, "ok"); return; }
+    setPrecaching({ done: 0, total: need.length });
+    push(`Pre-caching ${need.length} audio clips…`, "run");
+    const r = await precacheMedia(urls, (p) => setPrecaching({ done: p.done, total: p.total }));
+    setPrecaching(null);
+    push(
+      `Audio cached: ${r.done - r.failed}/${r.total}${r.failed ? ` · ${r.failed} failed` : ""}`,
+      r.failed ? "err" : "ok",
+    );
   };
 
   // active regen jobs we're watching → cue ids
@@ -208,6 +229,14 @@ export function Audio({ slug }: { slug: string }) {
                 Continuous
               </label>
               <button className="btn btn-amber" onClick={regenAllMissing}><IRegen /> Regen missing</button>
+              <button
+                className="btn"
+                onClick={precache}
+                disabled={!!precaching}
+                title="Load all of this episode's audio into the browser so playback is instant over the Cloudflare proxy"
+              >
+                <IDL /> {precaching ? `Caching ${precaching.done}/${precaching.total}` : "Pre-cache audio"}
+              </button>
             </div>
           </header>
           <div className="overflow-y-auto flex-1">

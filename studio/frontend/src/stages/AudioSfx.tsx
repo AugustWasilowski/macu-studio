@@ -7,6 +7,7 @@ import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
 import { PlayBtn } from "../components/PlayBtn";
 import { IPlus, IX } from "../components/Icons";
+import { resolveMedia } from "../mediaCache";
 
 // One item in the continuous-playback queue (VO cue or an SFX one-shot).
 export interface PlayItem { url: string; cueId?: string; label: string; }
@@ -21,7 +22,7 @@ export function usePreview() {
   const [previewUrl, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!previewUrl) return;
-    const a = new window.Audio(previewUrl);
+    const a = new window.Audio(resolveMedia(previewUrl));
     a.onended = () => setUrl(null);
     a.onerror = () => setUrl(null);
     a.play().catch(() => setUrl(null));
@@ -115,16 +116,30 @@ export function useSfx(slug: string) {
         .map(({ x }) => ({ url: libraryApi.audioUrl("sfx", x.file), label: `sfx ${x.file}` }));
     items.push(...gapItems(null));
     for (const c of cueRows) {
-      if ((c as any).wav_exists) items.push({ url: mediaUrl.cueAudio(slug, c.id), cueId: c.id, label: c.id });
+      if (c.wav_exists) items.push({ url: mediaUrl.cueAudio(slug, c.id, c.wav_mtime), cueId: c.id, label: c.id });
       items.push(...gapItems(c.id));
     }
     return items;
   };
 
+  // Every distinct audio URL for this episode (versioned cue wavs + SFX clips),
+  // for the "Pre-cache audio" button. URLs match what buildPlaylist/playback use
+  // so the blob cache keys line up.
+  const precacheUrls = (): string[] => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+    const add = (u: string) => { if (!seen.has(u)) { seen.add(u); urls.push(u); } };
+    for (const c of cueRows) {
+      if (c.wav_exists) add(mediaUrl.cueAudio(slug, c.id, c.wav_mtime));
+    }
+    for (const e of sfx) add(libraryApi.audioUrl("sfx", e.file));
+    return urls;
+  };
+
   return {
     sfx, cueIds, durOf,
     gapsOrder: [null, ...cueIds] as (string | null)[],
-    entriesByGap, addToGap, moveEntry, del, setGain, onDropGap, buildPlaylist,
+    entriesByGap, addToGap, moveEntry, del, setGain, onDropGap, buildPlaylist, precacheUrls,
   };
 }
 
