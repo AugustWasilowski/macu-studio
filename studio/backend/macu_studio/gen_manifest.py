@@ -233,20 +233,41 @@ def _build(slug: str) -> dict:
                 warnings.append(f"segment '{header}' is new → slug '{header_slug[header]}' "
                                 f"(freshly generated — review)")
 
+    # STABLE IDS: a matched cue keeps its existing id, so its already-rendered
+    # vo/<id>.wav + clips/<id>_sN stay attached and any music-bed/sfx ref to it
+    # stays valid. Only genuinely-new lines mint a fresh id (next free c<N>), placed
+    # in document order. We deliberately do NOT renumber — renumbering detaches every
+    # downstream asset and silently repoints music beds at the wrong cues.
+    def _idnum(cid: str | None) -> int:
+        mo = re.match(r"c0*(\d+)", cid or "")
+        return int(mo.group(1)) if mo else 0
+
+    used_ids = {c.get("id") for c in old_cues if c.get("id")}
+    next_n = max((_idnum(c.get("id")) for c in old_cues), default=0) + 1
+
+    def _mint() -> str:
+        nonlocal next_n
+        while f"c{next_n:02d}" in used_ids:
+            next_n += 1
+        cid = f"c{next_n:02d}"
+        used_ids.add(cid)
+        next_n += 1
+        return cid
+
     # build new cues. Matched cues inherit hand-tuned VO/shots verbatim (zero churn
     # on an unchanged script); only new/edited cues use raw script-derived content.
     new_cues: list[dict] = []
     changes: list[dict] = []
     n_new, n_edited = 0, 0
-    for i, c in enumerate(raw, 1):
-        cid = f"c{i:02d}"
+    for c in raw:
         speaker = c["speaker"]
         speaker_who = _resolve_character(speaker, characters)
-        script_shots = _parse_shot_line(c["shot_line"] or "", speaker_who, old, warnings, cid)
         seg = header_slug.get(c["header"], "")
 
         queue = old_by_vo.get(_norm(c["vo"]))
         oc = queue.pop(0) if queue else None
+        cid = oc["id"] if (oc is not None and oc.get("id")) else _mint()
+        script_shots = _parse_shot_line(c["shot_line"] or "", speaker_who, old, warnings, cid)
         if oc is not None:
             # preserve hand-tuned VO; keep old shots iff the script's shot set matches
             shots = (oc.get("shots") if _shot_sig(script_shots) == _shot_sig(oc.get("shots"))
@@ -288,28 +309,60 @@ def _build(slug: str) -> dict:
             new_cues.append(hold)
             warnings.append(f"preserved hold cue '{oc.get('id')}' appended at end (anchor lost)")
 
-    # renumber sequentially for stable ids
-    for i, cue in enumerate(new_cues, 1):
-        cid = f"c{i:02d}"
+    # ids are already stable (matched cues kept theirs, new cues minted unique). Just
+    # re-stamp shot ids from the cue id so a reshot/new cue's shots line up — cheap,
+    # idempotent, and never reorders or renumbers.
+    for cue in new_cues:
+        cid = cue["id"]
         for j, sh in enumerate(cue.get("shots") or [], 1):
             sh["id"] = f"{cid}_s{j}"
-        cue["id"] = cid
 
     merged = dict(old)
     merged["cues"] = new_cues
+
+    # validate cue references (music beds, sfx) against surviving cue ids. With stable
+    # ids an unchanged ref just passes through; a ref only goes stale if that cue's VO
+    # was removed/edited enough not to match (so it became a new cue). Drop the stale
+    # ref + warn rather than let a bed play under the wrong cue.
+    valid_ids = {c["id"] for c in new_cues}
+    dropped_refs: list[str] = []
+    for bed in ((merged.get("music") or {}).get("beds") or []):
+        refs = bed.get("cues")
+        if isinstance(refs, list):
+            gone = [r for r in refs if r not in valid_ids]
+            if gone:
+                dropped_refs += [f"music/{bed.get('name', '?')}:{r}" for r in gone]
+                warnings.append(f"music bed '{bed.get('name')}': dropped stale cue ref(s) "
+                                f"{gone} — cue no longer in script; re-add if intended")
+            bed["cues"] = [r for r in refs if r in valid_ids]
+    for sfx in (merged.get("sfx") or []):
+        label = sfx.get("name") or sfx.get("id") or "?"
+        refs = sfx.get("cues")
+        if isinstance(refs, list):
+            gone = [r for r in refs if r not in valid_ids]
+            if gone:
+                dropped_refs += [f"sfx/{label}:{r}" for r in gone]
+                warnings.append(f"sfx '{label}': dropped stale cue ref(s) {gone}")
+            sfx["cues"] = [r for r in refs if r in valid_ids]
+        ref = sfx.get("cue")
+        if isinstance(ref, str) and ref and ref not in valid_ids:
+            dropped_refs.append(f"sfx/{label}:{ref}")
+            warnings.append(f"sfx '{label}': cue ref '{ref}' no longer in script — review")
 
     summary = {
         "old_cue_count": len(old_cues),
         "new_cue_count": len(new_cues),
         "cues_added": n_new,
         "cues_reshot": n_edited,
+        "new_ids": [ch["id"] for ch in changes if ch["type"] == "added"],
+        "dropped_cue_refs": dropped_refs,
         "changes": changes,
         "speakers": sorted({c["speaker"] for c in new_cues if c.get("speaker")}),
         "unmapped_speakers": sorted({c["speaker"] for c in new_cues
                                      if c.get("speaker") and c["speaker"] not in speaker_map}),
         "segments": list(dict.fromkeys(c["segment"] for c in new_cues if c.get("segment"))),
         "warnings": warnings,
-        "renumbered": len(old_cues) != len(new_cues),
+        "renumbered": False,  # stable-id policy: cues are never renumbered
     }
     return {"manifest": merged, "summary": summary, "cues": new_cues}
 
