@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, mediaUrl } from "../api";
+import { graphicsApi } from "../api/graphics";
 import { useStore } from "../store";
 import { Badge, Dot } from "../components/Badge";
 import { RegenNotes } from "../components/RegenNotes";
+import { Modal } from "../components/Modal";
+import { Field } from "../components/Field";
+import { VersionArrows } from "../components/VersionArrows";
 import { IRegen } from "../components/Icons";
 
 interface HFEvent { ts: number; kind: string; n?: number; name?: string; line?: string; error?: string; [k: string]: unknown }
@@ -22,6 +26,27 @@ export function Graphics({ slug }: { slug: string }) {
   });
 
   const [logLines, setLogLines] = useState<string[]>([]);
+
+  const hfTemplates = useQuery({
+    queryKey: ["hfTemplates"],
+    queryFn: () => graphicsApi.templates(),
+  });
+  const templateOptions = hfTemplates.data?.templates ?? [];
+
+  // ---- New title card modal ----
+  const [newOpen, setNewOpen] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const [newComp, setNewComp] = useState("");
+  const [newFields, setNewFields] = useState('{\n  "kicker": "",\n  "title_line_1": "",\n  "title_line_2": "",\n  "sub": ""\n}');
+  useEffect(() => {
+    if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
+  }, [templateOptions, newComp]);
+
+  // ---- YouTube thumbnail ----
+  const [thumbOpen, setThumbOpen] = useState(false);
+  const [thumbFields, setThumbFields] = useState('{\n  "title_line_1": "",\n  "title_line_2": ""\n}');
+  const [thumbOverride, setThumbOverride] = useState<string | null>(null);
+  const [thumbBust, setThumbBust] = useState(0);
 
   function watchHfJob(jobId: string, key: string) {
     const es = new EventSource(`/api/hf/jobs/${jobId}/stream`);
@@ -62,6 +87,72 @@ export function Graphics({ slug }: { slug: string }) {
     },
   });
 
+  const newTitle = useMutation({
+    mutationFn: (args: { key: string; composition: string; fields: Record<string, unknown> }) =>
+      graphicsApi.newTitle(slug, args),
+    onMutate: (a) => { setBusy(`title:${a.key}`, true); push(`new title ${a.key} → HyperFrames`, "run"); },
+    onError: (e: Error, a) => {
+      setBusy(`title:${a.key}`, false);
+      push(`new title ${a.key}: ${e.message}`, "err");
+    },
+    onSuccess: (r, a) => {
+      setNewOpen(false);
+      qc.invalidateQueries({ queryKey: ["titles", slug] });
+      if (r.job_id) watchHfJob(r.job_id, a.key);
+    },
+  });
+
+  const regenThumb = useMutation({
+    mutationFn: (fields: Record<string, unknown>) =>
+      graphicsApi.regenYThumb(slug, { fields }),
+    onMutate: () => { setBusy("ythumb", true); push("thumbnail → HyperFrames", "run"); },
+    onError: (e: Error) => {
+      setBusy("ythumb", false);
+      push(`thumbnail: ${e.message}`, "err");
+    },
+    onSuccess: (r) => {
+      setThumbOpen(false);
+      if (r.job_id) {
+        const es = new EventSource(`/api/hf/jobs/${r.job_id}/stream`);
+        es.onmessage = (m) => {
+          let ev: HFEvent;
+          try { ev = JSON.parse(m.data); } catch { return; }
+          if (ev.kind === "log" && typeof ev.line === "string") {
+            setLogLines((L) => [...L.slice(-200), `[thumb] ${ev.line}`]);
+          } else if (ev.kind === "job.done") {
+            setBusy("ythumb", false);
+            push("thumbnail rendered", "ok");
+            setThumbOverride(null);
+            setThumbBust((n) => n + 1);
+            es.close();
+          } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
+            setBusy("ythumb", false);
+            push(`thumbnail failed: ${ev.error}`, "err");
+            setLogLines((L) => [...L.slice(-200), `[thumb] ERROR: ${ev.error}`]);
+            es.close();
+          }
+        };
+        es.addEventListener("end", () => es.close());
+      }
+    },
+  });
+
+  function submitNewTitle() {
+    let fields: Record<string, unknown> = {};
+    try { fields = JSON.parse(newFields || "{}"); }
+    catch { push("fields must be valid JSON", "err"); return; }
+    if (!newKey.trim()) { push("key required", "err"); return; }
+    if (!newComp) { push("composition required", "err"); return; }
+    newTitle.mutate({ key: newKey.trim(), composition: newComp, fields });
+  }
+
+  function submitRegenThumb() {
+    let fields: Record<string, unknown> = {};
+    try { fields = JSON.parse(thumbFields || "{}"); }
+    catch { push("fields must be valid JSON", "err"); return; }
+    regenThumb.mutate(fields);
+  }
+
   const renderAllMissing = () => {
     const ts = (titles.data?.titles ?? []).filter(
       (t) => t.scope === "local" && (t.status === "missing" || t.status === "stale")
@@ -91,12 +182,15 @@ export function Graphics({ slug }: { slug: string }) {
           <div className="panel-title">TITLE CARDS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ manifest.title_assets</span></div>
           <div className="flex items-center gap-2">
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{cards.length}</span> READY</span>
+            <button className="btn btn-cyan" onClick={() => setNewOpen(true)}>
+              + New title card
+            </button>
             <button className="btn btn-amber" onClick={renderAllMissing}>
               <IRegen /> Render all missing
             </button>
           </div>
         </header>
-        <div className="overflow-y-auto flex-1 p-3 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+        <div className="overflow-y-auto flex-1 p-3 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
           {cards.map((t) => {
             const active = selectedKey === t.key;
             const isBusy = !!busy[`title:${t.key}`];
@@ -107,7 +201,7 @@ export function Graphics({ slug }: { slug: string }) {
                 className={"hairline-soft text-left p-0 overflow-hidden rounded transition-colors " + (active ? "border-amber" : "")}
                 style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)" } : {}}
               >
-                <div className="bg-black grid place-items-center" style={{ aspectRatio: "16/9" }}>
+                <div className="bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
                   {t.scope === "local" && t.exists ? (
                     <video
                       key={mediaUrl.titlePreview(slug, t.key) + (t.mtime ?? "")}
@@ -186,10 +280,10 @@ export function Graphics({ slug }: { slug: string }) {
                 playsInline
                 controls
                 className="w-full bg-black hairline-soft rounded"
-                style={{ aspectRatio: "16/9" }}
+                style={{ aspectRatio: "1/1" }}
               />
             ) : (
-              <div className="hairline-soft bg-black grid place-items-center" style={{ aspectRatio: "16/9" }}>
+              <div className="hairline-soft bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
                 <div className="text-center">
                   <Badge status={cur.status} />
                   <div className="label-tiny mt-2 break-all">
@@ -222,7 +316,80 @@ export function Graphics({ slug }: { slug: string }) {
         ) : (
           <div className="text-txt-faint">No title selected.</div>
         )}
+
+        <div className="panel">
+          <div className="flex items-center justify-between px-3 py-2 border-b hairline">
+            <div className="panel-title">YOUTUBE THUMBNAIL</div>
+            <button
+              className="btn btn-cyan"
+              disabled={!!busy.ythumb}
+              onClick={() => setThumbOpen(true)}
+            ><IRegen /> Regenerate</button>
+          </div>
+          <div className="p-3 flex flex-col gap-2">
+            <div className="bg-black hairline-soft rounded overflow-hidden grid place-items-center" style={{ aspectRatio: "16/9" }}>
+              <img
+                key={(thumbOverride ?? graphicsApi.ythumbPreviewUrl(slug)) + `?b=${thumbBust}`}
+                src={thumbOverride ?? `${graphicsApi.ythumbPreviewUrl(slug)}?b=${thumbBust}`}
+                alt="youtube thumbnail"
+                className="w-full h-full object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "visible"; }}
+              />
+            </div>
+            <VersionArrows
+              slug={slug}
+              kind="ythumb"
+              vkey={slug}
+              onView={(u) => setThumbOverride(u)}
+              onChanged={() => { setThumbOverride(null); setThumbBust((n) => n + 1); }}
+            />
+          </div>
+        </div>
       </aside>
+
+      <Modal
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        title="New title card"
+        footer={
+          <>
+            <button className="btn" onClick={() => setNewOpen(false)}>Cancel</button>
+            <button className="btn btn-cyan" disabled={newTitle.isPending} onClick={submitNewTitle}>Create + render</button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <Field label="key" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
+          <Field
+            label="composition"
+            value={newComp}
+            onChange={setNewComp}
+            options={templateOptions.length ? templateOptions : [""]}
+          />
+          <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
+        </div>
+      </Modal>
+
+      <Modal
+        open={thumbOpen}
+        onClose={() => setThumbOpen(false)}
+        title="Regenerate YouTube thumbnail"
+        footer={
+          <>
+            <button className="btn" onClick={() => setThumbOpen(false)}>Cancel</button>
+            <button className="btn btn-cyan" disabled={regenThumb.isPending} onClick={submitRegenThumb}>Regenerate</button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-txt-dim text-[12px]">
+            Renders the <code>youtube_thumb</code> composition to{" "}
+            <code>final/{slug}_thumb.png</code>. The current thumbnail is archived first.
+          </p>
+          <Field label="fields (JSON)" value={thumbFields} onChange={setThumbFields} rows={6} monospace />
+        </div>
+      </Modal>
     </div>
   );
 }

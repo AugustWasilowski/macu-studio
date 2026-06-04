@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type GenManifestSummary } from "../api";
+import { writersApi } from "../api/writers";
 import { useStore } from "../store";
 import { Modal } from "../components/Modal";
+import { Markdown } from "../components/Markdown";
 
 const WPM = 150;
 
@@ -19,6 +21,7 @@ export function Script({ slug }: { slug: string }) {
   const [preview, setPreview] = useState(false);
   const [saved, setSaved] = useState(true);
   const [gen, setGen] = useState<GenManifestSummary | null>(null);
+  const [notesOpen, setNotesOpen] = useState(true);
 
   useEffect(() => {
     if (scriptQ.data) {
@@ -58,6 +61,20 @@ export function Script({ slug }: { slug: string }) {
       qc.invalidateQueries({ queryKey: ["cues", slug] });
     },
     onError: (e: Error) => push("apply failed: " + e.message, "err"),
+  });
+
+  // Send the script to Max's always-on writers' room (fire-and-forget).
+  const writersMut = useMutation({
+    mutationFn: () => writersApi.kick(slug),
+    onSuccess: () => push("Sent to Max — notes will appear when ready", "ok"),
+    onError: (e: Error) => push("writers' room failed: " + e.message, "err"),
+  });
+
+  // Poll for the synthesized notes Max writes to writers_room.md.
+  const notesQ = useQuery({
+    queryKey: ["writersRoom", slug],
+    queryFn: () => writersApi.notes(slug),
+    refetchInterval: 5000,
   });
 
   // Ctrl/Cmd+S
@@ -106,6 +123,14 @@ export function Script({ slug }: { slug: string }) {
             >
               {genMut.isPending ? "Reading script…" : "Generate manifest"}
             </button>
+            <button
+              className="btn"
+              disabled={writersMut.isPending}
+              title="Send script.md to Max's writers' room for a critique pass (notes appear when ready)"
+              onClick={() => writersMut.mutate()}
+            >
+              {writersMut.isPending ? "Sending…" : "Send to writers' room"}
+            </button>
           </div>
         </header>
         <div className="flex-1 min-h-0">
@@ -131,6 +156,12 @@ export function Script({ slug }: { slug: string }) {
         </footer>
       </section>
 
+      <WritersRoomPanel
+        open={notesOpen}
+        onToggle={() => setNotesOpen((v) => !v)}
+        notes={notesQ.data}
+      />
+
       <GenManifestModal
         summary={gen}
         onClose={() => setGen(null)}
@@ -138,6 +169,45 @@ export function Script({ slug }: { slug: string }) {
         applying={applyMut.isPending}
       />
     </div>
+  );
+}
+
+function WritersRoomPanel({
+  open, onToggle, notes,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  notes?: { text: string; mtime: number | null; exists: boolean };
+}) {
+  const exists = !!notes?.exists;
+  return (
+    <section
+      className="panel flex flex-col ml-2 border-l hairline"
+      style={{ width: open ? 380 : 44, transition: "width 120ms ease" }}
+    >
+      <header className="flex items-center justify-between px-3 py-2 border-b hairline">
+        {open && (
+          <div className="panel-title">
+            WRITERS' ROOM NOTES
+            {exists && <span className="text-green ml-2 text-[10px]">● ready</span>}
+          </div>
+        )}
+        <button className="btn ml-auto" onClick={onToggle} title={open ? "Collapse" : "Expand"}>
+          {open ? "›" : "‹"}
+        </button>
+      </header>
+      {open && (
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 text-[13px] leading-relaxed">
+          {exists ? (
+            <ScriptPreview text={notes!.text} />
+          ) : (
+            <div className="logtail text-[12px] text-txt-faint">
+              waiting for Max…
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -217,39 +287,8 @@ function GenManifestModal({
   );
 }
 
+// Thin wrapper kept for call sites; rendering now lives in the shared Markdown
+// component (components/Markdown.tsx).
 function ScriptPreview({ text }: { text: string }) {
-  const lines = useMemo(() => text.split("\n"), [text]);
-  return (
-    <>
-      {lines.map((line, i) => {
-        const cue = line.match(/^\[CUE\s+([\w\-]+)\s*\/\s*([^\]]+)\]/i);
-        if (cue) {
-          const color = colorForSpeaker(cue[2].trim());
-          return (
-            <div
-              key={i}
-              className="flex items-baseline gap-2 my-1 pl-2 py-1 rounded-[3px]"
-              style={{ borderLeft: `3px solid ${color}`, background: `${color}10` }}
-            >
-              <span className="text-amber font-bold text-[12px] tracking-wider">CUE {cue[1]}</span>
-              <span className="text-[12px]" style={{ color }}>{cue[2].trim()}</span>
-            </div>
-          );
-        }
-        if (line.startsWith("# ")) return <h1 key={i} className="text-amber font-bold text-xl mt-3 mb-1" style={{ textShadow: "var(--glow-amber)" }}>{line.slice(2)}</h1>;
-        if (line.startsWith("## ")) return <h2 key={i} className="text-amber font-semibold text-base mt-2 mb-1">{line.slice(3)}</h2>;
-        if (line.startsWith("> ")) return <blockquote key={i} className="border-l-2 border-[var(--line-soft)] pl-2 my-1 text-txt-dim italic">{line.slice(2)}</blockquote>;
-        if (!line.trim()) return <div key={i} className="h-2" />;
-        return <p key={i} className="my-1">{line}</p>;
-      })}
-    </>
-  );
-}
-
-function colorForSpeaker(name: string): string {
-  if (!name) return "#938d82";
-  const palette = ["#f5a623", "#00e5ff", "#33ff66", "#c08bff", "#ff7a59", "#9ad6ff", "#ffd166", "#7cc97a"];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
-  return palette[Math.abs(h) % palette.length];
+  return <Markdown text={text} />;
 }

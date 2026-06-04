@@ -5,7 +5,11 @@ import { useStore } from "../store";
 import { Badge } from "../components/Badge";
 import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
-import { IRegen } from "../components/Icons";
+import { Modal } from "../components/Modal";
+import { Field } from "../components/Field";
+import { VersionArrows } from "../components/VersionArrows";
+import { IRegen, IPlus } from "../components/Icons";
+import { versionsApi } from "../api/assets";
 import type { PipelineEvent, Shot } from "../types";
 
 export function Video({ slug }: { slug: string }) {
@@ -27,6 +31,11 @@ export function Video({ slug }: { slug: string }) {
 
   const [draftPrompt, setDraftPrompt] = useState<string | null>(null);
   const [draftSeed, setDraftSeed] = useState<Record<string, number | null>>({});
+  // Per-shot version-preview override URL (null = canonical shot preview).
+  const [shotOverrides, setShotOverrides] = useState<Record<string, string | null>>({});
+  const setShotOverride = (key: string, u: string | null) =>
+    setShotOverrides((s) => ({ ...s, [key]: u }));
+  const [addOpen, setAddOpen] = useState(false);
 
   const watchJob = (jobId: string, key: string) => {
     setBusy(`shot:${key}`, true);
@@ -125,6 +134,9 @@ export function Video({ slug }: { slug: string }) {
           <div className="panel-title">SHOT LIST <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ characters + broll</span></div>
           <div className="flex items-center gap-2">
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> RENDERED</span>
+            <button className="btn btn-cyan" onClick={() => setAddOpen(true)}>
+              <IPlus /> Add shot
+            </button>
             <button className="btn btn-amber" onClick={renderAllMissing}>
               <IRegen /> Render all missing/stale
             </button>
@@ -140,6 +152,7 @@ export function Video({ slug }: { slug: string }) {
                 <th className="px-2 py-1 w-[90px]">SEED</th>
                 <th className="px-2 py-1">STATUS</th>
                 <th className="px-2 py-1"></th>
+                <th className="px-2 py-1">VER</th>
               </tr>
             </thead>
             <tbody>
@@ -195,6 +208,15 @@ export function Video({ slug }: { slug: string }) {
                         <RegenNotes onSubmit={() => regen.mutate(s.key)} />
                       </div>
                     </td>
+                    <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      <VersionArrows
+                        slug={slug}
+                        kind="shot"
+                        vkey={s.key}
+                        onView={(u) => setShotOverride(s.key, u)}
+                        onChanged={() => qc.invalidateQueries({ queryKey: ["shots", slug] })}
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -211,10 +233,10 @@ export function Video({ slug }: { slug: string }) {
         </div>
         {cur ? (
           <>
-            {cur.webp_exists ? (
+            {(shotOverrides[cur.key] || cur.webp_exists) ? (
               <img
-                key={mediaUrl.shotPreview(slug, cur.key) + (cur.webp_mtime ?? "")}
-                src={mediaUrl.shotPreview(slug, cur.key)}
+                key={(shotOverrides[cur.key] || mediaUrl.shotPreview(slug, cur.key)) + (cur.webp_mtime ?? "")}
+                src={shotOverrides[cur.key] || mediaUrl.shotPreview(slug, cur.key)}
                 alt={cur.key}
                 className="w-full hairline-soft bg-black"
                 style={{ aspectRatio: "1/1", objectFit: "contain" }}
@@ -265,7 +287,103 @@ export function Video({ slug }: { slug: string }) {
           <div className="text-txt-faint">No shot selected.</div>
         )}
       </aside>
+
+      <AddShotDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        slug={slug}
+        onAdded={() => {
+          qc.invalidateQueries({ queryKey: ["shots", slug] });
+          qc.invalidateQueries({ queryKey: ["manifest", slug] });
+        }}
+      />
     </div>
+  );
+}
+
+function AddShotDialog({ open, onClose, slug, onAdded }: {
+  open: boolean;
+  onClose: () => void;
+  slug: string;
+  onAdded: () => void;
+}) {
+  const push = useStore((s) => s.pushToast);
+  const cues = useQuery({
+    queryKey: ["cues", slug],
+    queryFn: () => api.cues(slug),
+    enabled: open,
+  });
+  const cueIds = cues.data?.cues.map((c) => c.id) ?? [];
+
+  const [key, setKey] = useState("");
+  const [kind, setKind] = useState<"character" | "broll">("character");
+  const [prompt, setPrompt] = useState("");
+  const [seed, setSeed] = useState("");
+  const [attach, setAttach] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setKey(""); setKind("character"); setPrompt(""); setSeed(""); setAttach(""); setBusy(false);
+    }
+  }, [open]);
+
+  const submit = async () => {
+    if (!key.trim()) { push("key is required", "err"); return; }
+    setBusy(true);
+    try {
+      const seedNum = seed.trim() ? parseInt(seed.replace(/\D/g, ""), 10) : null;
+      await versionsApi.addShot(slug, {
+        key: key.trim(),
+        kind,
+        prompt,
+        seed: Number.isNaN(seedNum as number) ? null : seedNum,
+        attach_to_cue: attach || null,
+      });
+      push(`shot ${key.trim()} added`, "ok");
+      onAdded();
+      onClose();
+    } catch (e: any) {
+      push("add failed: " + (e?.message ?? "error"), "err");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="ADD SHOT"
+      width={520}
+      footer={
+        <>
+          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn btn-cyan" disabled={busy || !key.trim()} onClick={submit}>
+            {busy ? "Adding…" : "Add to manifest"}
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="key" value={key} onChange={setKey} placeholder="e.g. ron / city_ruins" />
+          <Field label="kind" value={kind} onChange={(v) => setKind(v as "character" | "broll")} options={["character", "broll"]} />
+        </div>
+        <Field label="prompt" value={prompt} onChange={setPrompt} rows={4} placeholder="describe the shot" />
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" />
+          <Field
+            label="attach to cue (optional)"
+            value={attach}
+            onChange={setAttach}
+            options={["", ...cueIds]}
+          />
+        </div>
+        <div className="text-[11px] text-txt-faint">
+          Adds a {kind} key to the manifest{attach ? <> and a shot to <span className="text-cyan">@{attach}</span></> : null}. Render it from the SHOT LIST.
+        </div>
+      </div>
+    </Modal>
   );
 }
 

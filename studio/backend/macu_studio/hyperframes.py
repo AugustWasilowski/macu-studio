@@ -21,6 +21,7 @@ from typing import AsyncIterator
 from .config import SHARES
 from .episodes import episode_dir
 from . import manifest as manifest_mod
+from . import versions as versions_mod
 
 
 TEMPLATES = SHARES / "assets" / "hyperframes" / "templates"
@@ -39,10 +40,15 @@ DEFAULT_FIELDS = {
 # ---- job state -----------------------------------------------------------
 
 class Job:
-    def __init__(self, job_id: str, slug: str, key: str):
+    def __init__(self, job_id: str, slug: str, key: str,
+                 kind: str = "title", composition: str | None = None,
+                 fields: dict | None = None):
         self.id = job_id
         self.slug = slug
         self.key = key
+        self.kind = kind           # title | thumb
+        self.composition = composition
+        self.fields = fields or {}
         self.state = "queued"       # queued | running | done | error
         self.events: list[dict] = []
         self.event_cond = asyncio.Condition()
@@ -78,7 +84,10 @@ async def _worker() -> None:
         job = JOBS.get(job_id)
         if not job:
             continue
-        await _run(job)
+        if job.kind == "thumb":
+            await _run_thumb(job)
+        else:
+            await _run(job)
 
 
 # ---- templating ----------------------------------------------------------
@@ -214,7 +223,110 @@ async def _run(job: Job) -> None:
         job.finished_at = time.time()
 
 
+async def _run_thumb(job: Job) -> None:
+    """Render a YouTube thumbnail into final/<slug>_thumb.png.
+
+    The previous thumb has already been archived by submit_thumb() before the
+    job was queued. Scaffolds the composition under hyperframes/_ythumb/, renders
+    it, and produces a PNG at the canonical thumb path. If hyperframes emits an
+    mp4, a single frame is extracted to PNG via ffmpeg."""
+    job.state = "running"
+    job.started_at = time.time()
+    await job.emit("job.started", slug=job.slug, key=job.key)
+    try:
+        composition = job.composition or "youtube_thumb"
+        fields = job.fields or {}
+
+        # _ythumb is the scaffold key; reuses the per-key dir machinery.
+        project_dir = _scaffold(job.slug, "_ythumb", composition, fields)
+        out_mp4 = project_dir / "out" / "_ythumb.mp4"
+        out_png = project_dir / "out" / "_ythumb.png"
+        # Clear any stale renders so we don't promote an old frame.
+        for stale in (out_mp4, out_png):
+            if stale.exists():
+                stale.unlink()
+
+        await job.emit("stage.started", n=1, name="render",
+                        project=str(project_dir), composition=composition)
+
+        env = os.environ.copy()
+        env["PATH"] = f"{NODE_BIN}:{env.get('PATH', '')}"
+        env["NPM_CONFIG_PREFIX"] = ""
+
+        proc = await asyncio.create_subprocess_exec(
+            NPX, "--userconfig", "/dev/null", "hyperframes", "render",
+            "--output", "out/_ythumb.mp4",
+            "--fps", "8",
+            "--quality", "high",
+            cwd=str(project_dir),
+            env=env,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        stdout = []
+        assert proc.stdout
+        async for line in proc.stdout:
+            decoded = line.decode("utf-8", errors="replace").rstrip()
+            stdout.append(decoded)
+            await job.emit("log", line=decoded)
+        rc = await proc.wait()
+        log = "\n".join(stdout[-80:])
+
+        if rc != 0:
+            await job.emit("stage.error", n=1, name="render", error=f"npx hyperframes render exit {rc}", log=log)
+            await job.emit("job.error", error=f"render rc={rc}")
+            job.state = "error"
+            return
+
+        # Land a PNG. hyperframes may have produced a png directly or an mp4.
+        final_dir = episode_dir(job.slug) / "final"
+        final_dir.mkdir(exist_ok=True)
+        final_png = final_dir / f"{job.slug}_thumb.png"
+
+        if out_png.exists():
+            shutil.copyfile(out_png, final_png)
+        elif out_mp4.exists():
+            await job.emit("log", line="extracting single frame from mp4 → png")
+            ff = await asyncio.create_subprocess_exec(
+                "ffmpeg", "-y", "-i", str(out_mp4), "-frames:v", "1", str(final_png),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            assert ff.stdout
+            async for line in ff.stdout:
+                await job.emit("log", line=line.decode("utf-8", errors="replace").rstrip())
+            ffrc = await ff.wait()
+            if ffrc != 0 or not final_png.exists():
+                await job.emit("stage.error", n=1, name="render", error=f"ffmpeg frame extract exit {ffrc}")
+                await job.emit("job.error", error="thumb png extract failed")
+                job.state = "error"
+                return
+        else:
+            await job.emit("stage.error", n=1, name="render", error="render reported success but no png/mp4 found", log=log)
+            await job.emit("job.error", error="missing thumb output")
+            job.state = "error"
+            return
+
+        await job.emit("stage.done", n=1, name="render", wall_s=round(time.time() - job.started_at, 2),
+                        result={"png_path": str(final_png), "bytes": final_png.stat().st_size})
+        await job.emit("job.done", final=str(final_png), bytes=final_png.stat().st_size,
+                        wall_s=round(time.time() - job.started_at, 2))
+        job.state = "done"
+    except Exception as e:
+        await job.emit("job.error", error=str(e))
+        job.state = "error"
+    finally:
+        job.finished_at = time.time()
+
+
 # ---- public API ----------------------------------------------------------
+
+def list_templates() -> list[str]:
+    """Names of subdirs under assets/hyperframes/templates/ (empty if missing)."""
+    if not TEMPLATES.exists():
+        return []
+    return sorted(p.name for p in TEMPLATES.iterdir() if p.is_dir())
+
 
 async def submit(slug: str, key: str) -> str:
     """Queue a render. Returns the job_id."""
@@ -223,6 +335,36 @@ async def submit(slug: str, key: str) -> str:
     assert QUEUE is not None
     job_id = "hf-" + uuid.uuid4().hex[:10]
     JOBS[job_id] = Job(job_id, slug, key)
+    QUEUE.put_nowait(job_id)
+    return job_id
+
+
+async def submit_new(slug: str, key: str, composition: str, fields: dict) -> str:
+    """Create a new title_assets[key] entry from a composition + fields, then
+    queue its render. Returns the job_id."""
+    m = manifest_mod.load(slug)
+    ta = m.setdefault("title_assets", {})
+    ta[key] = {"source": "hyperframes", "composition": composition, "fields": fields or {}}
+    manifest_mod.save(slug, m)
+    return await submit(slug, key)
+
+
+async def submit_thumb(slug: str, fields: dict, composition: str = "youtube_thumb") -> str:
+    """Queue a YouTube thumbnail render. Archives the current thumb first, then
+    scaffolds + renders the composition into final/<slug>_thumb.png. Returns the
+    job_id. Raises FileNotFoundError if the template is missing."""
+    template_dir = TEMPLATES / composition
+    if not (template_dir / "index.html").exists():
+        raise FileNotFoundError(
+            f"youtube thumbnail template not found: {template_dir}/index.html")
+    # Archive the outgoing thumb into version history before overwriting.
+    versions_mod.archive_current(slug, "ythumb", slug)
+    loop = asyncio.get_event_loop()
+    _ensure_worker(loop)
+    assert QUEUE is not None
+    job_id = "hf-" + uuid.uuid4().hex[:10]
+    JOBS[job_id] = Job(job_id, slug, slug, kind="thumb",
+                       composition=composition, fields=fields or {})
     QUEUE.put_nowait(job_id)
     return job_id
 

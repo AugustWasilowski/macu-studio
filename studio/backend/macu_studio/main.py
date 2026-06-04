@@ -22,6 +22,7 @@ from . import regen as regen_mod
 from . import sfx as sfx_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN
 
 
@@ -322,6 +323,16 @@ async def post_chat_reply(request: Request, body: dict = Body(...)):
         raise HTTPException(400, "request_id and text required")
     delivered = chat_mod.deliver(str(request_id), text)
     return {"ok": delivered, "request_id": request_id}
+
+
+# ---------- Feature routers (versioning, graphics, writers' room, youtube, docs, git-sync) ----------
+
+app.include_router(routes_assets.router)
+app.include_router(routes_graphics.router)
+app.include_router(routes_writers.router)
+app.include_router(routes_youtube.router)
+app.include_router(routes_docs.router)
+app.include_router(routes_gitsync.router)
 
 
 # ---------- SPA static mount (last, after API routes) ----------

@@ -3,6 +3,7 @@ import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
+import { gitsyncApi } from "../api/gitsync";
 
 interface Props {
   episodes: EpisodeSummary[];
@@ -23,7 +24,24 @@ function nowClock() {
 export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage }: Props) {
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const toggleDrawer = useStore((s) => s.toggleDrawer);
+  const pushToast = useStore((s) => s.pushToast);
+
+  async function onSync() {
+    if (!slug || syncing) return;
+    setSyncing(true);
+    try {
+      const r = await gitsyncApi.sync(slug);
+      if (!r.ok) pushToast(`git sync failed: ${r.log.split("\n").pop() || ""}`, "err");
+      else if (r.committed) pushToast(`synced ${slug} → ${r.commit}`, "ok");
+      else pushToast(`${slug} already in sync`, "info");
+    } catch (e) {
+      pushToast(`git sync error: ${e instanceof Error ? e.message : String(e)}`, "err");
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   useEffect(() => {
     const t = setInterval(() => setClock(nowClock()), 1000);
@@ -96,6 +114,16 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage }:
         })}
       </nav>
       <div className="ml-auto flex items-center gap-3">
+        <button
+          className="btn"
+          onClick={onSync}
+          disabled={syncing || !slug}
+          title="Sync script + manifest + youtube.txt to git"
+        >
+          <span className="font-semibold tracking-wider uppercase text-[11px]">
+            {syncing ? "Syncing…" : "Git sync"}
+          </span>
+        </button>
         <span className="seg-readout cyan">{clock}</span>
         <button className="btn" onClick={toggleDrawer} title="Open manifest drawer">
           <IBrace />

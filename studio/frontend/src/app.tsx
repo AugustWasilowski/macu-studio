@@ -8,6 +8,8 @@ import { Audio } from "./stages/Audio";
 import { Script } from "./stages/Script";
 import { Video } from "./stages/Video";
 import { Graphics } from "./stages/Graphics";
+import { YouTube } from "./stages/YouTube";
+import { Docs } from "./stages/Docs";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
 import { useRoute, Page } from "./route";
@@ -98,10 +100,9 @@ function PageView({
   loading: boolean;
   go: (r: any) => void;
 }) {
-  // Top-level pages (rendered by their own components once Phases F2/G land;
-  // Placeholder keeps the build green in the interim).
-  if (page === "youtube") return <Placeholder slug={slug} stage={"youtube" as any} />;
-  if (page === "docs") return <Placeholder slug={slug} stage={"docs" as any} />;
+  // Top-level pages — driven by the global activeSlug, not (slug, stage).
+  if (page === "youtube") return <YouTube />;
+  if (page === "docs") return <Docs />;
 
   if (!slug) {
     return (

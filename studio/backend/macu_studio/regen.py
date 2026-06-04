@@ -11,6 +11,7 @@ from pathlib import Path
 from .episodes import episode_dir
 from .manifest import _vo_cache_path
 from . import pipeline
+from . import versions
 
 
 def _drop_cue_from_vo_cache(slug: str, cue_id: str) -> None:
@@ -29,6 +30,7 @@ def _drop_cue_from_vo_cache(slug: str, cue_id: str) -> None:
 async def regen_cue(slug: str, cue_id: str) -> dict:
     ep = episode_dir(slug)
     wav = ep / "vo" / f"{cue_id}.wav"
+    versions.archive_current(slug, "cue", cue_id)
     if wav.exists():
         wav.unlink()
     _drop_cue_from_vo_cache(slug, cue_id)
@@ -37,6 +39,7 @@ async def regen_cue(slug: str, cue_id: str) -> dict:
 
 async def regen_shot(slug: str, key: str) -> dict:
     ep = episode_dir(slug)
+    versions.archive_current(slug, "shot", key)
     # Be thorough — both character and broll path conventions
     candidates: list[Path] = [
         ep / "clips" / f"{key}_master.zs.webp",

@@ -9,6 +9,9 @@ RENDER_URL = os.environ.get("MACU_RENDER_URL", "http://127.0.0.1:8773").rstrip("
 STUDIO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = STUDIO_ROOT / "frontend" / "dist"
 
+# The macu-pipeline repo root (studio/ lives inside it). `docs/` is the canon dir.
+REPO_ROOT = STUDIO_ROOT.parent
+
 HOST = os.environ.get("MACU_STUDIO_HOST", "0.0.0.0")
 PORT = int(os.environ.get("MACU_STUDIO_PORT", "8774"))
 
@@ -41,3 +44,27 @@ def _load_chat_token() -> str:
 
 
 CHAT_WEBHOOK_TOKEN = _load_chat_token()
+
+
+# ---- YouTube Data API v3 (landing page) ----
+# Env vars win; else read ~/.config/macu-studio/youtube.json
+# ({"api_key": ..., "channel_id": ...}). Both default to empty strings, in
+# which case the YouTube landing page degrades to "not configured".
+def _load_youtube_creds() -> tuple[str, str]:
+    api_key = os.environ.get("YOUTUBE_API_KEY", "").strip()
+    channel_id = os.environ.get("YOUTUBE_CHANNEL_ID", "").strip()
+    if api_key and channel_id:
+        return api_key, channel_id
+    cfg = Path.home() / ".config" / "macu-studio" / "youtube.json"
+    if cfg.exists():
+        try:
+            import json
+            data = json.loads(cfg.read_text())
+            api_key = api_key or str(data.get("api_key") or "").strip()
+            channel_id = channel_id or str(data.get("channel_id") or "").strip()
+        except Exception:
+            pass
+    return api_key, channel_id
+
+
+YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID = _load_youtube_creds()

@@ -8,6 +8,7 @@ import { PlayBtn } from "../components/PlayBtn";
 import { RegenNotes } from "../components/RegenNotes";
 import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
+import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlus, IX } from "../components/Icons";
 import type { Cue, PipelineEvent } from "../types";
 
@@ -47,12 +48,19 @@ export function Audio({ slug }: { slug: string }) {
 
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Per-cue version-preview override URL (null = canonical cue audio).
+  const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
+  const setCueOverride = (id: string, u: string | null) =>
+    setCueOverrides((s) => ({ ...s, [id]: u }));
+  const overridesRef = useRef(cueOverrides);
+  overridesRef.current = cueOverrides;
 
   // Bind <audio> events for play/pause/end to drive `playing` state
   useEffect(() => {
     if (!playing || playing.split(":")[0] !== "cue") return;
     const cueId = playing.split(":")[1];
-    const a = new window.Audio(mediaUrl.cueAudio(slug, cueId));
+    const src = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId);
+    const a = new window.Audio(src);
     audioRef.current = a;
     a.onended = () => setPlaying(null);
     // Surface failures instead of silently resetting — MediaError codes:
@@ -175,6 +183,7 @@ export function Audio({ slug }: { slug: string }) {
                   <th className="px-2 py-1">DUR</th>
                   <th className="px-2 py-1">STATUS</th>
                   <th className="px-2 py-1"></th>
+                  <th className="px-2 py-1">VER</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,6 +241,15 @@ export function Audio({ slug }: { slug: string }) {
                           </button>
                           <RegenNotes onSubmit={(_) => regen.mutate(c.id)} />
                         </div>
+                      </td>
+                      <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                        <VersionArrows
+                          slug={slug}
+                          kind="cue"
+                          vkey={c.id}
+                          onView={(u) => setCueOverride(c.id, u)}
+                          onChanged={() => qc.invalidateQueries({ queryKey: ["cues", slug] })}
+                        />
                       </td>
                     </tr>
                   );
