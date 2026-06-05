@@ -12,6 +12,7 @@ import { IRegen, IPlus, IDL } from "../components/Icons";
 import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
 import { Timeline } from "./Timeline";
+import { ShotGenModal } from "./ShotGenModal";
 import type { PipelineEvent, Shot } from "../types";
 
 export function Video({ slug }: { slug: string }) {
@@ -71,6 +72,7 @@ function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.React
   const setViewSeed = (key: string, seed: number | null | undefined) =>
     setViewSeeds((s) => ({ ...s, [key]: seed }));
   const [addOpen, setAddOpen] = useState(false);
+  const [genOpen, setGenOpen] = useState(false);
 
   const watchJob = (jobId: string, key: string) => {
     setBusy(`shot:${key}`, true);
@@ -198,6 +200,9 @@ function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.React
           <div className="panel-title">SHOT LIST <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ characters + broll</span></div>
           <div className="flex items-center gap-2">
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> RENDERED</span>
+            <button className="btn btn-cyan" onClick={() => setGenOpen(true)} title="Use the local LLM to propose a shot list from the script (reuses recurring characters)">
+              <IRegen /> Generate shot list
+            </button>
             <button className="btn btn-cyan" onClick={() => setAddOpen(true)}>
               <IPlus /> Add shot
             </button>
@@ -381,6 +386,7 @@ function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.React
           qc.invalidateQueries({ queryKey: ["manifest", slug] });
         }}
       />
+      <ShotGenModal slug={slug} open={genOpen} onClose={() => setGenOpen(false)} />
       </div>
     </div>
   );

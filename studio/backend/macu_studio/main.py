@@ -26,6 +26,7 @@ from . import assets as assets_mod
 from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
+from . import shotgen as shotgen_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -339,6 +340,37 @@ async def put_music_beds(slug: str, body: dict = Body(...)):
     m["music"] = music
     manifest_mod.save(slug, m)
     return {"ok": True, "count": len(beds)}
+
+
+# ---------- LLM shot-list generation (Ollama on-demand) ----------
+
+@app.post("/api/episodes/{slug}/shots/generate")
+def post_shots_generate(slug: str):
+    """Dry run: ask the local LLM to propose the shot list (reuse vs mint + per-cue
+    shots). 409 if the GPU is busy (a render is active). Sync def → runs in the
+    threadpool so the long model call doesn't block the event loop."""
+    busy, free = agen_mod.gpu_busy()
+    if busy:
+        raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
+    try:
+        return shotgen_mod.generate(slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"shot-gen failed: {e}")
+
+
+@app.post("/api/episodes/{slug}/shots/apply")
+async def post_shots_apply(slug: str, body: dict = Body(...)):
+    """Merge an approved proposal (from /shots/generate, possibly edited) into the
+    manifest — write new character/broll defs and set each planned cue's shots[]."""
+    proposal = body.get("proposal")
+    if not isinstance(proposal, dict):
+        raise HTTPException(400, "proposal object required")
+    try:
+        return shotgen_mod.apply(slug, proposal)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 # ---------- Asset library (assets/sfx, assets/music) ----------

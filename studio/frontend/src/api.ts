@@ -96,7 +96,25 @@ export const api = {
   regenShot: (slug: string, key: string) =>
     fetch(`/api/episodes/${slug}/shot/${key}/regen`, { method: "POST" })
       .then((r) => J<JobSubmitResp>(r)),
+  generateShots: (slug: string) =>
+    fetch(`/api/episodes/${slug}/shots/generate`, { method: "POST" })
+      .then((r) => J<ShotProposal>(r)),
+  applyShots: (slug: string, proposal: ShotProposal) =>
+    fetch(`/api/episodes/${slug}/shots/apply`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proposal }),
+    }).then((r) => J<{ ok: boolean; applied_cues: number; new_characters: number; new_broll: number }>(r)),
 };
+
+export interface ShotProposalChar { reuse: boolean; seed?: number | null; core: string }
+export interface ShotProposalBroll { reuse: boolean; prompt: string }
+export interface ShotProposalCue { cue_id: string; shots: { id: string; kind: string; who: string; seed?: number }[] }
+export interface ShotProposal {
+  characters: Record<string, ShotProposalChar>;
+  broll: Record<string, ShotProposalBroll>;
+  cues: ShotProposalCue[];
+  summary: { new_characters: string[]; reused_characters: string[]; new_broll: string[]; reused_broll: string[]; cues_planned: number };
+}
 
 export const mediaUrl = {
   cueAudio: (slug: string, cueId: string, v?: number | null) =>
