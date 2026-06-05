@@ -28,6 +28,7 @@ from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import shotgen as shotgen_mod
+from . import cardgen as cardgen_mod
 from . import activity as activity_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
@@ -440,6 +441,63 @@ async def post_shots_apply(slug: str, body: dict = Body(...)):
         raise HTTPException(400, "proposal object required")
     try:
         return shotgen_mod.apply(slug, proposal)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+# ---------- LLM card-text generation (Ollama on-demand) ----------
+
+@app.get("/api/card-types")
+def get_card_types():
+    """Supported card types for the Studio card-text generator dropdown."""
+    return {"card_types": cardgen_mod.card_types()}
+
+
+@app.post("/api/episodes/{slug}/card-text/generate")
+def post_card_text_generate(slug: str, body: dict = Body(default={})):
+    """Dry run: ask the local LLM to write the five HyperFrames fields for a card type
+    (deadpan/funny, lifting a punchline from the script). 409 if the GPU is busy. Sync
+    def → threadpool so the long model call doesn't block the loop."""
+    card_type = (body.get("card_type") or "").strip()
+    composition = (body.get("composition") or "").strip() or None
+    if not card_type:
+        raise HTTPException(400, "card_type required")
+    busy, free = agen_mod.gpu_busy()
+    if busy:
+        raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
+    activity_mod.set_running(f"Writing {card_type} card text", ttl=180)
+    try:
+        out = cardgen_mod.generate(slug, card_type, composition=composition)
+        activity_mod.clear()
+        return out
+    except ValueError as e:
+        activity_mod.clear()
+        raise HTTPException(400, str(e))
+    except FileNotFoundError as e:
+        activity_mod.clear()
+        raise HTTPException(404, str(e))
+    except Exception as e:  # noqa: BLE001
+        activity_mod.set_error("Card-text gen failed")
+        raise HTTPException(500, f"card-text gen failed: {e}")
+
+
+@app.post("/api/episodes/{slug}/card-text/apply")
+def post_card_text_apply(slug: str, body: dict = Body(...)):
+    """Merge approved (possibly edited) card fields into the manifest. For youtube_thumb
+    this writes manifest.youtube_thumb; otherwise title_assets[key]. The existing
+    Graphics render routes then pick it up unchanged."""
+    card_type = (body.get("card_type") or "").strip()
+    key = (body.get("key") or "").strip()
+    fields = body.get("fields")
+    composition = (body.get("composition") or "").strip() or None
+    if not card_type:
+        raise HTTPException(400, "card_type required")
+    if not isinstance(fields, dict):
+        raise HTTPException(400, "fields object required")
+    try:
+        return cardgen_mod.apply(slug, card_type, key, fields, composition=composition)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
 

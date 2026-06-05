@@ -98,6 +98,12 @@ export function Graphics({ slug }: { slug: string }) {
   const [newKey, setNewKey] = useState("");
   const [newComp, setNewComp] = useState("");
   const [newFields, setNewFields] = useState(DEFAULT_FIELDS);
+  // Card type drives the AI writer's brief (which composition + tone). Title-card modal
+  // offers the non-thumbnail types; the thumbnail modal is always youtube_thumb.
+  const [newCardType, setNewCardType] = useState("fresh_title");
+  const cardTypes = useQuery({ queryKey: ["cardTypes"], queryFn: () => graphicsApi.cardTypes() });
+  const titleCardTypes = (cardTypes.data?.card_types ?? ["macu_title", "fresh_title", "weather"])
+    .filter((t) => t !== "youtube_thumb");
   useEffect(() => {
     if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
   }, [templateOptions, newComp]);
@@ -202,6 +208,25 @@ export function Graphics({ slug }: { slug: string }) {
         };
         es.addEventListener("end", () => es.close());
       }
+    },
+  });
+
+  // AI card-text writer (on-demand Ollama). Fills the fields textarea in either modal.
+  const genText = useMutation({
+    mutationFn: (args: { card_type: string; target: "title" | "thumb" }) =>
+      graphicsApi.genCardText(slug, { card_type: args.card_type }),
+    onMutate: (a) => push(`writing ${a.card_type.replace("_", " ")} text…`, "run"),
+    onError: (e: Error) => push(`card text: ${e.message}`, "err"),
+    onSuccess: (r, a) => {
+      const pretty = JSON.stringify(r.fields, null, 2);
+      if (a.target === "thumb") {
+        setThumbFields(pretty);
+      } else {
+        setNewFields(pretty);
+        if (r.composition) setNewComp(r.composition);
+      }
+      (r.warnings ?? []).forEach((w) => push(w, "info"));
+      push("card text written — review + edit before render", "ok");
     },
   });
 
@@ -485,6 +510,17 @@ export function Graphics({ slug }: { slug: string }) {
             onChange={setNewComp}
             options={templateOptions.length ? templateOptions : [""]}
           />
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Field label="AI card type" value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
+            </div>
+            <button
+              className="btn btn-amber whitespace-nowrap"
+              disabled={genText.isPending}
+              title="Write deadpan card text with the local LLM (Ollama) from this episode's script"
+              onClick={() => genText.mutate({ card_type: newCardType, target: "title" })}
+            >✨ {genText.isPending ? "Writing…" : "Write with AI"}</button>
+          </div>
           <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
         </div>
       </Modal>
@@ -505,6 +541,14 @@ export function Graphics({ slug }: { slug: string }) {
             Renders the <code>youtube_thumb</code> composition to{" "}
             <code>final/{slug}_thumb.png</code>. The current thumbnail is archived first.
           </p>
+          <div className="flex justify-end">
+            <button
+              className="btn btn-amber"
+              disabled={genText.isPending}
+              title="Write a punchy deadpan thumbnail hook with the local LLM (Ollama)"
+              onClick={() => genText.mutate({ card_type: "youtube_thumb", target: "thumb" })}
+            >✨ {genText.isPending ? "Writing…" : "Write with AI"}</button>
+          </div>
           <Field label="fields (JSON)" value={thumbFields} onChange={setThumbFields} rows={6} monospace />
         </div>
       </Modal>

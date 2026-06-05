@@ -14,10 +14,25 @@ export interface RegenYThumbArgs {
   fields: Record<string, unknown>;
   composition?: string;
 }
+export interface GenCardTextResp {
+  card_type: string;
+  composition: string;
+  fields: Record<string, string>;
+  idtag_default: string;
+  warnings: string[];
+}
 
 export const graphicsApi = {
   templates: () =>
     fetch("/api/hf/templates").then((r) => J<{ templates: string[] }>(r)),
+  cardTypes: () =>
+    fetch("/api/card-types").then((r) => J<{ card_types: string[] }>(r)),
+  // On-demand Ollama: write deadpan card text (the five HF fields) for a card type.
+  genCardText: (slug: string, body: { card_type: string; composition?: string }) =>
+    fetch(`/api/episodes/${slug}/card-text/generate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then((r) => J<GenCardTextResp>(r)),
   newTitle: (slug: string, body: NewTitleArgs) =>
     fetch(`/api/episodes/${slug}/title/new`, {
       method: "POST", headers: { "Content-Type": "application/json" },
