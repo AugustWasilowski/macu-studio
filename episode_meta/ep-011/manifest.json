@@ -867,5 +867,19 @@
     }
   ],
   "season": 2,
-  "episode_num": 1
+  "episode_num": 1,
+  "overlays": [
+    {
+      "asset": "macu_report_title",
+      "mode": "insert",
+      "anchor_cue": "c36",
+      "start_offset": 0,
+      "duration": 3,
+      "position": "lower_third",
+      "scale": 1,
+      "opacity": 1,
+      "fade_in": 0.3,
+      "fade_out": 0.3
+    }
+  ]
 }
