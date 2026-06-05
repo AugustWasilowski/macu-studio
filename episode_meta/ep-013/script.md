@@ -1,6 +1,13 @@
-# THE MACU Report — Episode 13 — "The Combine" (Week 2, Wed — Road to the Crater Bowl) — v2
+# THE MACU Report — Episode 13 — "The Combine" (Week 2, Wed — Road to the Crater Bowl) — v3
 
-_Draft 2026-06-01, v2 (writers'-room punch-up) 2026-06-01. ~7 min. Room pass fixed: betting line now planted
+_v3 (arc-room + writers'-room + police-squad redo) 2026-06-04: BROKE THE AI-FUSE FORMULA — Walter no longer
+"Marvelous athletes"-breezes (the ep12-clone flavor); he now offers faint admiration ("Consistent times. Very
+consistent.") that reads as complicity once ep15 lands; added a WALTER TOSS from the Gary/bet segment into the
+Glowboys beat (was a hard cut); gave THE BARREL a comic self-entered entrance via Crater Carl so its ep15
+heroic payoff isn't a deus ex machina; moved Ron's self-aware flicker ("I hear how that sounds") to the scene
+BUTTON before the ad cut; added Walter's running indignation ("I'll need her back Monday. She has an
+appointment.") to seed ep14; WEATHER now buttons on "fifty percent chance of glow. Up ten." not the "mild"
+tagline; police-squad beats added. Prior: v2 (writers'-room punch-up) 2026-06-01. ~7 min. Room pass fixed: betting line now planted
 upstream by Crater Carl ("opened at a hundred-to-one… linemaker on the phone with a priest") so Seg 3's "off the
 board" is caused; Ron's "pulse is optional" gets a self-aware flicker ("I hear how that sounds"); Brenda's
 on-field mechanic clarified ("she starts at left tackle"); Gary keeps his arc alive in Seg 3 (jersey beat); the
@@ -35,6 +42,9 @@ stands at — and I want to be transparent — zero. Which is why tonight, we ma
 during last night's weather.
 » Walter core, deadpan
 
+**WALTER:** We wish him well. He had the combine times of a professional.
+» Walter core, sincere
+
 **RON:** Which is why tonight: the first-ever live Crater Bowl tryout. The Slags are open for applications.
 » Ron core → SLAGS OPEN TRYOUTS title card
 
@@ -62,12 +72,18 @@ linemaker is now on the phone with a priest! First up — a real specimen!
 a note from my physician that just says "no." But I've got a great attitude and I own my own helmet.
 » Chet core, soft and confident at the crater
 
+**CHET:** _(Howie)_ It belonged to my uncle. He won't be needing it.
+» Chet core, still cheerful
+
+**CRATER CARL:** _(Popiel)_ And — I want to be clear, I did not invite this — there's a steel drum at station four. Just sittin' there. Real confident. Rolled in on its own, far as anyone can tell. We're lettin' it run!
+» Crater Carl core → b-roll: a battered steel drum at the crater's rim, unnervingly still
+
 **COACH BODHI:** _(Snoop, serene)_ I'm not feeling it, Chet. Too much pulse. A roster of the living is a
 roster of the afraid. _(turning)_ Now — that barrel. That barrel has presence. The barrel stays.
 » Coach Bodhi core, calm, gesturing at a battered steel drum
 
 **RON:** Bodhi, the barrel is a barrel. _(to camera, fraying)_ Does anyone out there have a pulse? It's
-optional! Pulse is now officially optional! ...I hear how that sounds. The requirement has been lowered.
+optional! Pulse is now officially optional! The requirement has been lowered. ...I hear how that sounds.
 » Ron core, fraying, to camera
 
 ---
@@ -78,6 +94,9 @@ optional! Pulse is now officially optional! ...I hear how that sounds. The requi
 lifeline — one fortress stands. Survival Strength Sanctum. We do not make survivors. We make warriors. Our
 clients have survived three of the four major collapses.
 » b-roll: a grim wasteland gym, figures hauling scrap and tires
+
+**SARGE:** _(Announcer)_ The fourth is ongoing. We consider that an active enrollment.
+» b-roll: the gym, same shot, nobody pauses
 
 **SARGE:** _(Announcer)_ Confront the challenge. Five five five, two three six eight. One call is all it takes
 to forge the warrior within. That's the Sanctum guarantee.
@@ -114,6 +133,12 @@ frame. Look at that wheelbase. That is a competitor.
 we'd find our people!
 » b-roll: the car, both little curtains drawn back, headlights bright
 
+**WALTER:** _(flat)_ I'll need her back Monday. She has an appointment.
+» Walter core
+
+**WALTER:** It's a tire rotation. She's been pulling left.
+» Walter core
+
 ---
 
 ## SEGMENT 3 — THE LINE
@@ -139,27 +164,29 @@ houses.
 **WALTER:** _(not looking up)_ We'll see, Gary.
 » Walter core
 
+**WALTER:** Meanwhile, the Glowboys held a combine of their own. Crater Carl was there.
+» Walter core → toss to the field
+
 ---
 
 ## SEGMENT 4 — MEET THE GLOWBOYS (AI beat)
 
-**CRATER CARL:** _(Popiel)_ And across town, the Glowboys posted their combine numbers — the forty-yard dash
-in zero-point-four seconds. Folks, that's a new record, and also possibly a sin!
+**CRATER CARL:** _(Popiel)_ Thanks, Walter! Zero-point-four-second forty-yard dash. Folks, that's a new record — and also, possibly, a sin!
 » Crater Carl core → b-roll: glowing players blurring across a field
 
 **RON:** Zero-point-four — no man runs that, Walter. That's not a time, that's a machine time. That's the
 reactor. Those aren't players, those are the same thing they put in the war—
 » Ron core, alarmed
 
-**WALTER:** Marvelous athletes. Weather.
-» Walter core, breezing past
+**WALTER:** _(a beat)_ Consistent times. Very consistent. Weather.
+» Walter core, faint admiration, breezing past
 
 ---
 
 ## WEATHER
 
 **WALTER:** Friday's forecast for the Big Hole: ashfall, a chance of structural collapse, a light metallic
-drizzle, and a fifty percent chance of glow — up ten. Conditions: mild. Perfect Crater Bowl weather.
+drizzle, conditions: mild — and a fifty percent chance of glow. Up ten.
 » Walter core → MACU WEATHER card → b-roll: weather map
 
 ---
