@@ -34,8 +34,8 @@
       },
       "COACH BODHI": {
         "engine": "omnivoice",
-        "profile_id": "03250a65",
-        "voice_name": "PHB_BucNasty"
+        "profile_id": "31649b70",
+        "voice_name": "Snoop"
       },
       "CRATER CARL": {
         "engine": "omnivoice",
@@ -501,13 +501,6 @@
       "segment": "walkthrough",
       "speaker": "GARY",
       "vo": "Practice went great, fellas. Brenda only clipped two cones and a man. The man understood. ...We're peaking at the right time. I think we're peaking at the right time.",
-      "shots": []
-    },
-    {
-      "id": "c45",
-      "segment": "walkthrough",
-      "speaker": "CRATER CARL",
-      "vo": "The man has since been identified as a Slags scout. He will not be available to comment.",
       "shots": []
     },
     {
