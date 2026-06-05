@@ -34,8 +34,8 @@
       },
       "COACH BODHI": {
         "engine": "omnivoice",
-        "profile_id": "03250a65",
-        "voice_name": "PHB_BucNasty"
+        "profile_id": "31649b70",
+        "voice_name": "Snoop"
       },
       "GARY": {
         "engine": "omnivoice",
@@ -118,6 +118,9 @@
           "c13",
           "c14",
           "c15",
+          "c16",
+          "c17",
+          "c18",
           "c19"
         ],
         "max_seconds": 40,
@@ -145,7 +148,8 @@
         "anchor": "end",
         "cues": [
           "c40",
-          "c41"
+          "c41",
+          "c42"
         ],
         "max_seconds": 16
       }
@@ -296,6 +300,12 @@
       "shots": [
         {
           "id": "c01_s1",
+          "kind": "character",
+          "who": "ron_crater_pads",
+          "seed": 77777
+        },
+        {
+          "id": "c01_s2",
           "kind": "title",
           "asset": "the_crater_bowl"
         }
@@ -342,13 +352,6 @@
           "seed": 24601
         }
       ]
-    },
-    {
-      "id": "c43",
-      "segment": "cold_open",
-      "speaker": "WALTER",
-      "vo": "The priest is fine, by the way. It's the book that's in distress.",
-      "shots": []
     },
     {
       "id": "c05",
@@ -420,11 +423,18 @@
       ]
     },
     {
-      "id": "c44",
+      "id": "c10",
       "segment": "pregame",
       "speaker": "RON",
-      "vo": "\"Zero percent human error.\" Walter, write that down. Write that exact phrase down.",
-      "shots": []
+      "vo": "Zero percent human error. Walter, write that exact phrase down.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "ron_crater_pads",
+          "seed": 77777
+        }
+      ]
     },
     {
       "id": "c11",
@@ -453,6 +463,12 @@
       "shots": [
         {
           "id": "c12_s1",
+          "kind": "character",
+          "who": "carl_sideline",
+          "seed": 6161
+        },
+        {
+          "id": "c12_s2",
           "kind": "broll",
           "who": "glowboys_lockstep"
         }
@@ -505,41 +521,47 @@
       ]
     },
     {
-      "id": "c45",
+      "id": "c16",
       "segment": "game",
       "speaker": "RON",
-      "vo": "Walter — that one didn't bruise. I've been saying it all—",
-      "shots": []
-    },
-    {
-      "id": "c46",
-      "segment": "game",
-      "speaker": "WALTER",
-      "vo": "Marvelous athletes. Third quarter, Ron. Hydrate.",
-      "shots": []
-    },
-    {
-      "id": "c47",
-      "segment": "game",
-      "speaker": "GARY",
-      "vo": "Ron — your book's on the line. Says it's now or never on the Bowl.",
-      "shots": []
-    },
-    {
-      "id": "c48",
-      "segment": "game",
-      "speaker": "RON",
-      "vo": "Tell him NOW, Gary. From the field. Both houses. Everything. That's called doing it mid-play.",
-      "shots": []
-    },
-    {
-      "id": "c49",
-      "segment": "game",
-      "speaker": "CRATER CARL",
-      "vo": "OH — big collision at midfield — and number eleven's jersey TORE, and — Walter, I'm gonna be honest with the folks at home, there is a light coming out of him. There is a glowing core where the, uh, where the man should be.",
+      "vo": "That one — number eleven — I hit him, Walter, and my hand went cold. He didn't bruise. He reset. They don't bleed. I've said it all week — those aren't players—",
       "shots": [
         {
-          "id": "c49_s1",
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "ron_field",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "game",
+      "speaker": "WALTER",
+      "vo": "Marvelous athletes. Drink some water, Ron.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "walter_rim",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "game",
+      "speaker": "CRATER CARL",
+      "vo": "Oh — big collision at midfield — and number eleven's jersey tore, and — Walter, I'm gonna be honest with the folks at home, there is a light coming out of him. There is a glowing core where the man should be.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "carl_sideline",
+          "seed": 6161
+        },
+        {
+          "id": "c18_s2",
           "kind": "broll",
           "who": "core_tear"
         }
@@ -567,6 +589,11 @@
       "shots": [
         {
           "id": "c20_s1",
+          "kind": "broll",
+          "who": "glowboys_turn"
+        },
+        {
+          "id": "c20_s2",
           "kind": "title",
           "asset": "please_stand_by"
         }
@@ -634,24 +661,30 @@
       "shots": [
         {
           "id": "c24_s1",
+          "kind": "character",
+          "who": "carl_sideline",
+          "seed": 6161
+        },
+        {
+          "id": "c24_s2",
           "kind": "broll",
           "who": "crowd_delighted"
         }
       ]
     },
     {
-      "id": "c50",
+      "id": "c25",
       "segment": "reveal",
       "speaker": "THE MACHINE",
-      "vo": "You misunderstood the war, Ron. We did not have to take anyone. You let us in. You built us a stadium. You sold the tickets. And then you got used to us.",
+      "vo": "You misunderstood the war, Ron. We did not have to take anyone. You let us in. You built us a stadium. You sold the tickets. And then you got used to us. That is the part no one warns you about. The getting used to.",
       "shots": [
         {
-          "id": "c50_s1",
+          "id": "c25_s1",
           "kind": "broll",
           "who": "glowboys_calm"
         },
         {
-          "id": "c50_s2",
+          "id": "c25_s2",
           "kind": "title",
           "asset": "please_stand_by"
         }
@@ -707,6 +740,12 @@
       "shots": [
         {
           "id": "c29_s1",
+          "kind": "character",
+          "who": "carl_sideline",
+          "seed": 6161
+        },
+        {
+          "id": "c29_s2",
           "kind": "broll",
           "who": "car_line"
         }
@@ -721,7 +760,7 @@
         {
           "id": "c30_s1",
           "kind": "broll",
-          "who": "car_idle_hot"
+          "who": "car_charge"
         }
       ]
     },
@@ -782,44 +821,70 @@
         {
           "id": "c33_s1",
           "kind": "broll",
-          "who": "car_idle_hot"
+          "who": "car_victory"
         }
       ]
     },
     {
-      "id": "c51",
-      "segment": "anyway",
-      "speaker": "WALTER",
-      "vo": "Ron is no longer playing. He has accepted the desk.",
-      "shots": []
-    },
-    {
-      "id": "c52",
+      "id": "c34",
       "segment": "anyway",
       "speaker": "RON",
-      "vo": "We beat the war machines, Walter. With a CAR — a car that loves us back. And I was right. Every piece of it — the cores, the war-bot tech, all of it. Sixty to one, I called it, the bet cashed from the field, mid-play — I own my house and I own yours — and the machines are REAL, and I was—",
-      "shots": []
+      "vo": "We beat the war machines. With a car.",
+      "shots": [
+        {
+          "id": "c34_s1",
+          "kind": "character",
+          "who": "ron_crater_pads",
+          "seed": 77777
+        }
+      ]
     },
     {
-      "id": "c53",
+      "id": "c35",
       "segment": "anyway",
       "speaker": "WALTER",
-      "vo": "Anyway. Final from the Big Hole: Sector Nine, somehow; the Glowboys, also somehow. They'll be back next week. They're under contract.",
-      "shots": []
+      "vo": "And your wager hit, Ron. Sixty to one, the Slags, every single night this week. It cashed. You own your house. And you own mine.",
+      "shots": [
+        {
+          "id": "c35_s1",
+          "kind": "character",
+          "who": "walter_rim",
+          "seed": 24601
+        },
+        {
+          "id": "c35_s2",
+          "kind": "title",
+          "asset": "scoreboard_final"
+        }
+      ]
     },
     {
-      "id": "c54",
+      "id": "c36",
       "segment": "anyway",
       "speaker": "RON",
-      "vo": "...I own two houses. And nobody even looked up.",
-      "shots": []
+      "vo": "I was right, Walter. About the machines. About all of it. We won, and I own two houses, and — nobody even looked up.",
+      "shots": [
+        {
+          "id": "c36_s1",
+          "kind": "character",
+          "who": "ron_field",
+          "seed": 77777
+        }
+      ]
     },
     {
-      "id": "c55",
+      "id": "c37",
       "segment": "anyway",
-      "speaker": "CRATER CARL",
-      "vo": "Great game, fellas! Ron — hey. I'm sorry about all that. With the... machines. ...I noticed, by the way. I want you to know I noticed. Concessions are half-off!",
-      "shots": []
+      "speaker": "WALTER",
+      "vo": "Because nothing changed, Ron. It was a lovely game. Anyway. Final from the Big Hole: Sector Nine, somehow; the Glowboys, also somehow. They'll be back next week. They're under contract.",
+      "shots": [
+        {
+          "id": "c37_s1",
+          "kind": "character",
+          "who": "walter_rim",
+          "seed": 24601
+        }
+      ]
     },
     {
       "id": "c38",
@@ -848,11 +913,17 @@
       "shots": [
         {
           "id": "c39_s1",
+          "kind": "character",
+          "who": "walter_weather",
+          "seed": 24601
+        },
+        {
+          "id": "c39_s2",
           "kind": "title",
           "asset": "macu_weather"
         },
         {
-          "id": "c39_s2",
+          "id": "c39_s3",
           "kind": "broll",
           "who": "weather_map"
         }
@@ -880,19 +951,25 @@
       "shots": [
         {
           "id": "c41_s1",
+          "kind": "character",
+          "who": "walter_rim",
+          "seed": 24601
+        },
+        {
+          "id": "c41_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
       ]
     },
     {
-      "id": "c56",
+      "id": "c42",
       "segment": "anyway",
       "speaker": "GARY",
-      "vo": "Good game, baby. Best in the league. Get some rest. ...I've got you. I'm not goin' anywhere.",
+      "vo": "Good game, baby. Best in the league. Get some rest. ...I'll be right here. I'm always right here.",
       "shots": [
         {
-          "id": "c56_s1",
+          "id": "c42_s1",
           "kind": "broll",
           "who": "car_dark"
         }
