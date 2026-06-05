@@ -106,9 +106,7 @@
         "cues": [
           "c15",
           "c16",
-          "c17",
-          "c18",
-          "c19"
+          "c17"
         ],
         "max_seconds": 34,
         "gain": 0.18,
@@ -119,7 +117,6 @@
         "name": "outro",
         "anchor": "end",
         "cues": [
-          "c27",
           "c28",
           "c29"
         ],
@@ -299,11 +296,6 @@
           "id": "c04_s1",
           "kind": "broll",
           "who": "intercom_speaker"
-        },
-        {
-          "id": "c04_s2",
-          "kind": "broll",
-          "who": "lot_dawn_tracks"
         }
       ]
     },
@@ -315,12 +307,6 @@
       "shots": [
         {
           "id": "c05_s1",
-          "kind": "character",
-          "who": "walter_deadpan",
-          "seed": 24601
-        },
-        {
-          "id": "c05_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -341,18 +327,11 @@
       ]
     },
     {
-      "id": "c07",
+      "id": "c30",
       "segment": "suits",
       "speaker": "COACH BODHI",
-      "vo": "You were born ready, Ron. The desk prepared you. Years of sitting perfectly still under a hot light, saying words into the dark. The crater rewards exactly that. You will not feel a thing. That is the goal.",
-      "shots": [
-        {
-          "id": "c07_s1",
-          "kind": "character",
-          "who": "bodhi_serene",
-          "seed": 4200
-        }
-      ]
+      "vo": "You were born ready, Ron. The desk prepared you. Years of sitting perfectly still under a hot light, saying words into the dark. The crater rewards exactly that. And Brenda — she has never once moved with fear. That stillness, that no-fear: that is the team's heart. You cannot teach it. You are already practicing.",
+      "shots": []
     },
     {
       "id": "c08",
@@ -383,6 +362,13 @@
       ]
     },
     {
+      "id": "c31",
+      "segment": "suits",
+      "speaker": "RON",
+      "vo": "Good enough. Bobby — I'll call you.",
+      "shots": []
+    },
+    {
       "id": "c10",
       "segment": "ad",
       "speaker": "BOBBY",
@@ -390,14 +376,8 @@
       "shots": [
         {
           "id": "c10_s1",
-          "kind": "character",
-          "who": "bobby",
-          "seed": 8282
-        },
-        {
-          "id": "c10_s2",
           "kind": "broll",
-          "who": "bobby_lot"
+          "who": "lot_dawn_tracks"
         }
       ]
     },
@@ -423,54 +403,51 @@
       "shots": [
         {
           "id": "c12_s1",
-          "kind": "character",
-          "who": "bobby",
-          "seed": 8282
-        },
-        {
-          "id": "c12_s2",
           "kind": "broll",
           "who": "phantom_rover"
         }
       ]
     },
     {
-      "id": "c13",
+      "id": "c32",
       "segment": "ad",
       "speaker": "RON",
-      "vo": "And what's that glowing one in the back — the dark-energy cell? If that can play center, I'll go three thousand tokens. Does it have hands? Doesn't need hands.",
+      "vo": "And what's that glowing one in the back — the dark-energy cell? If that can play center, I'll go three thousand tokens. Wait — what doesn't need a dark-energy cell anymore?",
+      "shots": []
+    },
+    {
+      "id": "c33",
+      "segment": "ad",
+      "speaker": "BOBBY",
+      "vo": "Get scavenged! Only at Bobby's!",
       "shots": [
         {
-          "id": "c13_s1",
-          "kind": "character",
-          "who": "ron_phone",
-          "seed": 77777
+          "id": "c33_s1",
+          "kind": "broll",
+          "who": "warbot_cell"
         }
       ]
     },
     {
-      "id": "c14",
+      "id": "c34",
       "segment": "ad",
-      "speaker": "BOBBY",
-      "vo": "Runs great! Came off somethin' that doesn't need it anymore! Get scavenged, only at Bobby's!",
-      "shots": [
-        {
-          "id": "c14_s1",
-          "kind": "character",
-          "who": "bobby",
-          "seed": 8282
-        },
-        {
-          "id": "c14_s2",
-          "kind": "broll",
-          "who": "warbot_cell"
-        },
-        {
-          "id": "c14_s3",
-          "kind": "title",
-          "asset": "macu_report_bumper"
-        }
-      ]
+      "speaker": "RON",
+      "vo": "...I didn't follow up on that. I should follow up on that.",
+      "shots": []
+    },
+    {
+      "id": "c35",
+      "segment": "ad",
+      "speaker": "WALTER",
+      "vo": "You won't.",
+      "shots": []
+    },
+    {
+      "id": "c36",
+      "segment": "ad",
+      "speaker": "RON",
+      "vo": "No. But I should.",
+      "shots": []
     },
     {
       "id": "c15",
@@ -480,12 +457,6 @@
       "shots": [
         {
           "id": "c15_s1",
-          "kind": "character",
-          "who": "walter_toss",
-          "seed": 24601
-        },
-        {
-          "id": "c15_s2",
           "kind": "broll",
           "who": "practice_field"
         }
@@ -499,12 +470,6 @@
       "shots": [
         {
           "id": "c16_s1",
-          "kind": "character",
-          "who": "carl_manic",
-          "seed": 6161
-        },
-        {
-          "id": "c16_s2",
           "kind": "broll",
           "who": "brenda_cones"
         }
@@ -525,31 +490,18 @@
       ]
     },
     {
-      "id": "c18",
+      "id": "c37",
       "segment": "walkthrough",
       "speaker": "RON",
-      "vo": "I pulled something just hearing that. Walk it off, Ron. You're fine. You're number one.",
-      "shots": [
-        {
-          "id": "c18_s1",
-          "kind": "character",
-          "who": "ron_strain",
-          "seed": 77777
-        }
-      ]
+      "vo": "Something's already torn. Doesn't matter. I'm number one.",
+      "shots": []
     },
     {
-      "id": "c19",
+      "id": "c38",
       "segment": "walkthrough",
       "speaker": "GARY",
-      "vo": "Practice went great, fellas. Brenda only clipped two cones and a man. The man understood. We're peaking at the right time.",
-      "shots": [
-        {
-          "id": "c19_s1",
-          "kind": "broll",
-          "who": "brenda_cones"
-        }
-      ]
+      "vo": "Practice went great, fellas. Brenda only clipped two cones and a man. The man understood. ...We're peaking at the right time. I think we're peaking at the right time.",
+      "shots": []
     },
     {
       "id": "c20",
@@ -571,42 +523,44 @@
       ]
     },
     {
-      "id": "c21",
+      "id": "c39",
       "segment": "line",
       "speaker": "CRATER CARL",
-      "vo": "Eerie stuff, Walter — not one of 'em blinked, breathed, or asked for a break. The most focused session they've ever filmed, and also they've stopped filming it! Their coordinator called it transcendent preparation. Coach Bodhi called it plagiarism. He did not elaborate.",
+      "vo": "Eerie stuff, Walter — not one of 'em blinked, breathed, or asked for a break. The most focused session they've ever filmed, and also they've stopped filming it! Their coordinator called it \"transcendent preparation.\" Coach Bodhi said that stillness belongs to the earth, and they don't own it. He did not elaborate.",
       "shots": [
         {
-          "id": "c21_s1",
-          "kind": "character",
-          "who": "carl_manic",
-          "seed": 6161
-        },
-        {
-          "id": "c21_s2",
+          "id": "c39_s1",
           "kind": "broll",
           "who": "glowboys_still"
         }
       ]
     },
     {
-      "id": "c22",
+      "id": "c40",
       "segment": "line",
-      "speaker": "RON",
-      "vo": "Put my house on the Slags. And Walter's. Same as every night this week.",
+      "speaker": "WALTER",
+      "vo": "The Glowboys have been— —favored since Monday. Sixty points.",
+      "shots": []
+    },
+    {
+      "id": "c41",
+      "segment": "line",
+      "speaker": "GARY",
+      "vo": "Hey, fellas. I, uh — I don't love that they don't blink. ...Just me?",
       "shots": [
         {
-          "id": "c22_s1",
-          "kind": "character",
-          "who": "ron_bet",
-          "seed": 77777
-        },
-        {
-          "id": "c22_s2",
-          "kind": "title",
-          "asset": "scoreboard_eve"
+          "id": "c41_s1",
+          "kind": "broll",
+          "who": "intercom_speaker"
         }
       ]
+    },
+    {
+      "id": "c42",
+      "segment": "line",
+      "speaker": "RON",
+      "vo": "Six hours. Still. Not blinking. They're either the most prepared team in the league, or they're not a team at all. Either way — put my house on the Slags. And Walter's. Same as every night this week.",
+      "shots": []
     },
     {
       "id": "c23",
@@ -637,6 +591,13 @@
       ]
     },
     {
+      "id": "c43",
+      "segment": "line",
+      "speaker": "WALTER",
+      "vo": "...Yes.",
+      "shots": []
+    },
+    {
       "id": "c25",
       "segment": "weather",
       "speaker": "WALTER",
@@ -644,17 +605,11 @@
       "shots": [
         {
           "id": "c25_s1",
-          "kind": "character",
-          "who": "walter_weather",
-          "seed": 24601
-        },
-        {
-          "id": "c25_s2",
           "kind": "title",
           "asset": "macu_weather"
         },
         {
-          "id": "c25_s3",
+          "id": "c25_s2",
           "kind": "broll",
           "who": "weather_map"
         }
@@ -675,18 +630,11 @@
       ]
     },
     {
-      "id": "c27",
+      "id": "c44",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "That's our broadcast, MACU. Tomorrow: the Crater Bowl. A car. A coach at peace. A barrel somewhere in the dark. And me. I have never been less prepared, or more certain. Tomorrow — we broadcast from the crater.",
-      "shots": [
-        {
-          "id": "c27_s1",
-          "kind": "character",
-          "who": "ron_radiant",
-          "seed": 77777
-        }
-      ]
+      "vo": "That's our broadcast, MACU. Tomorrow: the Crater Bowl. A car. A coach at peace. A barrel somewhere in the dark. And me — sixty years old, in borrowed pads, going in. I may have to sub myself out if the broadcast gets heavy. But I have never been less prepared, or more certain. Tomorrow — we broadcast from the crater.",
+      "shots": []
     },
     {
       "id": "c28",
@@ -696,12 +644,6 @@
       "shots": [
         {
           "id": "c28_s1",
-          "kind": "character",
-          "who": "walter_deadpan",
-          "seed": 24601
-        },
-        {
-          "id": "c28_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -716,7 +658,7 @@
         {
           "id": "c29_s1",
           "kind": "broll",
-          "who": "brenda_dim"
+          "who": "lot_dawn_tracks"
         }
       ]
     }

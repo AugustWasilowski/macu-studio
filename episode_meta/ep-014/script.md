@@ -1,6 +1,18 @@
-# THE MACU Report — Episode 14 — "The Walkthrough" (Week 2, Thu — Road to the Crater Bowl) — v2
+# THE MACU Report — Episode 14 — "The Walkthrough" (Week 2, Thu — Road to the Crater Bowl) — v3
 
-_Draft 2026-06-01, v2 (writers'-room punch-up) 2026-06-01. Room pass: Bobby's war-bot beat reworked so Ron tries
+_v3 (arc-room + writers'-room + police-squad redo) 2026-06-04: shifted THURSDAY-RON to the fatalist/doomed-noble
+register the hollow Friday needs ("sixty years old, in borrowed pads, going in"; "something's already torn —
+doesn't matter"); pre-planted ep15's BENCH ("I may have to sub myself out if the broadcast gets heavy") to close
+the Ron-as-player thread; gave the AI fuse its THIRD distinct flavor — Walter ALMOST says it ("The Glowboys have
+been—" then resets to the forecast) — so ep15's "everyone always knew" reads as suppressed knowledge (after
+ep12's cheerful confirm + ep13's faint admiration); de-sinistered BODHI (cut "you will not feel a thing — that
+is the goal"; "plagiarism" → "that stillness belongs to the earth, they don't own it") and used his Seg-1 line
+to PLANT "HEART" on Brenda ("that no-fear: that is the team's heart") so ep15's Gary payoff lands; MOVED GARY'S
+FEAR into the episode (mid-Seg-3, reacting to the Glowboys' stillness) with the signoff coda kept as its echo;
+made the bet CAUSAL ("six hours, still… either way") and gave Seg 3 a flat Walter blackout button; added the
+Bobby's alarm-note + post-ad button ("I should follow up on that" / "You won't"); trimmed Ron's soft side-pull;
+police-squad beats added. KEEPS the "from the field, mid-play" plant — ep15 must pay it. Prior: v2 (writers'-room
+punch-up) 2026-06-01. Room pass: Bobby's war-bot beat reworked so Ron tries
 to ROSTER the dark-energy cell instead of interrogating it (creep stays in Bobby's breeze-past, fuse subtler);
 barrel got a causal tag ("more game-reps than anyone on this roster"); the thin Glowboys segment got a second
 layer (Bodhi calls their stillness "plagiarism"); the bet tightened (no longer states the joke twice) and now
@@ -55,8 +67,9 @@ Coach — am I ready?
 » Ron core, standing in pads at the desk
 
 **COACH BODHI:** _(Snoop, serene)_ You were born ready, Ron. The desk prepared you. Years of sitting perfectly
-still under a hot light, saying words into the dark. The crater rewards exactly that. You will not feel a
-thing. That is the goal.
+still under a hot light, saying words into the dark. The crater rewards exactly that. And Brenda — she has
+never once moved with fear. That stillness, that no-fear: that is the team's heart. You cannot teach it. _(a
+pause)_ You are already practicing.
 » Coach Bodhi core, calm
 
 **RON:** _(moved)_ That's the most beautiful contract negotiation I've ever had.
@@ -64,6 +77,9 @@ thing. That is the goal.
 
 **WALTER:** He has no contract. He has pads he found.
 » Walter core, flat
+
+**RON:** _(tightening a strap)_ Good enough. Bobby — I'll call you.
+» Ron core, already reaching for the phone
 
 ---
 
@@ -82,12 +98,20 @@ building a roster and I'm flexible on species.
 » b-roll: the dealer slapping the hood of a Phantom Rover
 
 **RON:** And what's that glowing one in the back — the dark-energy cell? If that can play center, I'll go three
-thousand tokens. Does it have hands? Doesn't need hands.
-» Ron core, squinting, pointing
+thousand tokens. _(something flickers)_ Wait — what doesn't need a dark-energy cell anymore?
+» Ron core, squinting, pointing — a beat of alarm
 
-**BOBBY:** _(Howie, breezing)_ Runs GREAT! Came off somethin' that doesn't need it anymore! Get scavenged, only
-at Bobby's!
+**BOBBY:** _(Howie, breezing immediately)_ Get scavenged! Only at Bobby's!
 » b-roll: a glowing salvaged cell on a shelf of war-bot parts
+
+**RON:** _(quietly, back at the desk, the phone still in his hand)_ ...I didn't follow up on that. I should follow up on that.
+» Ron core
+
+**WALTER:** You won't.
+» Walter core
+
+**RON:** No. But I should.
+» Ron core
 
 ---
 
@@ -105,11 +129,10 @@ Coach says it's doing laps, and it's got more game-reps than anyone on this rost
 concept of forward. Brenda's already there. Brenda gets it.
 » Coach Bodhi core, cross-legged on the field
 
-**RON:** _(straining)_ I pulled something just hearing that. Walk it off, Ron. You're fine. You're number one.
-» Ron core, clutching his side, in pads
+**RON:** _(a hand to his ribs, not stopping)_ Something's already torn. Doesn't matter. I'm number one.
+» Ron core, in pads, pressing on
 
-**GARY:** _(Newman, over comms)_ Practice went GREAT, fellas. Brenda only clipped two cones and a man. The man
-understood. We're peaking at the right time.
+**GARY:** _(Newman, over comms, tired but proud)_ Practice went great, fellas. Brenda only clipped two cones and a man. The man understood. ...We're peaking at the right time. I think we're peaking at the right time.
 » b-roll: the car nudging a fallen cone, a figure limping off frame
 
 ---
@@ -122,10 +145,17 @@ glowing for six hours.
 
 **CRATER CARL:** _(Popiel)_ Eerie stuff, Walter — not one of 'em blinked, breathed, or asked for a break. The
 most focused session they've ever filmed, and also they've stopped filming it! Their coordinator called it
-"transcendent preparation." Coach Bodhi called it "plagiarism." He did not elaborate.
+"transcendent preparation." Coach Bodhi said that stillness belongs to the earth, and they don't own it. He
+did not elaborate.
 » Crater Carl core → b-roll: the still, glowing row
 
-**RON:** Put my house on the Slags. And Walter's. Same as every night this week.
+**WALTER:** _(a pause)_ The Glowboys have been— _(he glances at his notes, resets)_ —favored since Monday. Sixty points.
+» Walter core, the sentence he didn't finish
+
+**GARY:** _(Newman, over comms, quieter than usual)_ Hey, fellas. I, uh — I don't love that they don't blink. ...Just me?
+» b-roll: the intercom speaker → the still, glowing row on a monitor in the dark lot
+
+**RON:** Six hours. Still. Not blinking. They're either the most prepared team in the league, or they're not a team at all. Either way — put my house on the Slags. And Walter's. Same as every night this week.
 » Ron core, sliding the keys across the desk
 
 **WALTER:** Ron, it is Thursday.
@@ -133,6 +163,9 @@ most focused session they've ever filmed, and also they've stopped filming it! T
 
 **RON:** And I'll do it again tomorrow — from the field, mid-play, if I have to. That's commitment, Walter.
 » Ron core
+
+**WALTER:** _(a long pause)_ ...Yes.
+» Walter core
 
 ---
 
@@ -151,7 +184,8 @@ survived them all. That's a message.
 ## SIGNOFF
 
 **RON:** That's our broadcast, MACU. Tomorrow: the Crater Bowl. A car. A coach at peace. A barrel somewhere in
-the dark. And me. I have never been less prepared, or more certain. Tomorrow — we broadcast from the crater.
+the dark. And me — sixty years old, in borrowed pads, going in. _(a beat)_ I may have to sub myself out if the
+broadcast gets heavy. But I have never been less prepared, or more certain. Tomorrow — we broadcast from the crater.
 » Ron core, face paint smearing, pads on, exhausted and radiant
 
 **WALTER:** He is going to be in the game and on the broadcast at the same time, MACU. We have not solved how.
