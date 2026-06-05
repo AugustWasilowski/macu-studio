@@ -135,6 +135,9 @@ concept of forward. Brenda's already there. Brenda gets it.
 **GARY:** _(Newman, over comms, tired but proud)_ Practice went great, fellas. Brenda only clipped two cones and a man. The man understood. ...We're peaking at the right time. I think we're peaking at the right time.
 » b-roll: the car nudging a fallen cone, a figure limping off frame
 
+**CRATER CARL:** _(Popiel)_ The man has since been identified as a Slags scout. He will not be available to comment.
+» Crater Carl core, reading from notes
+
 ---
 
 ## SEGMENT 3 — THE LINE & THE GLOWBOYS
