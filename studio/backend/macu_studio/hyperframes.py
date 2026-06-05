@@ -346,6 +346,16 @@ async def _run_thumb(job: Job) -> None:
             job.state = "error"
             return
 
+        # Persist the params that produced this live thumb so the Graphics modal can
+        # show them, and so the NEXT regen stamps them onto this version when it's
+        # archived (see submit_thumb).
+        try:
+            mm = manifest_mod.load(job.slug)
+            mm["youtube_thumb"] = {"composition": composition, "fields": fields}
+            manifest_mod.save(job.slug, mm)
+        except Exception as e:
+            await job.emit("log", line=f"(could not persist thumb params: {e})")
+
         await job.emit("stage.done", n=1, name="render", wall_s=round(time.time() - job.started_at, 2),
                         result={"png_path": str(final_png), "bytes": final_png.stat().st_size})
         await job.emit("job.done", final=str(final_png), bytes=final_png.stat().st_size,
@@ -396,8 +406,13 @@ async def submit_thumb(slug: str, fields: dict, composition: str = "youtube_thum
     if not (template_dir / "index.html").exists():
         raise FileNotFoundError(
             f"youtube thumbnail template not found: {template_dir}/index.html")
-    # Archive the outgoing thumb into version history before overwriting.
-    versions_mod.archive_current(slug, "ythumb", slug)
+    # Archive the outgoing thumb into version history before overwriting, stamping it
+    # with the composition + fields that produced it (persisted in manifest.youtube_thumb
+    # by the previous render) so the Graphics modal can show each version's metadata.
+    old = manifest_mod.load(slug).get("youtube_thumb")
+    archive_meta = ({"composition": old.get("composition"), "fields": old.get("fields")}
+                    if isinstance(old, dict) else None)
+    versions_mod.archive_current(slug, "ythumb", slug, meta=archive_meta)
     loop = asyncio.get_event_loop()
     _ensure_worker(loop)
     assert QUEUE is not None

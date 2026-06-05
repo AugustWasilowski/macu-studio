@@ -8,6 +8,7 @@ import { RegenNotes } from "../components/RegenNotes";
 import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
 import { VersionArrows } from "../components/VersionArrows";
+import { ThumbModal } from "../components/ThumbModal";
 import { PlayBtn } from "../components/PlayBtn";
 import { IRegen, IPlay, IPause, IX } from "../components/Icons";
 import { useSfx, type PlayItem } from "./AudioSfx";
@@ -112,6 +113,7 @@ export function Graphics({ slug }: { slug: string }) {
   const [thumbFields, setThumbFields] = useState('{\n  "title_line_1": "",\n  "title_line_2": ""\n}');
   const [thumbOverride, setThumbOverride] = useState<string | null>(null);
   const [thumbBust, setThumbBust] = useState(0);
+  const [thumbViewOpen, setThumbViewOpen] = useState(false);
 
   function watchHfJob(jobId: string, key: string) {
     const es = new EventSource(`/api/hf/jobs/${jobId}/stream`);
@@ -438,7 +440,12 @@ export function Graphics({ slug }: { slug: string }) {
             <button className="btn btn-cyan" disabled={!!busy.ythumb} onClick={() => setThumbOpen(true)}><IRegen /> Regenerate</button>
           </div>
           <div className="p-3 flex flex-col gap-2">
-            <div className="bg-black hairline-soft rounded overflow-hidden grid place-items-center" style={{ aspectRatio: "16/9" }}>
+            <button
+              className="bg-black hairline-soft rounded overflow-hidden grid place-items-center cursor-zoom-in p-0"
+              style={{ aspectRatio: "16/9" }}
+              title="Click to enlarge · browse versions · see the template + fields"
+              onClick={() => setThumbViewOpen(true)}
+            >
               <img
                 key={(thumbOverride ?? graphicsApi.ythumbPreviewUrl(slug)) + `?b=${thumbBust}`}
                 src={thumbOverride ?? `${graphicsApi.ythumbPreviewUrl(slug)}?b=${thumbBust}`}
@@ -447,7 +454,7 @@ export function Graphics({ slug }: { slug: string }) {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
                 onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "visible"; }}
               />
-            </div>
+            </button>
             <VersionArrows
               slug={slug}
               kind="ythumb"
@@ -501,6 +508,15 @@ export function Graphics({ slug }: { slug: string }) {
           <Field label="fields (JSON)" value={thumbFields} onChange={setThumbFields} rows={6} monospace />
         </div>
       </Modal>
+
+      <ThumbModal
+        open={thumbViewOpen}
+        onClose={() => setThumbViewOpen(false)}
+        slug={slug}
+        liveParams={((manifest.data as any)?.youtube_thumb as { composition?: string; fields?: Record<string, unknown> }) ?? null}
+        livePreviewUrl={`${graphicsApi.ythumbPreviewUrl(slug)}?b=${thumbBust}`}
+        onChanged={() => { setThumbOverride(null); setThumbBust((n) => n + 1); qc.invalidateQueries({ queryKey: ["manifest", slug] }); }}
+      />
     </div>
   );
 }
