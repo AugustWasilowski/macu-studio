@@ -1,12 +1,32 @@
 """Manifest read/write + derived asset status."""
 from __future__ import annotations
-import hashlib, json, os, tempfile, time
+import hashlib, json, os, tempfile, time, wave
 from pathlib import Path
 from typing import Any
 
 from .episodes import episode_dir, manifest_path
 from .config import SHARES
 from . import models
+
+
+def _load_cue_durs(slug: str) -> dict[str, float]:
+    """The real per-cue (muxed) durations written by stage 4 to .work/cue_durs.json.
+    Present once an episode has been assembled — the source the timeline/render use."""
+    try:
+        return json.loads((episode_dir(slug) / ".work" / "cue_durs.json").read_text())
+    except Exception:
+        return {}
+
+
+def _wav_dur(path: Path) -> float | None:
+    """Duration of a PCM wav via the stdlib header read (no ffprobe subprocess) —
+    the pre-assembly fallback for a cue's length before cue_durs.json exists."""
+    try:
+        with wave.open(str(path), "rb") as w:
+            fr = w.getframerate()
+            return round(w.getnframes() / float(fr), 3) if fr else None
+    except Exception:
+        return None
 
 
 def load(slug: str) -> dict[str, Any]:
@@ -101,6 +121,9 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
     vo_dir = ep / "vo"
     voice_block = m.get("voice") or {}
     speaker_map = voice_block.get("speaker_map") or {}
+    # Real per-cue durations once assembled; falls back to the VO wav header below.
+    # This feeds the Audio DUR column, the cue inspector, and the Video timeline layout.
+    cue_durs = _load_cue_durs(slug)
 
     rows: list[dict] = []
     for cue in m.get("cues") or []:
@@ -110,12 +133,15 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
         is_hold = not text and "hold_seconds" in cue
         wav = vo_dir / f"{cid}.wav"
         status: str
-        duration: float | None = None
+        duration: float | None = cue_durs.get(cid)
         if is_hold:
             # HOLD cues: silent placeholder; 'generated' once a wav exists.
             status = "generated" if wav.exists() else "missing"
-            duration = float(cue.get("hold_seconds") or 0.0)
+            if duration is None:
+                duration = float(cue.get("hold_seconds") or 0.0)
         else:
+            if duration is None and wav.exists():
+                duration = _wav_dur(wav)
             # An existing wav is "generated". We deliberately do NOT hash-compare for
             # staleness here: the pipeline's vo/.cache.json hashes were written by
             # whatever hash scheme was current at render time (episodes 5-10 predate the
@@ -133,7 +159,7 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
             "is_hold": is_hold,
             "hold_seconds": cue.get("hold_seconds"),
             "status": status,
-            "duration_s": duration,
+            "duration_s": round(duration, 2) if isinstance(duration, (int, float)) else None,
             "engine": voice.get("engine"),
             "profile_id": voice.get("profile_id"),
             "voice_name": voice.get("voice_name"),
