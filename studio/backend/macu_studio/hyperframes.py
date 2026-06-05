@@ -116,10 +116,13 @@ def _scaffold(slug: str, key: str, composition: str, fields: dict) -> Path:
     if not (template_dir / "index.html").exists():
         raise FileNotFoundError(f"template not found: {template_dir}")
 
+    # ALWAYS re-apply fields: index.html is a derived artifact (fields are the only
+    # interface), so it must be regenerated every render. The old "write only if
+    # missing" guard meant changing the JSON between renders was silently ignored —
+    # every regen reused the first render's text (and could show a stale episode's).
     index = project_dir / "index.html"
-    if not index.exists():
-        raw = (template_dir / "index.html").read_text()
-        index.write_text(_apply_fields(raw, fields))
+    raw = (template_dir / "index.html").read_text()
+    index.write_text(_apply_fields(raw, fields))
 
     hf_json = project_dir / "hyperframes.json"
     if not hf_json.exists():
