@@ -346,6 +346,8 @@ def _build(slug: str) -> dict:
     valid_ids = {c["id"] for c in new_cues}
     dropped_refs: list[str] = []
     for bed in ((merged.get("music") or {}).get("beds") or []):
+        if not isinstance(bed, dict):
+            continue
         refs = bed.get("cues")
         if isinstance(refs, list):
             gone = [r for r in refs if r not in valid_ids]
@@ -354,7 +356,13 @@ def _build(slug: str) -> dict:
                 warnings.append(f"music bed '{bed.get('name')}': dropped stale cue ref(s) "
                                 f"{gone} — cue no longer in script; re-add if intended")
             bed["cues"] = [r for r in refs if r in valid_ids]
-    for sfx in (merged.get("sfx") or []):
+    # sfx is a LIST of one-shot dicts in the current schema, but ep-010..015 carry a
+    # legacy config DICT (and a bad entry could be a bare string) — only validate
+    # genuine one-shot dicts, skip everything else so gen-manifest never 500s.
+    sfx_block = merged.get("sfx")
+    for sfx in (sfx_block if isinstance(sfx_block, list) else []):
+        if not isinstance(sfx, dict):
+            continue
         label = sfx.get("name") or sfx.get("id") or "?"
         refs = sfx.get("cues")
         if isinstance(refs, list):
