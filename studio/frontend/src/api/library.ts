@@ -28,6 +28,19 @@ export interface SfxEntry {
   [k: string]: unknown;
 }
 
+// One manifest.music.beds[] entry — a music clip spanning a cue range (stage_5_music).
+export interface MusicBed {
+  name?: string;
+  file?: string;            // which clip plays (basename); falls back to the theme bed
+  cues: string[];           // the cue ids the bed spans
+  anchor?: "start" | "end"; // where the bed is pinned in its span
+  max_seconds?: number;     // duration cap
+  gain?: number;
+  fade_in?: number;
+  fade_out?: number;
+  [k: string]: unknown;
+}
+
 export const libraryApi = {
   list: (kind: AssetKind): Promise<AssetItem[]> =>
     fetch(`/api/assets/${kind}`).then(J<{ assets: AssetItem[] }>).then((r) => r.assets),
@@ -45,4 +58,11 @@ export const libraryApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ file }),
     }).then(J<{ ok: boolean; added: boolean }>),
+  // Replace manifest.music.beds[] wholesale (timeline MUSIC track placements).
+  putBeds: (slug: string, beds: MusicBed[]) =>
+    fetch(`/api/episodes/${slug}/music/beds`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ beds }),
+    }).then(J<{ ok: boolean; count: number }>),
 };

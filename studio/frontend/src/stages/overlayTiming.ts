@@ -1,4 +1,7 @@
 import type { Cue, Overlay } from "../types";
+import type { MusicBed, SfxEntry } from "../api/library";
+
+const SFX_VIS_LEN = 0.6; // seconds — point sfx are drawn as a short fixed-width marker
 
 /** Cumulative start-second of each cue + episode total, from per-cue durations.
  * Mirrors stage_5_music / stage_4b's cum map. Cues with no duration yet count as 0. */
@@ -63,4 +66,87 @@ export function makeOverlay(asset: string, cueId: string, durationS: number): Ov
     fade_in: 0.3,
     fade_out: 0.3,
   };
+}
+
+// ---- music beds (cue-range spans) ----
+
+/** Absolute [start,end] window of a bed = first cue start → last cue end. */
+export function bedWindow(
+  bed: MusicBed,
+  cues: Pick<Cue, "id" | "duration_s">[],
+  cum: Record<string, number>,
+): { start: number; end: number } {
+  const refs = Array.isArray(bed.cues) ? bed.cues : [];
+  if (!refs.length) return { start: 0, end: 0 };
+  const first = refs[0], last = refs[refs.length - 1];
+  const start = cum[first] ?? 0;
+  const lc = cues.find((c) => c.id === last);
+  const end = (cum[last] ?? start) + (lc?.duration_s ?? 0);
+  return { start, end };
+}
+
+/** The contiguous cue ids whose spans intersect [start,end] (for re-anchoring a bed on drag). */
+export function cuesInRange(
+  start: number,
+  end: number,
+  cues: Pick<Cue, "id" | "duration_s">[],
+  cum: Record<string, number>,
+): string[] {
+  const out: string[] = [];
+  for (const c of cues) {
+    const cs = cum[c.id] ?? 0;
+    const ce = cs + (c.duration_s ?? 0);
+    if (cs < end - 0.01 && ce > start + 0.01) out.push(c.id);
+  }
+  return out;
+}
+
+/** A fresh music bed on `file` covering a single cue. */
+export function makeBed(file: string, cueId: string, cueDur: number): MusicBed {
+  return {
+    name: file.replace(/\.[^.]+$/, ""),
+    file,
+    cues: [cueId],
+    anchor: "start",
+    max_seconds: Math.max(1, Math.round(cueDur || 8)),
+    gain: 0.5,
+    fade_in: 0.5,
+    fade_out: 0.5,
+  };
+}
+
+// ---- sfx one-shots (point clips pinned to a cue) ----
+
+/** Absolute start-second of an sfx one-shot: cue start (+cue dur if at:end) + delay. */
+export function sfxAnchorSec(
+  e: SfxEntry,
+  cues: Pick<Cue, "id" | "duration_s">[],
+  cum: Record<string, number>,
+): number {
+  if (!e.cue) return 0;
+  const base = cum[e.cue] ?? 0;
+  const cueDur = e.at === "end" ? (cues.find((c) => c.id === e.cue)?.duration_s ?? 0) : 0;
+  return base + cueDur + (e.delay ?? 0);
+}
+
+/** [start,end] visual window of a point sfx marker. */
+export function sfxWindow(
+  e: SfxEntry,
+  cues: Pick<Cue, "id" | "duration_s">[],
+  cum: Record<string, number>,
+): { start: number; end: number } {
+  const start = sfxAnchorSec(e, cues, cum);
+  return { start, end: start + SFX_VIS_LEN };
+}
+
+/** Re-pin an sfx to the absolute second `sec`: nearest cue, at:start, delay = offset into it. */
+export function repinSfx(
+  e: SfxEntry,
+  sec: number,
+  cues: Pick<Cue, "id" | "duration_s">[],
+  cum: Record<string, number>,
+): SfxEntry {
+  const cue = cueAtSecond(sec, cues, cum) ?? e.cue;
+  const delay = cue ? Math.max(0, Math.round((sec - (cum[cue] ?? 0)) * 100) / 100) : 0;
+  return { ...e, cue, at: "start", delay };
 }

@@ -323,6 +323,24 @@ async def put_overlays(slug: str, body: dict = Body(...)):
     return {"ok": True, "count": len(overlays)}
 
 
+@app.put("/api/episodes/{slug}/music/beds")
+async def put_music_beds(slug: str, body: dict = Body(...)):
+    """Replace manifest.music.beds[] wholesale — the single mutation for the Video
+    timeline's MUSIC track (drag-to-place / drag-resize cue-spanning beds). Leaves
+    music.clips[] (the file pool) and other music settings untouched."""
+    beds = body.get("beds")
+    if not isinstance(beds, list):
+        raise HTTPException(400, "beds must be a list")
+    m = manifest_mod.load(slug)
+    music = m.get("music")
+    if not isinstance(music, dict):
+        music = {}
+    music["beds"] = beds
+    m["music"] = music
+    manifest_mod.save(slug, m)
+    return {"ok": True, "count": len(beds)}
+
+
 # ---------- Asset library (assets/sfx, assets/music) ----------
 
 @app.get("/api/assets/{kind}")

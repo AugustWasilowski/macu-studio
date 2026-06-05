@@ -2,21 +2,26 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, mediaUrl } from "../api";
 import { graphicsApi } from "../api/graphics";
+import { libraryApi } from "../api/library";
+import type { MusicBed, SfxEntry } from "../api/library";
 import { useStore } from "../store";
-import { IX, IPlay, IPause } from "../components/Icons";
-import { cueOffsets, overlayWindow, cueAtSecond, makeOverlay } from "./overlayTiming";
-import type { Cue, Overlay, OverlayMode, OverlayPosition } from "../types";
+import { IPlay, IPause } from "../components/Icons";
+import {
+  cueOffsets, overlayWindow, cueAtSecond, makeOverlay,
+  bedWindow, cuesInRange, makeBed, sfxWindow, repinSfx,
+} from "./overlayTiming";
+import { drawerDrag } from "./trackEditor";
+import type { Selection, TrackKind } from "./trackEditor";
+import { MetadataPanel } from "./MetadataPanel";
+import type { MetaCallbacks } from "./MetadataPanel";
+import { AssetDrawer } from "./AssetDrawer";
+import type { Cue, Overlay } from "../types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-const POSITIONS: OverlayPosition[] = ["lower_third", "bug_tl", "bug_tr", "center", "full"];
-
-// Module-level drag payload for dropping a palette card onto the graphics track.
-let paletteDrag: { asset: string } | null = null;
-
-type DragState = { idx: number; kind: "move" | "l" | "r"; startX: number; origStart: number; origDur: number };
+type DragState = { track: TrackKind; idx: number; kind: "move" | "l" | "r"; startX: number; start: number; end: number };
 
 export function Timeline({ slug }: { slug: string }) {
   const qc = useQueryClient();
@@ -24,238 +29,190 @@ export function Timeline({ slug }: { slug: string }) {
 
   const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug), refetchInterval: 4000 });
   const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
-  const titles = useQuery({ queryKey: ["titles", slug], queryFn: () => api.titles(slug) });
   const finalQ = useQuery({ queryKey: ["final", slug], queryFn: () => api.final(slug) });
 
   const cueList = cues.data?.cues ?? [];
-  const overlays: Overlay[] = useMemo(
-    () => ((manifest.data as any)?.overlays as Overlay[]) ?? [],
-    [manifest.data],
-  );
-  const beds: any[] = useMemo(() => ((manifest.data as any)?.music?.beds as any[]) ?? [], [manifest.data]);
+  const m = manifest.data as any;
+  const overlays: Overlay[] = useMemo(() => (m?.overlays as Overlay[]) ?? [], [m]);
+  const beds: MusicBed[] = useMemo(() => (m?.music?.beds as MusicBed[]) ?? [], [m]);
+  const sfxList: SfxEntry[] = useMemo(() => (Array.isArray(m?.sfx) ? (m.sfx as SfxEntry[]) : []), [m]);
   const { cum, total } = useMemo(() => cueOffsets(cueList), [cueList]);
-  const cards = (titles.data?.titles ?? []).filter((t) => t.scope !== "hyperframes");
 
-  const [pps, setPps] = useState(48); // px per second (zoom)
-  const [selIdx, setSelIdx] = useState<number | null>(null);
-  const [working, setWorking] = useState<Overlay[] | null>(null);
+  const [pps, setPps] = useState(48);
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [working, setWorking] = useState<null | { track: TrackKind; items: any[] }>(null);
+  const [overDrawer, setOverDrawer] = useState(false);
   const dragRef = useRef<DragState | null>(null);
-  const trackRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
 
-  // ---- preview monitor (the rendered final video) + playhead ----
+  // ---- preview monitor ----
   const finalExists = !!finalQ.data?.exists;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [playT, setPlayT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const dur = finalQ.data?.duration_s ?? total;
-
-  const seekTo = (sec: number) => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.currentTime = clamp(sec, 0, (v.duration || dur) - 0.05);
-    v.play().catch(() => {});
-  };
-  const togglePlay = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.paused) v.play().catch(() => {}); else v.pause();
-  };
-
-  // keep the playhead in view while playing
+  const seekTo = (sec: number) => { const v = videoRef.current; if (!v) return; v.currentTime = clamp(sec, 0, (v.duration || dur) - 0.05); v.play().catch(() => {}); };
+  const togglePlay = () => { const v = videoRef.current; if (!v) return; if (v.paused) v.play().catch(() => {}); else v.pause(); };
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !playing) return;
     const x = playT * pps;
-    if (x < el.scrollLeft + 60 || x > el.scrollLeft + el.clientWidth - 60) {
-      el.scrollLeft = Math.max(0, x - el.clientWidth / 3);
-    }
+    if (x < el.scrollLeft + 60 || x > el.scrollLeft + el.clientWidth - 60) el.scrollLeft = Math.max(0, x - el.clientWidth / 3);
   }, [playT, playing, pps]);
 
-  const shown = working ?? overlays;
-
-  const putOverlays = useMutation({
-    mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }),
-    onError: (e: Error) => push("overlays save failed: " + e.message, "err"),
-  });
-  const commit = (next: Overlay[]) => putOverlays.mutate(next);
-  const patch = (idx: number, p: Partial<Overlay>) => commit(shown.map((o, i) => (i === idx ? { ...o, ...p } : o)));
-  const remove = (idx: number) => { commit(shown.filter((_, i) => i !== idx)); setSelIdx(null); };
-
-  // snap a second value to the nearest cue boundary if within ~7px
-  const boundaries = useMemo(() => {
-    const bs = cueList.map((c) => cum[c.id] ?? 0);
-    bs.push(total);
-    return bs;
-  }, [cueList, cum, total]);
-  const snap = (sec: number) => {
-    const thr = 7 / pps;
-    let best = sec, bestD = thr;
-    for (const b of boundaries) { const d = Math.abs(sec - b); if (d < bestD) { best = b; bestD = d; } }
-    return best;
+  // ---- persistence ----
+  const putOverlays = useMutation({ mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
+  const putBeds = useMutation({ mutationFn: (next: MusicBed[]) => libraryApi.putBeds(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
+  const putSfx = useMutation({ mutationFn: (next: SfxEntry[]) => libraryApi.putSfx(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
+  const commitTrack = (track: TrackKind, items: any[]) => {
+    if (track === "graphics") putOverlays.mutate(items);
+    else if (track === "music") putBeds.mutate(items);
+    else putSfx.mutate(items);
   };
 
-  const beginDrag = (e: React.PointerEvent, idx: number, kind: DragState["kind"]) => {
+  // shown arrays (override the active track with the in-flight working copy)
+  const shownOverlays: Overlay[] = working?.track === "graphics" ? working.items : overlays;
+  const shownBeds: MusicBed[] = working?.track === "music" ? working.items : beds;
+  const shownSfx: SfxEntry[] = working?.track === "sfx" ? working.items : sfxList;
+
+  // ---- metadata-panel edit callbacks ----
+  const cb: MetaCallbacks = {
+    slug,
+    patchOverlay: (idx, p) => commitTrack("graphics", overlays.map((o, i) => i === idx ? { ...o, ...p } : o)),
+    removeOverlay: (idx) => { commitTrack("graphics", overlays.filter((_, i) => i !== idx)); setSelection(null); },
+    patchSfx: (idx, p) => commitTrack("sfx", sfxList.map((e, i) => i === idx ? { ...e, ...p } : e)),
+    removeSfx: (idx) => { commitTrack("sfx", sfxList.filter((_, i) => i !== idx)); setSelection(null); },
+    patchBed: (idx, p) => commitTrack("music", beds.map((b, i) => i === idx ? { ...b, ...p } : b)),
+    removeBed: (idx) => { commitTrack("music", beds.filter((_, i) => i !== idx)); setSelection(null); },
+  };
+
+  // ---- snap to cue boundaries ----
+  const boundaries = useMemo(() => { const bs = cueList.map((c) => cum[c.id] ?? 0); bs.push(total); return bs; }, [cueList, cum, total]);
+  const snap = (sec: number) => { const thr = 7 / pps; let best = sec, bestD = thr; for (const b of boundaries) { const d = Math.abs(sec - b); if (d < bestD) { best = b; bestD = d; } } return best; };
+  const cueDurOf = (id: string) => cueList.find((c) => c.id === id)?.duration_s ?? 0;
+
+  // ---- pointer drag (move / resize) ----
+  const beginDrag = (e: React.PointerEvent, track: TrackKind, idx: number, kind: DragState["kind"], win: { start: number; end: number }, select: Selection) => {
     e.stopPropagation();
-    const ov = overlays[idx];
-    const { start } = overlayWindow(ov, cum);
-    dragRef.current = { idx, kind, startX: e.clientX, origStart: start, origDur: ov.duration ?? 0 };
-    setWorking(overlays.map((o) => ({ ...o })));
-    setSelIdx(idx);
+    dragRef.current = { track, idx, kind, startX: e.clientX, start: win.start, end: win.end };
+    const src = track === "graphics" ? overlays : track === "music" ? beds : sfxList;
+    setWorking({ track, items: src.map((x) => ({ ...x })) });
+    setSelection(select);
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   };
+
   const onMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
+    // drag-to-remove hover check
+    const dr = drawerRef.current;
+    setOverDrawer(!!dr && e.clientY >= dr.getBoundingClientRect().top);
     const dxSec = (e.clientX - d.startX) / pps;
     setWorking((prev) => {
-      const next = (prev ?? overlays).map((o) => ({ ...o }));
-      const ov = next[d.idx];
-      let start = d.origStart, dur2 = d.origDur;
-      if (d.kind === "move") start = clamp(d.origStart + dxSec, 0, Math.max(0, total - dur2));
-      else if (d.kind === "r") dur2 = Math.max(0.3, d.origDur + dxSec);
-      else {
-        const ns = clamp(d.origStart + dxSec, 0, d.origStart + d.origDur - 0.3);
-        dur2 = d.origStart + d.origDur - ns;
-        start = ns;
+      if (!prev) return prev;
+      const items = prev.items.map((x) => ({ ...x }));
+      const it = items[d.idx];
+      const len = d.end - d.start;
+      if (d.track === "graphics") {
+        let s = d.start, du = len;
+        if (d.kind === "move") s = snap(clamp(d.start + dxSec, 0, Math.max(0, total - len)));
+        else if (d.kind === "r") du = snap(clamp(d.end + dxSec, d.start + 0.3, total)) - d.start;
+        else { s = snap(clamp(d.start + dxSec, 0, d.end - 0.3)); du = d.end - s; }
+        const anchor = cueAtSecond(s, cueList, cum) ?? it.anchor_cue;
+        it.anchor_cue = anchor; it.start_offset = round2(s - (cum[anchor] ?? 0)); it.duration = round2(du);
+      } else if (d.track === "music") {
+        let ns = d.start, ne = d.end;
+        if (d.kind === "move") { ns = snap(clamp(d.start + dxSec, 0, Math.max(0, total - len))); ne = ns + len; }
+        else if (d.kind === "r") ne = snap(clamp(d.end + dxSec, d.start + 0.3, total));
+        else ns = snap(clamp(d.start + dxSec, 0, d.end - 0.3));
+        const cuesR = cuesInRange(ns, ne, cueList, cum);
+        if (cuesR.length) { it.cues = cuesR; it.max_seconds = Math.max(1, Math.round(ne - ns)); }
+      } else { // sfx — move only
+        if (d.kind === "move") { const s = snap(clamp(d.start + dxSec, 0, total)); Object.assign(it, repinSfx(it, s, cueList, cum)); }
       }
-      start = snap(start);
-      const anchor = cueAtSecond(start, cueList, cum) ?? ov.anchor_cue;
-      ov.anchor_cue = anchor;
-      ov.start_offset = round2(start - (cum[anchor] ?? 0));
-      ov.duration = round2(dur2);
-      return next;
+      return { ...prev, items };
     });
   };
+
   const endDrag = () => {
-    if (!dragRef.current) return;
+    const d = dragRef.current;
+    if (!d || !working) { dragRef.current = null; return; }
+    const dr = drawerRef.current;
+    const removed = overDrawer && !!dr;
     dragRef.current = null;
-    setWorking((w) => { if (w) commit(w); return null; });
-  };
-
-  const onTrackDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!paletteDrag || !trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const sec = clamp((e.clientX - rect.left) / pps, 0, Math.max(0, total));
-    const anchor = cueAtSecond(sec, cueList, cum);
-    if (!anchor) { push("no cues to anchor to", "err"); paletteDrag = null; return; }
-    const ov = makeOverlay(paletteDrag.asset, anchor, 3);
-    ov.start_offset = round2(sec - (cum[anchor] ?? 0));
-    commit([...overlays, ov]);
-    push(`${paletteDrag.asset} → graphic @ ${sec.toFixed(1)}s`, "ok");
-    paletteDrag = null;
-  };
-
-  // first-shot thumbnail for a cue (filmstrip background). Only the animated shot
-  // webps work as a CSS background-image — title cards are mp4 (skip them; the cue
-  // just shows its label) so we don't fire doomed background-image requests.
-  const cueThumb = (c: Cue): string | null => {
-    for (const s of (c.shots || []) as any[]) {
-      if ((s.kind === "character" || s.kind === "broll") && s.who) return mediaUrl.shotPreview(slug, s.who);
+    setOverDrawer(false);
+    if (removed) {
+      const next = working.items.filter((_, i) => i !== d.idx);
+      commitTrack(d.track, next);
+      setSelection(null);
+      push("removed from timeline", "ok");
+    } else {
+      commitTrack(d.track, working.items);
     }
-    return null;
+    setWorking(null);
   };
+
+  // ---- drawer → track drops ----
+  const secFromClientX = (clientX: number) => { const el = scrollRef.current; if (!el) return 0; const r = el.getBoundingClientRect(); return clamp((clientX - r.left + el.scrollLeft) / pps, 0, total); };
+  const onDropGraphics = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "card") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; const ov = makeOverlay(d.asset, anchor, 3); ov.start_offset = round2(sec - (cum[anchor] ?? 0)); commitTrack("graphics", [...overlays, ov]); push(`${d.asset} → graphic`, "ok"); drawerDrag.clear(); };
+  const onDropMusic = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "music") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; commitTrack("music", [...beds, makeBed(d.file, anchor, cueDurOf(anchor))]); push(`${d.file} → music bed`, "ok"); drawerDrag.clear(); };
+  const onDropSfx = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "sfx") return; const sec = secFromClientX(e.clientX); const cue = cueAtSecond(sec, cueList, cum); if (!cue) return; const entry = repinSfx({ file: d.file, cue, at: "start", gain: 0.4, source: "library" } as SfxEntry, sec, cueList, cum); commitTrack("sfx", [...sfxList, entry]); push(`${d.file} → sfx @ ${cue}`, "ok"); drawerDrag.clear(); };
+
+  const cueThumb = (c: Cue): string | null => { for (const s of (c.shots || []) as any[]) { if ((s.kind === "character" || s.kind === "broll") && s.who) return mediaUrl.shotPreview(slug, s.who); } return null; };
 
   const width = Math.max(640, total * pps + 40);
-  const sel = selIdx != null ? shown[selIdx] : null;
-
-  const ticks: number[] = [];
-  for (let t = 0; t <= total; t += 5) ticks.push(t);
-
-  const secFromClientX = (clientX: number) => {
-    const el = scrollRef.current;
-    if (!el) return 0;
-    const rect = el.getBoundingClientRect();
-    return clamp((clientX - rect.left + el.scrollLeft) / pps, 0, total);
-  };
+  const ticks: number[] = []; for (let t = 0; t <= total; t += 5) ticks.push(t);
 
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
-      {/* PREVIEW MONITOR — large; click a cue (or the ruler) to play from there */}
+      {/* PREVIEW */}
       <section className="panel flex flex-col min-h-0 flex-1 p-2 gap-2">
         <div className="flex items-center justify-between">
-          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click any cue to play from there · overlay edits show after a re-render</span></div>
+          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click a cue to play · audio/graphic edits show after a re-render</span></div>
           <div className="flex items-center gap-3">
-            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>
-              {playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}
-            </button>
+            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>{playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}</button>
             <span className="font-mono tabular-nums text-[12px]">{fmt(playT)} <span className="text-txt-faint">/ {fmt(dur)}</span></span>
           </div>
         </div>
         <div className="flex-1 min-h-0 bg-black hairline-soft rounded grid place-items-center overflow-hidden">
           {finalExists ? (
-            <video
-              ref={videoRef}
-              src={mediaUrl.finalVideo(slug)}
-              className="max-w-full object-contain"
-              style={{ height: "100%" }}
-              playsInline
-              onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)}
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-              onEnded={() => setPlaying(false)}
-            />
-          ) : (
-            <div className="text-txt-faint text-[12px] text-center px-3">No rendered video yet — run the episode (Assembly → Run) to enable the synced preview.</div>
-          )}
+            <video ref={videoRef} src={mediaUrl.finalVideo(slug)} className="max-w-full object-contain" style={{ height: "100%" }} playsInline
+              onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
+          ) : <div className="text-txt-faint text-[12px] text-center px-3">No rendered video yet — run the episode (Assembly → Run) to enable the synced preview.</div>}
         </div>
       </section>
 
+      {/* TIMELINE */}
       <section className="panel flex flex-col flex-none">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card onto the graphics track · click a cue to play · drag/resize bars to retime</span></div>
+          <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag assets from the drawer onto a track · scrub on the ruler · drag clips to move, edges to trim</span></div>
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="seg-readout">{overlays.length} GFX · {total.toFixed(1)}s</span>
+            <span className="seg-readout">{shownOverlays.length} GFX · {shownBeds.length} ♫ · {shownSfx.length} ♪ · {total.toFixed(1)}s</span>
             <button className="btn p-1" title="zoom out" onClick={() => setPps((z) => Math.max(12, z - 12))}>−</button>
             <span className="text-txt-faint">{pps}px/s</span>
             <button className="btn p-1" title="zoom in" onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
           </div>
         </header>
-
-        <div
-          ref={scrollRef}
-          className="overflow-x-auto overflow-y-hidden"
-          onPointerMove={onMove}
-          onPointerUp={endDrag}
-          onPointerLeave={endDrag}
-        >
+        <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
           <div style={{ width }} className="select-none relative">
-            {/* ruler (click to seek) */}
-            <div
-              className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint cursor-pointer"
-              onClick={(e) => seekTo(secFromClientX(e.clientX))}
-              title="click to scrub"
-            >
-              {ticks.map((t) => (
-                <div key={t} className="absolute top-0 h-full border-l border-[var(--line-soft)] pl-1" style={{ left: t * pps }}>{t}s</div>
-              ))}
+            {/* ruler — the only scrub surface */}
+            <div className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint cursor-pointer" onClick={(e) => seekTo(secFromClientX(e.clientX))} title="click to scrub">
+              {ticks.map((t) => <div key={t} className="absolute top-0 h-full border-l border-[var(--line-soft)] pl-1" style={{ left: t * pps }}>{t}s</div>)}
             </div>
 
-            {/* cues track — filmstrip thumbnails, click to play */}
-            <TrackLabelRow label="CUES" />
+            {/* CUES — filmstrip, click to select */}
+            <TrackLabel label="CUES" />
             <div className="relative h-16 border-b hairline-soft">
               {cueList.map((c) => {
-                const left = (cum[c.id] ?? 0) * pps;
-                const w = (c.duration_s ?? 0) * pps;
-                const thumb = cueThumb(c);
+                const left = (cum[c.id] ?? 0) * pps; const w = (c.duration_s ?? 0) * pps; const thumb = cueThumb(c);
+                const active = selection?.t === "cue" && selection.cue.id === c.id;
                 return (
-                  <div
-                    key={c.id}
-                    onClick={() => seekTo(cum[c.id] ?? 0)}
+                  <div key={c.id} onClick={() => setSelection({ t: "cue", cue: c })}
                     className="absolute top-0.5 rounded-sm overflow-hidden cursor-pointer hairline-soft"
-                    style={{
-                      left, width: Math.max(2, w), height: "calc(100% - 4px)",
-                      backgroundColor: "var(--bg-2)",
-                      backgroundImage: thumb ? `url(${thumb})` : undefined,
-                      backgroundRepeat: "repeat-x",
-                      backgroundSize: "auto 100%",
-                    }}
-                    title={`${c.id} · ${c.speaker} — click to play from ${fmt(cum[c.id] ?? 0)}`}
-                  >
-                    <div className="absolute inset-x-0 bottom-0 px-1 text-[9px] leading-tight"
-                      style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
+                    style={{ left, width: Math.max(2, w), height: "calc(100% - 4px)", backgroundColor: "var(--bg-2)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%", outline: active ? "1px solid var(--amber)" : undefined }}
+                    title={`${c.id} · ${c.speaker} — click for metadata`}>
+                    <div className="absolute inset-x-0 bottom-0 px-1 text-[9px] leading-tight" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
                       <span className="text-amber font-bold">{c.id}</span> <span className="text-txt-dim">{c.speaker}</span>
                     </div>
                   </div>
@@ -263,153 +220,81 @@ export function Timeline({ slug }: { slug: string }) {
               })}
             </div>
 
-            {/* graphics track (editable) */}
-            <TrackLabelRow label="GRAPHICS" />
-            <div
-              ref={trackRef}
-              className="relative h-12 border-b hairline-soft"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onTrackDrop}
-            >
-              {shown.map((ov, idx) => {
-                const { start } = overlayWindow(ov, cum);
-                const left = start * pps;
-                const w = Math.max(8, (ov.duration ?? 0) * pps);
-                const active = selIdx === idx;
+            {/* GRAPHICS — editable overlay bars */}
+            <TrackLabel label="GRAPHICS" />
+            <div className="relative h-12 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropGraphics}>
+              {shownOverlays.map((ov, idx) => {
+                const { start, end } = overlayWindow(ov, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
+                const active = selection?.t === "overlay" && selection.idx === idx;
                 return (
-                  <div
-                    key={ov.id ?? idx}
-                    onPointerDown={(e) => beginDrag(e, idx, "move")}
-                    onClick={() => setSelIdx(idx)}
+                  <div key={ov.id ?? idx} onPointerDown={(e) => beginDrag(e, "graphics", idx, "move", { start, end }, { t: "overlay", idx, ov })}
                     className={"absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 " + (ov.mode === "overlay" ? "bg-[#0c3b44]" : "bg-[#3b2e0c]")}
-                    style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }}
-                    title={`${ov.asset} · ${ov.mode} · ${(ov.duration ?? 0).toFixed(1)}s`}
-                  >
-                    <span onPointerDown={(e) => beginDrag(e, idx, "l")} className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
-                    <video src={mediaUrl.titlePreview(slug, ov.asset)} muted loop autoPlay playsInline
-                      className="bg-black rounded pointer-events-none flex-none" style={{ width: 26, height: 26, objectFit: "contain" }} />
+                    style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${ov.asset} · ${ov.mode}`}>
+                    <span onPointerDown={(e) => beginDrag(e, "graphics", idx, "l", { start, end }, { t: "overlay", idx, ov })} className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                    <video src={mediaUrl.titlePreview(slug, ov.asset)} muted loop autoPlay playsInline className="bg-black rounded pointer-events-none flex-none" style={{ width: 26, height: 26, objectFit: "contain" }} />
                     <span className="font-mono text-[10px] truncate pointer-events-none">{ov.asset}</span>
-                    <span onPointerDown={(e) => beginDrag(e, idx, "r")} className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                    <span onPointerDown={(e) => beginDrag(e, "graphics", idx, "r", { start, end }, { t: "overlay", idx, ov })} className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
                   </div>
                 );
               })}
-              {shown.length === 0 && (
-                <div className="absolute inset-0 grid place-items-center text-txt-faint text-[11px] pointer-events-none">
-                  drag a title card here to place a graphic
-                </div>
-              )}
+              {shownOverlays.length === 0 && <Empty label="drag a graphics card here" />}
             </div>
 
-            {/* music beds track (read-only context) */}
-            {beds.length > 0 && (
-              <>
-                <TrackLabelRow label="MUSIC" />
-                <div className="relative h-7">
-                  {beds.map((b, i) => {
-                    const refs: string[] = Array.isArray(b.cues) ? b.cues : [];
-                    if (!refs.length) return null;
-                    const first = refs[0], last = refs[refs.length - 1];
-                    const start = cum[first] ?? 0;
-                    const lc = cueList.find((c) => c.id === last);
-                    const end = (cum[last] ?? start) + (lc?.duration_s ?? 0);
-                    return (
-                      <div key={i} className="absolute top-0.5 h-6 rounded-sm bg-[#2a1840] hairline-soft text-[10px] px-1 truncate"
-                        style={{ left: start * pps, width: Math.max(4, (end - start) * pps) }} title={`${b.name} bed`}>
-                        ♪ {b.name}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+            {/* MUSIC — editable beds */}
+            <TrackLabel label="MUSIC" />
+            <div className="relative h-8 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropMusic}>
+              {shownBeds.map((b, idx) => {
+                const { start, end } = bedWindow(b, cueList, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
+                const active = selection?.t === "bed" && selection.idx === idx;
+                return (
+                  <div key={idx} onPointerDown={(e) => beginDrag(e, "music", idx, "move", { start, end }, { t: "bed", idx, b })}
+                    className="absolute top-0.5 h-7 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 bg-[#2a1840]"
+                    style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${b.name || b.file} bed`}>
+                    <span onPointerDown={(e) => beginDrag(e, "music", idx, "l", { start, end }, { t: "bed", idx, b })} className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                    <span className="font-mono text-[10px] truncate pointer-events-none text-[#c7a3ff]">♫ {b.name || b.file}</span>
+                    <span onPointerDown={(e) => beginDrag(e, "music", idx, "r", { start, end }, { t: "bed", idx, b })} className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                  </div>
+                );
+              })}
+              {shownBeds.length === 0 && <Empty label="drag a music clip here" />}
+            </div>
+
+            {/* SFX — point markers, move only */}
+            <TrackLabel label="SFX" />
+            <div className="relative h-7" onDragOver={(e) => e.preventDefault()} onDrop={onDropSfx}>
+              {shownSfx.map((e2, idx) => {
+                const { start, end } = sfxWindow(e2, cueList, cum); const left = start * pps; const w = Math.max(10, (end - start) * pps);
+                const active = selection?.t === "sfx" && selection.idx === idx;
+                return (
+                  <div key={idx} onPointerDown={(ev) => beginDrag(ev, "sfx", idx, "move", { start, end }, { t: "sfx", idx, e: e2 })}
+                    className="absolute top-0.5 h-6 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#0c3a3a]"
+                    style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${e2.file} @ ${e2.cue}`}>
+                    <span className="font-mono text-[10px] truncate pointer-events-none text-[#6fe0e0]">♪ {e2.file}</span>
+                  </div>
+                );
+              })}
+              {shownSfx.length === 0 && <Empty label="drag a sound effect here" />}
+            </div>
 
             {/* playhead */}
-            {playT > 0 && (
-              <div className="absolute top-0 bottom-0 pointer-events-none z-20"
-                style={{ left: playT * pps, width: 2, background: "var(--cyan)", boxShadow: "0 0 6px var(--cyan)" }} />
-            )}
+            {playT > 0 && <div className="absolute top-0 bottom-0 pointer-events-none z-20" style={{ left: playT * pps, width: 2, background: "var(--cyan)", boxShadow: "0 0 6px var(--cyan)" }} />}
           </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-[1fr_320px] gap-3" style={{ minHeight: 120 }}>
-        {/* palette strip */}
-        <section className="panel flex flex-col min-h-0">
-          <header className="px-3 py-2 border-b hairline panel-title">CARDS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag onto the graphics track</span></header>
-          <div className="p-2 flex gap-2 overflow-x-auto">
-            {cards.map((t) => (
-              <div key={t.key} draggable onDragStart={() => { paletteDrag = { asset: t.key }; }}
-                className="flex-none hairline-soft rounded overflow-hidden cursor-grab" style={{ width: 90 }} title={`drag ${t.key} onto the track`}>
-                <div className="bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
-                  {t.exists ? (
-                    <video src={mediaUrl.titlePreview(slug, t.key)} muted loop autoPlay playsInline className="w-full h-full object-contain pointer-events-none" />
-                  ) : <span className="label-tiny p-1 text-center">{t.key}</span>}
-                </div>
-                <div className="px-1 py-0.5 bg-bg-2 font-mono text-[10px] truncate">{t.key}</div>
-              </div>
-            ))}
-            {cards.length === 0 && <div className="text-txt-faint text-[12px] p-2">No title cards yet — make them on the Graphics page.</div>}
-          </div>
-        </section>
-
-        {/* selected-overlay inspector */}
-        <section className="panel p-3 flex flex-col gap-2 overflow-y-auto">
-          <div className="panel-title">GRAPHIC</div>
-          {sel ? (
-            <>
-              <div className="flex items-center gap-2">
-                <video src={mediaUrl.titlePreview(slug, sel.asset)} muted loop autoPlay playsInline className="bg-black rounded" style={{ width: 40, height: 40, objectFit: "contain" }} />
-                <span className="font-mono text-[12px] flex-1 truncate">{sel.asset}</span>
-                <button className="btn p-1" title="delete" onClick={() => remove(selIdx!)}><IX /></button>
-              </div>
-              <label className="flex items-center justify-between text-[12px]">
-                <span className="label-tiny">mode</span>
-                <select className="input text-[12px] py-0.5" value={sel.mode}
-                  onChange={(e) => patch(selIdx!, { mode: e.target.value as OverlayMode })}>
-                  <option value="insert">insert (full-frame)</option>
-                  <option value="overlay">overlay (on footage)</option>
-                </select>
-              </label>
-              {sel.mode === "overlay" && (
-                <>
-                  <label className="flex items-center justify-between text-[12px]">
-                    <span className="label-tiny">position</span>
-                    <select className="input text-[12px] py-0.5" value={sel.position ?? "lower_third"}
-                      onChange={(e) => patch(selIdx!, { position: e.target.value as OverlayPosition })}>
-                      {POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </label>
-                  <NumRow label="scale" value={sel.scale ?? 1} step={0.05} onChange={(v) => patch(selIdx!, { scale: v })} />
-                  <NumRow label="opacity" value={sel.opacity ?? 1} step={0.05} onChange={(v) => patch(selIdx!, { opacity: v })} />
-                </>
-              )}
-              <NumRow label="fade in" value={sel.fade_in ?? 0} step={0.1} onChange={(v) => patch(selIdx!, { fade_in: v })} />
-              <NumRow label="fade out" value={sel.fade_out ?? 0} step={0.1} onChange={(v) => patch(selIdx!, { fade_out: v })} />
-              <div className="grid grid-cols-2 gap-1 text-[11px] text-txt-faint mt-1">
-                <span>anchor</span><span className="text-amber font-mono">{sel.anchor_cue}</span>
-                <span>start +s</span><span className="font-mono">{(sel.start_offset ?? 0).toFixed(2)}</span>
-                <span>duration</span><span className="font-mono">{(sel.duration ?? 0).toFixed(2)}s</span>
-              </div>
-            </>
-          ) : (
-            <div className="text-txt-faint text-[12px]">Select a graphic bar to edit it.</div>
-          )}
-        </section>
+      {/* DRAWER + METADATA */}
+      <div className="grid grid-cols-[1fr_320px] gap-3" style={{ minHeight: 150, maxHeight: 220 }}>
+        <div ref={drawerRef} className="min-h-0"><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
+        <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
       </div>
     </div>
   );
 }
 
-function TrackLabelRow({ label }: { label: string }) {
+function TrackLabel({ label }: { label: string }) {
   return <div className="label-tiny px-2 pt-1 pb-0.5 text-txt-faint sticky left-0">{label}</div>;
 }
 
-function NumRow({ label, value, step, onChange }: { label: string; value: number; step: number; onChange: (v: number) => void }) {
-  return (
-    <label className="flex items-center justify-between text-[12px]">
-      <span className="label-tiny">{label}</span>
-      <input className="input w-24 text-[12px] py-0.5" type="number" step={step} value={value}
-        onChange={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) onChange(Math.round(v * 100) / 100); }} />
-    </label>
-  );
+function Empty({ label }: { label: string }) {
+  return <div className="absolute inset-0 grid place-items-center text-txt-faint text-[11px] pointer-events-none">{label}</div>;
 }
