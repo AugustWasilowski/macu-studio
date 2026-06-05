@@ -6,6 +6,7 @@ import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
 import { SysStat } from "./SysStat";
+import { JobStatus } from "./JobStatus";
 
 interface Props {
   episodes: EpisodeSummary[];
@@ -158,6 +159,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
         })}
       </nav>
       <div className="ml-auto flex items-center gap-3">
+        <JobStatus />
         <SysStat />
         <button
           className="btn"

@@ -39,6 +39,10 @@ export function Timeline({ slug }: { slug: string }) {
   const { cum, total } = useMemo(() => cueOffsets(cueList), [cueList]);
 
   const [pps, setPps] = useState(48);
+  const [timelineOpen, setTimelineOpen] = useState(() => localStorage.getItem("macu.tl.timeline") !== "0");
+  const [bottomOpen, setBottomOpen] = useState(() => localStorage.getItem("macu.tl.bottom") !== "0");
+  const toggleTimeline = () => setTimelineOpen((v) => { localStorage.setItem("macu.tl.timeline", v ? "0" : "1"); return !v; });
+  const toggleBottom = () => setBottomOpen((v) => { localStorage.setItem("macu.tl.bottom", v ? "0" : "1"); return !v; });
   const [selection, setSelection] = useState<Selection | null>(null);
   const [working, setWorking] = useState<null | { track: TrackKind; items: any[] }>(null);
   const [overDrawer, setOverDrawer] = useState(false);
@@ -184,7 +188,8 @@ export function Timeline({ slug }: { slug: string }) {
       </section>
 
       {/* TIMELINE */}
-      <section className="panel flex flex-col flex-none">
+      <section className="panel flex flex-col flex-none relative">
+        <CollapseTab open={timelineOpen} onToggle={toggleTimeline} label="timeline" />
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag assets from the drawer onto a track · scrub on the ruler · drag clips to move, edges to trim</span></div>
           <div className="flex items-center gap-2 text-[11px]">
@@ -194,6 +199,7 @@ export function Timeline({ slug }: { slug: string }) {
             <button className="btn p-1" title="zoom in" onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
           </div>
         </header>
+        {timelineOpen && (
         <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
           <div style={{ width }} className="select-none relative">
             {/* ruler — the only scrub surface */}
@@ -280,14 +286,37 @@ export function Timeline({ slug }: { slug: string }) {
             {playT > 0 && <div className="absolute top-0 bottom-0 pointer-events-none z-20" style={{ left: playT * pps, width: 2, background: "var(--cyan)", boxShadow: "0 0 6px var(--cyan)" }} />}
           </div>
         </div>
+        )}
       </section>
 
-      {/* DRAWER + METADATA */}
-      <div className="grid grid-cols-[1fr_320px] gap-3" style={{ minHeight: 150, maxHeight: 220 }}>
-        <div ref={drawerRef} className="min-h-0"><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
-        <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
+      {/* DRAWER + METADATA (collapse together) */}
+      <div className="relative flex-none" style={{ minHeight: bottomOpen ? 150 : 16 }}>
+        <CollapseTab open={bottomOpen} onToggle={toggleBottom} label="drawer" />
+        {bottomOpen && (
+          <div className="grid grid-cols-[1fr_320px] gap-3 h-full" style={{ minHeight: 150, maxHeight: 220 }}>
+            <div ref={drawerRef} className="min-h-0"><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
+            <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function CollapseTab({ open, onToggle, label }: { open: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={(open ? "Collapse " : "Expand ") + label}
+      className="absolute left-1/2 z-30 flex items-center justify-center"
+      style={{
+        transform: "translateX(-50%)", top: -8, width: 56, height: 15,
+        background: "var(--amber)", color: "#1a1206", borderRadius: 5,
+        fontSize: 11, fontWeight: 700, lineHeight: 1, boxShadow: "var(--glow-amber)",
+      }}
+    >
+      {open ? "▼" : "▲"}
+    </button>
   );
 }
 

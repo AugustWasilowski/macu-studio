@@ -18,6 +18,16 @@ export function Script({ slug }: { slug: string }) {
 
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"edit" | "preview" | "diff">("preview");
+  // script-text font size (script body only, not the rest of the UI); persisted
+  const [fontPx, setFontPx] = useState(() => {
+    const v = Number(localStorage.getItem("macu.script.fontPx"));
+    return v >= 9 && v <= 28 ? v : 13;
+  });
+  const bumpFont = (d: number) => setFontPx((p) => {
+    const n = Math.max(9, Math.min(28, p + d));
+    localStorage.setItem("macu.script.fontPx", String(n));
+    return n;
+  });
   const [saved, setSaved] = useState(true);
   const [gen, setGen] = useState<GenManifestSummary | null>(null);
 
@@ -90,6 +100,11 @@ export function Script({ slug }: { slug: string }) {
             <span className={"text-[11px] " + (saved ? "text-green" : "text-amber")}>
               {saved ? "● SAVED" : "○ UNSAVED"}
             </span>
+            <span className="inline-flex items-center gap-0.5 mr-1" title="Script text size">
+              <button className="btn px-1.5 py-0.5" onClick={() => bumpFont(-1)}>A−</button>
+              <span className="text-txt-faint text-[10px] w-6 text-center tabular-nums">{fontPx}</span>
+              <button className="btn px-1.5 py-0.5" onClick={() => bumpFont(1)}>A+</button>
+            </span>
             <button className={"btn " + (mode === "edit" ? "btn-amber" : "")} onClick={() => setMode("edit")}>Edit</button>
             <button className={"btn " + (mode === "preview" ? "btn-amber" : "")} onClick={() => setMode("preview")}>Preview</button>
             <button className={"btn " + (mode === "diff" ? "btn-amber" : "")} onClick={() => setMode("diff")} title="Compare synced versions (green added / red cut)">Diff</button>
@@ -112,14 +127,15 @@ export function Script({ slug }: { slug: string }) {
         </header>
         <div className="flex-1 min-h-0">
           {mode === "preview" ? (
-            <div className="h-full overflow-y-auto p-4 text-[13px] leading-relaxed">
+            <div className="h-full overflow-y-auto p-4 leading-relaxed" style={{ fontSize: fontPx }}>
               <ScriptPreview text={text} />
             </div>
           ) : mode === "diff" ? (
-            <DiffView slug={slug} />
+            <DiffView slug={slug} fontPx={fontPx} />
           ) : (
             <textarea
-              className="w-full h-full p-3 font-mono text-[13px] bg-[#0b0b0a] text-txt resize-none outline-none border-0"
+              className="w-full h-full p-3 font-mono bg-[#0b0b0a] text-txt resize-none outline-none border-0"
+              style={{ fontSize: fontPx }}
               spellCheck={false}
               value={text}
               onChange={(e) => { setText(e.target.value); setSaved(false); }}
@@ -241,7 +257,7 @@ function Pad({ children }: { children: ReactNode }) {
   return <div className="p-4 text-[12px] text-txt-faint">{children}</div>;
 }
 
-function DiffView({ slug }: { slug: string }) {
+function DiffView({ slug, fontPx }: { slug: string; fontPx: number }) {
   const versionsQ = useQuery({
     queryKey: ["scriptVersions", slug],
     queryFn: () => api.scriptVersions(slug),
@@ -283,7 +299,7 @@ function DiffView({ slug }: { slug: string }) {
           </span>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-auto font-mono text-[12px] leading-[1.55]">
+      <div className="flex-1 min-h-0 overflow-auto font-mono leading-[1.55]" style={{ fontSize: fontPx }}>
         {diffQ.isLoading && <Pad>computing diff…</Pad>}
         {d && d.lines.length === 0 && <Pad>No changes between these two versions.</Pad>}
         {d && d.lines.map((ln, idx) => <DiffLine key={idx} line={ln} />)}

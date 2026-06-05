@@ -3,6 +3,7 @@
 Endpoints under /api ; SPA mounted at /. Runs as `uvicorn macu_studio.main:app`.
 """
 from __future__ import annotations
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import shotgen as shotgen_mod
+from . import activity as activity_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -57,6 +59,57 @@ def health():
 async def get_sysstat():
     """CPU % + GPU % + GPU RAM for the topbar readout (poll ~every 2s)."""
     return await sysstat_mod.snapshot()
+
+
+_STAGE_LABEL = {
+    "vo": "Rendering audio", "masters": "Rendering video", "rife": "Rendering video",
+    "assemble": "Assembling video", "graphics": "Rendering graphics", "music": "Rendering music",
+    "whisper": "Transcribing", "srt": "Subtitles", "burn": "Burning subtitles",
+}
+
+
+async def _render_label(job: dict) -> str:
+    """Friendly label for a running render job — its current stage if we can read it."""
+    try:
+        st = await pipeline_mod.status(job["id"])
+        cur = None
+        for e in (st.get("last_events") or []):
+            if e.get("kind") == "stage.started":
+                cur = e.get("name")
+            elif e.get("kind") == "stage.done" and e.get("name") == cur:
+                cur = None
+        if cur:
+            return _STAGE_LABEL.get(cur, f"Rendering ({cur})")
+    except Exception:
+        pass
+    return f"Rendering {job.get('slug', '')}"
+
+
+@app.get("/api/activity")
+async def get_activity():
+    """What the box is processing right now, for the topbar job indicator. Aggregates
+    the render server's jobs, HyperFrames jobs, and the synchronous-job activity slot.
+    Poll ~every 2s. Returns {state: idle|running|error, label}."""
+    # 1) render-server job (the heavy, multi-minute work)
+    try:
+        jobs = (await pipeline_mod.jobs_list()).get("jobs", [])
+    except Exception:
+        jobs = []
+    running = next((j for j in jobs if j.get("state") == "running"), None)
+    if running:
+        return {"state": "running", "label": await _render_label(running)}
+    recent = max((j for j in jobs if j.get("finished_at")), key=lambda j: j["finished_at"], default=None)
+    if recent and recent.get("state") == "error" and (time.time() - recent["finished_at"]) < 8:
+        return {"state": "error", "label": f"Render failed: {recent.get('slug', '')}"}
+    # 2) HyperFrames (title/graphics) jobs
+    for job in list(hf_mod.JOBS.values()):
+        if getattr(job, "state", None) == "running":
+            return {"state": "running", "label": f"Rendering graphics: {job.key}"}
+    # 3) synchronous studio jobs (agen sfx/music, shot-gen)
+    s = activity_mod.get()
+    if s["state"] != "idle":
+        return s
+    return {"state": "idle", "label": ""}
 
 
 # ---------- Episodes ----------
@@ -352,11 +405,16 @@ def post_shots_generate(slug: str):
     busy, free = agen_mod.gpu_busy()
     if busy:
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
+    activity_mod.set_running("Generating shot list", ttl=180)
     try:
-        return shotgen_mod.generate(slug)
+        out = shotgen_mod.generate(slug)
+        activity_mod.clear()
+        return out
     except FileNotFoundError as e:
+        activity_mod.clear()
         raise HTTPException(404, str(e))
     except Exception as e:  # noqa: BLE001
+        activity_mod.set_error("Shot-gen failed")
         raise HTTPException(500, f"shot-gen failed: {e}")
 
 
@@ -431,6 +489,7 @@ async def post_sfx_gen(slug: str, body: dict = Body(...)):
     at = body.get("at") or "start"
     if at not in ("start", "end"):
         raise HTTPException(400, "at must be 'start' or 'end'")
+    activity_mod.set_running("Rendering SFX", ttl=120)
     res = await agen_mod.gen_sfx_and_pin(
         slug, prompt, cue_id=body.get("cue_id"), at=at,
         duration=float(body.get("duration") or 3.0),
@@ -438,6 +497,7 @@ async def post_sfx_gen(slug: str, body: dict = Body(...)):
         gain_db=float(body.get("gain_db") if body.get("gain_db") is not None else -6.0),
         fade_s=float(body.get("fade_s") if body.get("fade_s") is not None else 0.5),
     )
+    activity_mod.set_error("SFX gen busy") if res.get("busy") else activity_mod.clear()
     if res.get("busy"):
         raise HTTPException(409, res.get("hint") or "GPU busy")
     return res
@@ -449,12 +509,14 @@ async def post_music_gen(slug: str, body: dict = Body(...)):
     prompt = (body.get("prompt") or "").strip()
     if not prompt:
         raise HTTPException(400, "prompt required")
+    activity_mod.set_running("Rendering music", ttl=180)
     res = await agen_mod.gen_music(
         slug, prompt, engine=body.get("engine") or "music",
         duration=float(body.get("duration") or 20.0),
         seed=body.get("seed"), basename=body.get("basename") or None,
         add_to_clips=bool(body.get("add_to_clips", True)),
     )
+    activity_mod.set_error("Music gen busy") if res.get("busy") else activity_mod.clear()
     if res.get("busy"):
         raise HTTPException(409, res.get("hint") or "GPU busy")
     return res
