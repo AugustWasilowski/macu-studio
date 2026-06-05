@@ -251,15 +251,15 @@ body {
 /* Themed scrollbars (override the browser default app-wide) */
 * {
   scrollbar-width: thin;                       /* Firefox */
-  scrollbar-color: var(--bg-3) var(--bg-1);    /* thumb track (Firefox) */
+  scrollbar-color: var(--amber) var(--bg-1);   /* thumb track (Firefox) */
 }
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: var(--bg-1); }
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-3);
+  background: rgba(245, 166, 35, 0.85);        /* amber accent — the draggable part */
   border: 2px solid var(--bg-1);               /* inset so the thumb reads as a pill */
   border-radius: 6px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(245, 166, 35, 0.55); } /* amber on hover */
+::-webkit-scrollbar-thumb:hover { background: var(--amber); }
 ::-webkit-scrollbar-thumb:active { background: var(--amber); }
 ::-webkit-scrollbar-corner { background: var(--bg-1); }
