@@ -7,7 +7,7 @@ Generated assets (audio/video/frames) are never copied.
 """
 from __future__ import annotations
 
-import filecmp
+import hashlib
 import shutil
 import subprocess
 
@@ -19,26 +19,61 @@ META = REPO / "episode_meta"
 
 TEXT_FILES = ("script.md", "manifest.json", "youtube.txt")
 
+# Which remote ref the sync dot is measured against — green means the working
+# files exactly match what's PUSHED there (not just the local episode_meta copy).
+REMOTE_REF = "origin/main"
 
-def sync_status(slug: str) -> bool:
-    """True when the episode's working TEXT files match the tracked episode_meta
-    copy (i.e. nothing to sync). False if any differ or the episode was never
-    synced — that's the 'pending changes' (red dot) state in the picker."""
+
+def _git_blob_hash(content: bytes) -> str:
+    """The git object id for `content` (sha1 of 'blob <len>\\0<content>') — same
+    value git stores, so we can compare a working file to a tree blob hash without
+    reading the blob's bytes back out."""
+    h = hashlib.sha1()
+    h.update(b"blob %d\0" % len(content))
+    h.update(content)
+    return h.hexdigest()
+
+
+def pushed_tree() -> dict[str, str] | None:
+    """{ 'episode_meta/<slug>/<file>': blobhash } at REMOTE_REF, or None if the
+    ref/tree is unreadable (treat every episode as not-pushed). One git call for
+    all episodes — no network (uses the local remote-tracking ref, which our own
+    pushes update; a push that fails leaves it stale, so the dot stays red)."""
+    p = _git("ls-tree", "-r", REMOTE_REF, "--", "episode_meta")
+    if p.returncode != 0:
+        return None
+    out: dict[str, str] = {}
+    for line in p.stdout.splitlines():
+        meta, _, path = line.partition("\t")          # "<mode> blob <hash>\t<path>"
+        parts = meta.split()
+        if len(parts) >= 3 and parts[1] == "blob" and path:
+            out[path] = parts[2]
+    return out
+
+
+def sync_status(slug: str, tree: dict[str, str] | None = None) -> bool:
+    """True when the episode's working TEXT files exactly match what's PUSHED to
+    REMOTE_REF (green dot). False if any differ, are missing on the remote, or the
+    push hasn't happened — that's the 'pending / unpushed changes' (red) state.
+    Pass a `tree` from pushed_tree() to avoid recomputing it per episode."""
+    if tree is None:
+        tree = pushed_tree()
+    if tree is None:
+        return False
     try:
         src = episode_dir(slug)
     except FileNotFoundError:
         return False
-    dest = META / slug
-    if not dest.exists():
-        return False
+    saw = False
     for name in TEXT_FILES:
         f = src / name
         if not f.exists():
             continue  # absent in working → nothing to compare for this file
-        d = dest / name
-        if not d.exists() or not filecmp.cmp(f, d, shallow=False):
+        saw = True
+        want = tree.get(f"episode_meta/{slug}/{name}")
+        if not want or _git_blob_hash(f.read_bytes()) != want:
             return False
-    return True
+    return saw
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:

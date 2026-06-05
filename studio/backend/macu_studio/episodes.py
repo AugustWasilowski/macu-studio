@@ -54,6 +54,10 @@ def list_episodes() -> list[EpisodeSummary]:
     out: list[EpisodeSummary] = []
     if not EPISODES.exists():
         return out
+    # One git ls-tree for the whole list; each episode's sync dot is measured
+    # against what's pushed to the remote (lazy import avoids a module cycle).
+    from . import gitsync
+    pushed = gitsync.pushed_tree()
     for entry in sorted(EPISODES.iterdir(), key=lambda p: p.name):
         if not entry.is_dir():
             continue
@@ -73,8 +77,6 @@ def list_episodes() -> list[EpisodeSummary]:
             if derived:
                 season, episode_num = derived
         label = se_label(season, episode_num) if season and episode_num else None
-        # Lazy import avoids a module-level cycle (gitsync imports episode_dir).
-        from . import gitsync
         out.append(
             EpisodeSummary(
                 slug=entry.name,
@@ -84,7 +86,7 @@ def list_episodes() -> list[EpisodeSummary]:
                 season=season,
                 episode_num=episode_num,
                 se_label=label,
-                synced=gitsync.sync_status(entry.name),
+                synced=gitsync.sync_status(entry.name, pushed),
             )
         )
     return out
