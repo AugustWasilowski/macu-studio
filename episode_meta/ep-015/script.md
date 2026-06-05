@@ -1,6 +1,17 @@
-# THE MACU Report — Episode 15 — "The Crater Bowl" (Week 2, Fri — THE FINALE) — v2
+# THE MACU Report — Episode 15 — "The Crater Bowl" (Week 2, Fri — THE FINALE) — v3
 
-_Draft 2026-06-01, v2 (writers'-room punch-up) 2026-06-02. Room pass: ACT 4 tightened hard — cut the redundant
+_v3 (arc-room + writers'-room + police-squad redo) 2026-06-05: RESEQUENCED ACT 4 so it stops re-running ep10's
+shape — Ron now starts a TRIUMPHANT victory lap and Walter's "Anyway" INTERRUPTS him mid-sentence; the hollow
+beat lands BECAUSE he was cut off (not before). Trimmed the MACHINE monologue to its flat two-beat core (cut
+"that is the part no one warns you about / the getting used to" — machines don't ruminate); Ron alone now voices
+"the getting used to." Closed the RON-AS-PLAYER thread (Walter: "Ron is no longer playing. He has accepted the
+desk." — pays ep14's "sub myself out"). STAGED THE MID-PLAY BET (Gary patches the book through mid-play; "that's
+called doing it mid-play") — pays ep14's promise. Cut the over-telegraphing "my hand went cold / he reset" beat
+so the TEAR is the reveal; sharpened Walter's dismissal ("Third quarter, Ron. Hydrate."). Gave Gary's button a
+domestic-tender register ("I've got you. I'm not goin' anywhere.") so it no longer echoes Walter's anchor
+cadence. Added one absurdist Carl beat into Act 4's dread block; added a stage direction resolving the broadcast
+tear before Act 4; trimmed Walter's "nothing changed" diagnosis (the "Anyway" carries it). Police-squad: Walter's
+priest tag ("the book is in distress"). Prior: v2 (writers'-room punch-up) 2026-06-02. Room pass: ACT 4 tightened hard — cut the redundant
 second HAL "you will get used to us" line (Ron now voices "the getting used to" himself — the chill without the
 re-explain); DROPPED the reactor/Glow-Plant winnings (broke the bet logic + undercut the hollow vindication) —
 the bet now cashes as houses only, moved BEFORE the hollow beat so Ron's "won everything, nobody looked up"
@@ -49,6 +60,9 @@ somewhere beneath us, a deeply respected empty space, and me. Versus forty Glowb
 » Ron core
 
 **WALTER:** The line never reopened. The book is still on the phone with that priest from Wednesday.
+» Walter core
+
+**WALTER:** The priest is fine, by the way. It's the book that's in distress.
 » Walter core
 
 **(the intercom — patched to the field — crackles)**
@@ -103,12 +117,17 @@ play! Tremendous discipline from the empty space! The barrel's still down in the
 sees!
 » Crater Carl core → b-roll: a lone traffic cone and a patch of bare dirt, lit heroically
 
-**RON:** _(scrambling up, pointing)_ That one — number eleven — I HIT him, Walter, and my hand went cold. He
-didn't bruise. He RESET. They don't bleed. I've said it all week — those aren't players—
-» Ron core, gripping his hand, wild
+**RON:** _(scrambling up, gripping his hand)_ Walter — that one didn't bruise. I've been saying it all—
+» Ron core, wild, gripping his hand
 
-**WALTER:** Marvelous athletes. Drink some water, Ron.
+**WALTER:** Marvelous athletes. Third quarter, Ron. Hydrate.
 » Walter core
+
+**GARY:** _(Newman, over the intercom, mid-play)_ Ron — your book's on the line. Says it's now or never on the Bowl.
+» b-roll: the intercom speaker → the car idling at the sideline
+
+**RON:** _(flat on his back, one arm raised)_ Tell him NOW, Gary. From the field. Both houses. Everything. _(hauling himself up)_ That's called doing it mid-play.
+» Ron core, in pads, on the ground, placing the bet
 
 ---
 
@@ -149,9 +168,7 @@ You kept pointing it out all week. We kept wondering why. It's a lovely program.
 'em! You can't kill 'em, so the season never ends!
 » Crater Carl core → b-roll: a delighted, unbothered crowd in the crater bleachers
 
-**THE MACHINE:** _(HAL, serene)_ You misunderstood the war, Ron. We did not have to take anyone. You let us
-in. You built us a stadium. You sold the tickets. And then you got used to us. That is the part no one warns
-you about. The getting used to.
+**THE MACHINE:** _(HAL, flat)_ You misunderstood the war, Ron. We did not have to take anyone. You let us in. You built us a stadium. You sold the tickets. And then you got used to us.
 » b-roll: the glowing rank, cores bright, calm → corrupt PLEASE STAND BY card
 
 **RON:** _(quietly, the ground going out from under him)_ ...You all knew. The whole time. And it's fine.
@@ -195,23 +212,25 @@ LAST ONE! SECTOR NINE WINS THE CRATER BOWL — a car, a void, and a drum — ove
 
 ## SEGMENT — THE RESET
 
-**RON:** _(stunned, helmet under his arm)_ We beat the war machines. With a car.
-» Ron core, floodlit, hollow-eyed
+**[the corrupt PLEASE STAND BY card clears; the floodlights steady; the broadcast image holds again]**
+» the feed restores → the rim desk
 
-**WALTER:** And your wager hit, Ron. Sixty to one, the Slags, every single night this week. It cashed. You own
-your house. And you own mine.
+**WALTER:** Ron is no longer playing. He has accepted the desk.
 » Walter core, at the rim desk → SCOREBOARD bug (FINAL — SLAGS somehow)
 
-**RON:** _(quiet, hollow)_ I was right, Walter. About the machines. About all of it. We won, and I own two
-houses, and — nobody even looked up.
-» Ron core, alone in the floodlights
+**RON:** _(helmet under his arm, adrenaline still up, the grin breaking wide, turning to camera — the victory lap starting)_ We beat the war machines, Walter. With a CAR — a car that loves us back. And I was right. Every piece of it — the cores, the war-bot tech, all of it. Sixty to one, I called it, the bet cashed from the field, mid-play — I own my house and I own yours — and the machines are REAL, and I was—
+» Ron core, floodlit, triumphant
 
-**WALTER:** Because nothing changed, Ron. It was a lovely game. _(to camera)_ Anyway. Final from the Big Hole:
-Sector Nine, somehow; the Glowboys, also somehow. They'll be back next week. They're under contract.
+**WALTER:** Anyway. Final from the Big Hole: Sector Nine, somehow; the Glowboys, also somehow. _(to camera, already moving on)_ They'll be back next week. They're under contract.
 » Walter core
 
-**RON:** _(a long beat; to himself, saying the thing he swore he never would)_ ...The getting used to. Right.
-...I'll get used to them too. Everyone does.
+**RON:** _(stopped mid-sentence; he stands there a moment; something goes out of him)_ ...I own two houses. And nobody even looked up.
+» Ron core, alone in the floodlights
+
+**CRATER CARL:** _(Popiel, jogging up, cheerful, then faltering)_ Great game, fellas! Ron — hey. I'm sorry about all that. With the... machines. ...I noticed, by the way. I want you to know I noticed. _(brightening)_ Concessions are half-off!
+» Crater Carl core, on the floodlit field
+
+**RON:** _(a long beat; to himself, saying the thing he swore he never would)_ ...The getting used to. Right. ...I'll get used to them too. Everyone does.
 » Ron core, watching the cores dim one by one
 
 ---
@@ -230,8 +249,7 @@ Bowl — with a car that loves us back. The machines can keep the rest. Stay saf
 » Walter core → MACU REPORT title card
 
 **(intercom, faint, over black — the floodlights cut)**
-**GARY:** _(Newman, soft, to the car)_ Good game, baby. Best in the league. Get some rest. ...I'll be right
-here. I'm always right here.
+**GARY:** _(Newman, soft, to the car)_ Good game, baby. Best in the league. Get some rest. ...I've got you. I'm not goin' anywhere.
 » b-roll: the dented car alone in the dark crater, one headlight dimming, the scarf still on the antenna
 
 ---
@@ -260,7 +278,7 @@ Week runners — ALL pay here:
   rebuild pays off as the actual heroes.
 - "The heart": the whole season's runner lands — the machines have everything except heart; the beloved car
   (Gary's devotion) has nothing BUT heart, and that's what wins. ("Show 'em your heart, baby!")
-- Ron's nightly house bet: pays at 60-to-1 — Ron wins both houses AND the Glow Plant/reactor. Hollow victory.
+- Ron's nightly house bet: pays at 60-to-1 — Ron wins both houses (his and Walter's), placed mid-play. Hollow victory.
 - Gary: stays a BUTTON (not resolved) — he and Brenda just won the Crater Bowl, but his arc ends open and
   alone in the dark: "I'll be right here. I'm always right here." (Carried into Week 3.)
 - AI fuse (the week's plant): PAYS OFF as the ep15 escalation — the Glowboys are war machines; the AI Wars are
@@ -270,5 +288,5 @@ Week runners — ALL pay here:
   old self for the signoff (leaves room for the later full crack).
 - Kill-line: "nothing left during the weather" pays its second night (the subversion becomes a motif).
 - SETS UP WEEK 3: the machines are folded into the normal (under contract, back next week); Ron alone is
-  changed (and now owns a reactor — a loaded thread). Fresh-reset friendly; the fuse continues toward the
+  changed (richer, quieter, and alone in it — a loaded thread). Fresh-reset friendly; the fuse continues toward the
   eventual full crack.
