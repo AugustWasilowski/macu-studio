@@ -173,14 +173,24 @@ export function Timeline({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
-      {/* PREVIEW MONITOR — the rendered final video, click a cue to play from there */}
-      <section className="panel flex items-stretch gap-3 p-2">
-        <div className="bg-black hairline-soft rounded overflow-hidden grid place-items-center flex-none" style={{ width: 200, height: 200 }}>
+      {/* PREVIEW MONITOR — large; click a cue (or the ruler) to play from there */}
+      <section className="panel flex flex-col min-h-0 flex-1 p-2 gap-2">
+        <div className="flex items-center justify-between">
+          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click any cue to play from there · overlay edits show after a re-render</span></div>
+          <div className="flex items-center gap-3">
+            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>
+              {playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}
+            </button>
+            <span className="font-mono tabular-nums text-[12px]">{fmt(playT)} <span className="text-txt-faint">/ {fmt(dur)}</span></span>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 bg-black hairline-soft rounded grid place-items-center overflow-hidden">
           {finalExists ? (
             <video
               ref={videoRef}
               src={mediaUrl.finalVideo(slug)}
-              className="w-full h-full object-contain"
+              className="max-w-full object-contain"
+              style={{ height: "100%" }}
               playsInline
               onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)}
               onPlay={() => setPlaying(true)}
@@ -188,26 +198,12 @@ export function Timeline({ slug }: { slug: string }) {
               onEnded={() => setPlaying(false)}
             />
           ) : (
-            <div className="text-txt-faint text-[11px] text-center px-2">No rendered video yet — run the episode to preview.</div>
+            <div className="text-txt-faint text-[12px] text-center px-3">No rendered video yet — run the episode (Assembly → Run) to enable the synced preview.</div>
           )}
-        </div>
-        <div className="flex flex-col justify-between flex-1 min-w-0">
-          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click any cue to play from there</span></div>
-          <div className="flex items-center gap-3">
-            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>
-              {playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}
-            </button>
-            <span className="font-mono tabular-nums text-[12px]">{fmt(playT)} <span className="text-txt-faint">/ {fmt(dur)}</span></span>
-          </div>
-          <div className="text-txt-faint text-[11px]">
-            {finalExists
-              ? "Preview is the last rendered cut — overlay edits show after a re-render."
-              : "Render the episode (Assembly → Run) to enable the synced preview."}
-          </div>
         </div>
       </section>
 
-      <section className="panel flex flex-col min-h-0 flex-1">
+      <section className="panel flex flex-col flex-none">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card onto the graphics track · click a cue to play · drag/resize bars to retime</span></div>
           <div className="flex items-center gap-2 text-[11px]">
@@ -220,7 +216,7 @@ export function Timeline({ slug }: { slug: string }) {
 
         <div
           ref={scrollRef}
-          className="overflow-x-auto overflow-y-hidden flex-1"
+          className="overflow-x-auto overflow-y-hidden"
           onPointerMove={onMove}
           onPointerUp={endDrag}
           onPointerLeave={endDrag}

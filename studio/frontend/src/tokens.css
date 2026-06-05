@@ -247,3 +247,19 @@ body {
 .toast.run { border-color: rgba(0, 229, 255, 0.45); color: var(--cyan); }
 .toast.info { border-color: rgba(245, 166, 35, 0.45); color: var(--amber); }
 .toast.err { border-color: rgba(255, 77, 77, 0.45); color: var(--red); }
+
+/* Themed scrollbars (override the browser default app-wide) */
+* {
+  scrollbar-width: thin;                       /* Firefox */
+  scrollbar-color: var(--bg-3) var(--bg-1);    /* thumb track (Firefox) */
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--bg-1); }
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border: 2px solid var(--bg-1);               /* inset so the thumb reads as a pill */
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(245, 166, 35, 0.55); } /* amber on hover */
+::-webkit-scrollbar-thumb:active { background: var(--amber); }
+::-webkit-scrollbar-corner { background: var(--bg-1); }
