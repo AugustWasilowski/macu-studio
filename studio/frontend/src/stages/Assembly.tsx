@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api, jobStreamUrl, mediaUrl } from "../api";
-import { useStore } from "../store";
+import { useStore, DEFAULT_RUN } from "../store";
 import { Badge, Dot } from "../components/Badge";
 import { IDL, IFolder, IRegen } from "../components/Icons";
 import type { PipelineEvent, PipelineStage, StageKey } from "../types";
@@ -27,70 +27,63 @@ export function Assembly({ slug }: { slug: string }) {
     queryFn: () => api.srt(slug),
   });
 
-  // SSE-driven live overlay on top of the at-rest pipeline snapshot
-  const [live, setLive] = useState<Record<StageKey, "running" | "done" | "failed" | null>>(() =>
-    Object.fromEntries(STAGE_KEYS.map((k) => [k, null])) as any
-  );
-  const [logLines, setLogLines] = useState<string[]>([]);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
+  // Run state lives in the store (keyed by slug) so the log tail + stage state
+  // survive leaving the Assembly tab. On return the SSE reconnects from `seen`
+  // (?since=) — no replayed or missed events.
+  const runState = useStore((s) => s.runs[slug]) ?? DEFAULT_RUN;
+  const resetRun = useStore((s) => s.resetRun);
+  const patchRun = useStore((s) => s.patchRun);
+  const appendRunLog = useStore((s) => s.appendRunLog);
+  const setRunLive = useStore((s) => s.setRunLive);
+  const live = runState.live;
+  const logLines = runState.logLines;
+  const running = runState.running;
+
+  // On mount / slug change, re-attach to an in-progress render (after a reload, or
+  // one started from another tab/CLI) so the log tail rebuilds from the job's events.
+  useEffect(() => {
+    let alive = true;
+    api.activePipelineJob(slug).then((r) => {
+      if (!alive || !r.job_id) return;
+      if (useStore.getState().runs[slug]?.jobId === r.job_id) return; // already tracking it
+      patchRun(slug, { jobId: r.job_id, running: true, seen: 0, logLines: [], live: {} });
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [slug, patchRun]);
 
   useEffect(() => {
-    if (!jobId) return;
-    const es = new EventSource(jobStreamUrl(jobId));
+    if (!runState.jobId || !runState.running) return;
+    const sinceAtOpen = useStore.getState().runs[slug]?.seen ?? 0;
+    const es = new EventSource(jobStreamUrl(runState.jobId, sinceAtOpen));
     const ts = () => new Date().toLocaleTimeString("en-GB", { hour12: false });
-    const push = (line: string) => setLogLines((L) => [...L.slice(-200), line]);
     es.onmessage = (m) => {
       let ev: PipelineEvent;
       try { ev = JSON.parse(m.data); } catch { return; }
+      const seen = (useStore.getState().runs[slug]?.seen ?? 0) + 1;
       const n = (ev.n ?? 0) as number;
       const k = STAGE_KEYS[n - 1];
-      if (ev.kind === "stage.started" && k) {
-        setLive((s) => ({ ...s, [k]: "running" }));
-        push(`[${ts()}] stage ${n} ${ev.name} STARTED`);
-      } else if (ev.kind === "stage.done" && k) {
-        setLive((s) => ({ ...s, [k]: "done" }));
-        push(`[${ts()}] stage ${n} ${ev.name} done (${ev.wall_s}s)`);
-        // Invalidate downstream queries — pipeline status + final at minimum
-        qc.invalidateQueries({ queryKey: ["pipeline", slug] });
-      } else if (ev.kind === "stage.error" && k) {
-        setLive((s) => ({ ...s, [k]: "failed" }));
-        push(`[${ts()}] ERROR stage ${n} ${ev.name}: ${ev.error}`);
-      } else if (ev.kind === "job.done") {
-        push(`[${ts()}] JOB DONE — ${(ev as any).final ?? ""}`);
-        setRunning(false);
-        qc.invalidateQueries({ queryKey: ["pipeline", slug] });
-        qc.invalidateQueries({ queryKey: ["final", slug] });
-        qc.invalidateQueries({ queryKey: ["srt", slug] });
-      } else if (ev.kind === "job.error") {
-        push(`[${ts()}] JOB ERROR: ${ev.error}`);
-        setRunning(false);
-      } else if (ev.kind === "job.started") {
-        push(`[${ts()}] job started slug=${(ev as any).slug} from=${(ev as any).from_stage ?? 1}`);
-      }
+      let line = "";
+      if (ev.kind === "stage.started" && k) { setRunLive(slug, k, "running"); line = `[${ts()}] stage ${n} ${ev.name} STARTED`; }
+      else if (ev.kind === "stage.done" && k) { setRunLive(slug, k, "done"); line = `[${ts()}] stage ${n} ${ev.name} done (${ev.wall_s}s)`; qc.invalidateQueries({ queryKey: ["pipeline", slug] }); }
+      else if (ev.kind === "stage.error" && k) { setRunLive(slug, k, "failed"); line = `[${ts()}] ERROR stage ${n} ${ev.name}: ${ev.error}`; }
+      else if (ev.kind === "job.done") { line = `[${ts()}] JOB DONE — ${(ev as any).final ?? ""}`; patchRun(slug, { running: false }); qc.invalidateQueries({ queryKey: ["pipeline", slug] }); qc.invalidateQueries({ queryKey: ["final", slug] }); qc.invalidateQueries({ queryKey: ["srt", slug] }); }
+      else if (ev.kind === "job.error") { line = `[${ts()}] JOB ERROR: ${ev.error}`; patchRun(slug, { running: false }); }
+      else if (ev.kind === "job.started") { line = `[${ts()}] job started slug=${(ev as any).slug} from=${(ev as any).from_stage ?? 1}`; }
+      if (line) appendRunLog(slug, line, seen); else patchRun(slug, { seen });
     };
-    es.addEventListener("end", () => {
-      es.close();
-    });
-    es.onerror = () => {
-      // browser auto-reconnects; we mostly just note it
-    };
+    es.addEventListener("end", () => es.close());
     return () => { es.close(); };
-  }, [jobId, qc, slug]);
+  }, [slug, runState.jobId, runState.running, qc, patchRun, appendRunLog, setRunLive]);
 
   const run = useMutation({
     mutationFn: (body: { from_stage?: number; only?: number }) => api.run(slug, body),
-    onMutate: () => {
-      setLive(Object.fromEntries(STAGE_KEYS.map((k) => [k, null])) as any);
-      setLogLines([]);
-      setRunning(true);
-    },
+    onMutate: () => resetRun(slug),
     onSuccess: (r) => {
-      setJobId(r.job_id);
+      patchRun(slug, { jobId: r.job_id });
       push("RUN queued (" + r.job_id + ")", "run");
     },
     onError: (e: Error) => {
-      setRunning(false);
+      patchRun(slug, { running: false });
       push("Render failed: " + e.message, "err");
     },
   });

@@ -15,6 +15,20 @@ export interface LogEntry {
 
 const LOG_CAP = 300;
 
+// Per-episode Assembly run state — lives in the store (not the component) so the
+// log tail + stage state survive navigating away from the Assembly tab. `seen` is
+// the count of render-server events consumed, used to reconnect the SSE from where
+// we left off (?since=seen) instead of replaying or losing events.
+export type StageStatus = "running" | "done" | "failed" | null;
+export interface AssemblyRun {
+  jobId: string | null;
+  running: boolean;
+  seen: number;
+  logLines: string[];
+  live: Record<string, StageStatus>;
+}
+export const DEFAULT_RUN: AssemblyRun = { jobId: null, running: false, seen: 0, logLines: [], live: {} };
+
 interface State {
   drawerOpen: boolean;
   logOpen: boolean;
@@ -27,6 +41,7 @@ interface State {
   selectedTitleKey: string | null;
   playingKey: string | null;
   busy: Record<string, boolean>;
+  runs: Record<string, AssemblyRun>;
 }
 
 interface Actions {
@@ -48,6 +63,10 @@ interface Actions {
   selectTitle: (key: string | null) => void;
   setPlaying: (key: string | null) => void;
   setBusy: (key: string, on: boolean) => void;
+  resetRun: (slug: string) => void;
+  patchRun: (slug: string, partial: Partial<AssemblyRun>) => void;
+  appendRunLog: (slug: string, line: string, seen: number) => void;
+  setRunLive: (slug: string, key: string, status: StageStatus) => void;
 }
 
 let toastSeq = 1;
@@ -64,6 +83,7 @@ export const useStore = create<State & Actions>((set) => ({
   selectedTitleKey: null,
   playingKey: null,
   busy: {},
+  runs: {},
 
   // Opening one right-hand drawer closes the others so they don't overlap.
   openDrawer: () => set({ drawerOpen: true, logOpen: false, terminalOpen: false }),
@@ -92,4 +112,14 @@ export const useStore = create<State & Actions>((set) => ({
   selectTitle: (key) => set({ selectedTitleKey: key }),
   setPlaying: (key) => set({ playingKey: key }),
   setBusy: (key, on) => set((s) => ({ busy: { ...s.busy, [key]: on } })),
+  resetRun: (slug) => set((s) => ({ runs: { ...s.runs, [slug]: { ...DEFAULT_RUN, running: true } } })),
+  patchRun: (slug, partial) => set((s) => ({ runs: { ...s.runs, [slug]: { ...(s.runs[slug] ?? DEFAULT_RUN), ...partial } } })),
+  appendRunLog: (slug, line, seen) => set((s) => {
+    const r = s.runs[slug] ?? DEFAULT_RUN;
+    return { runs: { ...s.runs, [slug]: { ...r, seen, logLines: [...r.logLines.slice(-300), line] } } };
+  }),
+  setRunLive: (slug, key, status) => set((s) => {
+    const r = s.runs[slug] ?? DEFAULT_RUN;
+    return { runs: { ...s.runs, [slug]: { ...r, live: { ...r.live, [key]: status } } } };
+  }),
 }));

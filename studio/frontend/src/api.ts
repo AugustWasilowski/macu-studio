@@ -76,6 +76,8 @@ export const api = {
     fetch(`/api/episodes/${slug}/titles`).then((r) => J<{ titles: TitleAsset[] }>(r)),
   pipeline: (slug: string) =>
     fetch(`/api/episodes/${slug}/pipeline`).then((r) => J<{ stages: PipelineStage[] }>(r)),
+  activePipelineJob: (slug: string) =>
+    fetch(`/api/episodes/${slug}/pipeline/active`).then((r) => J<{ job_id: string | null }>(r)),
   final: (slug: string) =>
     fetch(`/api/episodes/${slug}/final`).then((r) => J<FinalInfo>(r)),
   srt: (slug: string) =>
@@ -129,4 +131,4 @@ export const mediaUrl = {
     `/api/episodes/${slug}/final/thumb`,
 };
 
-export const jobStreamUrl = (jobId: string) => `/api/jobs/${jobId}/stream`;
+export const jobStreamUrl = (jobId: string, since = 0) => `/api/jobs/${jobId}/stream?since=${since}`;

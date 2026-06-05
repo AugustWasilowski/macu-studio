@@ -208,6 +208,19 @@ def get_pipeline_status(slug: str):
     return {"stages": manifest_mod.episode_pipeline_status(slug)}
 
 
+@app.get("/api/episodes/{slug}/pipeline/active")
+async def get_pipeline_active(slug: str):
+    """The currently-running render job id for this episode (or null) — lets the
+    Assembly tab re-attach to an in-progress render after a reload / from another
+    tab and rebuild its log tail by streaming the job's events."""
+    try:
+        jobs = (await pipeline_mod.jobs_list()).get("jobs", [])
+    except Exception:
+        jobs = []
+    running = next((j for j in jobs if j.get("slug") == slug and j.get("state") == "running"), None)
+    return {"job_id": running["id"] if running else None}
+
+
 @app.get("/api/episodes/{slug}/final")
 def get_final_info(slug: str):
     return manifest_mod.final_info(slug)
