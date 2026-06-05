@@ -1,6 +1,14 @@
-# THE MACU Report — Episode 12 — "Tale of the Tape" (Week 2, Tue — Road to the Crater Bowl) — v2
+# THE MACU Report — Episode 12 — "Tale of the Tape" (Week 2, Tue — Road to the Crater Bowl) — v3
 
-_Draft 2026-06-01, v2 (writers'-room punch-up) 2026-06-01. ~7 min. Room pass fixed: scout now CAUSES the bench
+_v3 (arc-room + writers'-room + police-squad redo) 2026-06-04: DE-SIGNALED the Phoenix ad ("find us" / "ask for
+Fern", not "signal") per the no-Signal reset; added a WALTER RE-ENTRY TOSS after the bumper before Ron goes
+operational (eases the ad seam); DIFFERENTIATED the AI-fuse beat — Norm now cheerfully CONFIRMS the war-bot core
+("same Mark Four series… friendlier!") so the three fuse nights aren't an identical Ron-alarms/Walter-breezes
+formula; planted Ron's ANTI-NORMALIZATION manifesto ("the day somebody calls those things just another team…
+we've already lost — on the record") so ep15's "I'll get used to them too" betrays a stance; fixed the
+"cowards"→"ringers" logic slip; MUTATED the house bet (Walter "…He will." resignation); WEATHER now buttons on
+the instruments-declined line, not the "mild" tagline; police-squad beats added. Prior: v2 (writers'-room
+punch-up) 2026-06-01. ~7 min. Room pass fixed: scout now CAUSES the bench
 ("forty glowing machines… get my last Slag in here"); Carl gets a button (Walter forgets his name); the Slag
 foreshadows his own exit ("maybe I'll just walk it"); odds jump is now caused ("listed as questionable,
 personal reasons"); weather got an extra absurd specific; signoff reworked so Walter's "he left during the
@@ -61,9 +69,15 @@ free performance enhancement, courtesy of the Plant. They don't tire. They don't
 people. Mostly.
 » Norm core, relaxed thumbs-up at the cooling tower
 
-**RON:** Forty glowing cowards. My guy has heart. _(squinting at the monitor)_ Wait. That's a dark-energy
+**RON:** Forty glowing ringers. My guy has heart. _(squinting at the monitor)_ Wait. That's a dark-energy
 core. Walter, that's the reactor they put in the war bots. That's the same machine. It's the same—
 » Ron core, alarmed, pointing at the monitor
+
+**NORM:** _(Howie, delighted)_ Oh, the core? Same series as the old Mark Four war units, yeah! Ours just play football. Friendlier!
+» Norm core, cheerful thumbs-up at the cooling tower
+
+**RON:** _(low, to camera)_ The day somebody calls those things just another team and moves on — that's the day we've already lost, MACU. I want that on the record.
+» Ron core, to camera
 
 **WALTER:** And they're favored by forty. Thank you, Norm — and thank you to the manic fellow beside him,
 whoever he was. Lovely glow.
@@ -77,10 +91,13 @@ whoever he was. Lovely glow.
 gifts — remedies for this unforgiving era. With Phoenix, a mere weed becomes a lifeline.
 » b-roll: a dim apothecary, shelves of dried herbs and jars, soft light
 
-**FERN:** _(Laura)_ Embrace nature's resilience. Signal us today for a free, no-obligation consultation on your
-journey to wellness. Eight six seven, five three oh nine. One signal is all it takes. That's the Phoenix
-Promise.
-» b-roll: hands grinding dried herbs in a stone bowl → MACU REPORT bumper
+**FERN:** _(Laura)_ Embrace nature's resilience. Find us today for a free, no-obligation consultation on your
+journey to wellness. Eight six seven, five three oh nine. Ask for Fern. Tell her the ash sent you. That's the
+Phoenix Promise.
+» b-roll: hands grinding dried herbs in a stone bowl
+
+**FERN:** _(Laura, same beatific register)_ Phoenix Apothecary is not responsible for outcomes consistent with being in the wasteland.
+» b-roll: the apothecary shelf, soft light → MACU REPORT bumper
 
 **RON:** _(leaning in, hopeful)_ Phoenix Apothecary. Quick question — can you regrow a man? ...Half a man? I
 have a tooth, a dream, and three days.
@@ -89,6 +106,9 @@ have a tooth, a dream, and three days.
 ---
 
 ## SEGMENT 2 — SAVE THE LAST SLAG
+
+**WALTER:** _(settling)_ We're back. The Slags' situation has, in the past ninety seconds, deteriorated.
+» Walter core, returning from break
 
 **RON:** Forty glowing machines, Walter. And one of him. I'm not risking it. Get my last Slag in here — now.
 » Ron core, urgent
@@ -120,6 +140,9 @@ at the studio door)_ ...Crater's nice this time of year, though. Maybe I'll just
 **WALTER:** _(flat)_ He seems at peace, Ron.
 » Walter core
 
+**WALTER:** Coach Bodhi has coached eleven seasons. He has never lost a player to injury.
+» Walter core, settling his papers
+
 ---
 
 ## SEGMENT 3 — THE LINE (odds heighten)
@@ -132,7 +155,7 @@ to one half.
 **RON:** Put my house on the Slags. Again.
 » Ron core, sliding the key across the desk
 
-**WALTER:** Ron, it is Tuesday.
+**WALTER:** _(a beat)_ ...He will. Ron, it is Tuesday.
 » Walter core
 
 **RON:** And I'll do it again Wednesday. I told you. That's consistency.
@@ -151,8 +174,7 @@ real happy out here. She says hi.
 ## WEATHER
 
 **WALTER:** Friday's forecast for the Big Hole: ashfall, a chance of structural collapse, a forty percent
-chance of glow, and a barometric reading the instruments have politely declined to confirm. Conditions: mild.
-Perfect Crater Bowl weather.
+chance of glow, conditions: mild — and a barometric reading the instruments have politely declined to confirm.
 » Walter core → MACU WEATHER card → b-roll: weather map
 
 ---

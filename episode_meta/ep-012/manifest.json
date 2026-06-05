@@ -118,7 +118,6 @@
           "c06",
           "c07",
           "c08",
-          "c09",
           "c10"
         ],
         "max_seconds": 34,
@@ -322,12 +321,6 @@
       "shots": [
         {
           "id": "c03_s1",
-          "kind": "character",
-          "who": "ron_cheer",
-          "seed": 77777
-        },
-        {
-          "id": "c03_s2",
           "kind": "title",
           "asset": "the_crater_bowl"
         }
@@ -343,11 +336,6 @@
           "id": "c04_s1",
           "kind": "broll",
           "who": "intercom_speaker"
-        },
-        {
-          "id": "c04_s2",
-          "kind": "broll",
-          "who": "parking_lot_car"
         }
       ]
     },
@@ -373,17 +361,11 @@
       "shots": [
         {
           "id": "c06_s1",
-          "kind": "character",
-          "who": "walter_toss",
-          "seed": 24601
-        },
-        {
-          "id": "c06_s2",
           "kind": "title",
           "asset": "tale_of_the_tape"
         },
         {
-          "id": "c06_s3",
+          "id": "c06_s2",
           "kind": "broll",
           "who": "glow_plant_tower"
         }
@@ -397,12 +379,6 @@
       "shots": [
         {
           "id": "c07_s1",
-          "kind": "character",
-          "who": "carl_manic",
-          "seed": 6161
-        },
-        {
-          "id": "c07_s2",
           "kind": "broll",
           "who": "glowboys_row"
         }
@@ -423,23 +399,25 @@
       ]
     },
     {
-      "id": "c09",
+      "id": "c34",
       "segment": "scout",
       "speaker": "RON",
-      "vo": "Forty glowing cowards. My guy has heart. Wait. That's a dark-energy core. Walter, that's the reactor they put in the war bots. That's the same machine. It's the same—",
-      "shots": [
-        {
-          "id": "c09_s1",
-          "kind": "character",
-          "who": "ron_alarmed",
-          "seed": 77777
-        },
-        {
-          "id": "c09_s2",
-          "kind": "broll",
-          "who": "reactor_core"
-        }
-      ]
+      "vo": "Forty glowing ringers. My guy has heart. Wait. That's a dark-energy core. Walter, that's the reactor they put in the war bots. That's the same machine. It's the same—",
+      "shots": []
+    },
+    {
+      "id": "c35",
+      "segment": "scout",
+      "speaker": "NORM",
+      "vo": "Oh, the core? Same series as the old Mark Four war units, yeah! Ours just play football. Friendlier!",
+      "shots": []
+    },
+    {
+      "id": "c36",
+      "segment": "scout",
+      "speaker": "RON",
+      "vo": "The day somebody calls those things just another team and moves on — that's the day we've already lost, MACU. I want that on the record.",
+      "shots": []
     },
     {
       "id": "c10",
@@ -463,30 +441,31 @@
       "shots": [
         {
           "id": "c11_s1",
-          "kind": "character",
-          "who": "fern_apothecary",
-          "seed": 4646
-        },
-        {
-          "id": "c11_s2",
           "kind": "broll",
-          "who": "apothecary_shelf"
+          "who": "parking_lot_car_dim"
         }
       ]
     },
     {
-      "id": "c12",
+      "id": "c37",
       "segment": "ad",
       "speaker": "FERN",
-      "vo": "Embrace nature's resilience. Signal us today for a free, no-obligation consultation on your journey to wellness. Eight six seven, five three oh nine. One signal is all it takes. That's the Phoenix Promise.",
+      "vo": "Embrace nature's resilience. Find us today for a free, no-obligation consultation on your journey to wellness. Eight six seven, five three oh nine. Ask for Fern. Tell her the ash sent you. That's the Phoenix Promise.",
+      "shots": []
+    },
+    {
+      "id": "c38",
+      "segment": "ad",
+      "speaker": "FERN",
+      "vo": "Phoenix Apothecary is not responsible for outcomes consistent with being in the wasteland.",
       "shots": [
         {
-          "id": "c12_s1",
+          "id": "c38_s1",
           "kind": "broll",
-          "who": "apothecary_grind"
+          "who": "apothecary_shelf"
         },
         {
-          "id": "c12_s2",
+          "id": "c38_s2",
           "kind": "title",
           "asset": "macu_report_bumper"
         }
@@ -505,6 +484,13 @@
           "seed": 77777
         }
       ]
+    },
+    {
+      "id": "c39",
+      "segment": "slag",
+      "speaker": "WALTER",
+      "vo": "We're back. The Slags' situation has, in the past ninety seconds, deteriorated.",
+      "shots": []
     },
     {
       "id": "c14",
@@ -528,12 +514,6 @@
       "shots": [
         {
           "id": "c15_s1",
-          "kind": "character",
-          "who": "walter_dry",
-          "seed": 24601
-        },
-        {
-          "id": "c15_s2",
           "kind": "broll",
           "who": "desk_with_player"
         }
@@ -618,7 +598,7 @@
         {
           "id": "c21_s1",
           "kind": "character",
-          "who": "last_slag_door",
+          "who": "last_slag",
           "seed": 1515
         }
       ]
@@ -636,6 +616,13 @@
           "seed": 24601
         }
       ]
+    },
+    {
+      "id": "c40",
+      "segment": "slag",
+      "speaker": "WALTER",
+      "vo": "Coach Bodhi has coached eleven seasons. He has never lost a player to injury.",
+      "shots": []
     },
     {
       "id": "c23",
@@ -671,18 +658,11 @@
       ]
     },
     {
-      "id": "c25",
+      "id": "c41",
       "segment": "line",
       "speaker": "WALTER",
-      "vo": "Ron, it is Tuesday.",
-      "shots": [
-        {
-          "id": "c25_s1",
-          "kind": "character",
-          "who": "walter_monday",
-          "seed": 24601
-        }
-      ]
+      "vo": "...He will. Ron, it is Tuesday.",
+      "shots": []
     },
     {
       "id": "c26",
@@ -708,11 +688,6 @@
           "id": "c27_s1",
           "kind": "broll",
           "who": "intercom_speaker"
-        },
-        {
-          "id": "c27_s2",
-          "kind": "broll",
-          "who": "parking_lot_car_lit"
         }
       ]
     },
@@ -731,24 +706,18 @@
       ]
     },
     {
-      "id": "c29",
+      "id": "c42",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "Friday's forecast for the Big Hole: ashfall, a chance of structural collapse, a forty percent chance of glow, and a barometric reading the instruments have politely declined to confirm. Conditions: mild. Perfect Crater Bowl weather.",
+      "vo": "Friday's forecast for the Big Hole: ashfall, a chance of structural collapse, a forty percent chance of glow, conditions: mild — and a barometric reading the instruments have politely declined to confirm.",
       "shots": [
         {
-          "id": "c29_s1",
-          "kind": "character",
-          "who": "walter_weather",
-          "seed": 24601
-        },
-        {
-          "id": "c29_s2",
+          "id": "c42_s1",
           "kind": "title",
           "asset": "macu_weather"
         },
         {
-          "id": "c29_s3",
+          "id": "c42_s2",
           "kind": "broll",
           "who": "weather_map"
         }
@@ -790,12 +759,6 @@
       "shots": [
         {
           "id": "c32_s1",
-          "kind": "character",
-          "who": "ron_moved",
-          "seed": 77777
-        },
-        {
-          "id": "c32_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -810,7 +773,7 @@
         {
           "id": "c33_s1",
           "kind": "broll",
-          "who": "parking_lot_car_dim"
+          "who": "parking_lot_car"
         }
       ]
     }
