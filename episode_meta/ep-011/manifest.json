@@ -104,7 +104,7 @@
           "c02",
           "c03"
         ],
-        "max_seconds": 14
+        "max_seconds": 19
       },
       {
         "name": "sports",
@@ -112,8 +112,7 @@
         "cues": [
           "c19",
           "c20",
-          "c21",
-          "c22"
+          "c21"
         ],
         "max_seconds": 34,
         "gain": 0.2,
@@ -132,67 +131,7 @@
     ],
     "note": "Intro + a hotter sports bed under the live game + outro. Rest plays dry."
   },
-  "sfx": {
-    "enabled": true,
-    "source_dir": "/mnt/storage/shares/MACU/assets/sfx",
-    "note": "One-shots mixed at each cue's start (VO stays full). SYNTH (Max, ffmpeg into assets/sfx/): intercom_crackle.wav (short static burst — Gary's intercom signature). ACQUIRE (Max, CC0 freesound, exact filenames): whistle_blow.wav, impact_thud.wav, crowd_murmur.wav, door_thud.wav. Missing file -> skip gracefully.",
-    "acquire_needed": [
-      "whistle_blow.wav",
-      "impact_thud.wav",
-      "crowd_murmur.wav",
-      "door_thud.wav"
-    ],
-    "cues": [
-      {
-        "cue": "c04",
-        "file": "intercom_crackle.wav",
-        "gain": 0.5,
-        "at": "start"
-      },
-      {
-        "cue": "c20",
-        "file": "whistle_blow.wav",
-        "gain": 0.5,
-        "at": "start"
-      },
-      {
-        "cue": "c21",
-        "file": "impact_thud.wav",
-        "gain": 0.7,
-        "at": "start"
-      },
-      {
-        "cue": "c22",
-        "file": "crowd_murmur.wav",
-        "gain": 0.4,
-        "at": "start"
-      },
-      {
-        "cue": "c28",
-        "file": "intercom_crackle.wav",
-        "gain": 0.5,
-        "at": "start"
-      },
-      {
-        "cue": "c28",
-        "file": "door_thud.wav",
-        "gain": 0.6,
-        "at": "start"
-      },
-      {
-        "cue": "c34",
-        "file": "intercom_crackle.wav",
-        "gain": 0.5,
-        "at": "start"
-      },
-      {
-        "cue": "c36",
-        "file": "intercom_crackle.wav",
-        "gain": 0.3,
-        "at": "start"
-      }
-    ]
-  },
+  "sfx": [],
   "subtitles": {
     "font": "Better VCR",
     "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
@@ -259,7 +198,7 @@
       "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, news desk in front of a bookshelf, not looking up, smoothly reading from notes"
     },
     "walter_weather": {
-      "seed": 24601,
+      "seed": 9699,
       "core": "Walter Cronkite, older 1970s television news anchor, balding grey hair, thin grey mustache, dark suit and tie, gesturing at a chalk weather map, measured, 1970s studio"
     },
     "walter_league": {
@@ -279,11 +218,11 @@
       "core": "a manic superfan sports correspondent in face paint and a team scarf, at the rim of a smoky crater stadium, 1970s broadcast, mid play-by-play, pointing at the action, mouth open"
     },
     "carl_hit": {
-      "seed": 6161,
+      "seed": 6368,
       "core": "a manic superfan sports correspondent in face paint and a team scarf, at the rim of a smoky crater stadium, 1970s broadcast, wincing and gesturing wildly, dust behind"
     },
     "carl_lone": {
-      "seed": 6161,
+      "seed": 5692,
       "core": "a manic superfan sports correspondent in face paint and a team scarf, at the rim of a smoky crater stadium, 1970s broadcast, checking a clipboard, manic grin"
     },
     "bodhi_serene": {
@@ -352,14 +291,43 @@
       "shots": [
         {
           "id": "c03_s1",
-          "kind": "character",
-          "who": "ron_cheer",
-          "seed": 77777
-        },
-        {
-          "id": "c03_s2",
           "kind": "title",
           "asset": "the_crater_bowl"
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "After everything last week — the broadcast, all of it — I needed something real, Walter. And here it is.",
+      "shots": []
+    },
+    {
+      "id": "c38",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "The Slags.",
+      "shots": []
+    },
+    {
+      "id": "c39",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "The Slags.",
+      "shots": []
+    },
+    {
+      "id": "c40",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "One of whom is currently listed as \"on assignment.\"",
+      "shots": [
+        {
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "walter_deadpan",
+          "seed": 24601
         }
       ]
     },
@@ -398,12 +366,6 @@
       "shots": [
         {
           "id": "c06_s1",
-          "kind": "character",
-          "who": "walter_toss",
-          "seed": 24601
-        },
-        {
-          "id": "c06_s2",
           "kind": "broll",
           "who": "big_hole"
         }
@@ -450,16 +412,31 @@
       "shots": [
         {
           "id": "c09_s1",
-          "kind": "character",
-          "who": "carl_call",
-          "seed": 6161
-        },
-        {
-          "id": "c09_s2",
           "kind": "broll",
           "who": "big_hole_crowd"
         }
       ]
+    },
+    {
+      "id": "c41",
+      "segment": "sports",
+      "speaker": "CRATER CARL",
+      "vo": "And across the way, the Glowboys — all forty — warming up in formation. They glow like they're reactor-fed, Walter. Like actual reactors! That's probably just their gear, though!",
+      "shots": []
+    },
+    {
+      "id": "c42",
+      "segment": "sports",
+      "speaker": "RON",
+      "vo": "Carl — did you just say reactor —",
+      "shots": []
+    },
+    {
+      "id": "c43",
+      "segment": "sports",
+      "speaker": "WALTER",
+      "vo": "Destiny. We'll be right back, after a word from our sponsors.",
+      "shots": []
     },
     {
       "id": "c10",
@@ -475,20 +452,54 @@
       ]
     },
     {
-      "id": "c11",
+      "id": "c44",
       "segment": "ad",
       "speaker": "RADBITES",
-      "vo": "Now in three flavors: Marsh, Burrow, and Original. Arm yourself for the stormy days ahead. Embrace the inevitable. Radbites. Call now — five five five, one two three four — for a free, no-obligation introduction to the new taste of survival. One signal is all it takes.",
+      "vo": "Now in three flavors: Marsh, Burrow, and Original. Original is our most requested. We don't know why.",
       "shots": [
         {
-          "id": "c11_s1",
+          "id": "c44_s1",
           "kind": "broll",
-          "who": "radbites_creature"
+          "who": "radbites_tin"
+        }
+      ]
+    },
+    {
+      "id": "c45",
+      "segment": "ad",
+      "speaker": "RADBITES",
+      "vo": "Arm yourself for the stormy days ahead. Embrace the inevitable. Radbites. Call now — five five five, one two three four — for a free, no-obligation introduction to the new taste of survival. One call is all it takes.",
+      "shots": [
+        {
+          "id": "c45_s1",
+          "kind": "broll",
+          "who": "radbites_tin"
         },
         {
-          "id": "c11_s2",
+          "id": "c45_s2",
           "kind": "title",
           "asset": "macu_report_bumper"
+        }
+      ]
+    },
+    {
+      "id": "c46",
+      "segment": "whistleblower",
+      "speaker": "RON",
+      "vo": "That Radbites spot got me somewhere, Walter. \"From the creatures the wastelands changed.\" That's poetry. That's survival. Reminds me of the Slags, honestly.",
+      "shots": []
+    },
+    {
+      "id": "c47",
+      "segment": "whistleblower",
+      "speaker": "WALTER",
+      "vo": "The Slags are the wastelands, Ron.",
+      "shots": [
+        {
+          "id": "c47_s1",
+          "kind": "character",
+          "who": "walter_dry",
+          "seed": 24601
         }
       ]
     },
@@ -507,18 +518,11 @@
       ]
     },
     {
-      "id": "c13",
+      "id": "c48",
       "segment": "whistleblower",
       "speaker": "WHISTLEBLOWER",
-      "vo": "Yeah. Hi. I played three games. I'm the only one who — look, the reason they never lose a player is they don't report the —",
-      "shots": [
-        {
-          "id": "c13_s1",
-          "kind": "character",
-          "who": "whistleblower_nervous",
-          "seed": 1212
-        }
-      ]
+      "vo": "Yeah. Hi. I played three games. I'm the only one who — look, the reason they never \"lose\" a player is they don't report it as a loss. They call it a leave of absence. Number seven went on leave during warmups. In two pieces. They listed him as —",
+      "shots": []
     },
     {
       "id": "c14",
@@ -542,12 +546,6 @@
       "shots": [
         {
           "id": "c15_s1",
-          "kind": "character",
-          "who": "walter_deadpan",
-          "seed": 24601
-        },
-        {
-          "id": "c15_s2",
           "kind": "broll",
           "who": "odds_board"
         }
@@ -568,18 +566,11 @@
       ]
     },
     {
-      "id": "c17",
+      "id": "c49",
       "segment": "line",
       "speaker": "WALTER",
-      "vo": "Ron, it is Monday.",
-      "shots": [
-        {
-          "id": "c17_s1",
-          "kind": "character",
-          "who": "walter_monday",
-          "seed": 24601
-        }
-      ]
+      "vo": "Ron. It's Monday.",
+      "shots": []
     },
     {
       "id": "c18",
@@ -596,6 +587,13 @@
       ]
     },
     {
+      "id": "c50",
+      "segment": "line",
+      "speaker": "WALTER",
+      "vo": "He will.",
+      "shots": []
+    },
+    {
       "id": "c19",
       "segment": "game",
       "speaker": "WALTER",
@@ -603,12 +601,6 @@
       "shots": [
         {
           "id": "c19_s1",
-          "kind": "character",
-          "who": "walter_toss",
-          "seed": 24601
-        },
-        {
-          "id": "c19_s2",
           "kind": "broll",
           "who": "big_hole_game"
         }
@@ -636,41 +628,29 @@
         {
           "id": "c21_s1",
           "kind": "broll",
-          "who": "craterball_hit"
+          "who": "big_hole_crowd"
         }
       ]
     },
     {
-      "id": "c22",
+      "id": "c51",
       "segment": "game",
       "speaker": "CRATER CARL",
-      "vo": "Slags recover the ball! And that brings Sector Nine's active roster to — let me check — one. One Slag. What a game! What a season!",
+      "vo": "Slags recover the ball! And with the field tribunal still deliberating whether number eleven's \"leave of absence\" counts as a roster move — that brings Sector Nine's active roster to: one. ONE Slag! What a season!",
       "shots": [
         {
-          "id": "c22_s1",
+          "id": "c51_s1",
           "kind": "broll",
           "who": "craterball_lone"
-        },
-        {
-          "id": "c22_s2",
-          "kind": "title",
-          "asset": "scoreboard_1"
         }
       ]
     },
     {
-      "id": "c23",
+      "id": "c52",
       "segment": "game",
       "speaker": "RON",
-      "vo": "For perspective, let's hear from the Slags' legendary coach and spiritual advisor — Coach Bodhi.",
-      "shots": [
-        {
-          "id": "c23_s1",
-          "kind": "character",
-          "who": "ron_facepaint",
-          "seed": 77777
-        }
-      ]
+      "vo": "That is one committed athlete, Carl. For perspective, let's hear from the Slags' legendary coach and spiritual advisor — Coach Bodhi.",
+      "shots": []
     },
     {
       "id": "c24",
@@ -738,11 +718,6 @@
           "id": "c28_s1",
           "kind": "broll",
           "who": "intercom_speaker"
-        },
-        {
-          "id": "c28_s2",
-          "kind": "broll",
-          "who": "locked_door"
         }
       ]
     },
@@ -761,22 +736,43 @@
       ]
     },
     {
-      "id": "c30",
+      "id": "c53",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "Ashfall, a chance of structural collapse, and a condition rating of mild. Perfect Crater Ball weather.",
+      "vo": "Ashfall, a chance of structural collapse, and a condition rating of mild.",
       "shots": [
         {
-          "id": "c30_s1",
+          "id": "c53_s1",
           "kind": "title",
           "asset": "macu_weather"
         },
         {
-          "id": "c30_s2",
+          "id": "c53_s2",
           "kind": "broll",
           "who": "weather_map"
         }
       ]
+    },
+    {
+      "id": "c54",
+      "segment": "weather",
+      "speaker": "RON",
+      "vo": "The ash settles by Friday. The sky is clearing.",
+      "shots": []
+    },
+    {
+      "id": "c55",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "The structural-collapse probability is currently seventy-two percent.",
+      "shots": []
+    },
+    {
+      "id": "c56",
+      "segment": "weather",
+      "speaker": "RON",
+      "vo": "For them.",
+      "shots": []
     },
     {
       "id": "c31",
@@ -821,6 +817,13 @@
       ]
     },
     {
+      "id": "c57",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "The affiliate roster currently has forty-seven members. It is a very active program.",
+      "shots": []
+    },
+    {
       "id": "c34",
       "segment": "signoff",
       "speaker": "GARY",
@@ -829,7 +832,7 @@
         {
           "id": "c34_s1",
           "kind": "broll",
-          "who": "shadow_glass"
+          "who": "intercom_speaker"
         }
       ]
     },
@@ -841,12 +844,6 @@
       "shots": [
         {
           "id": "c35_s1",
-          "kind": "character",
-          "who": "walter_signoff",
-          "seed": 24601
-        },
-        {
-          "id": "c35_s2",
           "kind": "title",
           "asset": "macu_report_title"
         }
@@ -861,7 +858,7 @@
         {
           "id": "c36_s1",
           "kind": "broll",
-          "who": "intercom_dim"
+          "who": "intercom_speaker"
         }
       ]
     }
@@ -879,7 +876,8 @@
       "scale": 1,
       "opacity": 1,
       "fade_in": 0.3,
-      "fade_out": 0.3
+      "fade_out": 0.3,
+      "id": "ov_001"
     }
   ]
 }

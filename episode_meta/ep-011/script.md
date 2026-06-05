@@ -1,6 +1,16 @@
-# THE MACU Report — Episode 11 — "Seeding" (Week 2, Mon — Road to the Crater Bowl) — v3
+# THE MACU Report — Episode 11 — "Seeding" (Week 2, Mon — Road to the Crater Bowl) — v4
 
-_Draft 2026-06-01, v3 (writers'-room punch-up) 2026-06-01. ~6–7 min. WEEK 2 opener (fresh reset — NO Unit 7, NO moon, NO Signal).
+_v4 (arc-room + writers'-room + police-squad redo) 2026-06-04: PLANTED THE WEEK'S AI FUSE (Crater Carl's
+"reactor-fed" Glowboys + Ron's ignored aside → Walter "Destiny") so ep15's "five nights" is honest; added the
+GASLIT-RESET beat (Ron obliquely references last week's broadcast → Walter blank); EASED THE RADBITES SEAM —
+the trigger for this redo — (Walter dry toss-out before the ad + a Ron post-bumper beat genuinely moved by the
+spot, which also plants the "wastelands-changed creatures → Slags → snacks/heart" echo early); gave the
+WHISTLEBLOWER a specific escalating line ("in two pieces…") before Ron's cut so the interrupt has something to
+interrupt (kept as a clean one-off); added Ron's ARITHMETIC FLINCH + a "field tribunal" line accounting for the
+2→1 roster drop; WEATHER now buttons on Ron's "For them." omen; HOUSE BET mutated (Walter anticipatory + a
+quiet "He will." prophecy → seeds the week's escalating bet runner); de-Signaled the Radbites close ("one call",
+not "one signal", per the no-Signal reset); POLICE-SQUAD beats added (Radbites "we don't know why"; Walter's
+"affiliate roster… forty-seven members"). Prior: v3 (writers'-room punch-up) 2026-06-01. ~6–7 min. WEEK 2 opener (fresh reset — NO Unit 7, NO moon, NO Signal).
 Room pass fixed: whistleblower now PAYS OFF (signoff "transfers to an affiliate roster" → Ron "just paperwork");
 house-bet timeline made Monday-true ("it is Monday / do it again Tuesday / consistency"); Gary's lockout now
 FORCES the weather toss ("that'll be the wind"); Radbites got an absurd specific (flavors: Marsh/Burrow/Original);
@@ -34,6 +44,18 @@ living players between them.
 **RON:** That's called peaking at the right time, Walter. That's called destiny.
 » Ron core → THE CRATER BOWL title card
 
+**RON:** _(dropping half a register, genuine)_ After everything last week — the broadcast, all of it — I needed something real, Walter. And here it is.
+» Ron core, the manic grin flickering for just a moment
+
+**WALTER:** The Slags.
+» Walter core, blank
+
+**RON:** The Slags.
+» Ron core
+
+**WALTER:** One of whom is currently listed as "on assignment."
+» Walter core, deadpan
+
 **(the studio intercom crackles)**
 **GARY:** _(Newman, over the intercom)_ Walter! Waaalter. It's Gary. From the weekend. Big game, huh, buddy?
 You, me — we carpool to the Bowl. I'll drive. I'll bring the cooler. Walter? Is this thing on?
@@ -60,6 +82,15 @@ up — that's a hundred percent attendance, baby!
 playoff grit! — and a head coach who has stopped blinking entirely!
 » Crater Carl core → b-roll: the Big Hole crowd
 
+**CRATER CARL:** _(Popiel)_ And across the way, the Glowboys — all forty — warming up in formation. They glow like they're reactor-fed, Walter. Like actual reactors! That's probably just their gear, though!
+» Crater Carl core → b-roll: the Glowboys, forty figures glowing in eerie formation
+
+**RON:** _(quick, half under his breath)_ Carl — did you just say reactor —
+» Ron core, a flicker of alarm
+
+**WALTER:** Destiny. We'll be right back, after a word from our sponsors.
+» Walter core, a full stop → toss to break
+
 ---
 
 ## AD BREAK — RADBITES
@@ -69,20 +100,26 @@ was born from the ashes. From the irradiated wastelands — from the creatures t
 make food. We call it Radbites.
 » b-roll: a dented ration tin labeled in stencil, on a shelf in a dim pantry
 
-**RADBITES:** _(Announcer)_ Now in three flavors: Marsh, Burrow, and Original. Arm yourself for the stormy
-days ahead. Embrace the inevitable. Radbites. Call now — five five five, one two three four — for a free,
-no-obligation introduction to the new taste of survival. One signal is all it takes.
+**RADBITES:** _(Announcer)_ Now in three flavors: Marsh, Burrow, and Original. Original is our most requested. We don't know why.
+» b-roll: the dented tin on its dim shelf
+
+**RADBITES:** _(Announcer)_ Arm yourself for the stormy days ahead. Embrace the inevitable. Radbites. Call now — five five five, one two three four — for a free, no-obligation introduction to the new taste of survival. One call is all it takes.
 » b-roll: a strange transformed wasteland creature, then the tin again → MACU REPORT bumper
 
 ---
 
 ## SEGMENT 2 — A FORMER SLAG SPEAKS (whistleblower)
 
+**RON:** _(quieter, genuine)_ That Radbites spot got me somewhere, Walter. "From the creatures the wastelands changed." That's poetry. That's survival. Reminds me of the Slags, honestly.
+» Ron core, briefly moved → b-roll: the MACU REPORT bumper resolving back to the anchor desk
+
+**WALTER:** The Slags are the wastelands, Ron.
+» Walter core, dry
+
 **WALTER:** Not everyone shares the excitement. We're joined by a former Slag.
 » Walter core
 
-**WHISTLEBLOWER:** _(Seth, nervous, glancing off)_ Yeah. Hi. I played three games. I'm the only one who — look,
-the reason they never "lose" a player is they don't report the —
+**WHISTLEBLOWER:** _(Seth, nervous, glancing off)_ Yeah. Hi. I played three games. I'm the only one who — look, the reason they never "lose" a player is they don't report it as a loss. They call it a leave of absence. Number seven went on leave during warmups. In two pieces. They listed him as —
 » Whistleblower core, dim, nervous
 
 **RON:** We'll take a quick break!
@@ -99,11 +136,14 @@ and the over-under on surviving players is one and a half.
 **RON:** Put my house on the Slags. The whole house. And my chair.
 » Ron core, sliding a key across the desk
 
-**WALTER:** Ron, it is Monday.
+**WALTER:** _(already, before the key finishes sliding)_ Ron. It's Monday.
 » Walter core
 
 **RON:** And I'll do it again Tuesday. That's called consistency.
 » Ron core
+
+**WALTER:** _(quiet, to nobody)_ He will.
+» Walter core
 
 ---
 
@@ -121,12 +161,13 @@ try to stop him —
 is going — somewhere — they are filing for the exits, folks, and frankly, that is the smart play!
 » b-roll: a bone-jarring collision, dust plume, the crowd scattering
 
-**CRATER CARL:** _(Popiel)_ Slags recover the ball! And that brings Sector Nine's active roster to — let me
-check — one. ONE Slag. What a game! What a season!
+**CRATER CARL:** _(Popiel)_ Slags recover the ball! And with the field tribunal still deliberating whether
+number eleven's "leave of absence" counts as a roster move — that brings Sector Nine's active roster to: one.
+ONE Slag! What a season!
 » b-roll: a lone armored player standing alone in the crater → SCOREBOARD bug (SLAGS 1 — PLAYERS REMAINING)
 
-**RON:** For perspective, let's hear from the Slags' legendary coach and spiritual advisor — Coach Bodhi.
-» Ron core
+**RON:** _(his eyes flick to the number — the grin tightens for half a second — then it returns, too wide)_ That is one committed athlete, Carl. For perspective, let's hear from the Slags' legendary coach and spiritual advisor — Coach Bodhi.
+» Ron core, the arithmetic flinch
 
 **COACH BODHI:** _(Snoop, serene)_ You can't lose a player, man. You relocate his energy. Number eleven didn't
 pass away. He diversified. He's in the wind now. He's in the soil. He's in the snacks.
@@ -157,9 +198,17 @@ I'm outside. The door's locked. Is it always locked? _(a thud — Gary trying th
 
 ## WEATHER
 
-**WALTER:** Ashfall, a chance of structural collapse, and a condition rating of mild. Perfect Crater Ball
-weather.
+**WALTER:** Ashfall, a chance of structural collapse, and a condition rating of mild.
 » Walter core → MACU WEATHER card → b-roll: weather map
+
+**RON:** _(low, certain)_ The ash settles by Friday. The sky is clearing.
+» Ron core
+
+**WALTER:** The structural-collapse probability is currently seventy-two percent.
+» Walter core
+
+**RON:** For them.
+» Ron core, a curse, not a forecast
 
 ---
 
@@ -175,6 +224,9 @@ transfers to an affiliate roster.
 
 **RON:** _(nodding, moved)_ See? It's just paperwork. That's the heart, Walter.
 » Ron core
+
+**WALTER:** The affiliate roster currently has forty-seven members. It is a very active program.
+» Walter core, shuffling papers
 
 **(intercom crackles)**
 **GARY:** _(Newman)_ I can see you, fellas. The little red light's on.
