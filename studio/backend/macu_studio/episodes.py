@@ -24,6 +24,7 @@ class EpisodeSummary:
     season: int | None = None
     episode_num: int | None = None
     se_label: str | None = None  # "S01-E1" or None (pre-series / non-ep slugs)
+    synced: bool = True  # working text files match the tracked episode_meta copy
 
 
 def _utc_iso(ts: float) -> str:
@@ -72,6 +73,8 @@ def list_episodes() -> list[EpisodeSummary]:
             if derived:
                 season, episode_num = derived
         label = se_label(season, episode_num) if season and episode_num else None
+        # Lazy import avoids a module-level cycle (gitsync imports episode_dir).
+        from . import gitsync
         out.append(
             EpisodeSummary(
                 slug=entry.name,
@@ -81,6 +84,7 @@ def list_episodes() -> list[EpisodeSummary]:
                 season=season,
                 episode_num=episode_num,
                 se_label=label,
+                synced=gitsync.sync_status(entry.name),
             )
         )
     return out

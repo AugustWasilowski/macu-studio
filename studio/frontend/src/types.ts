@@ -39,6 +39,7 @@ export interface EpisodeSummary {
   season?: number | null;
   episode_num?: number | null;
   se_label?: string | null; // "S01-E1" or null (pre-series / non-ep)
+  synced?: boolean; // working text files match the tracked episode_meta copy
 }
 
 export interface Cue {

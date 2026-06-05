@@ -42,7 +42,12 @@ function Shell() {
   const [route, go] = useRoute();
   const activeSlug = useStore((s) => s.activeSlug);
   const setActiveSlug = useStore((s) => s.setActiveSlug);
-  const episodes = useQuery({ queryKey: ["episodes"], queryFn: api.episodes });
+  const episodes = useQuery({
+    queryKey: ["episodes"],
+    queryFn: api.episodes,
+    refetchInterval: 5000,        // keep the picker's git-sync dots fresh as files change
+    refetchOnWindowFocus: true,
+  });
 
   // Keep the store's activeSlug in sync with the routed slug on stage pages.
   useEffect(() => {

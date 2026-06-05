@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
@@ -27,6 +28,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const qc = useQueryClient();
   const toggleDrawer = useStore((s) => s.toggleDrawer);
   const toggleLog = useStore((s) => s.toggleLog);
   const toggleTerminal = useStore((s) => s.toggleTerminal);
@@ -40,6 +42,8 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       if (!r.ok) pushToast(`git sync failed: ${r.log.split("\n").pop() || ""}`, "err");
       else if (r.committed) pushToast(`synced ${slug} → ${r.commit}`, "ok");
       else pushToast(`${slug} already in sync`, "info");
+      // refresh the picker's sync dots
+      qc.invalidateQueries({ queryKey: ["episodes"] });
     } catch (e) {
       pushToast(`git sync error: ${e instanceof Error ? e.message : String(e)}`, "err");
     } finally {
@@ -96,6 +100,15 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
                 className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-bg-3"
                 onClick={() => { setOpen(false); onPick(e.slug); }}
               >
+                <span
+                  className="flex-none rounded-full"
+                  style={{
+                    width: 8, height: 8,
+                    background: e.synced === false ? "var(--red)" : "var(--green)",
+                    boxShadow: `0 0 5px ${e.synced === false ? "var(--red)" : "var(--green)"}`,
+                  }}
+                  title={e.synced === false ? "Pending changes — not synced to git" : "Synced to git"}
+                />
                 <span className="text-amber font-bold w-12">{e.slug}</span>
                 <span className="seg-readout cyan text-[10px] w-[52px] text-center">{e.se_label ?? ""}</span>
                 <span className="flex-1 truncate text-txt-dim">{e.title}</span>

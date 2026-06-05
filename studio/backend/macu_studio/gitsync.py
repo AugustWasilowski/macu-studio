@@ -7,6 +7,7 @@ Generated assets (audio/video/frames) are never copied.
 """
 from __future__ import annotations
 
+import filecmp
 import shutil
 import subprocess
 
@@ -17,6 +18,27 @@ REPO = config.STUDIO_ROOT.parent
 META = REPO / "episode_meta"
 
 TEXT_FILES = ("script.md", "manifest.json", "youtube.txt")
+
+
+def sync_status(slug: str) -> bool:
+    """True when the episode's working TEXT files match the tracked episode_meta
+    copy (i.e. nothing to sync). False if any differ or the episode was never
+    synced — that's the 'pending changes' (red dot) state in the picker."""
+    try:
+        src = episode_dir(slug)
+    except FileNotFoundError:
+        return False
+    dest = META / slug
+    if not dest.exists():
+        return False
+    for name in TEXT_FILES:
+        f = src / name
+        if not f.exists():
+            continue  # absent in working → nothing to compare for this file
+        d = dest / name
+        if not d.exists() or not filecmp.cmp(f, d, shallow=False):
+            return False
+    return True
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
