@@ -159,7 +159,7 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
             "is_hold": is_hold,
             "hold_seconds": cue.get("hold_seconds"),
             "status": status,
-            "duration_s": round(duration, 2) if isinstance(duration, (int, float)) else None,
+            "duration_s": round(duration, 3) if isinstance(duration, (int, float)) else None,
             "engine": voice.get("engine"),
             "profile_id": voice.get("profile_id"),
             "voice_name": voice.get("voice_name"),

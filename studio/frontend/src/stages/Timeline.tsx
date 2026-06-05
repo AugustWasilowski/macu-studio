@@ -1,14 +1,15 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, mediaUrl } from "../api";
 import { graphicsApi } from "../api/graphics";
 import { useStore } from "../store";
-import { IX } from "../components/Icons";
+import { IX, IPlay, IPause } from "../components/Icons";
 import { cueOffsets, overlayWindow, cueAtSecond, makeOverlay } from "./overlayTiming";
-import type { Overlay, OverlayMode, OverlayPosition } from "../types";
+import type { Cue, Overlay, OverlayMode, OverlayPosition } from "../types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 const POSITIONS: OverlayPosition[] = ["lower_third", "bug_tl", "bug_tr", "center", "full"];
 
@@ -24,6 +25,7 @@ export function Timeline({ slug }: { slug: string }) {
   const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug), refetchInterval: 4000 });
   const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
   const titles = useQuery({ queryKey: ["titles", slug], queryFn: () => api.titles(slug) });
+  const finalQ = useQuery({ queryKey: ["final", slug], queryFn: () => api.final(slug) });
 
   const cueList = cues.data?.cues ?? [];
   const overlays: Overlay[] = useMemo(
@@ -39,6 +41,36 @@ export function Timeline({ slug }: { slug: string }) {
   const [working, setWorking] = useState<Overlay[] | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // ---- preview monitor (the rendered final video) + playhead ----
+  const finalExists = !!finalQ.data?.exists;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [playT, setPlayT] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const dur = finalQ.data?.duration_s ?? total;
+
+  const seekTo = (sec: number) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = clamp(sec, 0, (v.duration || dur) - 0.05);
+    v.play().catch(() => {});
+  };
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) v.play().catch(() => {}); else v.pause();
+  };
+
+  // keep the playhead in view while playing
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !playing) return;
+    const x = playT * pps;
+    if (x < el.scrollLeft + 60 || x > el.scrollLeft + el.clientWidth - 60) {
+      el.scrollLeft = Math.max(0, x - el.clientWidth / 3);
+    }
+  }, [playT, playing, pps]);
 
   const shown = working ?? overlays;
 
@@ -80,19 +112,19 @@ export function Timeline({ slug }: { slug: string }) {
     setWorking((prev) => {
       const next = (prev ?? overlays).map((o) => ({ ...o }));
       const ov = next[d.idx];
-      let start = d.origStart, dur = d.origDur;
-      if (d.kind === "move") start = clamp(d.origStart + dxSec, 0, Math.max(0, total - dur));
-      else if (d.kind === "r") dur = Math.max(0.3, d.origDur + dxSec);
-      else { // left edge
+      let start = d.origStart, dur2 = d.origDur;
+      if (d.kind === "move") start = clamp(d.origStart + dxSec, 0, Math.max(0, total - dur2));
+      else if (d.kind === "r") dur2 = Math.max(0.3, d.origDur + dxSec);
+      else {
         const ns = clamp(d.origStart + dxSec, 0, d.origStart + d.origDur - 0.3);
-        dur = d.origStart + d.origDur - ns;
+        dur2 = d.origStart + d.origDur - ns;
         start = ns;
       }
       start = snap(start);
       const anchor = cueAtSecond(start, cueList, cum) ?? ov.anchor_cue;
       ov.anchor_cue = anchor;
       ov.start_offset = round2(start - (cum[anchor] ?? 0));
-      ov.duration = round2(dur);
+      ov.duration = round2(dur2);
       return next;
     });
   };
@@ -106,7 +138,7 @@ export function Timeline({ slug }: { slug: string }) {
     e.preventDefault();
     if (!paletteDrag || !trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
-    const sec = clamp((e.clientX - rect.left + trackRef.current.scrollLeft) / pps, 0, Math.max(0, total));
+    const sec = clamp((e.clientX - rect.left) / pps, 0, Math.max(0, total));
     const anchor = cueAtSecond(sec, cueList, cum);
     if (!anchor) { push("no cues to anchor to", "err"); paletteDrag = null; return; }
     const ov = makeOverlay(paletteDrag.asset, anchor, 3);
@@ -116,18 +148,68 @@ export function Timeline({ slug }: { slug: string }) {
     paletteDrag = null;
   };
 
+  // first-shot thumbnail for a cue (filmstrip background). Only the animated shot
+  // webps work as a CSS background-image — title cards are mp4 (skip them; the cue
+  // just shows its label) so we don't fire doomed background-image requests.
+  const cueThumb = (c: Cue): string | null => {
+    for (const s of (c.shots || []) as any[]) {
+      if ((s.kind === "character" || s.kind === "broll") && s.who) return mediaUrl.shotPreview(slug, s.who);
+    }
+    return null;
+  };
+
   const width = Math.max(640, total * pps + 40);
   const sel = selIdx != null ? shown[selIdx] : null;
 
-  // ruler ticks every 5s
   const ticks: number[] = [];
   for (let t = 0; t <= total; t += 5) ticks.push(t);
 
+  const secFromClientX = (clientX: number) => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    return clamp((clientX - rect.left + el.scrollLeft) / pps, 0, total);
+  };
+
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
+      {/* PREVIEW MONITOR — the rendered final video, click a cue to play from there */}
+      <section className="panel flex items-stretch gap-3 p-2">
+        <div className="bg-black hairline-soft rounded overflow-hidden grid place-items-center flex-none" style={{ width: 200, height: 200 }}>
+          {finalExists ? (
+            <video
+              ref={videoRef}
+              src={mediaUrl.finalVideo(slug)}
+              className="w-full h-full object-contain"
+              playsInline
+              onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => setPlaying(false)}
+            />
+          ) : (
+            <div className="text-txt-faint text-[11px] text-center px-2">No rendered video yet — run the episode to preview.</div>
+          )}
+        </div>
+        <div className="flex flex-col justify-between flex-1 min-w-0">
+          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click any cue to play from there</span></div>
+          <div className="flex items-center gap-3">
+            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>
+              {playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}
+            </button>
+            <span className="font-mono tabular-nums text-[12px]">{fmt(playT)} <span className="text-txt-faint">/ {fmt(dur)}</span></span>
+          </div>
+          <div className="text-txt-faint text-[11px]">
+            {finalExists
+              ? "Preview is the last rendered cut — overlay edits show after a re-render."
+              : "Render the episode (Assembly → Run) to enable the synced preview."}
+          </div>
+        </div>
+      </section>
+
       <section className="panel flex flex-col min-h-0 flex-1">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card onto the graphics track · drag/resize bars to retime</span></div>
+          <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card onto the graphics track · click a cue to play · drag/resize bars to retime</span></div>
           <div className="flex items-center gap-2 text-[11px]">
             <span className="seg-readout">{overlays.length} GFX · {total.toFixed(1)}s</span>
             <button className="btn p-1" title="zoom out" onClick={() => setPps((z) => Math.max(12, z - 12))}>−</button>
@@ -137,29 +219,49 @@ export function Timeline({ slug }: { slug: string }) {
         </header>
 
         <div
+          ref={scrollRef}
           className="overflow-x-auto overflow-y-hidden flex-1"
           onPointerMove={onMove}
           onPointerUp={endDrag}
           onPointerLeave={endDrag}
         >
-          <div style={{ width }} className="select-none">
-            {/* ruler */}
-            <div className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint">
+          <div style={{ width }} className="select-none relative">
+            {/* ruler (click to seek) */}
+            <div
+              className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint cursor-pointer"
+              onClick={(e) => seekTo(secFromClientX(e.clientX))}
+              title="click to scrub"
+            >
               {ticks.map((t) => (
                 <div key={t} className="absolute top-0 h-full border-l border-[var(--line-soft)] pl-1" style={{ left: t * pps }}>{t}s</div>
               ))}
             </div>
 
-            {/* cues track (read-only) */}
+            {/* cues track — filmstrip thumbnails, click to play */}
             <TrackLabelRow label="CUES" />
-            <div className="relative h-8 border-b hairline-soft">
+            <div className="relative h-16 border-b hairline-soft">
               {cueList.map((c) => {
                 const left = (cum[c.id] ?? 0) * pps;
                 const w = (c.duration_s ?? 0) * pps;
+                const thumb = cueThumb(c);
                 return (
-                  <div key={c.id} className="absolute top-0.5 h-7 hairline-soft bg-bg-2 rounded-sm overflow-hidden text-[10px] px-1"
-                    style={{ left, width: Math.max(2, w) }} title={`${c.id} · ${c.speaker}`}>
-                    <span className="text-amber font-bold">{c.id}</span> <span className="text-txt-faint">{c.speaker}</span>
+                  <div
+                    key={c.id}
+                    onClick={() => seekTo(cum[c.id] ?? 0)}
+                    className="absolute top-0.5 rounded-sm overflow-hidden cursor-pointer hairline-soft"
+                    style={{
+                      left, width: Math.max(2, w), height: "calc(100% - 4px)",
+                      backgroundColor: "var(--bg-2)",
+                      backgroundImage: thumb ? `url(${thumb})` : undefined,
+                      backgroundRepeat: "repeat-x",
+                      backgroundSize: "auto 100%",
+                    }}
+                    title={`${c.id} · ${c.speaker} — click to play from ${fmt(cum[c.id] ?? 0)}`}
+                  >
+                    <div className="absolute inset-x-0 bottom-0 px-1 text-[9px] leading-tight"
+                      style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
+                      <span className="text-amber font-bold">{c.id}</span> <span className="text-txt-dim">{c.speaker}</span>
+                    </div>
                   </div>
                 );
               })}
@@ -223,6 +325,12 @@ export function Timeline({ slug }: { slug: string }) {
                   })}
                 </div>
               </>
+            )}
+
+            {/* playhead */}
+            {playT > 0 && (
+              <div className="absolute top-0 bottom-0 pointer-events-none z-20"
+                style={{ left: playT * pps, width: 2, background: "var(--cyan)", boxShadow: "0 0 6px var(--cyan)" }} />
             )}
           </div>
         </div>
