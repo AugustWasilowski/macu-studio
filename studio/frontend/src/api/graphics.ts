@@ -38,6 +38,13 @@ export const graphicsApi = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then((r) => J<JobSubmitResp>(r)),
+  // On-demand Ollama: write a NEW HyperFrames composition (animated card HTML) from a brief,
+  // saved as the template named `key`. Returns the composition name + its placeholder fields.
+  genComposition: (slug: string, body: { key: string; brief: string }) =>
+    fetch(`/api/episodes/${slug}/composition/generate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then((r) => J<{ ok: boolean; key: string; composition: string; fields: Record<string, string>; placeholders: string[]; bytes: number }>(r)),
   regenYThumb: (slug: string, body: RegenYThumbArgs) =>
     fetch(`/api/episodes/${slug}/ythumb/regen`, {
       method: "POST", headers: { "Content-Type": "application/json" },

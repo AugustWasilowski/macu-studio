@@ -164,6 +164,54 @@ is Ron alone remembering a thing the entire staff has genuinely moved on from.
 
 ---
 
+## WEEK 2 — "ROAD TO THE CRATER BOWL" (ep11–15) — STORY-ROOM REVISIONS (full redo 2026-06-05)
+
+The whole week (ep11 "Seeding" → ep15 "The Crater Bowl") was sent back through the full apparatus before
+re-release: a season-level ARC ROOM (Arc Architect / Canon Keeper / Audience/Tone / Skeptic), then per-episode
+WRITERS' ROOM + POLICE-SQUAD passes. Trigger: August was jarred watching ep11 by the hard cut from the Radbites
+commercial back to Walter. Scripts bumped ep11→**v4**, ep12–15→**v3**. (Render deferred — manifests NOT yet
+synced to these scripts; that's the first step of the render session.)
+
+**Spine (unchanged):** Ron's face-painted devotion to the doomed Sector Nine Slags builds Mon→Fri to the Crater
+Bowl; roster decays 2→1→0→Brenda(the car)→Ron-himself→the game; the Glowboys are the looming 40-pt favorite; the
+AI fuse (Glowboys = war-bot reactor tech) pays off Friday as the horror flip ("you let us in; you got used to
+us"); Brenda wins on heart; Walter "Anyway,"-s it; Ron goes hollow-then-changed. NO Unit 7 / Signal / moon — the
+escalation runs through the Glowboys only.
+
+**Engine fixes the room converged on (folded in):**
+- **AI fuse made honest + non-repetitive.** ep11 had NO fuse beat (so ep15's "five nights" was a lie) — planted
+  one (Crater Carl's "reactor-fed" Glowboys + Ron's ignored aside → Walter "Destiny"). The ep12/13/14 beats were
+  three identical "Ron alarms → Walter breezes" — differentiated: **ep12** Norm cheerfully CONFIRMS the war-bot
+  core; **ep13** Walter faint ADMIRATION ("consistent times"); **ep14** Walter ALMOST says it then resets. So
+  ep15's "everyone always knew" reads as complicity built across the week, not a twist from nowhere.
+- **ep15 no longer re-runs ep10's shape** (the #1 freshness risk). Act 4 resequenced: Ron starts a TRIUMPHANT
+  victory lap → Walter's "Anyway" INTERRUPTS mid-sentence → the hollow lands BECAUSE he was cut off. Machine
+  monologue trimmed to its flat core; Ron alone owns the "the getting used to" echo (machines don't ruminate).
+- **Segment SEAMS eased** week-wide (the original complaint): every ad now has a Walter toss-out and/or a
+  standardized Ron post-bumper button; ep11's Radbites→Walter cut got a Ron "moved by the spot" bridge that also
+  plants the snacks/heart echo early.
+- **Daily HOUSE BET mutated** so it escalates instead of repeating verbatim (Walter drifts from blank day-naming
+  → resigned recognition: "He will." / "…Yes."). Ron's delusion gets a DIFFERENT flavor each night (evangelical
+  → protective → inventor-eureka → fatalist-grand) to cure dramatic-irony fatigue.
+- **"HEART" runner tested + transferred:** ep14 Bodhi explicitly names Brenda's no-fear stillness as the team's
+  heart, priming Gary's ep15 payoff ("you know what they've never had? HEART").
+- **The BARREL earned its ep15 heroics** — given a self-entered comic entrance in ep13 (Crater Carl) so its
+  Friday payoff isn't a deus ex machina.
+- **Continuity swept:** de-Signaled both wider-MACU ads ("one signal" → "one call" / "ask for Fern") so the
+  no-Signal reset never re-invokes ep10's Signal; ep11 added the gaslit-reset beat (Ron alone remembers last
+  week); Ron-as-player planted (ep14 "sub myself out") and closed (ep15 Walter retires him); the ep15 bet cashes
+  as houses only (no reactor winnings — that stale note was corrected).
+- **Police-squad deadpan non-sequiturs** threaded through all five (Radbites "we don't know why"; "affiliate
+  roster — forty-seven members"; Sarge's "the fourth collapse is ongoing — an active enrollment"; Walter's
+  "the book is in distress"; etc.). Borderline beats were surfaced to August for veto, not auto-applied.
+
+**Escalation note (ARC 1 "Ron Sees It").** ep11–15 hold the arc at its post-ep10 register: Ron is vindicated
+BIGGER than ep10 but still does NOT fully crack — he goes quiet, then rallies a sliver of the old self. The cost
+lands on Ron (now changed: richer, quieter, alone in it). The full sustained crack remains later. Leads into
+Week 3 ("The Gathering," ep16–20) below.
+
+---
+
 ## WEEK 3 — RAW IDEAS / ICEBOX (August's notes 2026-06-02 — not yet broken; hold for the Week 3 room)
 
 - **Cannibalism storyline via "Scavenger's Feast" (Chef Martha returns).** Martha's wholesome cooking-show

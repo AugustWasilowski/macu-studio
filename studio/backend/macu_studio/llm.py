@@ -77,3 +77,23 @@ def chat_json(messages: list[dict], schema: dict, model: str = DEFAULT_MODEL,
     out = json.loads(resp)
     content = (out.get("message") or {}).get("content") or ""
     return json.loads(content)
+
+
+def chat_text(messages: list[dict], model: str = DEFAULT_MODEL,
+              temperature: float = 0.4, timeout: int = 600, num_ctx: int = 16384) -> str:
+    """POST /api/chat and return the raw text the model produced (no JSON schema) —
+    for free-form output like generated HTML compositions."""
+    body = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "options": {"temperature": temperature, "num_ctx": num_ctx},
+    }
+    req = urllib.request.Request(
+        OLLAMA_URL + "/api/chat",
+        data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    resp = urllib.request.urlopen(req, timeout=timeout).read()
+    out = json.loads(resp)
+    return (out.get("message") or {}).get("content") or ""

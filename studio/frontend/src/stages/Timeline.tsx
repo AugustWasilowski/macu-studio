@@ -4,11 +4,13 @@ import { api, mediaUrl } from "../api";
 import { graphicsApi } from "../api/graphics";
 import { libraryApi } from "../api/library";
 import type { MusicBed, SfxEntry } from "../api/library";
+import { versionsApi } from "../api/assets";
 import { useStore } from "../store";
 import { IPlay, IPause } from "../components/Icons";
 import {
   cueOffsets, overlayWindow, cueAtSecond, makeOverlay,
   bedWindow, cuesInRange, makeBed, sfxWindow, repinSfx,
+  shotWindow, voWindow,
 } from "./overlayTiming";
 import { drawerDrag } from "./trackEditor";
 import type { Selection, TrackKind } from "./trackEditor";
@@ -72,7 +74,90 @@ export function Timeline({ slug }: { slug: string }) {
   const commitTrack = (track: TrackKind, items: any[]) => {
     if (track === "graphics") putOverlays.mutate(items);
     else if (track === "music") putBeds.mutate(items);
-    else putSfx.mutate(items);
+    else if (track === "sfx") putSfx.mutate(items);
+  };
+
+  // ---- shots track (per-cue cue.shots[]; move/reorder/add/remove — no resize) ----
+  const putShots = useMutation({
+    mutationFn: (cuesMap: Record<string, any[]>) => versionsApi.putCueShots(slug, cuesMap),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cues", slug] }); qc.invalidateQueries({ queryKey: ["manifest", slug] }); },
+    onError: (e: Error) => push("shots save failed: " + e.message, "err"),
+  });
+  const cueById = (id: string) => cueList.find((c) => c.id === id);
+  // Shot ids encode their cue + position (e.g. c12_s1); re-mint after any membership/order change.
+  const remintShots = (cueId: string, shots: any[]) => shots.map((s, i) => ({ ...s, id: `${cueId}_s${i + 1}` }));
+  // Where in a cue's shot list an absolute second lands (0..len).
+  const shotInsertIdx = (sec: number, cue: Cue, len: number) => {
+    const base = cum[cue.id] ?? 0; const d = cue.duration_s ?? 0;
+    if (d <= 0 || len <= 0) return len;
+    return clamp(Math.round(clamp((sec - base) / d, 0, 1) * len), 0, len);
+  };
+  const onDropShots = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const d = drawerDrag.get();
+    drawerDrag.clear();
+    if (!d) return;
+    const sec = secFromClientX(e.clientX);
+    const targetId = cueAtSecond(sec, cueList, cum);
+    const tcue = targetId ? cueById(targetId) : null;
+    if (!targetId || !tcue) return;
+    const tshots = (tcue.shots ?? []) as any[];
+    if (d.kind === "shot") {
+      try {
+        if (d.version != null && d.slug) {
+          // A non-live take → copy that generation's frame in + pin its seed.
+          await versionsApi.importShotVersion(slug, d.slug, d.key, d.shotKind, d.version);
+          push(`pulled ${d.key} take v${d.version}${d.slug !== slug ? ` from ${d.slug}` : ""} — re-render to apply`, "ok");
+        } else if (d.slug && d.slug !== slug) {
+          // Cross-episode live shot → copy its definition (core+seed); master too if rendered.
+          const r = await versionsApi.importShot(slug, d.slug, d.key, d.shotKind);
+          push(r.master_copied ? `pulled ${d.key} from ${d.slug} — ready, no render needed`
+               : r.already ? `${d.key} already in this episode`
+               : `imported ${d.key} from ${d.slug} — render it on the Video tab`, "ok");
+        } else {
+          push(`${d.key} → ${targetId}`, "ok");
+        }
+      } catch (err: any) { push("import failed: " + (err?.message ?? "error"), "err"); return; }
+      const next = [...tshots];
+      next.splice(shotInsertIdx(sec, tcue, next.length), 0, { id: "", kind: d.shotKind, who: d.key });
+      putShots.mutate({ [targetId]: remintShots(targetId, next) });
+    } else if (d.kind === "shot-move") {
+      const src = cueById(d.cueId);
+      const moving = (src?.shots ?? []).find((s: any) => s.id === d.shotId);
+      if (!src || !moving) { drawerDrag.clear(); return; }
+      if (d.cueId === targetId) {
+        const without = (src.shots as any[]).filter((s: any) => s.id !== d.shotId);
+        without.splice(shotInsertIdx(sec, tcue, without.length), 0, moving);
+        putShots.mutate({ [targetId]: remintShots(targetId, without) });
+      } else {
+        const srcNext = (src.shots as any[]).filter((s: any) => s.id !== d.shotId);
+        const tgtNext = [...tshots];
+        tgtNext.splice(shotInsertIdx(sec, tcue, tgtNext.length), 0, moving);
+        putShots.mutate({ [d.cueId]: remintShots(d.cueId, srcNext), [targetId]: remintShots(targetId, tgtNext) });
+        push(`shot → ${targetId}`, "ok");
+      }
+    }
+    drawerDrag.clear();
+  };
+  // Drop an existing shot bar onto the drawer to remove it.
+  const onShotDropRemove = (e: React.DragEvent) => {
+    const d = drawerDrag.get();
+    if (d?.kind !== "shot-move") return;
+    e.preventDefault();
+    const src = cueById(d.cueId);
+    if (!src) { drawerDrag.clear(); return; }
+    const next = (src.shots as any[]).filter((s: any) => s.id !== d.shotId);
+    putShots.mutate({ [d.cueId]: remintShots(d.cueId, next) });
+    push("shot removed", "ok");
+    drawerDrag.clear();
+  };
+
+  // ---- VO audition (read-only VO track) ----
+  const voAudioRef = useRef<HTMLAudioElement | null>(null);
+  const playVo = (c: Cue) => {
+    const a = voAudioRef.current; if (!a) return;
+    a.src = mediaUrl.cueAudio(slug, c.id, c.wav_mtime);
+    a.play().catch(() => {});
   };
 
   // shown arrays (override the active track with the in-flight working copy)
@@ -159,7 +244,27 @@ export function Timeline({ slug }: { slug: string }) {
 
   // ---- drawer → track drops ----
   const secFromClientX = (clientX: number) => { const el = scrollRef.current; if (!el) return 0; const r = el.getBoundingClientRect(); return clamp((clientX - r.left + el.scrollLeft) / pps, 0, total); };
-  const onDropGraphics = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "card") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; const ov = makeOverlay(d.asset, anchor, 3); ov.start_offset = round2(sec - (cum[anchor] ?? 0)); commitTrack("graphics", [...overlays, ov]); push(`${d.asset} → graphic`, "ok"); drawerDrag.clear(); };
+  const onDropGraphics = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const d = drawerDrag.get();
+    drawerDrag.clear();
+    if (d?.kind !== "card") return;
+    const sec = secFromClientX(e.clientX);
+    const anchor = cueAtSecond(sec, cueList, cum);
+    if (!anchor) return;
+    if (d.slug && d.slug !== slug) {
+      try {
+        const r = await versionsApi.importTitle(slug, d.slug, d.asset);
+        push(r.master_copied ? `pulled ${d.asset} from ${d.slug} — ready`
+             : r.already ? `${d.asset} already in this episode`
+             : `imported ${d.asset} from ${d.slug} — render it on the Graphics tab`, "ok");
+      } catch (err: any) { push("import failed: " + (err?.message ?? "error"), "err"); return; }
+    }
+    const ov = makeOverlay(d.asset, anchor, 3);
+    ov.start_offset = round2(sec - (cum[anchor] ?? 0));
+    commitTrack("graphics", [...overlays, ov]);
+    if (!d.slug || d.slug === slug) push(`${d.asset} → graphic`, "ok");
+  };
   const onDropMusic = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "music") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; commitTrack("music", [...beds, makeBed(d.file, anchor, cueDurOf(anchor))]); push(`${d.file} → music bed`, "ok"); drawerDrag.clear(); };
   const onDropSfx = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "sfx") return; const sec = secFromClientX(e.clientX); const cue = cueAtSecond(sec, cueList, cum); if (!cue) return; const entry = repinSfx({ file: d.file, cue, at: "start", gain: 0.4, source: "library" } as SfxEntry, sec, cueList, cum); commitTrack("sfx", [...sfxList, entry]); push(`${d.file} → sfx @ ${cue}`, "ok"); drawerDrag.clear(); };
 
@@ -169,7 +274,7 @@ export function Timeline({ slug }: { slug: string }) {
   const ticks: number[] = []; for (let t = 0; t <= total; t += 5) ticks.push(t);
 
   return (
-    <div className="flex flex-col gap-3 h-full min-h-0">
+    <div className="flex flex-col gap-3 h-full min-h-0 min-w-0">
       {/* PREVIEW */}
       <section className="panel flex flex-col min-h-0 flex-1 p-2 gap-2">
         <div className="flex items-center justify-between">
@@ -181,7 +286,7 @@ export function Timeline({ slug }: { slug: string }) {
         </div>
         <div className="flex-1 min-h-0 bg-black hairline-soft rounded grid place-items-center overflow-hidden">
           {finalExists ? (
-            <video ref={videoRef} src={mediaUrl.finalVideo(slug)} className="max-w-full object-contain" style={{ height: "100%" }} playsInline
+            <video ref={videoRef} src={mediaUrl.finalVideo(slug)} className="max-h-full max-w-full object-contain" playsInline
               onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
           ) : <div className="text-txt-faint text-[12px] text-center px-3">No rendered video yet — run the episode (Assembly → Run) to enable the synced preview.</div>}
         </div>
@@ -193,7 +298,7 @@ export function Timeline({ slug }: { slug: string }) {
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag assets from the drawer onto a track · scrub on the ruler · drag clips to move, edges to trim</span></div>
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="seg-readout">{shownOverlays.length} GFX · {shownBeds.length} ♫ · {shownSfx.length} ♪ · {total.toFixed(1)}s</span>
+            <span className="seg-readout">{cueList.reduce((a, c) => a + ((c.shots ?? []).length), 0)} ▦ · {shownOverlays.length} GFX · {shownBeds.length} ♫ · {shownSfx.length} ♪ · {total.toFixed(1)}s</span>
             <button className="btn p-1" title="zoom out" onClick={() => setPps((z) => Math.max(12, z - 12))}>−</button>
             <span className="text-txt-faint">{pps}px/s</span>
             <button className="btn p-1" title="zoom in" onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
@@ -224,6 +329,48 @@ export function Timeline({ slug }: { slug: string }) {
                   </div>
                 );
               })}
+            </div>
+
+            {/* VO — read-only: each cue's narration clip; click to audition */}
+            <TrackLabel label="VO" />
+            <div className="relative h-7 border-b hairline-soft">
+              {cueList.map((c) => {
+                if ((c.duration_s ?? 0) <= 0) return null;
+                const { start, end } = voWindow(c, cum); const left = start * pps; const w = Math.max(4, (end - start) * pps);
+                return (
+                  <div key={c.id} onClick={() => playVo(c)} title={`${c.id} VO${c.wav_exists ? " — click to audition" : " (no wav yet)"}`}
+                    className="absolute top-0.5 h-6 rounded-sm overflow-hidden cursor-pointer flex items-center px-1 bg-[#23303a]"
+                    style={{ left, width: w, outline: "1px solid var(--line-soft)", opacity: c.wav_exists ? 1 : 0.45 }}>
+                    <span className="font-mono text-[10px] truncate pointer-events-none text-[#9ad6ff]">{c.id}</span>
+                  </div>
+                );
+              })}
+              {cueList.length === 0 && <Empty label="VO appears once cues have audio" />}
+            </div>
+
+            {/* SHOTS — per-cue, move/reorder/add/remove (no resize); width is the computed slice */}
+            <TrackLabel label="SHOTS" />
+            <div className="relative h-12 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropShots}>
+              {cueList.map((c) => {
+                const shots = (c.shots ?? []) as any[];
+                const n = shots.length;
+                return shots.map((s, idx) => {
+                  const { start, end } = shotWindow(c, idx, n, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
+                  const key = s.who ?? s.asset ?? "?"; const thumb = (s.who || s.asset) ? mediaUrl.shotPreview(slug, s.who ?? s.asset) : null;
+                  return (
+                    <div key={s.id ?? `${c.id}_${idx}`} draggable
+                      onDragStart={() => drawerDrag.set({ kind: "shot-move", cueId: c.id, shotId: s.id })}
+                      onDragEnd={() => drawerDrag.clear()}
+                      onClick={() => setSelection({ t: "cue", cue: c })}
+                      className="absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#1c2b1c]"
+                      style={{ left, width: w, outline: "1px solid var(--line-soft)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%" }}
+                      title={`${key} (${c.id}) — drag to move/reorder · drop on the drawer to remove`}>
+                      <span className="font-mono text-[9px] truncate pointer-events-none px-1 rounded" style={{ background: "rgba(0,0,0,0.6)" }}>{key}</span>
+                    </div>
+                  );
+                });
+              })}
+              {cueList.every((c) => !((c.shots ?? []) as any[]).length) && <Empty label="drag a shot here" />}
             </div>
 
             {/* GRAPHICS — editable overlay bars */}
@@ -289,16 +436,21 @@ export function Timeline({ slug }: { slug: string }) {
         )}
       </section>
 
-      {/* DRAWER + METADATA (collapse together) */}
-      <div className="relative flex-none" style={{ minHeight: bottomOpen ? 150 : 16 }}>
+      {/* DRAWER + METADATA (collapse together) — definite height so the drawer scrolls
+          internally (instead of bleeding off-page) and the preview's flex-1 gets correct
+          leftover space above it. */}
+      <div className="relative flex-none" style={{ height: bottomOpen ? 240 : 16 }}>
         <CollapseTab open={bottomOpen} onToggle={toggleBottom} label="drawer" />
         {bottomOpen && (
-          <div className="grid grid-cols-[1fr_320px] gap-3 h-full" style={{ minHeight: 150, maxHeight: 220 }}>
-            <div ref={drawerRef} className="min-h-0"><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
+          <div className="grid grid-cols-[1fr_320px] grid-rows-[minmax(0,1fr)] gap-3 h-full min-h-0">
+            <div ref={drawerRef} className="min-h-0 min-w-0"
+              onDragOver={(e) => { if (drawerDrag.get()?.kind === "shot-move") e.preventDefault(); }}
+              onDrop={onShotDropRemove}><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
             <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
           </div>
         )}
       </div>
+      <audio ref={voAudioRef} hidden />
     </div>
   );
 }

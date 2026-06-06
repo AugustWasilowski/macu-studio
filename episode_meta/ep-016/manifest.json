@@ -25,8 +25,8 @@
       },
       "COACH BODHI": {
         "engine": "omnivoice",
-        "profile_id": "31649b70",
-        "voice_name": "Snoop",
+        "profile_id": "03250a65",
+        "voice_name": "PHB_BucNasty",
         "speed": 0.9,
         "guidance_scale": 2.8,
         "seed": 4015

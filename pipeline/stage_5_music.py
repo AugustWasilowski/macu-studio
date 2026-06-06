@@ -19,11 +19,14 @@ from lib import episode_paths, load_manifest, ensure_dirs, probe_dur
 SFX_DIR = "/mnt/storage/shares/MACU/assets/sfx"
 
 
-def run(cmd):
+def run(cmd, timeout=900):
+    # Per-call cap so a deadlocked ffmpeg mix fails the stage instead of hanging the lock.
     try:
-        return subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout)
     except subprocess.CalledProcessError as e:
         print("FAIL:", " ".join(cmd[:6])); print(e.stderr[-1500:]); raise
+    except subprocess.TimeoutExpired:
+        print(f"TIMEOUT after {timeout}s:", " ".join(cmd[:6])); raise
 
 
 def _build_music_bed(bed, music, cum, cue_dur, total_dur, music_dir):

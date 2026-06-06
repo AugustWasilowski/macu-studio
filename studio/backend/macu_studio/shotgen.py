@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import json
 import random
+import re
 from pathlib import Path
 from typing import Any
 
 from . import llm
 from . import manifest as manifest_mod
+from . import prompts
 from .config import SHARES
 from .episodes import episode_dir
 
@@ -91,6 +93,11 @@ Rules:
 Return ONLY JSON matching the schema."""
 
 
+def ensure_prompt_seeded() -> None:
+    """Materialize the editable prompt file from the default (no-op if it exists)."""
+    prompts.load_or_seed(prompts.SHOTGEN_FILE, SYSTEM)
+
+
 def _read(p: Path) -> str:
     try:
         return p.read_text()
@@ -134,28 +141,76 @@ def _seed_assigner(existing_chars: dict) -> Any:
     return seed_for
 
 
-def generate(slug: str) -> dict:
-    """Dry run: ask the LLM, return a {characters, broll, cues, summary} proposal. No writes."""
+def _default_char_key(speaker: str, m: dict, existing_chars: dict) -> str | None:
+    """Fallback character key for a cue the LLM left unplanned: the key this speaker is
+    already shown with most often, else any existing key in the speaker's name family
+    (e.g. 'CRATER CARL' -> a carl_* key). None if the speaker has no character family —
+    the cue then stays unplanned (e.g. intercom-only speakers with no on-camera key)."""
+    counts: dict[str, int] = {}
+    for c in (m.get("cues") or []):
+        if c.get("speaker") == speaker:
+            for s in (c.get("shots") or []):
+                if s.get("kind") == "character" and s.get("who"):
+                    counts[s["who"]] = counts.get(s["who"], 0) + 1
+    if counts:
+        return max(counts, key=counts.get)
+    toks = [t for t in re.split(r"[^a-z0-9]+", (speaker or "").lower()) if t]
+    for tok in reversed(toks):  # last token first: 'CRATER CARL' -> carl
+        for k in existing_chars:
+            if k.split("_")[0] == tok:
+                return k
+    return None
+
+
+def _empty_proposal() -> dict:
+    return {"characters": {}, "broll": {}, "cues": [],
+            "summary": {"new_characters": [], "reused_characters": [],
+                        "new_broll": [], "reused_broll": [], "cues_planned": 0}}
+
+
+def generate(slug: str, only_missing: bool = False) -> dict:
+    """Dry run: ask the LLM, return a {characters, broll, cues, summary} proposal. No writes.
+
+    only_missing=True plans ONLY the cues that have no shots yet (gap-fill), leaving the
+    already-planned cues untouched — the safe default for an in-progress episode. On a
+    fresh episode every cue is empty, so it still plans them all. only_missing=False
+    re-plans every cue (apply then overwrites existing shots)."""
     m = manifest_mod.load(slug)
     cues = m.get("cues") or []
     existing_chars = m.get("characters") or {}
     existing_broll = m.get("broll") or {}
 
+    if only_missing:
+        target_ids = [c.get("id") for c in cues if not c.get("shots")]
+        if not target_ids:
+            return _empty_proposal()  # nothing to fill — every cue already has shots
+    else:
+        target_ids = [c.get("id") for c in cues]
+
     # The cues already carry each spoken line (vo) — that's the structured input the
     # model needs. Do NOT also send the full script.md (it blows past the context
     # window and the cues stop being visible). Keep a trimmed bible for new-character
-    # look/family guidance.
+    # look/family guidance. In gap-fill mode every cue is still sent (with its current
+    # shot status) for continuity context, but only `cues_to_plan` should be returned.
     payload = {
         "cues": [{"id": c.get("id"), "speaker": c.get("speaker"),
-                  "vo": (c.get("vo") or "")[:200], "segment": c.get("segment")} for c in cues],
+                  "vo": (c.get("vo") or "")[:200], "segment": c.get("segment"),
+                  "already_has_shots": bool(c.get("shots"))} for c in cues],
+        "cues_to_plan": target_ids,
         "existing_characters": {k: (v.get("core") if isinstance(v, dict) else str(v)) for k, v in existing_chars.items()},
         "existing_broll": list(existing_broll.keys()),
         "bible": _read(BIBLE)[:5000],
         "examples": _examples(exclude=slug),
     }
+    instr = (
+        "Plan the shots ONLY for the cue ids listed in `cues_to_plan`. Every other cue "
+        "already has shots — use them as context for visual continuity, but do NOT "
+        "re-plan them.\n\n"
+        if only_missing else
+        "Plan the shots for this episode.\n\n")
     messages = [
-        {"role": "system", "content": SYSTEM},
-        {"role": "user", "content": "Plan the shots for this episode.\n\n" + json.dumps(payload)},
+        {"role": "system", "content": prompts.load_or_seed(prompts.SHOTGEN_FILE, SYSTEM)},
+        {"role": "user", "content": instr + json.dumps(payload)},
     ]
 
     llm.start()
@@ -167,13 +222,16 @@ def generate(slug: str) -> dict:
     finally:
         llm.stop()
 
-    return _proposal(raw, m)
+    return _proposal(raw, m, target_ids=set(target_ids))
 
 
-def _proposal(raw: dict, m: dict) -> dict:
+def _proposal(raw: dict, m: dict, target_ids: set | None = None) -> dict:
     existing_chars = m.get("characters") or {}
     existing_broll = m.get("broll") or {}
-    valid_cue_ids = {c.get("id") for c in (m.get("cues") or [])}
+    all_cue_ids = {c.get("id") for c in (m.get("cues") or [])}
+    # Cues we're allowed to (re)plan. In gap-fill mode this is just the shot-less cues,
+    # so the proposal — and therefore apply() — never touches already-planned cues.
+    keep_ids = set(target_ids) if target_ids is not None else all_cue_ids
     seed_for = _seed_assigner(existing_chars)
 
     char_cores = {c["key"]: c.get("core", "") for c in (raw.get("characters") or []) if c.get("key")}
@@ -184,8 +242,8 @@ def _proposal(raw: dict, m: dict) -> dict:
     per_cue = []
     for cu in (raw.get("cues") or []):
         cid = cu.get("cue_id")
-        if cid not in valid_cue_ids:
-            continue  # drop hallucinated cue ids
+        if cid not in keep_ids:
+            continue  # drop hallucinated ids + (in gap-fill) cues we must not re-plan
         shots = []
         for i, sh in enumerate(cu.get("shots") or [], 1):
             kind, key = sh.get("kind"), sh.get("key")
@@ -200,6 +258,23 @@ def _proposal(raw: dict, m: dict) -> dict:
             shots.append(shot)
         if shots:
             per_cue.append({"cue_id": cid, "shots": shots})
+
+    # Coverage backstop: the local 7B model often omits cues on long episodes, leaving
+    # them shot-less — which later divides-by-zero in stage 4. Give every uncovered cue
+    # a single default shot of its speaker's character (a reused, already-defined key),
+    # so the proposal is always complete. The operator can refine the mood per cue after.
+    covered = {pc["cue_id"] for pc in per_cue}
+    cue_speaker = {c.get("id"): c.get("speaker") for c in (m.get("cues") or [])}
+    for cid in keep_ids:
+        if cid in covered:
+            continue
+        key = _default_char_key(cue_speaker.get(cid), m, existing_chars)
+        if not key:
+            continue  # no character family for this speaker — leave it to the operator
+        per_cue.append({"cue_id": cid,
+                        "shots": [{"id": f"{cid}_s1", "kind": "character",
+                                   "who": key, "seed": seed_for(key)}]})
+        used_char.add(key)
 
     def char_core(key: str) -> str:
         if key in existing_chars:

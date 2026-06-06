@@ -98,14 +98,28 @@ export const api = {
   regenShot: (slug: string, key: string) =>
     fetch(`/api/episodes/${slug}/shot/${key}/regen`, { method: "POST" })
       .then((r) => J<JobSubmitResp>(r)),
-  generateShots: (slug: string) =>
-    fetch(`/api/episodes/${slug}/shots/generate`, { method: "POST" })
-      .then((r) => J<ShotProposal>(r)),
+  generateShots: (slug: string, onlyMissing = true) =>
+    fetch(`/api/episodes/${slug}/shots/generate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ only_missing: onlyMissing }),
+    }).then((r) => J<ShotProposal>(r)),
   applyShots: (slug: string, proposal: ShotProposal) =>
     fetch(`/api/episodes/${slug}/shots/apply`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ proposal }),
     }).then((r) => J<{ ok: boolean; applied_cues: number; new_characters: number; new_broll: number }>(r)),
+  generateSfx: (slug: string) =>
+    fetch(`/api/episodes/${slug}/sfx/generate`, { method: "POST" })
+      .then((r) => J<SfxProposal>(r)),
+  applySfx: (slug: string, proposal: SfxProposal) =>
+    fetch(`/api/episodes/${slug}/sfx/apply`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proposal }),
+    }).then((r) => J<{ ok: boolean; placed: number; reused: number; acquire: { file: string; query: string }[]; total: number }>(r)),
+  // Kill the active render, clear the ComfyUI queue, free GPU memory. Returns a per-step report.
+  emergencyStop: () =>
+    fetch(`/api/emergency-stop`, { method: "POST" })
+      .then((r) => J<{ ok: boolean; report: Record<string, string> }>(r)),
 };
 
 export interface ShotProposalChar { reuse: boolean; seed?: number | null; core: string }
@@ -116,6 +130,22 @@ export interface ShotProposal {
   broll: Record<string, ShotProposalBroll>;
   cues: ShotProposalCue[];
   summary: { new_characters: string[]; reused_characters: string[]; new_broll: string[]; reused_broll: string[]; cues_planned: number };
+}
+
+export interface SfxProposalEntry {
+  cue: string;
+  at: string;
+  file: string;
+  gain: number;
+  reuse: boolean;
+  need: boolean;
+  query: string;
+  reason: string;
+  duration_s?: number | null;
+}
+export interface SfxProposal {
+  sfx: SfxProposalEntry[];
+  summary: { opportunities: number; reused: string[]; acquire: { file: string; query: string }[] };
 }
 
 export const mediaUrl = {

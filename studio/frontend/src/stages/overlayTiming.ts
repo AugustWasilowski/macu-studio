@@ -68,6 +68,32 @@ export function makeOverlay(asset: string, cueId: string, durationS: number): Ov
   };
 }
 
+// ---- per-cue shots (computed even slices) ----
+
+/** The absolute [start,end] window of shot `idx` of `n` within a cue. Shots have no
+ * stored duration — each gets an even slice of the cue's screen time, mirroring stage 4
+ * (`per = vo_dur / len(shots)`). Read-only geometry; dragging only changes membership/order. */
+export function shotWindow(
+  cue: Pick<Cue, "id" | "duration_s">,
+  idx: number,
+  n: number,
+  cum: Record<string, number>,
+): { start: number; end: number } {
+  const base = cum[cue.id] ?? 0;
+  const per = (cue.duration_s ?? 0) / Math.max(1, n);
+  const start = base + idx * per;
+  return { start, end: start + per };
+}
+
+/** Absolute [start,end] window of a cue's VO clip (read-only VO track). */
+export function voWindow(
+  cue: Pick<Cue, "id" | "duration_s">,
+  cum: Record<string, number>,
+): { start: number; end: number } {
+  const start = cum[cue.id] ?? 0;
+  return { start, end: start + (cue.duration_s ?? 0) };
+}
+
 // ---- music beds (cue-range spans) ----
 
 /** Absolute [start,end] window of a bed = first cue start → last cue end. */

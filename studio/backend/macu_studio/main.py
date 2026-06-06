@@ -28,7 +28,11 @@ from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
 from . import chat as chat_mod
 from . import shotgen as shotgen_mod
+from . import sfxgen as sfxgen_mod
 from . import cardgen as cardgen_mod
+from . import compgen as compgen_mod
+from . import corpus as corpus_mod
+from . import emergency as emergency_mod
 from . import activity as activity_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
@@ -37,6 +41,15 @@ from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKE
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[macu-studio] EPISODES={EPISODES} FRONTEND_DIST={FRONTEND_DIST}")
+    # Materialize the editable Ollama prompt files into docs/ so they appear on
+    # the Docs page even before the first generation. No-op once they exist.
+    try:
+        shotgen_mod.ensure_prompt_seeded()
+        sfxgen_mod.ensure_prompt_seeded()
+        cardgen_mod.ensure_prompt_seeded()
+        compgen_mod.ensure_prompt_seeded()
+    except Exception as e:
+        print(f"[macu-studio] prompt seed skipped: {e}")
     yield
 
 
@@ -379,9 +392,9 @@ async def put_sfx(slug: str, body: dict = Body(...)):
 
 @app.put("/api/episodes/{slug}/overlays")
 async def put_overlays(slug: str, body: dict = Body(...)):
-    """Replace manifest.overlays[] wholesale — the single mutation for the Graphics
-    dope sheet (drag-to-place) and the Video-page timeline (drag/resize/edit/delete
-    spanning title-card placements)."""
+    """Replace manifest.overlays[] wholesale — the single mutation for the dope sheet
+    (drag-to-place) and the timeline's GRAPHICS track (drag/resize/edit/delete spanning
+    title-card placements)."""
     overlays = body.get("overlays")
     if not isinstance(overlays, list):
         raise HTTPException(400, "overlays must be a list")
@@ -389,6 +402,90 @@ async def put_overlays(slug: str, body: dict = Body(...)):
     m["overlays"] = overlays
     manifest_mod.save(slug, m)
     return {"ok": True, "count": len(overlays)}
+
+
+# ---------- Cross-episode asset corpus (drawer "all episodes" toggle) ----------
+
+@app.get("/api/corpus/shot-alternates")
+def get_shot_alternates(slug: str | None = None):
+    """Archived (non-live) shot generations — one row per version. `slug` scopes to a
+    single episode; omit it for the whole corpus. Backs the drawer's 'alternates' toggle.
+    Declared before /api/corpus/{kind} so the static path wins the match."""
+    return {"alternates": corpus_mod.shot_alternates(slug)}
+
+
+@app.get("/api/corpus/{kind}")
+def get_corpus(kind: str):
+    """All shots / titles / cues across every episode (each row tagged with its `slug`).
+    Backs the asset drawer's 'all episodes' toggle so a shot from another episode can be
+    pulled into the one being edited."""
+    if kind == "shots":
+        return {"shots": corpus_mod.shots()}
+    if kind == "titles":
+        return {"titles": corpus_mod.titles()}
+    if kind == "cues":
+        return {"cues": corpus_mod.cues()}
+    raise HTTPException(400, "kind must be shots|titles|cues")
+
+
+@app.post("/api/episodes/{slug}/import-shot-version")
+async def post_import_shot_version(slug: str, body: dict = Body(...)):
+    """Pull a specific archived generation of a shot into this episode (copies that take's
+    frame over as the master + pins its seed; archives the current live take first)."""
+    from_slug, key, kind, v = body.get("from_slug"), body.get("key"), body.get("kind"), body.get("v")
+    if not (from_slug and key and kind in ("character", "broll") and v is not None):
+        raise HTTPException(400, "from_slug, key, kind(character|broll), v required")
+    try:
+        return corpus_mod.import_shot_version(slug, from_slug, key, kind, int(v))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/api/episodes/{slug}/import-shot")
+async def post_import_shot(slug: str, body: dict = Body(...)):
+    """Copy a shot definition (core+seed) from another episode's manifest into this one,
+    so a cross-episode shot dropped on the timeline renders here from the same seed."""
+    from_slug, key, kind = body.get("from_slug"), body.get("key"), body.get("kind")
+    if not (from_slug and key and kind in ("character", "broll")):
+        raise HTTPException(400, "from_slug, key, kind(character|broll) required")
+    try:
+        return corpus_mod.import_shot(slug, from_slug, key, kind)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/api/episodes/{slug}/import-title")
+async def post_import_title(slug: str, body: dict = Body(...)):
+    """Copy a title-card definition from another episode's manifest into this one."""
+    from_slug, key = body.get("from_slug"), body.get("key")
+    if not (from_slug and key):
+        raise HTTPException(400, "from_slug, key required")
+    try:
+        return corpus_mod.import_title(slug, from_slug, key)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.put("/api/episodes/{slug}/cue-shots")
+async def put_cue_shots(slug: str, body: dict = Body(...)):
+    """Set cue.shots[] for the named cues — the single mutation for the timeline SHOTS
+    track (drag a shot onto a cue, move between cues, reorder, drag-out to remove). Only
+    the cues present in the body are touched; everything else in the manifest is left
+    alone. Mirrors put_overlays/put_sfx. Shots keep the ManifestShot shape
+    ({id,kind,who?,asset?,seed?}); save() re-validates."""
+    cues = body.get("cues")
+    if not isinstance(cues, dict):
+        raise HTTPException(400, "cues must be an object of {cueId: [shot,...]}")
+    m = manifest_mod.load(slug)
+    by_id = {c.get("id"): c for c in (m.get("cues") or [])}
+    n = 0
+    for cid, shots in cues.items():
+        c = by_id.get(cid)
+        if c is not None and isinstance(shots, list):
+            c["shots"] = shots
+            n += 1
+    manifest_mod.save(slug, m)
+    return {"ok": True, "count": n}
 
 
 @app.put("/api/episodes/{slug}/music/beds")
@@ -412,16 +509,18 @@ async def put_music_beds(slug: str, body: dict = Body(...)):
 # ---------- LLM shot-list generation (Ollama on-demand) ----------
 
 @app.post("/api/episodes/{slug}/shots/generate")
-def post_shots_generate(slug: str):
+def post_shots_generate(slug: str, body: dict = Body(default={})):
     """Dry run: ask the local LLM to propose the shot list (reuse vs mint + per-cue
-    shots). 409 if the GPU is busy (a render is active). Sync def → runs in the
-    threadpool so the long model call doesn't block the event loop."""
+    shots). Body {only_missing:true} plans ONLY cues without shots (gap-fill, the safe
+    default) so apply won't clobber already-tuned cues. 409 if the GPU is busy (a render
+    is active). Sync def → runs in the threadpool so the long model call doesn't block."""
+    only_missing = bool(body.get("only_missing"))
     busy, free = agen_mod.gpu_busy()
     if busy:
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
-    activity_mod.set_running("Generating shot list", ttl=180)
+    activity_mod.set_running("Filling missing shots" if only_missing else "Generating shot list", ttl=180)
     try:
-        out = shotgen_mod.generate(slug)
+        out = shotgen_mod.generate(slug, only_missing=only_missing)
         activity_mod.clear()
         return out
     except FileNotFoundError as e:
@@ -441,6 +540,43 @@ async def post_shots_apply(slug: str, body: dict = Body(...)):
         raise HTTPException(400, "proposal object required")
     try:
         return shotgen_mod.apply(slug, proposal)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+
+
+# ---------- LLM sound-effect-list generation (Ollama on-demand) ----------
+
+@app.post("/api/episodes/{slug}/sfx/generate")
+def post_sfx_generate(slug: str):
+    """Dry run: ask the local LLM to read the script as a radio play and propose SFX
+    placements (favoring the existing kit, flagging any that need acquiring). 409 if the
+    GPU is busy (a render is active). Sync def → threadpool so the model call doesn't
+    block the event loop."""
+    busy, free = agen_mod.gpu_busy()
+    if busy:
+        raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
+    activity_mod.set_running("Generating SFX list", ttl=180)
+    try:
+        out = sfxgen_mod.generate(slug)
+        activity_mod.clear()
+        return out
+    except FileNotFoundError as e:
+        activity_mod.clear()
+        raise HTTPException(404, str(e))
+    except Exception as e:  # noqa: BLE001
+        activity_mod.set_error("SFX-gen failed")
+        raise HTTPException(500, f"sfx-gen failed: {e}")
+
+
+@app.post("/api/episodes/{slug}/sfx/apply")
+async def post_sfx_apply(slug: str, body: dict = Body(...)):
+    """Merge an approved SFX proposal (possibly edited) into manifest.sfx[] in the same
+    list shape the Audio-page drag-drop uses, so the effects land in the timeline."""
+    proposal = body.get("proposal")
+    if not isinstance(proposal, dict):
+        raise HTTPException(400, "proposal object required")
+    try:
+        return sfxgen_mod.apply(slug, proposal)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
 
@@ -500,6 +636,43 @@ def post_card_text_apply(slug: str, body: dict = Body(...)):
         raise HTTPException(400, str(e))
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
+
+
+@app.post("/api/emergency-stop")
+def post_emergency_stop():
+    """Kill the active render (run.py tree), interrupt + clear the ComfyUI queue, free its
+    VRAM, and stop the on-demand GPU containers. Best-effort; returns a per-step report."""
+    report = emergency_mod.stop_all()
+    try:
+        activity_mod.clear()
+    except Exception:
+        pass
+    return {"ok": True, "report": report}
+
+
+# ---------- LLM composition generation (Ollama on-demand) ----------
+
+@app.post("/api/episodes/{slug}/composition/generate")
+def post_composition_generate(slug: str, body: dict = Body(...)):
+    """Ask the local model to write a NEW HyperFrames composition (animated card HTML) from
+    a brief, save it as the template named `key`, and return its placeholder field set. 409
+    if the GPU is busy (a render is active). Sync def → threadpool for the long model call."""
+    key = (body.get("key") or "").strip()
+    brief = (body.get("brief") or "").strip()
+    busy, free = agen_mod.gpu_busy()
+    if busy:
+        raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
+    activity_mod.set_running(f"Generating composition {key}", ttl=240)
+    try:
+        out = compgen_mod.generate(slug, key, brief)
+        activity_mod.clear()
+        return out
+    except ValueError as e:
+        activity_mod.clear()
+        raise HTTPException(400, str(e))
+    except Exception as e:  # noqa: BLE001
+        activity_mod.set_error("Composition gen failed")
+        raise HTTPException(500, f"composition-gen failed: {e}")
 
 
 # ---------- Asset library (assets/sfx, assets/music) ----------

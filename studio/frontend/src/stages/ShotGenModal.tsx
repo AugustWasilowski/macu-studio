@@ -14,16 +14,19 @@ export function ShotGenModal({ slug, open, onClose }: { slug: string; open: bool
   const [phase, setPhase] = useState<"loading" | "review" | "applying" | "error">("loading");
   const [err, setErr] = useState("");
   const [p, setP] = useState<ShotProposal | null>(null);
+  // Gap-fill by default: only plan cues that have no shots yet, so apply never clobbers
+  // shots you've already tuned. Toggle off to re-plan the whole episode from scratch.
+  const [onlyMissing, setOnlyMissing] = useState(true);
 
   useEffect(() => {
     if (!open) return;
     setPhase("loading"); setErr(""); setP(null);
     let alive = true;
-    api.generateShots(slug)
+    api.generateShots(slug, onlyMissing)
       .then((res) => { if (alive) { setP(res); setPhase("review"); } })
       .catch((e: Error) => { if (alive) { setErr(e.message); setPhase("error"); } });
     return () => { alive = false; };
-  }, [open, slug]);
+  }, [open, slug, onlyMissing]);
 
   const editChar = (key: string, core: string) => setP((pp) => pp && ({ ...pp, characters: { ...pp.characters, [key]: { ...pp.characters[key], core } } }));
   const editBroll = (key: string, prompt: string) => setP((pp) => pp && ({ ...pp, broll: { ...pp.broll, [key]: { ...pp.broll[key], prompt } } }));
@@ -53,11 +56,17 @@ export function ShotGenModal({ slug, open, onClose }: { slug: string; open: bool
       footer={
         <>
           <button className="btn" onClick={onClose}>Close</button>
-          <button className="btn btn-cyan" disabled={phase !== "review" || !p} onClick={apply}>
+          <button className="btn btn-cyan" disabled={phase !== "review" || !p || (p?.cues.length ?? 0) === 0} onClick={apply}>
             {phase === "applying" ? "Applying…" : "Apply to manifest"}
           </button>
         </>
       }>
+      <label className="flex items-center gap-2 text-[11px] text-txt-dim mb-3 cursor-pointer select-none"
+        title="On: only plan cues that have no shots yet (won't touch cues you've already set). Off: re-plan every cue (overwrites existing shots).">
+        <input type="checkbox" checked={onlyMissing} disabled={phase === "loading" || phase === "applying"}
+          onChange={(e) => setOnlyMissing(e.target.checked)} />
+        Only plan cues without shots <span className="text-txt-faint">(gap-fill — leaves tuned cues alone)</span>
+      </label>
       {phase === "loading" && (
         <div className="text-txt-dim text-[13px] py-6 text-center">
           Asking the local LLM (Qwen2.5-7B) to plan the shots…<br />
@@ -71,7 +80,14 @@ export function ShotGenModal({ slug, open, onClose }: { slug: string; open: bool
             : `Generation failed: ${err}`}
         </div>
       )}
-      {(phase === "review" || phase === "applying") && p && (
+      {(phase === "review" || phase === "applying") && p && p.cues.length === 0 && (
+        <div className="text-txt-dim text-[12px] py-4">
+          {onlyMissing
+            ? "Every cue already has shots — nothing to fill. Uncheck the box above to re-plan the whole episode."
+            : "The model returned no shots. Try again."}
+        </div>
+      )}
+      {(phase === "review" || phase === "applying") && p && p.cues.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2 text-[12px]">
             <Stat label="cues planned" value={s!.cues_planned} />

@@ -68,6 +68,7 @@ def main(slug):
 
     jobs = []
     skipped = 0
+    seed_updates = {}  # broll key -> {prompt, seed} for seeds we assign here (persist for determinism)
     for kind, key in unique:
         target = staged_master_webp(slug, key, kind)
         if os.path.exists(target):
@@ -82,16 +83,32 @@ def main(slug):
         else:  # broll — value is a plain prompt string OR {"prompt", "seed"}
             bro = m["broll"][key]
             if isinstance(bro, dict):
-                prompt = (bro.get("prompt") or "") + style_suffix
+                core = bro.get("prompt") or ""
+                prompt = core + style_suffix
                 seed = bro.get("seed")
                 if seed is None:
                     seed = random.randint(1000, 9999)
+                    seed_updates[key] = {"prompt": core, "seed": seed}
             else:
                 prompt = bro + style_suffix
                 seed = random.randint(1000, 9999)
+                # Promote the plain-string broll to {prompt, seed} so this render is reproducible.
+                seed_updates[key] = {"prompt": bro, "seed": seed}
             comfy_prefix = f"macu/{slug}/broll_{key}"
         jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
                      "prefix": comfy_prefix, "target": target})
+
+    # Persist any seeds we just minted so re-renders (and cross-episode pulls) are
+    # deterministic. We never back-populate old data — only seeds assigned this run.
+    if seed_updates:
+        for key, val in seed_updates.items():
+            m["broll"][key] = val
+        mpath = episode_paths(slug)["manifest"]
+        tmp = mpath + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(m, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, mpath)
+        print(f"[stage 2 masters] saved {len(seed_updates)} new broll seed(s): {', '.join(seed_updates)}")
 
     print(f"[stage 2 masters] {len(jobs)} to render, {skipped} cached")
     if not jobs:
@@ -109,9 +126,27 @@ def main(slug):
             j["pid"] = None
         print(f"  queued {j['key']:24} (kind={j['kind']}, seed={j['seed']}) pid={j.get('pid')}")
 
+    # Watchdog: a crashed/restarted ComfyUI drops our queued prompts (queue goes empty)
+    # and /history never reports them — the old loop then polled idle for the full hour
+    # while holding the render lock. STALL_S bails early when ComfyUI is idle (empty
+    # queue) AND nothing has completed for that long; a slow-but-progressing render keeps
+    # resetting the clock (queue still busy), so only genuine stalls trip it. HARD_S is
+    # the absolute ceiling regardless.
+    STALL_S = 300
+    HARD_S = 60 * 60
+
+    def comfy_busy() -> bool:
+        try:
+            q = get("/queue")
+            return bool(q.get("queue_running") or q.get("queue_pending"))
+        except Exception:
+            return False  # unreachable ComfyUI counts as not-busy → stall clock advances
+
     done = set()
-    while len(done) < len(jobs) and time.time() - start < 60*60:
+    last_progress = time.time()
+    while len(done) < len(jobs) and time.time() - start < HARD_S:
         time.sleep(6)
+        before = len(done)
         for j in jobs:
             if j["key"] in done:
                 continue
@@ -144,9 +179,24 @@ def main(slug):
                     print(f"  done {j['key']:24} (recovered cold-load) -> {j['target']}")
                     progress_tick(2, "masters", len(done) / len(jobs))
 
+        # Stall detection: reset the clock on any completion or while ComfyUI is working;
+        # otherwise fail fast so the render lock isn't held by a dead ComfyUI.
+        if len(done) > before or comfy_busy():
+            last_progress = time.time()
+        else:
+            idle = time.time() - last_progress
+            if idle > STALL_S:
+                missing = [j["key"] for j in jobs if j["key"] not in done]
+                raise RuntimeError(
+                    f"[stage 2 masters] stalled — ComfyUI idle (empty queue) with no "
+                    f"completions for {int(idle/60)}m; it likely crashed or was restarted. "
+                    f"{len(done)}/{len(jobs)} done, missing: {missing}")
+            print(f"  …waiting on ComfyUI — {len(done)}/{len(jobs)} done, "
+                  f"idle {int(idle)}s/{STALL_S}s")
+
     if len(done) < len(jobs):
         missing = [j["key"] for j in jobs if j["key"] not in done]
-        raise RuntimeError(f"[stage 2 masters] timeout, missing: {missing}")
+        raise RuntimeError(f"[stage 2 masters] timeout after {int((time.time()-start)/60)}m, missing: {missing}")
 
     return {"rendered": len(jobs), "skipped": skipped,
             "wall_s": round(time.time()-start, 2)}

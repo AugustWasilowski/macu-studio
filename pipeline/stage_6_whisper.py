@@ -20,7 +20,7 @@ def _probe_duration(path):
     try:
         r = subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
                             "-of","default=noprint_wrappers=1:nokey=1", path],
-                           capture_output=True, text=True, check=True)
+                           capture_output=True, text=True, check=True, timeout=60)
         return float(r.stdout.strip())
     except Exception:
         return None
@@ -39,7 +39,7 @@ def main(slug):
     start = time.time()
     subprocess.run(["ffmpeg","-y","-i", src,"-vn","-ac","1","-ar","16000",
                     "-c:a","pcm_s16le", wav],
-                   check=True, capture_output=True)
+                   check=True, capture_output=True, timeout=900)
 
     # Background ticker: estimates fraction from elapsed / (audio_dur × multiplier),
     # capped at 0.95 so the post-subprocess tick(1.0) is the one that finalizes the zone.
@@ -74,7 +74,9 @@ with open("{out}","w") as f:
 print(f"whisper: {{len(out_segs)}} segs, {{sum(len(s['words']) for s in out_segs)}} words, {{time.time()-t0:.1f}}s")
 """
     try:
-        subprocess.run([WHISPER_VENV, "-c", script], check=True)
+        # Cap the transcription so a wedged whisper process fails the stage (releasing
+        # the render lock) instead of hanging. 30 min is far above a real episode's ASR.
+        subprocess.run([WHISPER_VENV, "-c", script], check=True, timeout=1800)
     finally:
         stop_ticker.set()
     progress_tick(6, "whisper", 1.0)

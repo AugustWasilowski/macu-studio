@@ -118,7 +118,9 @@ def worker():
             cmd += ["--only", str(job.only)]
         try:
             with open(job.log_path, "wb") as log:
-                p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
+                # start_new_session so the whole render tree (run.py + ffmpeg/rife children)
+                # is a process group we can kill in one shot via /kill.
+                p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 job.proc = p
                 p.wait()
             job.state = "done" if p.returncode == 0 else "error"
@@ -200,6 +202,8 @@ class Handler(BaseHTTPRequestHandler):
     # POST --------------------------------------------------------------
     def do_POST(self):
         u = urlparse(self.path)
+        if u.path == "/kill":
+            return self._kill()
         if u.path != "/render":
             return _json(self, 404, {"error": "not found"})
         length = int(self.headers.get("Content-Length", 0))
@@ -223,6 +227,31 @@ class Handler(BaseHTTPRequestHandler):
         return _json(self, 202, {"job_id": job_id, "queued": True,
                                   "events_url": f"/events/{job_id}",
                                   "status_url": f"/status/{job_id}"})
+
+    # KILL --------------------------------------------------------------
+    def _kill(self):
+        """Emergency stop: SIGTERM (then SIGKILL) every running job's process group so the
+        run.py tree + its ffmpeg/rife children all die, and mark the jobs errored so the
+        render lock clears."""
+        with JOBS_LOCK:
+            running = [j for j in JOBS.values() if j.state == "running" and getattr(j, "proc", None)]
+        killed = []
+        for j in running:
+            p = j.proc
+            for sig in (signal.SIGTERM, signal.SIGKILL):
+                if p.poll() is not None:
+                    break
+                try:
+                    os.killpg(os.getpgid(p.pid), sig)
+                except Exception:
+                    try: p.send_signal(sig)
+                    except Exception: pass
+                time.sleep(0.8)
+            j.state = "error"
+            try: j._persist()
+            except Exception: pass
+            killed.append(j.id)
+        return _json(self, 200, {"killed": killed})
 
     # SSE ---------------------------------------------------------------
     def _sse_stream(self, job, since):

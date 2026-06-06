@@ -27,6 +27,7 @@ import re
 
 from . import llm
 from . import manifest as manifest_mod
+from . import prompts
 from . import script as script_mod
 from .config import SHARES
 
@@ -119,6 +120,22 @@ You will be told the card TYPE and its specific brief, plus the episode's script
 Return ONLY the five fields as JSON matching the schema."""
 
 
+def _default_briefs() -> dict[str, str]:
+    return {k: v["brief"] for k, v in CARD_TYPES.items()}
+
+
+def _brief(card_type: str) -> str:
+    """The live (possibly Docs-edited) brief for `card_type`, else the in-code default."""
+    return prompts.load_or_seed_briefs(_default_briefs()).get(card_type) \
+        or CARD_TYPES[card_type]["brief"]
+
+
+def ensure_prompt_seeded() -> None:
+    """Materialize the editable system-prompt + briefs files (no-op if they exist)."""
+    prompts.load_or_seed(prompts.CARDGEN_FILE, SYSTEM)
+    prompts.load_or_seed_briefs(_default_briefs())
+
+
 def _read_text(p) -> str:
     try:
         return p.read_text()
@@ -152,6 +169,7 @@ def generate(slug: str, card_type: str, composition: str | None = None,
     if spec is None:
         raise ValueError(f"unknown card_type {card_type!r}; one of {list(CARD_TYPES)}")
     comp = composition or spec["composition"]
+    brief = _brief(card_type)
 
     m = manifest_mod.load(slug)
     sc = script_mod.read(slug)
@@ -165,7 +183,7 @@ def generate(slug: str, card_type: str, composition: str | None = None,
 
     payload = {
         "card_type": card_type,
-        "brief": spec["brief"],
+        "brief": brief,
         "episode_slug": slug,
         "episode_number": _episode_number(slug),
         "episode_title": m.get("title") or "",
@@ -175,10 +193,10 @@ def generate(slug: str, card_type: str, composition: str | None = None,
         "bible_excerpt": _read_text(BIBLE)[:2500],
     }
     messages = [
-        {"role": "system", "content": SYSTEM},
+        {"role": "system", "content": prompts.load_or_seed(prompts.CARDGEN_FILE, SYSTEM)},
         {"role": "user", "content": (
             f"Write the card text for a `{card_type}` card.\n\n"
-            f"BRIEF: {spec['brief']}\n\n"
+            f"BRIEF: {brief}\n\n"
             "Use the episode context below. Prefer lifting a real punchline from the "
             "script over inventing one.\n\n" + json.dumps(payload)
         )},

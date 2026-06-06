@@ -5,6 +5,7 @@ import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
+import { api } from "../api";
 import { SysStat } from "./SysStat";
 import { JobStatus } from "./JobStatus";
 
@@ -29,6 +30,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const qc = useQueryClient();
   const toggleDrawer = useStore((s) => s.toggleDrawer);
   const toggleLog = useStore((s) => s.toggleLog);
@@ -49,6 +51,24 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       pushToast(`git sync error: ${e instanceof Error ? e.message : String(e)}`, "err");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function onStop() {
+    if (stopping) return;
+    if (!window.confirm("EMERGENCY STOP — kill the active render, clear the ComfyUI queue, and free GPU memory?")) return;
+    setStopping(true);
+    pushToast("emergency stop — killing render + freeing GPU…", "run");
+    try {
+      const r = await api.emergencyStop();
+      pushToast("emergency stop complete — render killed, queue cleared, GPU freed", "ok");
+      // surface the per-step detail in the activity log
+      Object.entries(r.report).forEach(([k, v]) => pushToast(`${k}: ${v}`, v.startsWith("err") ? "err" : "info"));
+      qc.invalidateQueries({ queryKey: ["pipeline"] });
+    } catch (e) {
+      pushToast(`emergency stop failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+    } finally {
+      setStopping(false);
     }
   }
 
@@ -159,6 +179,15 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
         })}
       </nav>
       <div className="ml-auto flex items-center gap-3">
+        <button
+          className="btn"
+          onClick={onStop}
+          disabled={stopping}
+          title="Emergency stop: kill the active render, clear the ComfyUI queue, and free GPU memory"
+          style={{ borderColor: "var(--red)", color: "var(--red)", boxShadow: "0 0 6px rgba(255,77,77,.35)" }}
+        >
+          <span className="font-semibold tracking-wider uppercase text-[11px]">{stopping ? "Stopping…" : "■ Stop"}</span>
+        </button>
         <JobStatus />
         <SysStat />
         <button

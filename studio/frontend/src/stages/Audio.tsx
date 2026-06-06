@@ -11,6 +11,7 @@ import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlay, IPause, IDL } from "../components/Icons";
 import { precacheMedia, isCached } from "../mediaCache";
 import { useSfx, usePreview, GapZone, Library, PlayItem } from "./AudioSfx";
+import { SfxGenModal } from "./SfxGenModal";
 import { useCuePlayback } from "./useCuePlayback";
 import type { Cue, PipelineEvent } from "../types";
 
@@ -43,6 +44,7 @@ export function Audio({ slug }: { slug: string }) {
 
   const sfx = useSfx(slug);
   const preview = usePreview();
+  const [sfxGenOpen, setSfxGenOpen] = useState(false);
 
   // Per-cue version-preview override URL (null = canonical cue audio).
   const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
@@ -193,6 +195,10 @@ export function Audio({ slug }: { slug: string }) {
                 Continuous
               </label>
               <button className="btn btn-amber" onClick={regenAllMissing}><IRegen /> Regen missing</button>
+              <button className="btn btn-cyan" onClick={() => setSfxGenOpen(true)}
+                title="Use the local LLM to read the script as a radio play and propose sound effects — favoring the kit you already have. Inserts them into the timeline on apply.">
+                <IRegen /> Generate SFX list
+              </button>
               <button
                 className="btn"
                 onClick={precache}
@@ -291,6 +297,7 @@ export function Audio({ slug }: { slug: string }) {
         </div>
         <Library slug={slug} previewUrl={preview.previewUrl} onPreview={preview.toggle} />
       </aside>
+      <SfxGenModal slug={slug} open={sfxGenOpen} onClose={() => setSfxGenOpen(false)} />
     </div>
   );
 }

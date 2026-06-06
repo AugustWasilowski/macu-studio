@@ -11,11 +11,15 @@ DEFAULT_STYLE = ("BorderStyle=1,Outline=2,Shadow=1,"
                  "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
                  "MarginV=32,Alignment=2")
 
-def run(cmd):
+def run(cmd, timeout=1800):
+    # Per-call cap so a hung NVENC burn fails the stage (releasing the render lock)
+    # instead of blocking forever. 30 min is well above any real full-episode burn.
     try:
-        return subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout)
     except subprocess.CalledProcessError as e:
         print("FAIL:", " ".join(cmd[:6])); print(e.stderr[-1500:]); raise
+    except subprocess.TimeoutExpired:
+        print(f"TIMEOUT after {timeout}s:", " ".join(cmd[:6])); raise
 
 def main(slug):
     ensure_dirs(slug)
@@ -60,15 +64,32 @@ def main(slug):
     srt_esc = srt.replace(":","\\:")
     sub_filter = (f"subtitles='{srt_esc}':fontsdir='{fontsdir}':force_style='{style}'")
 
+    # Render to a temp file first, then version the previous final (rename it with its
+    # render timestamp) and move the new one into place. Doing it in this order means a
+    # failed burn never destroys the existing final, and prior renders are kept as
+    # final/<slug>.<YYYYmmdd-HHMMSS>.mp4 archives (the live file stays final/<slug>.mp4).
+    base, ext = os.path.splitext(final)
+    tmp = f"{base}.part{ext}"
     start = time.time()
     run(["ffmpeg","-y","-i", src,"-vf", sub_filter,
          "-c:v","h264_nvenc","-preset","p5","-tune","hq","-cq","22",
-         "-c:a","copy","-movflags","+faststart", final])
+         "-c:a","copy","-movflags","+faststart", tmp])
+    archived = None
+    if os.path.exists(final):
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(os.path.getmtime(final)))
+        archive = f"{base}.{stamp}{ext}"
+        n = 1
+        while os.path.exists(archive):
+            archive = f"{base}.{stamp}-{n}{ext}"; n += 1
+        os.rename(final, archive)
+        archived = os.path.basename(archive)
+        print(f"[stage 8 burn] archived previous final -> {archived}")
+    os.replace(tmp, final)
     size_mb = os.path.getsize(final) / (1024*1024)
     print(f"[stage 8 burn] {final} {round(size_mb,1)} MB "
           f"({round(time.time()-start,2)}s)")
     return {"final": final, "size_mb": round(size_mb,2),
-            "font_used": font_name,
+            "font_used": font_name, "archived": archived,
             "wall_s": round(time.time()-start,2)}
 
 if __name__ == "__main__":

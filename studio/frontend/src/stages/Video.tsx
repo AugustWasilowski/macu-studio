@@ -11,38 +11,15 @@ import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlus, IDL } from "../components/Icons";
 import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
-import { Timeline } from "./Timeline";
 import { ShotGenModal } from "./ShotGenModal";
 import type { PipelineEvent, Shot } from "../types";
 
+// The Video tab is the shot list. (The timeline moved to the Assembly tab.)
 export function Video({ slug }: { slug: string }) {
-  const [view, setView] = useState<"shots" | "timeline">("shots");
-  if (view === "timeline") {
-    return (
-      <div className="flex flex-col gap-3 h-full min-h-0">
-        <ViewToggle view={view} setView={setView} />
-        <div className="flex-1 min-h-0"><Timeline slug={slug} /></div>
-      </div>
-    );
-  }
-  return <ShotsView slug={slug} viewToggle={<ViewToggle view={view} setView={setView} />} />;
+  return <ShotsView slug={slug} />;
 }
 
-function ViewToggle({ view, setView }: { view: "shots" | "timeline"; setView: (v: "shots" | "timeline") => void }) {
-  return (
-    <div className="flex gap-1">
-      {(["shots", "timeline"] as const).map((v) => (
-        <button key={v} onClick={() => setView(v)}
-          className={"tab px-3 h-[28px] hairline-soft rounded-[3px] text-[11px] uppercase tracking-wider " + (view === v ? "active" : "")}
-          style={view === v ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", color: "var(--amber)" } : {}}>
-          {v === "shots" ? "Shots" : "Timeline"}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.ReactNode }) {
+function ShotsView({ slug }: { slug: string }) {
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const busy = useStore((s) => s.busy);
@@ -193,7 +170,6 @@ function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.React
 
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
-      {viewToggle}
       <div className="grid grid-cols-[1fr_380px] gap-3 flex-1 min-h-0">
       <section className="panel flex flex-col min-h-0">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
@@ -243,7 +219,7 @@ function ShotsView({ slug, viewToggle }: { slug: string; viewToggle: React.React
                 const viewingVersion = vseed !== undefined;
                 return (
                   <tr
-                    key={s.key}
+                    key={`${s.kind}/${s.key}`}
                     onClick={() => { selectShot(s.key); setDraftPrompt(null); }}
                     className={"border-b border-[var(--line-soft)] hover:bg-bg-3 cursor-pointer " + (active ? "bg-bg-3" : "")}
                   >

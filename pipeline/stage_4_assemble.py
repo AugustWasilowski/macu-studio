@@ -87,6 +87,16 @@ def main(slug):
     start = time.time()
     cue_videos = []
     cue_durs = {}
+    # Pre-flight: a cue with no shots has no video to show and would divide-by-zero
+    # in the per-shot timing below. Fail fast with the exact cue ids so the operator
+    # can assign shots (Studio → Video → Generate shot list, or edit the manifest)
+    # before re-assembling, instead of hitting a cryptic ZeroDivisionError mid-run.
+    shotless = [c["id"] for c in m["cues"] if not c.get("shots")]
+    if shotless:
+        raise RuntimeError(
+            f"[stage 4 assemble] {len(shotless)} cue(s) have no shots assigned: "
+            f"{', '.join(shotless)}. Assign shots to each (Studio → Video → "
+            f"Generate shot list, or edit the manifest) before assembling.")
     for cue in m["cues"]:
         vo = f"{p['vo']}/{cue['id']}.wav"
         vo_dur = probe_dur(vo)

@@ -45,3 +45,7 @@ studio/frontend/node_modules/
 studio/frontend/dist/
 studio/frontend/tsconfig.tsbuildinfo
 studio/**/*.egg-info/
+
+# Timestamped manifest backups (created by in-place edits)
+*.bak.*
+*.json.bak.*

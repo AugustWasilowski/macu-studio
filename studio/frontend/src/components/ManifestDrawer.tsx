@@ -4,7 +4,8 @@ import { api } from "../api";
 import { useStore } from "../store";
 import { Field } from "./Field";
 import { Dot } from "./Badge";
-import { IBrace, IChevron, IPlus, IRegen, IX } from "./Icons";
+import { Collapsible as Section } from "./Collapsible";
+import { IBrace, IPlus, IRegen, IX } from "./Icons";
 
 export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpToStage: (s: string) => void }) {
   const open = useStore((s) => s.drawerOpen);
@@ -309,24 +310,6 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
         </footer>
       </aside>
     </>
-  );
-}
-
-function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="hairline-soft rounded">
-      <button
-        className="w-full flex items-center gap-2 px-3 py-2 text-left bg-bg-2 hover:bg-bg-3"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform .15s" }}>
-          <IChevron />
-        </span>
-        <span className="label-tiny">{title}</span>
-      </button>
-      {open && <div className="p-3 flex flex-col gap-2">{children}</div>}
-    </div>
   );
 }
 

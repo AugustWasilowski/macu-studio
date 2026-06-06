@@ -9,17 +9,9 @@ import { Modal } from "../components/Modal";
 import { Field } from "../components/Field";
 import { VersionArrows } from "../components/VersionArrows";
 import { ThumbModal } from "../components/ThumbModal";
-import { PlayBtn } from "../components/PlayBtn";
-import { IRegen, IPlay, IPause, IX } from "../components/Icons";
-import { useSfx, type PlayItem } from "./AudioSfx";
-import { useCuePlayback } from "./useCuePlayback";
-import { cueOffsets, coveredCues, makeOverlay } from "./overlayTiming";
-import type { Overlay } from "../types";
+import { IRegen } from "../components/Icons";
 
 interface HFEvent { ts: number; kind: string; n?: number; name?: string; line?: string; error?: string; [k: string]: unknown }
-
-// Module-level drag payload for the title-card palette (same native-HTML5 idiom as AudioSfx).
-let titleDrag: { asset: string } | null = null;
 
 export function Graphics({ slug }: { slug: string }) {
   const qc = useQueryClient();
@@ -34,7 +26,6 @@ export function Graphics({ slug }: { slug: string }) {
     queryFn: () => api.titles(slug),
     refetchInterval: 4000, // self-refresh so renders show up without navigating away
   });
-  const cues = useQuery({ queryKey: ["cues", slug], queryFn: () => api.cues(slug), refetchInterval: 4000 });
   const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
 
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -45,59 +36,15 @@ export function Graphics({ slug }: { slug: string }) {
   });
   const templateOptions = hfTemplates.data?.templates ?? [];
 
-  // ---- dope sheet: cue list + audio playback + overlay placements ----
-  const cueList = cues.data?.cues ?? [];
-  const overlays: Overlay[] = useMemo(
-    () => ((manifest.data as any)?.overlays as Overlay[]) ?? [],
-    [manifest.data],
-  );
-  const { cum } = useMemo(() => cueOffsets(cueList), [cueList]);
-
-  const sfx = useSfx(slug);
-  const playback = useCuePlayback({
-    buildPlaylist: () => sfx.buildPlaylist(),
-    resolveSingle: (cueId): PlayItem => {
-      const c = cueList.find((x) => x.id === cueId);
-      return { url: mediaUrl.cueAudio(slug, cueId, c?.wav_mtime), cueId, label: cueId };
-    },
-    notify: push,
-  });
-  const { continuous, setContinuous, curCueId, sequentialPlaying, togglePlay, playAll } = playback;
-
-  const putOverlays = useMutation({
-    mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }),
-    onError: (e: Error) => push("overlays save failed: " + e.message, "err"),
-  });
-  const commitOverlays = (next: Overlay[]) => putOverlays.mutate(next);
-  const addOverlay = (cueId: string, asset: string) => {
-    const c = cueList.find((x) => x.id === cueId);
-    commitOverlays([...overlays, makeOverlay(asset, cueId, c?.duration_s ?? 3)]);
-    push(`${asset} → graphic on ${cueId}`, "ok");
-  };
-  const removeOverlay = (idx: number) => commitOverlays(overlays.filter((_, i) => i !== idx));
-  const onDropCue = (cueId: string) => {
-    if (!titleDrag) return;
-    addOverlay(cueId, titleDrag.asset);
-    titleDrag = null;
-  };
-
-  // overlays grouped by their anchor cue (rendered under that cue row)
-  const overlaysByAnchor = useMemo(() => {
-    const m = new Map<string, { ov: Overlay; idx: number }[]>();
-    overlays.forEach((ov, idx) => {
-      const k = ov.anchor_cue;
-      (m.get(k) ?? m.set(k, []).get(k)!).push({ ov, idx });
-    });
-    return m;
-  }, [overlays]);
-
   // ---- New title card modal ----
   const DEFAULT_FIELDS = '{\n  "kicker": "",\n  "title_line_1": "",\n  "title_line_2": "",\n  "sub": ""\n}';
   const [newOpen, setNewOpen] = useState(false);
   const [newKey, setNewKey] = useState("");
   const [newComp, setNewComp] = useState("");
   const [newFields, setNewFields] = useState(DEFAULT_FIELDS);
+  const [editMode, setEditMode] = useState(false);     // editing an existing object-form card
+  const [legacyNote, setLegacyNote] = useState("");    // descriptive string for bespoke/legacy cards
+  const [newBrief, setNewBrief] = useState("");        // brief for AI composition generation
   // Card type drives the AI writer's brief (which composition + tone). Title-card modal
   // offers the non-thumbnail types; the thumbnail modal is always youtube_thumb.
   const [newCardType, setNewCardType] = useState("fresh_title");
@@ -107,8 +54,29 @@ export function Graphics({ slug }: { slug: string }) {
   useEffect(() => {
     if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
   }, [templateOptions, newComp]);
+  // Open the modal for an existing card. If its manifest entry is the object form
+  // ({composition, fields}) we're EDITING — pre-fill both. If it's a bespoke/legacy
+  // string entry there are no saved fields to load, so fall back to configure mode and
+  // surface the descriptive string as a hint.
   const openNewFor = (key: string) => {
-    setNewKey(key);
+    const ta = ((manifest.data as any)?.title_assets ?? {})[key];
+    setNewKey(key); setNewBrief("");
+    if (ta && typeof ta === "object") {
+      setEditMode(true);
+      setNewComp(ta.composition || templateOptions[0] || "");
+      setNewFields(JSON.stringify(ta.fields ?? {}, null, 2));
+      setLegacyNote("");
+    } else {
+      setEditMode(false);
+      setNewComp((c) => c || templateOptions[0] || "");
+      setNewFields(DEFAULT_FIELDS);
+      setLegacyNote(typeof ta === "string" ? ta : "");
+    }
+    setNewOpen(true);
+  };
+
+  const openNew = () => {
+    setEditMode(false); setNewKey(""); setLegacyNote(""); setNewBrief("");
     setNewComp((c) => c || templateOptions[0] || "");
     setNewFields(DEFAULT_FIELDS);
     setNewOpen(true);
@@ -230,6 +198,21 @@ export function Graphics({ slug }: { slug: string }) {
     },
   });
 
+  // On-demand Ollama: generate a whole NEW HyperFrames composition (animated card) from a
+  // brief. Saves it as the template named by `key`, then selects it + loads its placeholder
+  // fields so you can fill values and Create + render.
+  const genComp = useMutation({
+    mutationFn: (args: { key: string; brief: string }) => graphicsApi.genComposition(slug, args),
+    onMutate: () => push("generating composition (local Qwen) — ~30-60s…", "run"),
+    onError: (e: Error) => push(`composition: ${e.message}`, "err"),
+    onSuccess: (r) => {
+      setNewComp(r.composition);
+      setNewFields(JSON.stringify(r.fields ?? {}, null, 2));
+      qc.invalidateQueries({ queryKey: ["hfTemplates"] });
+      push(`composition "${r.composition}" generated (${r.placeholders.length} fields) — fill + render`, "ok");
+    },
+  });
+
   function submitNewTitle() {
     let fields: Record<string, unknown> = {};
     try { fields = JSON.parse(newFields || "{}"); }
@@ -269,90 +252,74 @@ export function Graphics({ slug }: { slug: string }) {
   }, [cards, selectedKey, selectTitle]);
 
   return (
-    <div className="grid grid-cols-[1fr_380px] gap-3 h-full min-h-0">
-      {/* LEFT — the dope sheet: cue list + audio playback + drop-to-place graphics */}
-      <section className="panel flex flex-col min-h-0">
-        <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">DOPE SHEET <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card onto a cue · set the span on Video ▸ Timeline</span></div>
-          <div className="flex items-center gap-2">
-            <span className="seg-readout">{overlays.length} GFX</span>
-            <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop playback" : "Play VO + SFX in sequence"}>
-              {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
-            </button>
-            <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play continues to the next clip (off = one clip only)">
-              <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} />
-              Continuous
-            </label>
-          </div>
-        </header>
-        <div className="overflow-y-auto flex-1">
-          <table className="w-full text-[12px]">
-            <thead className="sticky top-0 bg-bg-1">
-              <tr className="label-tiny text-left border-b hairline-soft">
-                <th className="px-2 py-1">CUE</th>
-                <th className="px-2 py-1">SPEAKER</th>
-                <th className="px-2 py-1">VO TEXT</th>
-                <th className="px-2 py-1">DUR</th>
-                <th className="px-2 py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cueList.map((c) => {
-                const isPlaying = curCueId === c.id;
-                const anchored = overlaysByAnchor.get(c.id) ?? [];
-                return (
-                  <CueRow
-                    key={c.id}
-                    slug={slug}
-                    cueId={c.id}
-                    speaker={c.speaker}
-                    text={c.is_hold ? `[HOLD ${c.hold_seconds}s]` : c.text}
-                    durationS={c.duration_s}
-                    wavExists={c.wav_exists}
-                    isPlaying={isPlaying}
-                    onPlay={() => togglePlay(c.id)}
-                    onDropCard={() => onDropCue(c.id)}
-                    anchored={anchored}
-                    cueList={cueList}
-                    cum={cum}
-                    onRemoveOverlay={removeOverlay}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-          {cueList.length === 0 && <div className="p-4 text-txt-faint">No cues in manifest yet.</div>}
+    <div className="grid grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)] gap-3 h-full min-h-0">
+      {/* LEFT — large preview of the selected title card + metadata underneath */}
+      <section className="panel flex flex-col min-h-0 p-3 gap-3">
+        <div className="flex items-center justify-between flex-none">
+          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {cur ? cur.key : "select a card →"}</span></div>
+          {cur && <Badge status={cur.status} />}
         </div>
-        {logLines.length > 0 && (
-          <div className="border-t hairline-soft">
-            <div className="px-3 py-1 flex items-center justify-between">
-              <span className="label-tiny">render log tail</span>
-              <button className="btn p-0.5 text-[11px]" onClick={() => setLogLines([])}>clear</button>
+        {cur ? (
+          <>
+            <div className="flex-1 min-h-0 bg-black hairline-soft rounded grid place-items-center overflow-hidden">
+              {cur.exists ? (
+                <video
+                  key={mediaUrl.titlePreview(slug, cur.key) + (cur.mtime ?? "")}
+                  src={mediaUrl.titlePreview(slug, cur.key)}
+                  autoPlay muted loop playsInline controls
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <div className="text-center">
+                  <Badge status={cur.status} />
+                  <div className="label-tiny mt-2 break-all px-4">
+                    {cur.scope === "shared"
+                      ? "shared assets/titles/ — file not found"
+                      : `episodes/${slug}/titles/${cur.key}.mp4 (not built)`}
+                  </div>
+                </div>
+              )}
             </div>
-            <pre className="logtail mx-3 mb-3" style={{ height: 120 }}>{logLines.join("\n")}</pre>
-          </div>
+            <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1 text-[12px] flex-none">
+              <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
+              <span className="label-tiny">scope</span><span>{cur.scope}</span>
+              <span className="label-tiny">status</span><span>{cur.status}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-none">
+              {cur.configured ? (
+                <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]} onClick={() => regen.mutate(cur.key)}>
+                  <IRegen /> Regen
+                </button>
+              ) : (
+                <button className="btn btn-cyan" onClick={() => openNewFor(cur.key)}>
+                  <IRegen /> Configure + generate
+                </button>
+              )}
+              {cur.configured && <RegenNotes onSubmit={() => regen.mutate(cur.key)} />}
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 grid place-items-center text-txt-faint">No title selected — pick one from the cards on the right.</div>
         )}
       </section>
 
-      {/* RIGHT — title-card palette (draggable) + preview + YouTube thumbnail */}
+      {/* RIGHT — title-card palette (click → preview on the left) + YouTube thumbnail */}
       <aside className="flex flex-col gap-3 min-h-0 overflow-y-auto">
         <section className="panel flex flex-col">
           <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-            <div className="panel-title">TITLE CARDS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag → a cue</span></div>
+            <div className="panel-title">TITLE CARDS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ click → preview</span></div>
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{cards.length}</span></span>
           </header>
-          <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
+          <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}>
             {cards.map((t) => {
               const active = selectedKey === t.key;
               const isBusy = !!busy[`title:${t.key}`];
               return (
                 <div
                   key={t.key}
-                  draggable
-                  onDragStart={() => { titleDrag = { asset: t.key }; }}
                   onClick={() => selectTitle(t.key)}
-                  title="drag onto a cue to place · click to preview"
-                  className={"hairline-soft text-left p-0 overflow-hidden rounded transition-colors cursor-grab " + (active ? "border-amber" : "")}
+                  title="click to preview"
+                  className={"hairline-soft text-left p-0 overflow-hidden rounded transition-colors cursor-pointer " + (active ? "border-amber" : "")}
                   style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)" } : {}}
                 >
                   <div className="bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
@@ -393,7 +360,7 @@ export function Graphics({ slug }: { slug: string }) {
             )}
           </div>
           <div className="px-3 py-2 border-t hairline-soft flex items-center gap-2">
-            <button className="btn btn-cyan" onClick={() => setNewOpen(true)}>+ New title card</button>
+            <button className="btn btn-cyan" onClick={openNew}>+ New title card</button>
             <button className="btn btn-amber" onClick={renderAllMissing}><IRegen /> Render missing</button>
           </div>
           {hfStrip.length > 0 && (
@@ -406,56 +373,6 @@ export function Graphics({ slug }: { slug: string }) {
                 </span>
               ))}
             </div>
-          )}
-        </section>
-
-        <section className="panel p-3 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="panel-title">PREVIEW</div>
-            {cur && <Badge status={cur.status} />}
-          </div>
-          {cur ? (
-            <>
-              {cur.exists ? (
-                <video
-                  key={mediaUrl.titlePreview(slug, cur.key) + (cur.mtime ?? "")}
-                  src={mediaUrl.titlePreview(slug, cur.key)}
-                  autoPlay muted loop playsInline controls
-                  className="w-full bg-black hairline-soft rounded"
-                  style={{ aspectRatio: "1/1" }}
-                />
-              ) : (
-                <div className="hairline-soft bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
-                  <div className="text-center">
-                    <Badge status={cur.status} />
-                    <div className="label-tiny mt-2 break-all">
-                      {cur.scope === "shared"
-                        ? "shared assets/titles/ — file not found"
-                        : `episodes/${slug}/titles/${cur.key}.mp4 (not built)`}
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-1 text-[12px]">
-                <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
-                <span className="label-tiny">scope</span><span>{cur.scope}</span>
-                <span className="label-tiny">status</span><span>{cur.status}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {cur.configured ? (
-                  <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]} onClick={() => regen.mutate(cur.key)}>
-                    <IRegen /> Regen
-                  </button>
-                ) : (
-                  <button className="btn btn-cyan" onClick={() => openNewFor(cur.key)}>
-                    <IRegen /> Configure + generate
-                  </button>
-                )}
-                {cur.configured && <RegenNotes onSubmit={() => regen.mutate(cur.key)} />}
-              </div>
-            </>
-          ) : (
-            <div className="text-txt-faint">No title selected.</div>
           )}
         </section>
 
@@ -489,27 +406,60 @@ export function Graphics({ slug }: { slug: string }) {
             />
           </div>
         </section>
+
+        {logLines.length > 0 && (
+          <section className="panel">
+            <div className="px-3 py-1 flex items-center justify-between border-b hairline-soft">
+              <span className="label-tiny">render log tail</span>
+              <button className="btn p-0.5 text-[11px]" onClick={() => setLogLines([])}>clear</button>
+            </div>
+            <pre className="logtail mx-3 my-3" style={{ height: 120 }}>{logLines.join("\n")}</pre>
+          </section>
+        )}
       </aside>
 
       <Modal
         open={newOpen}
         onClose={() => setNewOpen(false)}
-        title="New title card"
+        title={editMode ? "Edit title card" : "New title card"}
         footer={
           <>
             <button className="btn" onClick={() => setNewOpen(false)}>Cancel</button>
-            <button className="btn btn-cyan" disabled={newTitle.isPending} onClick={submitNewTitle}>Create + render</button>
+            <button className="btn btn-cyan" disabled={newTitle.isPending} onClick={submitNewTitle}>{editMode ? "Save + render" : "Create + render"}</button>
           </>
         }
       >
         <div className="flex flex-col gap-3">
-          <Field label="key" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
+          {editMode ? (
+            <div className="flex items-center gap-2 text-[12px]"><span className="label-tiny">key</span><span className="font-mono text-amber">{newKey}</span></div>
+          ) : (
+            <Field label="key" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
+          )}
+          {legacyNote && (
+            <div className="hairline-soft rounded p-2 text-[11px] text-txt-dim">
+              <span className="label-tiny text-amber">no saved fields</span> — this card was authored as a description, not from a composition. Pick a composition + fill the fields to configure it (or keep generating it from a prompt).
+              <div className="mt-1 font-mono text-txt-faint break-words">{legacyNote}</div>
+            </div>
+          )}
           <Field
             label="composition"
             value={newComp}
             onChange={setNewComp}
-            options={templateOptions.length ? templateOptions : [""]}
+            options={Array.from(new Set([newComp, ...templateOptions].filter(Boolean))) as string[]}
           />
+          {/* Generate a whole NEW composition (animated card HTML) from a brief, via local Qwen.
+              Needs a key (used as the new composition's name). */}
+          <div className="hairline-soft rounded p-2 flex flex-col gap-2">
+            <div className="label-tiny">generate a new composition with AI <span className="text-txt-faint normal-case tracking-normal">(local Qwen → HyperFrames HTML)</span></div>
+            <Field label="brief" value={newBrief} onChange={setNewBrief} rows={3}
+              placeholder="e.g. a Crater Bowl scoreboard: SECTOR NINE SLAGS vs SECTOR FOUR GLOWBOYS, score ticks 2 → 1, ‘PLAYERS REMAINING’ underneath" />
+            <button
+              className="btn btn-amber self-start"
+              disabled={genComp.isPending || !newKey.trim() || !newBrief.trim()}
+              title="Generate a brand-new HyperFrames composition from this brief (saved as the composition named by the key above)"
+              onClick={() => genComp.mutate({ key: newKey.trim(), brief: newBrief })}
+            >✨ {genComp.isPending ? "Generating…" : "Generate composition"}</button>
+          </div>
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <Field label="AI card type" value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
@@ -517,9 +467,9 @@ export function Graphics({ slug }: { slug: string }) {
             <button
               className="btn btn-amber whitespace-nowrap"
               disabled={genText.isPending}
-              title="Write deadpan card text with the local LLM (Ollama) from this episode's script"
+              title="Write deadpan card text (the five fields) with the local LLM from this episode's script"
               onClick={() => genText.mutate({ card_type: newCardType, target: "title" })}
-            >✨ {genText.isPending ? "Writing…" : "Write with AI"}</button>
+            >✨ {genText.isPending ? "Writing…" : "Write fields with AI"}</button>
           </div>
           <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
         </div>
@@ -562,72 +512,5 @@ export function Graphics({ slug }: { slug: string }) {
         onChanged={() => { setThumbOverride(null); setThumbBust((n) => n + 1); qc.invalidateQueries({ queryKey: ["manifest", slug] }); }}
       />
     </div>
-  );
-}
-
-/* One dope-sheet row: the cue + a drop target + any graphics anchored to it. */
-function CueRow({
-  slug, cueId, speaker, text, durationS, wavExists, isPlaying,
-  onPlay, onDropCard, anchored, cueList, cum, onRemoveOverlay,
-}: {
-  slug: string;
-  cueId: string;
-  speaker: string;
-  text: string;
-  durationS: number | null;
-  wavExists: boolean;
-  isPlaying: boolean;
-  onPlay: () => void;
-  onDropCard: () => void;
-  anchored: { ov: Overlay; idx: number }[];
-  cueList: { id: string; duration_s: number | null }[];
-  cum: Record<string, number>;
-  onRemoveOverlay: (idx: number) => void;
-}) {
-  const [over, setOver] = useState(false);
-  return (
-    <>
-      <tr
-        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-        onDragLeave={() => setOver(false)}
-        onDrop={() => { setOver(false); onDropCard(); }}
-        className={"border-b border-[var(--line-soft)] hover:bg-bg-3 " + (over ? "outline outline-1 outline-[var(--cyan)] bg-bg-3" : "")}
-      >
-        <td className="px-2 py-1.5 text-amber font-bold">{cueId}</td>
-        <td className="px-2 py-1.5 whitespace-nowrap">{speaker}</td>
-        <td className="px-2 py-1.5 max-w-[360px] truncate" title={text}>{text}</td>
-        <td className="px-2 py-1.5 text-cyan whitespace-nowrap">{durationS != null ? `${durationS.toFixed(1)}s` : "—"}</td>
-        <td className="px-2 py-1.5">
-          <PlayBtn playing={isPlaying} onClick={onPlay} title={wavExists ? "Play" : "No wav yet"} />
-        </td>
-      </tr>
-      {anchored.length > 0 && (
-        <tr>
-          <td colSpan={5} className="p-0">
-            <div className="pl-9 pr-2 pb-1 flex flex-col gap-1">
-              {anchored.map(({ ov, idx }) => {
-                const span = coveredCues(ov, cueList, cum);
-                const spanLabel = span.length <= 1 ? (span[0] ?? cueId) : `${span[0]}–${span[span.length - 1]}`;
-                return (
-                  <div key={ov.id ?? idx} className="flex items-center gap-2 text-[11px] hairline-soft rounded px-2 py-0.5 bg-bg-2">
-                    <span className="text-cyan">▦</span>
-                    <video
-                      src={mediaUrl.titlePreview(slug, ov.asset)}
-                      muted loop autoPlay playsInline
-                      className="bg-black rounded pointer-events-none"
-                      style={{ width: 28, height: 28, objectFit: "contain" }}
-                    />
-                    <span className="font-mono flex-1 truncate" title={ov.asset}>{ov.asset}</span>
-                    <span className={"px-1 rounded text-[10px] " + (ov.mode === "overlay" ? "text-cyan" : "text-amber")}>{ov.mode}</span>
-                    <span className="text-txt-faint">{spanLabel} · {(ov.duration ?? 0).toFixed(1)}s</span>
-                    <button className="btn p-0.5" title="remove graphic" onClick={() => onRemoveOverlay(idx)}><IX /></button>
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
   );
 }

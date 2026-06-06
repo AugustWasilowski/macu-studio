@@ -9,8 +9,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs,
                  staged_master_dir, staged_master_webp)
 
-def run(cmd):
-    return subprocess.run(cmd, check=True, capture_output=True, text=True)
+def run(cmd, timeout=900):
+    # Per-call cap so a hung RIFE/Vulkan or ffmpeg invocation fails the stage (releasing
+    # the render lock) instead of blocking forever. 15 min is far above any real per-clip
+    # interpolation/encode time.
+    return subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout)
 
 def main(slug):
     ensure_dirs(slug)
