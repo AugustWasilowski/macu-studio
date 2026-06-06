@@ -3,6 +3,7 @@ import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-quer
 import { api } from "./api";
 import { Topbar } from "./components/Topbar";
 import { Settings } from "./components/Settings";
+import { Tour, TOUR_DONE_KEY } from "./components/Tour";
 import { Toasts } from "./components/Toasts";
 import { Assembly } from "./stages/Assembly";
 import { Audio } from "./stages/Audio";
@@ -45,7 +46,7 @@ function Shell() {
   const setActiveSlug = useStore((s) => s.setActiveSlug);
   const activeShow = useStore((s) => s.activeShow);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const pushToast = useStore((s) => s.pushToast);
+  const [tourOpen, setTourOpen] = useState(() => !localStorage.getItem(TOUR_DONE_KEY));
   const episodes = useQuery({
     queryKey: ["episodes", activeShow],
     queryFn: () => api.episodes(activeShow),
@@ -94,7 +95,7 @@ function Shell() {
         onPage={(p) => go({ page: p })}
         onHome={() => go({ page: "stage", slug, stage: "assembly" })}
         onOpenSettings={() => setSettingsOpen(true)}
-        onStartTutorial={() => pushToast("tutorial coming next", "info")}
+        onStartTutorial={() => setTourOpen(true)}
       />
       <main className="flex-1 p-3 min-h-0">
         <PageView page={route.page} slug={slug} stage={route.stage} loading={episodes.isLoading} go={go} />
@@ -105,6 +106,7 @@ function Shell() {
       <LogDrawer />
       <TerminalDrawer />
       {settingsOpen && <Settings show={activeShow} onClose={() => setSettingsOpen(false)} />}
+      {tourOpen && <Tour slug={slug} go={go} onClose={() => setTourOpen(false)} />}
     </div>
   );
 }
