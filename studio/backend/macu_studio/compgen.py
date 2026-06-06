@@ -19,6 +19,7 @@ import re
 from . import llm
 from . import prompts
 from . import hyperframes
+from . import manifest as manifest_mod
 
 # Full default — seeds docs/PROMPT_composition.md on first run; that file (editable in the
 # Docs tab) then wins. Keep this and the doc in sync if you change the contract here.
@@ -184,6 +185,13 @@ def generate(slug: str, key: str, brief: str) -> dict:
 
     placeholders = sorted(set(_PLACEHOLDER_RE.findall(html)))
     fields = {p.lower(): "" for p in placeholders}
+
+    # Create the title_asset so the card appears in the Graphics grid immediately (as an
+    # unrendered card). The operator fills the placeholder fields + renders to finish it.
+    m = manifest_mod.load(slug)
+    m.setdefault("title_assets", {})[key] = {"source": "hyperframes", "composition": key, "fields": fields}
+    manifest_mod.save(slug, m)
+
     return {
         "ok": True,
         "key": key,

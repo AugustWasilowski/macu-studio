@@ -209,7 +209,10 @@ export function Graphics({ slug }: { slug: string }) {
       setNewComp(r.composition);
       setNewFields(JSON.stringify(r.fields ?? {}, null, 2));
       qc.invalidateQueries({ queryKey: ["hfTemplates"] });
-      push(`composition "${r.composition}" generated (${r.placeholders.length} fields) — fill + render`, "ok");
+      qc.invalidateQueries({ queryKey: ["titles", slug] });   // card now exists → show it in the grid
+      qc.invalidateQueries({ queryKey: ["manifest", slug] });
+      selectTitle(r.composition);
+      push(`card "${r.composition}" created (${r.placeholders.length} fields) — fill the values, then Create + render`, "ok");
     },
   });
 
