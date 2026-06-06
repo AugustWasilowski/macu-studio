@@ -1,6 +1,6 @@
 {
   "episode": "ep-024",
-  "title": "The MACU Report \u2014 Episode 24 \u2014 \"Sugar Free\"",
+  "title": "The MACU Report — Episode 24 — \"Sugar Free\"",
   "version": 1,
   "authored_by": "Mayor Awesome",
   "season": 4,
@@ -113,8 +113,18 @@
   "title_assets": {
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
-    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
-    "sugar_free": "episodes/ep-024/titles/sugar_free.mp4 (NEW \u2014 Hyperframes house-style SUGAR FREE card; flag for build)"
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "sugar_free": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "THE CRYSTAL REPORT",
+        "title_line_1": "SUGAR",
+        "title_line_2": "FREE",
+        "sub": "NOTHING IN THE PACKET",
+        "idtag": "EP 24 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -191,15 +201,30 @@
     }
   },
   "broll": {
-    "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
-    "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
-    "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+    "crystal_packets": {
+      "prompt": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+      "seed": 8963
+    },
+    "lemonade_stand": {
+      "prompt": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
+      "seed": 8019
+    },
+    "ron_mug": {
+      "prompt": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+      "seed": 7191
+    },
     "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
-    "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
+    "cut_lab": {
+      "prompt": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
+      "seed": 9359
+    },
     "glass_water": "a plain glass of clear water on an empty news desk",
     "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
     "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
-    "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
+    "everwell": {
+      "prompt": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
+      "seed": 3478
+    },
     "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
   },
   "cues": [
@@ -207,7 +232,7 @@
       "id": "c01",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "Good evening, MACU. Ron here. We're \u2014 we're a little dry tonight. Supply's tight across the settlement. If anyone watching has a packet, the studio address is \u2014 Walter, what's our address. Walter. Do we have an address.",
+      "vo": "Good evening, MACU. Ron here. We're — we're a little dry tonight. Supply's tight across the settlement. If anyone watching has a packet, the studio address is — Walter, what's our address. Walter. Do we have an address.",
       "shots": [
         {
           "id": "c01_s1",
@@ -245,7 +270,7 @@
       "id": "c03",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "It's not \u2014 it's not LEMONADE, Walter, it's \u2014 ...what if there's nothing in it. What if there was never anything. ...The news. Let's do the news. I need something to hold.",
+      "vo": "It's not — it's not LEMONADE, Walter, it's — ...what if there's nothing in it. What if there was never anything. ...The news. Let's do the news. I need something to hold.",
       "shots": [
         {
           "id": "c03_s1",
@@ -259,7 +284,7 @@
       "id": "c04",
       "segment": "the_crisis",
       "speaker": "WALTER",
-      "vo": "The story tonight is scarcity. The original pallet \u2014 the one that started it all \u2014 is nearly empty. Prices have soared. A single packet now trades for a month of water rations. The settlement is, for the first time, rationing sunshine. Rationing is going smoothly. We've lost only the people we expected to, and one we didn't. We'll miss him most of all.",
+      "vo": "The story tonight is scarcity. The original pallet — the one that started it all — is nearly empty. Prices have soared. A single packet now trades for a month of water rations. The settlement is, for the first time, rationing sunshine. Rationing is going smoothly. We've lost only the people we expected to, and one we didn't. We'll miss him most of all.",
       "shots": [
         {
           "id": "c04_s1",
@@ -272,7 +297,7 @@
       "id": "c05",
       "segment": "the_crisis",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "Supply DOWN, demand UP \u2014 baby, that's the prettiest sentence in the LANGUAGE! Last packets goin' to AUCTION \u2014 well, all but ONE; my cousin's holdin' one back, won't tell me WHY. Family's family \u2014 but a MARKET'S a market! I'd sell you my own GOLD TOOTH right now but I already traded it. For a packet. ...Don't tell Sweet.",
+      "vo": "Supply DOWN, demand UP — baby, that's the prettiest sentence in the LANGUAGE! Last packets goin' to AUCTION — well, all but ONE; my cousin's holdin' one back, won't tell me WHY. Family's family — but a MARKET'S a market! I'd sell you my own GOLD TOOTH right now but I already traded it. For a packet. ...Don't tell Sweet.",
       "shots": [
         {
           "id": "c05_s1",
@@ -286,7 +311,7 @@
       "id": "c06",
       "segment": "the_crisis",
       "speaker": "ROSCOE",
-      "vo": "The SUPPLY is RATIONED, brother! ONE pour per CITIZEN! You come back for seconds, you BECOME the second! The last man who double-dipped is now the REFILL! He IS the pitcher! We pour HIM at PARTIES! He's a HIT at parties, OHHH YEAHHH \u2014 but he is NO LONGER INVITED to them!",
+      "vo": "The SUPPLY is RATIONED, brother! ONE pour per CITIZEN! You come back for seconds, you BECOME the second! The last man who double-dipped is now the REFILL! He IS the pitcher! We pour HIM at PARTIES! He's a HIT at parties, OHHH YEAHHH — but he is NO LONGER INVITED to them!",
       "shots": [
         {
           "id": "c06_s1",
@@ -327,7 +352,7 @@
       "id": "c09",
       "segment": "the_clinic",
       "speaker": "RON",
-      "vo": "...Sugar-free. There's \u2014 nothing in it. Nothing. I shook for nothing. I poured everyone's letters into a pitcher of NOTHING. ...There's not even anything to quit.",
+      "vo": "...Sugar-free. There's — nothing in it. Nothing. I shook for nothing. I poured everyone's letters into a pitcher of NOTHING. ...There's not even anything to quit.",
       "shots": [
         {
           "id": "c09_s1",
@@ -341,7 +366,7 @@
       "id": "c10",
       "segment": "the_clinic",
       "speaker": "SWEET",
-      "vo": "I told you on Monday, Ron. It's sugar-free. That's the part that should scare you. There was never anything in the packet. The thing you couldn't put down \u2014 that was all you. Good news is: a thing that was always you, you can take back.",
+      "vo": "I told you on Monday, Ron. It's sugar-free. That's the part that should scare you. There was never anything in the packet. The thing you couldn't put down — that was all you. Good news is: a thing that was always you, you can take back.",
       "shots": [
         {
           "id": "c10_s1",
@@ -383,7 +408,7 @@
       "id": "c13",
       "segment": "sponsor",
       "speaker": "EVERWELL",
-      "vo": "Feeling empty, MACU? EVERWELL understands. The Perpetual Wellness Casket holds you gently when nothing else will, and never runs dry. Unlike certain beverages, EVERWELL is a subscription you can finally stop chasing \u2014 because EVERWELL chases you. It isn't a coffin. It's a subscription. Your first month is complimentary. So was everyone's. They all rested. Reviews are unavailable \u2014 but they would have loved it. Rest now.",
+      "vo": "Feeling empty, MACU? EVERWELL understands. The Perpetual Wellness Casket holds you gently when nothing else will, and never runs dry. Unlike certain beverages, EVERWELL is a subscription you can finally stop chasing — because EVERWELL chases you. It isn't a coffin. It's a subscription. Your first month is complimentary. So was everyone's. They all rested. Reviews are unavailable — but they would have loved it. Rest now.",
       "shots": [
         {
           "id": "c13_s1",
@@ -396,7 +421,7 @@
       "id": "c14",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "And the forecast \u2014 speaking of dry. Dry. Very dry. A high of seventy-five and not a cloud, not a drop, not a pour anywhere on the map. The settlement is advised to drink water \u2014 actual water \u2014 a sentence I did not expect to deliver this week. Condition rating: extremely mild.",
+      "vo": "And the forecast — speaking of dry. Dry. Very dry. A high of seventy-five and not a cloud, not a drop, not a pour anywhere on the map. The settlement is advised to drink water — actual water — a sentence I did not expect to deliver this week. Condition rating: extremely mild.",
       "shots": [
         {
           "id": "c14_s1",
@@ -434,7 +459,7 @@
       "id": "c16",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "That's the most honest thing you've said all week, Ron. Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck. Drink water.",
+      "vo": "That's the most honest thing you've said all week, Ron. Anyway. Goodnight, MACU — stay safe, stay strong, and good luck. Drink water.",
       "shots": [
         {
           "id": "c16_s1",
