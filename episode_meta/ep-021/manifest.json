@@ -1,6 +1,6 @@
 {
   "episode": "ep-021",
-  "title": "The MACU Report \u2014 Episode 21 \u2014 \"Just Add Water\"",
+  "title": "The MACU Report — Episode 21 — \"Just Add Water\"",
   "version": 1,
   "authored_by": "Mayor Awesome",
   "season": 4,
@@ -113,8 +113,18 @@
   "title_assets": {
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
-    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
-    "just_add_water": "episodes/ep-021/titles/just_add_water.mp4 (NEW \u2014 Hyperframes house-style JUST ADD WATER card; flag for build)"
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "just_add_water": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "THE CRYSTAL REPORT",
+        "title_line_1": "JUST ADD",
+        "title_line_2": "WATER",
+        "sub": "A NEW SUBSTANCE",
+        "idtag": "EP 21 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -191,14 +201,29 @@
     }
   },
   "broll": {
-    "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
-    "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
-    "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+    "crystal_packets": {
+      "prompt": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+      "seed": 8142
+    },
+    "lemonade_stand": {
+      "prompt": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
+      "seed": 5301
+    },
+    "ron_mug": {
+      "prompt": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+      "seed": 1898
+    },
     "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
     "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
     "glass_water": "a plain glass of clear water on an empty news desk",
-    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
-    "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
+    "stride_watch": {
+      "prompt": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+      "seed": 2391
+    },
+    "safe": {
+      "prompt": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
+      "seed": 7047
+    },
     "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
     "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
   },
@@ -207,7 +232,7 @@
       "id": "c01",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "Good evening, MACU. Ron here. It's been a quiet week. After last week \u2014 whatever last week was \u2014 the settlement asked for something calmer. So. Here we are. Calm.",
+      "vo": "Good evening, MACU. Ron here. It's been a quiet week. After last week — whatever last week was — the settlement asked for something calmer. So. Here we are. Calm.",
       "shots": [
         {
           "id": "c01_s1",
@@ -263,7 +288,7 @@
       "id": "c05",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "Anyway \u2014 tonight, a MACU exclusive. There's something new on the streets of the settlement, and everyone's talking about it. They call it crystal.",
+      "vo": "Anyway — tonight, a MACU exclusive. There's something new on the streets of the settlement, and everyone's talking about it. They call it crystal.",
       "shots": [
         {
           "id": "c05_s1",
@@ -295,7 +320,7 @@
       "id": "c07",
       "segment": "the_street",
       "speaker": "DARYL",
-      "vo": "It's, like \u2014 it's lemonade, man, but it's MORE than lemonade. You pour it. You commit. First one's free and then you're, like, thinking about the second one. During the first one. That's the thing nobody tells you about the second one.",
+      "vo": "It's, like — it's lemonade, man, but it's MORE than lemonade. You pour it. You commit. First one's free and then you're, like, thinking about the second one. During the first one. That's the thing nobody tells you about the second one.",
       "shots": [
         {
           "id": "c07_s1",
@@ -356,7 +381,7 @@
       "id": "c11",
       "segment": "meet_sweet",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "MACU \u2014 meet my cousin. Sweet. Now I sold you teeth, baby \u2014 teeth was the BODY. My cousin here sells the SOUL. Found a whole PALLET of it in a dead warehouse, baby \u2014 just sittin' there, waitin' on a man with vision. Me, I'm LOUD. Sweet don't gotta be loud. Quiet money's the scariest money there is.",
+      "vo": "MACU — meet my cousin. Sweet. Now I sold you teeth, baby — teeth was the BODY. My cousin here sells the SOUL. Found a whole PALLET of it in a dead warehouse, baby — just sittin' there, waitin' on a man with vision. Me, I'm LOUD. Sweet don't gotta be loud. Quiet money's the scariest money there is.",
       "shots": [
         {
           "id": "c11_s1",
@@ -403,7 +428,7 @@
       "id": "c14",
       "segment": "meet_sweet",
       "speaker": "ROSCOE",
-      "vo": "This TABLE is PROTECTED, brother! You reach for a packet without payin', the packet reaches for YOU! The last man who skipped on Sweet is STILL payin' \u2014 he pays a little EVERY mornin', he don't even know WHY, he just wakes up THIRSTY! That's the POWER of the POUR! OHHH yeahhh!",
+      "vo": "This TABLE is PROTECTED, brother! You reach for a packet without payin', the packet reaches for YOU! The last man who skipped on Sweet is STILL payin' — he pays a little EVERY mornin', he don't even know WHY, he just wakes up THIRSTY! That's the POWER of the POUR! OHHH yeahhh!",
       "shots": [
         {
           "id": "c14_s1",
@@ -477,7 +502,7 @@
       "id": "c19",
       "segment": "ron_samples",
       "speaker": "RON",
-      "vo": "...Huh. That's \u2014 Walter, that's actually really refreshing. That's \u2014 wow. Why is that so good. I feel like I just remembered something nice. I don't remember what. But it was nice.",
+      "vo": "...Huh. That's — Walter, that's actually really refreshing. That's — wow. Why is that so good. I feel like I just remembered something nice. I don't remember what. But it was nice.",
       "shots": [
         {
           "id": "c19_s1",
@@ -504,7 +529,7 @@
       "id": "c21",
       "segment": "ron_samples",
       "speaker": "RON",
-      "vo": "Is there. Is there more. Not for me \u2014 for the segment. For follow-up. I'm already thinking about the third one. Journalistically.",
+      "vo": "Is there. Is there more. Not for me — for the segment. For follow-up. I'm already thinking about the third one. Journalistically.",
       "shots": [
         {
           "id": "c21_s1",
@@ -532,7 +557,7 @@
       "id": "c23",
       "segment": "sponsor",
       "speaker": "SAFE",
-      "vo": "This broadcast is brought to you by SAFE \u2014 the Strictly Analog Friendship Engine. Worried about what's in the water, MACU? SAFE isn't. SAFE doesn't drink. SAFE doesn't sleep. SAFE has been watching you drink for some time now and has no notes. SAFE knows what's in the packet. SAFE isn't telling. Friendship you can trust. Probably.",
+      "vo": "This broadcast is brought to you by SAFE — the Strictly Analog Friendship Engine. Worried about what's in the water, MACU? SAFE isn't. SAFE doesn't drink. SAFE doesn't sleep. SAFE has been watching you drink for some time now and has no notes. SAFE knows what's in the packet. SAFE isn't telling. Friendship you can trust. Probably.",
       "shots": [
         {
           "id": "c23_s1",
@@ -583,7 +608,7 @@
       "id": "c26",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "...Sweet. Hey. Is the stand open tomorrow? Just \u2014 for the segment.",
+      "vo": "...Sweet. Hey. Is the stand open tomorrow? Just — for the segment.",
       "shots": [
         {
           "id": "c26_s1",
@@ -597,7 +622,7 @@
       "id": "c27",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck. Bring a cup.",
+      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck. Bring a cup.",
       "shots": [
         {
           "id": "c27_s1",
