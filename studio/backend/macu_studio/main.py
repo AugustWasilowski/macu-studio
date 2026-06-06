@@ -34,7 +34,7 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
-from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
 
@@ -129,8 +129,9 @@ async def get_activity():
 # ---------- Episodes ----------
 
 @app.get("/api/episodes")
-def list_episodes():
-    return {"episodes": [e.__dict__ for e in ep_mod.list_episodes()]}
+def list_episodes(show: str | None = None):
+    """Episodes for one show (default: the-macu-report). Pass ?show=<id> to scope."""
+    return {"episodes": [e.__dict__ for e in ep_mod.list_episodes(show)]}
 
 
 @app.get("/api/episodes/{slug}/manifest")
@@ -829,6 +830,7 @@ app.include_router(routes_writers.router)
 app.include_router(routes_youtube.router)
 app.include_router(routes_docs.router)
 app.include_router(routes_gitsync.router)
+app.include_router(routes_shows.router)
 
 
 # ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------

@@ -29,7 +29,9 @@ from urllib.parse import urlparse, parse_qs
 
 PIPELINE = os.path.dirname(os.path.abspath(__file__))
 JOBS_ROOT = "/var/lib/macu-render/jobs"
-SHARES_EP = "/mnt/storage/shares/MACU/episodes"
+# Default episodes dir; a job may override it (multi-show support). Default is the
+# old hardcoded path so existing MACU renders are unchanged.
+SHARES_EP = os.environ.get("MACU_EPISODES", "/mnt/storage/shares/MACU/episodes")
 RUN_PY = f"{PIPELINE}/run.py"
 PORT = 8773
 
@@ -38,11 +40,12 @@ os.makedirs(JOBS_ROOT, exist_ok=True)
 # ----- job model -----------------------------------------------------------
 
 class Job:
-    def __init__(self, job_id, slug, from_stage=1, only=None):
+    def __init__(self, job_id, slug, from_stage=1, only=None, episodes_dir=None):
         self.id = job_id
         self.slug = slug
         self.from_stage = from_stage
         self.only = only
+        self.episodes_dir = episodes_dir   # None → use the server default (MACU)
         self.state = "queued"       # queued | running | done | error
         self.created_at = time.time()
         self.started_at = None
@@ -60,6 +63,7 @@ class Job:
         return {
             "id": self.id, "slug": self.slug,
             "from_stage": self.from_stage, "only": self.only,
+            "episodes_dir": self.episodes_dir,
             "state": self.state,
             "created_at": self.created_at,
             "started_at": self.started_at,
@@ -87,6 +91,7 @@ def load_existing_jobs():
             j = Job.__new__(Job)
             j.id = d["id"]; j.slug = d["slug"]
             j.from_stage = d.get("from_stage", 1); j.only = d.get("only")
+            j.episodes_dir = d.get("episodes_dir")
             j.state = d.get("state", "unknown")
             j.created_at = d.get("created_at"); j.started_at = d.get("started_at")
             j.finished_at = d.get("finished_at")
@@ -116,11 +121,18 @@ def worker():
             cmd += ["--from", str(job.from_stage)]
         if job.only:
             cmd += ["--only", str(job.only)]
+        # Per-job episodes dir (multi-show). The whole stage tree reads
+        # MACU_EPISODES via lib.episode_paths, so setting it here points run.py
+        # and every child stage at the right show's dir. Unset → server default.
+        env = os.environ.copy()
+        if getattr(job, "episodes_dir", None):
+            env["MACU_EPISODES"] = job.episodes_dir
         try:
             with open(job.log_path, "wb") as log:
                 # start_new_session so the whole render tree (run.py + ffmpeg/rife children)
                 # is a process group we can kill in one shot via /kill.
-                p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT,
+                                     start_new_session=True, env=env)
                 job.proc = p
                 p.wait()
             job.state = "done" if p.returncode == 0 else "error"
@@ -214,13 +226,15 @@ class Handler(BaseHTTPRequestHandler):
         slug = body.get("slug")
         if not slug:
             return _json(self, 400, {"error": "slug required"})
-        manifest = f"{SHARES_EP}/{slug}/manifest.json"
+        episodes_dir = body.get("episodes_dir") or SHARES_EP
+        manifest = f"{episodes_dir}/{slug}/manifest.json"
         if not os.path.exists(manifest):
             return _json(self, 400, {"error": f"manifest not found: {manifest}"})
         job_id = uuid.uuid4().hex[:12]
         job = Job(job_id, slug,
                   from_stage=int(body.get("from_stage", 1)),
-                  only=body.get("only"))
+                  only=body.get("only"),
+                  episodes_dir=(body.get("episodes_dir") or None))
         with JOBS_LOCK:
             JOBS[job_id] = job
         WORK_Q.put(job_id)

@@ -42,7 +42,9 @@ async function J<T>(r: Response): Promise<T> {
 }
 
 export const api = {
-  episodes: () => fetch("/api/episodes").then((r) => J<{ episodes: EpisodeSummary[] }>(r)),
+  episodes: (show?: string) =>
+    fetch(`/api/episodes${show ? `?show=${encodeURIComponent(show)}` : ""}`)
+      .then((r) => J<{ episodes: EpisodeSummary[] }>(r)),
   manifest: (slug: string) =>
     fetch(`/api/episodes/${slug}/manifest`).then((r) => J<Record<string, unknown>>(r)),
   putManifest: (slug: string, body: unknown) =>

@@ -7,8 +7,9 @@ import { Markdown } from "../components/Markdown";
 export function YouTube() {
   const activeSlug = useStore((s) => s.activeSlug);
   const setActiveSlug = useStore((s) => s.setActiveSlug);
+  const activeShow = useStore((s) => s.activeShow);
 
-  const episodesQ = useQuery({ queryKey: ["episodes"], queryFn: api.episodes });
+  const episodesQ = useQuery({ queryKey: ["episodes", activeShow], queryFn: () => api.episodes(activeShow) });
   const matchesQ = useQuery({ queryKey: ["youtube", "matches"], queryFn: youtubeApi.matches });
   const uploadsQ = useQuery({ queryKey: ["youtube", "uploads"], queryFn: youtubeApi.uploads });
 

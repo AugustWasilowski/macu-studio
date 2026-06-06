@@ -10,6 +10,11 @@ import os, json, socket, subprocess, time, glob, urllib.request, urllib.error
 # on purpose — episodes/assets are big binary data, the repo is code.
 SHARES = "/mnt/storage/shares/MACU"
 ASSETS = f"{SHARES}/assets"
+# Where episodes live. Defaults to the MACU flat dir; the render server (serve.py)
+# overrides this per-job via the MACU_EPISODES env var so a non-default show whose
+# episodes live elsewhere renders without any other code change. The default value
+# is byte-identical to the old hardcoded path, so MACU renders are unaffected.
+EPISODES_ROOT = os.environ.get("MACU_EPISODES", f"{SHARES}/episodes")
 # Services are all local on the box. Loopback (not the LAN IP) so this survives an
 # IP change like the .72 -> .245 host move.
 COMFY_URL = "http://127.0.0.1:8188"
@@ -70,7 +75,7 @@ def omnivoice_stop():
 
 
 def episode_paths(slug):
-    base = f"{SHARES}/episodes/{slug}"
+    base = f"{EPISODES_ROOT}/{slug}"
     return {
         "base": base,
         "manifest": f"{base}/manifest.json",

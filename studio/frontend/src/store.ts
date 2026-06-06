@@ -36,6 +36,7 @@ interface State {
   toasts: Toast[];
   log: LogEntry[];
   activeSlug: string | null;
+  activeShow: string;
   selectedCueId: string | null;
   selectedShotKey: string | null;
   selectedTitleKey: string | null;
@@ -56,6 +57,7 @@ interface Actions {
   closeTerminal: () => void;
   toggleTerminal: () => void;
   setActiveSlug: (slug: string | null) => void;
+  setActiveShow: (show: string) => void;
   pushToast: (text: string, kind?: ToastKind) => void;
   dropToast: (id: number) => void;
   selectCue: (id: string | null) => void;
@@ -78,6 +80,7 @@ export const useStore = create<State & Actions>((set) => ({
   toasts: [],
   log: [],
   activeSlug: null,
+  activeShow: localStorage.getItem("macu.show") || "the-macu-report",
   selectedCueId: null,
   selectedShotKey: null,
   selectedTitleKey: null,
@@ -97,6 +100,7 @@ export const useStore = create<State & Actions>((set) => ({
   closeTerminal: () => set({ terminalOpen: false }),
   toggleTerminal: () => set((s) => ({ terminalOpen: !s.terminalOpen, drawerOpen: false, logOpen: false })),
   setActiveSlug: (slug) => set({ activeSlug: slug }),
+  setActiveShow: (show) => { localStorage.setItem("macu.show", show); set({ activeShow: show }); },
   pushToast: (text, kind = "info") => {
     const id = toastSeq++;
     const entry: LogEntry = { id, ts: Date.now(), text, kind };

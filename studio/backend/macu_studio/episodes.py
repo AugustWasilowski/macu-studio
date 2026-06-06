@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from .config import EPISODES
+from . import shows as shows_mod
 
 
 SLUG_PATTERN = "ep"  # heuristic; we also include anything with a manifest
@@ -25,6 +26,7 @@ class EpisodeSummary:
     episode_num: int | None = None
     se_label: str | None = None  # "S01-E1" or None (pre-series / non-ep slugs)
     synced: bool = True  # working text files match the tracked episode_meta copy
+    show: str = shows_mod.DEFAULT_SHOW  # owning show id
 
 
 def _utc_iso(ts: float) -> str:
@@ -50,15 +52,21 @@ def se_label(season: int, episode: int) -> str:
     return f"S{season:02d}-E{episode}"
 
 
-def list_episodes() -> list[EpisodeSummary]:
+def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
+    """Episodes for one show (default: the-macu-report → the existing flat dir)."""
+    show = show or shows_mod.DEFAULT_SHOW
     out: list[EpisodeSummary] = []
-    if not EPISODES.exists():
+    try:
+        ep_root = shows_mod.show_episodes_dir(show)
+    except KeyError:
+        return out
+    if not ep_root.exists():
         return out
     # One git ls-tree for the whole list; each episode's sync dot is measured
     # against what's pushed to the remote (lazy import avoids a module cycle).
     from . import gitsync
     pushed = gitsync.pushed_tree()
-    for entry in sorted(EPISODES.iterdir(), key=lambda p: p.name):
+    for entry in sorted(ep_root.iterdir(), key=lambda p: p.name):
         if not entry.is_dir():
             continue
         manifest = entry / "manifest.json"
@@ -87,13 +95,19 @@ def list_episodes() -> list[EpisodeSummary]:
                 episode_num=episode_num,
                 se_label=label,
                 synced=gitsync.sync_status(entry.name, pushed),
+                show=show,
             )
         )
     return out
 
 
 def episode_dir(slug: str) -> Path:
-    p = EPISODES / slug
+    """Resolve an episode dir by slug across all registered shows.
+
+    The default show's flat dir is the fast path (covers every existing MACU
+    episode); other shows are found by scanning the registry. This is what keeps
+    all the per-slug routes show-agnostic."""
+    _show, p = shows_mod.resolve_episode(slug)
     if not p.is_dir():
         raise FileNotFoundError(f"episode dir not found: {p}")
     return p

@@ -8,7 +8,9 @@ import asyncio, json, time
 from typing import Any, AsyncIterator
 import httpx
 
+from . import config
 from .config import RENDER_URL
+from . import shows as shows_mod
 from .runtime_state import remember_job
 
 TIMEOUT = httpx.Timeout(connect=5.0, read=None, write=10.0, pool=10.0)
@@ -20,6 +22,16 @@ async def submit(slug: str, *, from_stage: int | None = None, only: int | None =
         body["from_stage"] = int(from_stage)
     if only:
         body["only"] = int(only)
+    # Tell the render server where this episode lives ONLY when it's not the
+    # default show's flat dir — so the proven MACU render path is byte-identical
+    # (no episodes_dir → serve.py uses its built-in default).
+    try:
+        _show, ep_dir = shows_mod.resolve_episode(slug)
+        ep_root = str(ep_dir.parent)
+        if ep_root != str(config.EPISODES):
+            body["episodes_dir"] = ep_root
+    except FileNotFoundError:
+        pass
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.post(f"{RENDER_URL}/render", json=body)
     if r.status_code >= 400:

@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { api } from "./api";
 import { Topbar } from "./components/Topbar";
+import { Settings } from "./components/Settings";
 import { Toasts } from "./components/Toasts";
 import { Assembly } from "./stages/Assembly";
 import { Audio } from "./stages/Audio";
@@ -42,9 +43,12 @@ function Shell() {
   const [route, go] = useRoute();
   const activeSlug = useStore((s) => s.activeSlug);
   const setActiveSlug = useStore((s) => s.setActiveSlug);
+  const activeShow = useStore((s) => s.activeShow);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const pushToast = useStore((s) => s.pushToast);
   const episodes = useQuery({
-    queryKey: ["episodes"],
-    queryFn: api.episodes,
+    queryKey: ["episodes", activeShow],
+    queryFn: () => api.episodes(activeShow),
     refetchInterval: 5000,        // keep the picker's git-sync dots fresh as files change
     refetchOnWindowFocus: true,
   });
@@ -56,12 +60,15 @@ function Shell() {
     }
   }, [route.page, route.slug, activeSlug, setActiveSlug]);
 
-  // Default to a slug once we know what's available (stage pages only).
+  // Default to a slug once we know what's available (stage pages only). Also
+  // re-pick when the routed slug isn't part of the active show (e.g. right after
+  // switching shows, which clears the slug).
   useEffect(() => {
-    if (route.page === "stage" && !route.slug && episodes.data?.episodes.length) {
-      const pick =
-        episodes.data.episodes.find((e) => e.slug === "ep-018") ??
-        episodes.data.episodes[episodes.data.episodes.length - 1];
+    const eps = episodes.data?.episodes;
+    if (route.page !== "stage" || !eps?.length) return;
+    const inShow = route.slug && eps.some((e) => e.slug === route.slug);
+    if (!inShow) {
+      const pick = eps.find((e) => e.slug === "ep-018") ?? eps[eps.length - 1];
       go({ slug: pick.slug, stage: route.stage });
     }
   }, [episodes.data, route.page, route.slug, route.stage, go]);
@@ -77,6 +84,8 @@ function Shell() {
         slug={slug}
         page={route.page}
         stage={route.stage}
+        activeShow={activeShow}
+        go={go}
         onPick={(s) => {
           setActiveSlug(s);
           go({ page: "stage", slug: s });
@@ -84,6 +93,8 @@ function Shell() {
         onStage={(stage) => go({ page: "stage", slug, stage })}
         onPage={(p) => go({ page: p })}
         onHome={() => go({ page: "stage", slug, stage: "assembly" })}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onStartTutorial={() => pushToast("tutorial coming next", "info")}
       />
       <main className="flex-1 p-3 min-h-0">
         <PageView page={route.page} slug={slug} stage={route.stage} loading={episodes.isLoading} go={go} />
@@ -93,6 +104,7 @@ function Shell() {
       )}
       <LogDrawer />
       <TerminalDrawer />
+      {settingsOpen && <Settings show={activeShow} onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

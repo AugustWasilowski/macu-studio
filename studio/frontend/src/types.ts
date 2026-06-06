@@ -40,6 +40,38 @@ export interface EpisodeSummary {
   episode_num?: number | null;
   se_label?: string | null; // "S01-E1" or null (pre-series / non-ep)
   synced?: boolean; // working text files match the tracked episode_meta copy
+  show?: string; // owning show id
+}
+
+// ---- Multi-show ----
+export interface ShowSummary {
+  id: string;
+  name: string;
+  episodes_dir: string;
+  assets_dir?: string;
+  title_prefix?: string;
+  episode_count: number;
+  is_default: boolean;
+}
+
+export interface ShowConfig {
+  id: string;
+  name: string;
+  episodes_dir: string;
+  assets_dir?: string;
+  title_prefix?: string;
+  episode_defaults?: Record<string, unknown>;
+  [k: string]: unknown;
+}
+
+export interface ImportResult {
+  ok: boolean;
+  show: string;
+  kind: string;
+  created_show: boolean;
+  created: string[];
+  updated: string[];
+  errors: string[];
 }
 
 export interface Cue {

@@ -8,16 +8,22 @@ import { gitsyncApi } from "../api/gitsync";
 import { api } from "../api";
 import { SysStat } from "./SysStat";
 import { JobStatus } from "./JobStatus";
+import { FileMenu } from "./FileMenu";
+import type { Route } from "../route";
 
 interface Props {
   episodes: EpisodeSummary[];
   slug: string;
   page: Page;
   stage: UIStage;
+  activeShow: string;
+  go: (r: Partial<Route>) => void;
   onPick: (slug: string) => void;
   onStage: (stage: UIStage) => void;
   onPage: (page: TopPage) => void;
   onHome: () => void;
+  onOpenSettings: () => void;
+  onStartTutorial: () => void;
 }
 
 const TOP_PAGE_LABELS: Record<TopPage, string> = { youtube: "YouTube", docs: "Docs" };
@@ -26,7 +32,7 @@ function nowClock() {
   return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, onHome }: Props) {
+export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, onStage, onPage, onHome, onOpenSettings, onStartTutorial }: Props) {
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -89,13 +95,14 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
     >
       <div className="flex items-center gap-2">
         <span className="led-dot pulse" style={{ "--led-c": "#ff4d4d" } as React.CSSProperties} />
-        <button
-          className="panel-title hover:brightness-125 cursor-pointer"
-          onClick={onHome}
-          title="Home — current episode (Assembly)"
-        >
-          MACU STUDIO
-        </button>
+        <FileMenu
+          activeShow={activeShow}
+          slug={slug}
+          go={go}
+          onOpenSettings={onOpenSettings}
+          onStartTutorial={onStartTutorial}
+          onGoAssembly={onHome}
+        />
         <span className="label-tiny pl-1">CH·245</span>
       </div>
       <button
@@ -106,7 +113,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       >
         <IChevron size={14} style={{ transform: "rotate(90deg)" }} />
       </button>
-      <div className="relative">
+      <div className="relative" data-tour="episode-picker">
         <button className="btn btn-amber" onClick={() => setOpen((o) => !o)}>
           <span style={{ color: "var(--amber)", fontWeight: 700 }}>{slug || "—"}</span>
           {cur?.se_label && <span className="seg-readout cyan text-[10px]">{cur.se_label}</span>}
@@ -147,13 +154,14 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       >
         <IChevron size={14} style={{ transform: "rotate(-90deg)" }} />
       </button>
-      <nav className="flex gap-1 ml-3">
+      <nav className="flex gap-1 ml-3" data-tour="tabs">
         {UI_STAGES.map((s) => {
           const active = page === "stage" && s.key === stage;
           const done = cur ? cur.done_stages >= s.n : false;
           return (
             <button
               key={s.key}
+              data-tour={`tab-${s.key}`}
               onClick={() => onStage(s.key)}
               className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (active ? "active" : "")}
               style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", color: "var(--amber)" } : {}}
@@ -169,6 +177,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
           return (
             <button
               key={p}
+              data-tour={`tab-${p}`}
               onClick={() => onPage(p)}
               className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (active ? "active" : "")}
               style={active ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}
@@ -181,6 +190,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
       <div className="ml-auto flex items-center gap-3">
         <button
           className="btn"
+          data-tour="stop"
           onClick={onStop}
           disabled={stopping}
           title="Emergency stop: kill the active render, clear the ComfyUI queue, and free GPU memory"
@@ -192,6 +202,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
         <SysStat />
         <button
           className="btn"
+          data-tour="git-sync"
           onClick={onSync}
           disabled={syncing || !slug}
           title="Sync script + manifest + youtube.txt to git"
@@ -201,7 +212,7 @@ export function Topbar({ episodes, slug, page, stage, onPick, onStage, onPage, o
           </span>
         </button>
         <span className="seg-readout cyan">{clock}</span>
-        <button className="btn" onClick={toggleTerminal} title="Open terminal (tmux into Max)">
+        <button className="btn" data-tour="drawers" onClick={toggleTerminal} title="Open terminal (tmux into Max)">
           <ITerminal />
         </button>
         <button className="btn" onClick={toggleLog} title="Open activity log">

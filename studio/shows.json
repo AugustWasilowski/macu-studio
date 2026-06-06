@@ -1,0 +1,80 @@
+[
+  {
+    "id": "the-macu-report",
+    "name": "The MACU Report",
+    "episodes_dir": "/mnt/storage/shares/MACU/episodes",
+    "assets_dir": "/mnt/storage/shares/MACU/assets",
+    "title_prefix": "The MACU Report — ",
+    "episode_defaults": {
+      "voice": {
+        "engine": "piper",
+        "model": "hal",
+        "endpoint": "http://10.0.0.245:5050/",
+        "method": "POST",
+        "body": "{\"text\": \"<line>\"}",
+        "format": "wav 22050Hz mono s16",
+        "out_pattern": "vo/<cue_id>.wav"
+      },
+      "comfyui": {
+        "workflow": "will-smith-modelscope-t2v",
+        "checkpoint": "zeroscope_v2_576w",
+        "endpoint": "http://10.0.0.245:8188/",
+        "frames": 24,
+        "width": 384,
+        "height": 384,
+        "steps": 30,
+        "cfg": 15,
+        "extract_fps": 8,
+        "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+        "out_pattern": "clips/<shot_id>.webp",
+        "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, B&W holds. Rollback: DAMO at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
+      },
+      "style": {
+        "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+        "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+      },
+      "subtitles": {
+        "font": "Better VCR",
+        "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+        "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+        "fontsize": 18,
+        "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+        "note": "Better VCR (public-domain VCR OSD font). Burn via ffmpeg subtitles filter with fontsdir set."
+      },
+      "music": {
+        "enabled": false,
+        "source_dir": "/mnt/storage/shares/MACU/assets/music",
+        "clips": [
+          "60s_big_band_00.mp3",
+          "60s_big_band_01.mp3",
+          "60s_big_band_02.mp3",
+          "60s_big_band_03.mp3"
+        ],
+        "gain": 0.16,
+        "fade_in": 1.5,
+        "fade_out": 2.5,
+        "random": true,
+        "beds": [],
+        "note": "Theme music disabled for this standalone ad bit (the big-band bed is for full-episode intros/outros, not a single segment). Flip enabled to true and add beds if a music bookend is wanted."
+      },
+      "characters": {
+        "walter": {
+          "seed": 24601,
+          "core": "Walter Cronkite, older television news anchor, balding grey hair, thin grey mustache, dark suit and tie, seated at a news desk in front of a bookshelf, reporting gravely"
+        },
+        "everwell": {
+          "seed": 5512,
+          "core": "a polished pale-wood casket pod standing upright in a softly lit funeral showroom, a single round glowing dial set into its closed lid, brass fittings, an ominous calm household appliance, the dial faintly glowing"
+        }
+      },
+      "broll": {
+        "showroom": "a dim funeral home showroom lined with upright caskets, soft display lamps, thick carpet, long shadows"
+      },
+      "title_assets": {
+        "macu_report_title": "episodes/everwell-bit/titles/macu_report_title.mp4 (reuse the EP5 Hyperframes title render; copy into this episode's titles/ dir before assembly)",
+        "macu_report_bumper": "episodes/everwell-bit/titles/macu_report_bumper.mp4 (~1.5s trimmed cut of the title; reuse from EP5)"
+      },
+      "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue: POST {text: vo} to voice.endpoint -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = cue VO duration / number of shots. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, (music disabled for this bit), burn subs (Better VCR font) from vo text -> final/everwell-bit.mp4."
+    }
+  }
+]
