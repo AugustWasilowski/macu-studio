@@ -1,0 +1,51 @@
+{
+  "episode": "awb-001",
+  "title": "As The World Burns — The Widow at the Gate",
+  "version": 1,
+  "show": "as-the-world-burns",
+  "voice": {
+    "default": {
+      "engine": "piper"
+    },
+    "endpoints": {},
+    "format": "wav 22050Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {}
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://10.0.0.245:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+    "out_pattern": "clips/<shot_id>.webp",
+    "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, B&W holds. Rollback: DAMO at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
+  },
+  "style": {
+    "suffix": "",
+    "negative": ""
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "fontsize": 18,
+    "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Better VCR (public-domain VCR OSD font). Burn via ffmpeg subtitles filter with fontsdir set."
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [],
+    "beds": []
+  },
+  "characters": {},
+  "broll": {},
+  "title_assets": {},
+  "cues": []
+}
