@@ -45,6 +45,7 @@ export function Graphics({ slug }: { slug: string }) {
   const [editMode, setEditMode] = useState(false);     // editing an existing object-form card
   const [legacyNote, setLegacyNote] = useState("");    // descriptive string for bespoke/legacy cards
   const [newBrief, setNewBrief] = useState("");        // brief for AI composition generation
+  const [compGenerated, setCompGenerated] = useState(false); // brief has been turned into a composition
   // Card type drives the AI writer's brief (which composition + tone). Title-card modal
   // offers the non-thumbnail types; the thumbnail modal is always youtube_thumb.
   const [newCardType, setNewCardType] = useState("fresh_title");
@@ -60,7 +61,7 @@ export function Graphics({ slug }: { slug: string }) {
   // surface the descriptive string as a hint.
   const openNewFor = (key: string) => {
     const ta = ((manifest.data as any)?.title_assets ?? {})[key];
-    setNewKey(key); setNewBrief("");
+    setNewKey(key); setNewBrief(""); setCompGenerated(false);
     if (ta && typeof ta === "object") {
       setEditMode(true);
       setNewComp(ta.composition || templateOptions[0] || "");
@@ -76,7 +77,7 @@ export function Graphics({ slug }: { slug: string }) {
   };
 
   const openNew = () => {
-    setEditMode(false); setNewKey(""); setLegacyNote(""); setNewBrief("");
+    setEditMode(false); setNewKey(""); setLegacyNote(""); setNewBrief(""); setCompGenerated(false);
     setNewComp((c) => c || templateOptions[0] || "");
     setNewFields(DEFAULT_FIELDS);
     setNewOpen(true);
@@ -212,6 +213,7 @@ export function Graphics({ slug }: { slug: string }) {
       qc.invalidateQueries({ queryKey: ["titles", slug] });   // card now exists → show it in the grid
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       selectTitle(r.composition);
+      setCompGenerated(true);
       push(`card "${r.composition}" created (${r.placeholders.length} fields) — fill the values, then Create + render`, "ok");
     },
   });
@@ -428,7 +430,10 @@ export function Graphics({ slug }: { slug: string }) {
         footer={
           <>
             <button className="btn" onClick={() => setNewOpen(false)}>Cancel</button>
-            <button className="btn btn-cyan" disabled={newTitle.isPending} onClick={submitNewTitle}>{editMode ? "Save + render" : "Create + render"}</button>
+            <button className="btn btn-cyan"
+              disabled={newTitle.isPending || (!!newBrief.trim() && !compGenerated)}
+              title={(!!newBrief.trim() && !compGenerated) ? "You wrote a brief — click 'Generate composition' first, or clear the brief to render the selected composition" : ""}
+              onClick={submitNewTitle}>{editMode ? "Save + render" : "Create + render"}</button>
           </>
         }
       >
@@ -454,8 +459,11 @@ export function Graphics({ slug }: { slug: string }) {
               Needs a key (used as the new composition's name). */}
           <div className="hairline-soft rounded p-2 flex flex-col gap-2">
             <div className="label-tiny">generate a new composition with AI <span className="text-txt-faint normal-case tracking-normal">(local Qwen → HyperFrames HTML)</span></div>
-            <Field label="brief" value={newBrief} onChange={setNewBrief} rows={3}
+            <Field label="brief" value={newBrief} onChange={(v) => { setNewBrief(v); setCompGenerated(false); }} rows={3}
               placeholder="e.g. a Crater Bowl scoreboard: SECTOR NINE SLAGS vs SECTOR FOUR GLOWBOYS, score ticks 2 → 1, ‘PLAYERS REMAINING’ underneath" />
+            {newBrief.trim() && !compGenerated && (
+              <div className="text-[10px] text-amber">↑ click Generate composition to use this brief — otherwise "Create + render" uses the composition selected above, ignoring the brief.</div>
+            )}
             <button
               className="btn btn-amber self-start"
               disabled={genComp.isPending || !newKey.trim() || !newBrief.trim()}
