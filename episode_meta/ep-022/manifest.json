@@ -1,6 +1,6 @@
 {
   "episode": "ep-022",
-  "title": "The MACU Report \u2014 Episode 22 \u2014 \"Cut With Sunshine\"",
+  "title": "The MACU Report — Episode 22 — \"Cut With Sunshine\"",
   "version": 1,
   "authored_by": "Mayor Awesome",
   "season": 4,
@@ -113,8 +113,18 @@
   "title_assets": {
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
-    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
-    "cut_with_sunshine": "episodes/ep-022/titles/cut_with_sunshine.mp4 (NEW \u2014 Hyperframes house-style CUT WITH SUNSHINE card; flag for build)"
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "cut_with_sunshine": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "THE CRYSTAL REPORT",
+        "title_line_1": "CUT WITH",
+        "title_line_2": "SUNSHINE",
+        "sub": "A PURITY CRISIS",
+        "idtag": "EP 22 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -191,16 +201,34 @@
     }
   },
   "broll": {
-    "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+    "crystal_packets": {
+      "prompt": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+      "seed": 1170
+    },
     "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
-    "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
-    "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
-    "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
+    "ron_mug": {
+      "prompt": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+      "seed": 8413
+    },
+    "crystal_pitcher": {
+      "prompt": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+      "seed": 6162
+    },
+    "cut_lab": {
+      "prompt": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
+      "seed": 3809
+    },
     "glass_water": "a plain glass of clear water on an empty news desk",
-    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+    "stride_watch": {
+      "prompt": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+      "seed": 5989
+    },
     "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
     "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
-    "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
+    "vending_machine": {
+      "prompt": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room",
+      "seed": 5354
+    }
   },
   "cues": [
     {
@@ -249,7 +277,7 @@
       "id": "c04",
       "segment": "cold_open",
       "speaker": "WALTER",
-      "vo": "Newscaster's fatigue. It happens to the best of us. Anyway \u2014 the news. And the news, like Ron, is mostly about beverages tonight. Before we begin: a man has been knocking on the inside of the vending machine since Thursday. Maintenance is aware. The machine is aware.",
+      "vo": "Newscaster's fatigue. It happens to the best of us. Anyway — the news. And the news, like Ron, is mostly about beverages tonight. Before we begin: a man has been knocking on the inside of the vending machine since Thursday. Maintenance is aware. The machine is aware.",
       "shots": [
         {
           "id": "c04_s1",
@@ -281,7 +309,7 @@
       "id": "c06",
       "segment": "macu_markets",
       "speaker": "SWEET",
-      "vo": "Demand's healthy. We don't sell to everyone \u2014 we serve the thirsty. A serving's a pour. A regular's a friend. We don't push. We don't have to. The thirst does the pushing for us.",
+      "vo": "Demand's healthy. We don't sell to everyone — we serve the thirsty. A serving's a pour. A regular's a friend. We don't push. We don't have to. The thirst does the pushing for us.",
       "shots": [
         {
           "id": "c06_s1",
@@ -342,7 +370,7 @@
       "id": "c10",
       "segment": "the_cut",
       "speaker": "WALTER",
-      "vo": "But success breeds danger. Tonight, an expos\u00e9. The crystal on your corner may not be pure. Unscrupulous dealers are cutting it \u2014 with ash, with grit, with floor. The settlement is, understandably, devastated.",
+      "vo": "But success breeds danger. Tonight, an exposé. The crystal on your corner may not be pure. Unscrupulous dealers are cutting it — with ash, with grit, with floor. The settlement is, understandably, devastated.",
       "shots": [
         {
           "id": "c10_s1",
@@ -355,7 +383,7 @@
       "id": "c11",
       "segment": "the_cut",
       "speaker": "DARYL",
-      "vo": "Man, I got a bad batch. I poured it and it was, like \u2014 GRAY. And gritty. It tasted like a DRIVEWAY. And I drank the whole thing? Because I'd already committed? That's the disease talking, man. And the disease has OPINIONS now.",
+      "vo": "Man, I got a bad batch. I poured it and it was, like — GRAY. And gritty. It tasted like a DRIVEWAY. And I drank the whole thing? Because I'd already committed? That's the disease talking, man. And the disease has OPINIONS now.",
       "shots": [
         {
           "id": "c11_s1",
@@ -383,7 +411,7 @@
       "id": "c13",
       "segment": "ron_defends",
       "speaker": "RON",
-      "vo": "So if you're buying, MACU, buy clean. Buy from a name you trust. Buy from \u2014 well. I'm not allowed to say. But he's got a folding table and a very calm voice.",
+      "vo": "So if you're buying, MACU, buy clean. Buy from a name you trust. Buy from — well. I'm not allowed to say. But he's got a folding table and a very calm voice.",
       "shots": [
         {
           "id": "c13_s1",
@@ -430,7 +458,7 @@
       "id": "c16",
       "segment": "ron_defends",
       "speaker": "STRIDE",
-      "vo": "Hydration streak: four days, Ron! A personal best. You haven't felt this good since \u2014 well. You haven't felt this good. Heart rate: elevated. Cause: unknown. Logging as joy. Keep it up.",
+      "vo": "Hydration streak: four days, Ron! A personal best. You haven't felt this good since — well. You haven't felt this good. Heart rate: elevated. Cause: unknown. Logging as joy. Keep it up.",
       "shots": [
         {
           "id": "c16_s1",
@@ -470,7 +498,7 @@
       "id": "c19",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "And the forecast. A bright day \u2014 cloudless, dry, a high of seventy-three. So dry, in fact, the settlement is advised to stay indoors and drink plenty of fluids, which, frankly, was already the plan. Cut with sunshine, the meteorologists are calling it. Visibility is excellent. We can see everyone. Everyone can see us. Condition rating: extremely mild.",
+      "vo": "And the forecast. A bright day — cloudless, dry, a high of seventy-three. So dry, in fact, the settlement is advised to stay indoors and drink plenty of fluids, which, frankly, was already the plan. Cut with sunshine, the meteorologists are calling it. Visibility is excellent. We can see everyone. Everyone can see us. Condition rating: extremely mild.",
       "shots": [
         {
           "id": "c19_s1",
@@ -508,7 +536,7 @@
       "id": "c21",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "...Sweet. Tomorrow. Can we talk about \u2014 a steadier supply. For the show. I can't keep running to the corner mid-broadcast, it looks unprofessional.",
+      "vo": "...Sweet. Tomorrow. Can we talk about — a steadier supply. For the show. I can't keep running to the corner mid-broadcast, it looks unprofessional.",
       "shots": [
         {
           "id": "c21_s1",
@@ -522,7 +550,7 @@
       "id": "c22",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck. And drink clean.",
+      "vo": "Anyway. Goodnight, MACU — stay safe, stay strong, and good luck. And drink clean.",
       "shots": [
         {
           "id": "c22_s1",
