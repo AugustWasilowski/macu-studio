@@ -14,7 +14,7 @@ gets its own job_id ('hf-' prefix) so the studio frontend can tail it just like
 macu-render jobs.
 """
 from __future__ import annotations
-import asyncio, json, os, shutil, subprocess, time, uuid
+import asyncio, json, os, re, shutil, subprocess, time, uuid
 from pathlib import Path
 from typing import AsyncIterator
 
@@ -378,6 +378,25 @@ def list_templates() -> list[str]:
     if not TEMPLATES.exists():
         return []
     return sorted(p.name for p in TEMPLATES.iterdir() if p.is_dir())
+
+
+_PLACEHOLDER_RE = re.compile(r"‹([A-Z0-9_]+)›")
+
+
+def template_fields(composition: str) -> dict:
+    """Scan a template's index.html for ‹PLACEHOLDER› tokens and return the editable
+    field set the modal should offer: {composition, placeholders, fields:{lower:""}}.
+    Mirrors compgen's scan so an existing layout's JSON can be scaffolded without the LLM."""
+    index = TEMPLATES / composition / "index.html"
+    if not index.exists():
+        return {"composition": composition, "placeholders": [], "fields": {}}
+    html = index.read_text(encoding="utf-8", errors="ignore")
+    placeholders = sorted(set(_PLACEHOLDER_RE.findall(html)))
+    return {
+        "composition": composition,
+        "placeholders": placeholders,
+        "fields": {p.lower(): "" for p in placeholders},
+    }
 
 
 async def submit(slug: str, key: str) -> str:

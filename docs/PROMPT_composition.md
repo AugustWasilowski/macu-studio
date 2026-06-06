@@ -21,13 +21,37 @@ Return ONLY the complete `index.html` — no markdown fences, no commentary, no 
     `textContent`, or set `rotation`). Pick fixed start/end values from the brief — never random.
 - `data-duration` on `#root` and `.clip` MUST equal the timeline's total length. Keep it 4–8s
   unless the brief says otherwise.
+- It MUST expose EVERY piece of human-readable copy as a `‹UPPER_SNAKE›` placeholder (see next
+  section). A composition with zero placeholders is INVALID and will be rejected — the operator
+  edits the card only through these tokens, so baked-in literal text is unusable.
 
-## Editable text = placeholders
-Any text the operator should be able to re-edit later MUST be a placeholder token of the form
-`‹UPPER_SNAKE›` (e.g. `‹TITLE_LINE_1›`, `‹HOME_TEAM›`, `‹HOME_SCORE›`, `‹SUB›`). The pipeline
-substitutes these before render. Use placeholders for names/scores/labels; hard-code only truly
-fixed chrome (e.g. the show wordmark, a static "LIVE" tag). Numbers that animate: put the START
-value in a placeholder and the END value in a second placeholder, and tween between them.
+## Editable text = placeholders (STRICT — this is the #1 thing models get wrong)
+EVERY visible word the card displays — every name, score, label, kicker, title line, sub,
+date, corner stamp — MUST be written as a placeholder token `‹UPPER_SNAKE›`, NOT as literal
+text. The pipeline substitutes the operator's values into these tokens before rendering. If you
+type the actual words from the brief into the HTML, the operator can never change them and the
+card is thrown away.
+
+DO (every reading is a token):
+  `<div class="kicker">‹KICKER›</div>`
+  `<div class="macu-title"><span>‹TITLE_LINE_1›</span><span>‹TITLE_LINE_2›</span></div>`
+  `<div class="team">‹HOME_TEAM›</div><div class="score">‹HOME_SCORE›</div>`
+  `<div class="idtag">‹IDTAG›</div>`
+DON'T (literal copy from the brief — REJECTED):
+  `<div class="kicker">CRATER BOWL</div>`
+  `<div class="team">SECTOR NINE GLOW BOYS</div><div class="score">40</div>`
+
+Rules:
+- Pick a clear UPPER_SNAKE name per field from its meaning (`HOME_TEAM`, `AWAY_SCORE`,
+  `STATUS`, `KICKER`, `TITLE_LINE_1`, `SUB`, `IDTAG`). Reuse the same token if the same value
+  appears twice.
+- Hard-code ONLY truly fixed chrome that is the SAME on every episode (the show wordmark
+  "THE MACU / REPORT", a static "LIVE" pill). When in doubt, make it a placeholder.
+- A number that ANIMATES (a score going 2→1, a counter, a wheel angle): put the START value in
+  one placeholder and the END value in a second placeholder (e.g. `‹HOME_SCORE_FROM›` /
+  `‹HOME_SCORE_TO›`) and tween between them — never hard-code either endpoint.
+- Aim for at least 3–4 placeholders on any real card; a title card has 5
+  (`‹KICKER› ‹TITLE_LINE_1› ‹TITLE_LINE_2› ‹SUB› ‹IDTAG›`).
 
 ## MACU house style (mandatory — match the example's look)
 - Pure black field (`#000`/`#0c0c10`), monochrome only. No color.
@@ -101,6 +125,9 @@ value in a placeholder and the END value in a second placeholder, and tween betw
 
 ## Before you answer
 - Re-check the contract: one `#root` (data-composition-id="main", correct duration), one `.clip`,
-  one paused GSAP timeline on `window.__timelines["main"]`, no random/time/raf, placeholders for
-  editable text, the four FX layers, 1024×1024.
+  one paused GSAP timeline on `window.__timelines["main"]`, no random/time/raf, the four FX
+  layers, 1024×1024.
+- PLACEHOLDER AUDIT: scan every visible text node. Is each name/score/label/line wrapped in a
+  `‹UPPER_SNAKE›` token? If you see literal copy from the brief anywhere in the markup, replace
+  it with a token now. There must be at least one placeholder; a card with none is invalid.
 - Output ONLY the final `index.html`.

@@ -19,6 +19,13 @@ def get_hf_templates():
     return {"templates": hyperframes.list_templates()}
 
 
+@router.get("/api/hf/templates/{composition}/fields")
+def get_hf_template_fields(composition: str):
+    """The editable ‹PLACEHOLDER› field set for a composition, so the New/Edit modal can
+    scaffold the JSON when the layout changes (no LLM needed)."""
+    return hyperframes.template_fields(composition)
+
+
 @router.post("/api/episodes/{slug}/title/new")
 async def post_title_new(slug: str, body: dict = Body(...)):
     key = (body.get("key") or "").strip()

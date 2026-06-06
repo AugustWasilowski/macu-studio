@@ -63,31 +63,63 @@ export function Graphics({ slug }: { slug: string }) {
   useEffect(() => {
     if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
   }, [templateOptions, newComp]);
+
+  // Scaffold the fields JSON from a composition's actual ‹PLACEHOLDER› tokens, so you can
+  // see what to fill without writing-with-AI. Preserves any values for keys that still
+  // exist (`preserveJson`), fills new keys empty, drops keys the layout no longer has.
+  // No-op if the template is unknown / has no placeholders (leaves the JSON untouched).
+  const fillFieldsFor = async (comp: string, preserveJson: string) => {
+    if (!comp) return;
+    try {
+      const r = await graphicsApi.templateFields(comp);
+      if (!Object.keys(r.fields).length) return;
+      let existing: Record<string, unknown> = {};
+      try { existing = JSON.parse(preserveJson || "{}"); } catch { /* keep empty */ }
+      const merged: Record<string, unknown> = {};
+      for (const k of Object.keys(r.fields)) merged[k] = k in existing ? existing[k] : r.fields[k];
+      setNewFields(JSON.stringify(merged, null, 2));
+    } catch { /* leave fields as-is */ }
+  };
+
+  // Picking a layout reshapes the JSON to match it (carrying over overlapping values).
+  const onPickComposition = (comp: string) => {
+    setNewComp(comp);
+    fillFieldsFor(comp, newFields);
+  };
+
   // Open the modal for an existing card. If its manifest entry is the object form
   // ({composition, fields}) we're EDITING — pre-fill both. If it's a bespoke/legacy
   // string entry there are no saved fields to load, so fall back to configure mode and
-  // surface the descriptive string as a hint.
+  // surface the descriptive string as a hint. Either way we scaffold the fields from the
+  // composition's placeholders (merging saved values in) so the JSON is never blank.
   const openNewFor = (key: string) => {
     const ta = ((manifest.data as any)?.title_assets ?? {})[key];
     setNewKey(key); setNewBrief(""); setCompGenerated(false);
     if (ta && typeof ta === "object") {
       setEditMode(true);
-      setNewComp(ta.composition || templateOptions[0] || "");
-      setNewFields(JSON.stringify(ta.fields ?? {}, null, 2));
+      const comp = ta.composition || templateOptions[0] || "";
+      const saved = JSON.stringify(ta.fields ?? {}, null, 2);
+      setNewComp(comp);
+      setNewFields(saved);
       setLegacyNote("");
+      fillFieldsFor(comp, saved);
     } else {
       setEditMode(false);
-      setNewComp((c) => c || templateOptions[0] || "");
+      const comp = newComp || templateOptions[0] || "";
+      setNewComp(comp);
       setNewFields(DEFAULT_FIELDS);
       setLegacyNote(typeof ta === "string" ? ta : "");
+      fillFieldsFor(comp, "{}");
     }
     setNewOpen(true);
   };
 
   const openNew = () => {
     setEditMode(false); setNewKey(""); setLegacyNote(""); setNewBrief(""); setCompGenerated(false);
-    setNewComp((c) => c || templateOptions[0] || "");
+    const comp = newComp || templateOptions[0] || "";
+    setNewComp(comp);
     setNewFields(DEFAULT_FIELDS);
+    fillFieldsFor(comp, "{}");
     setNewOpen(true);
   };
 
@@ -496,7 +528,7 @@ export function Graphics({ slug }: { slug: string }) {
               <Field
                 label="composition"
                 value={newComp}
-                onChange={setNewComp}
+                onChange={onPickComposition}
                 options={Array.from(new Set([newComp, ...templateOptions].filter(Boolean))) as string[]}
               />
               <CompPreview comp={newComp} />

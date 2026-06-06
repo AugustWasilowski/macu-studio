@@ -25,6 +25,11 @@ export interface GenCardTextResp {
 export const graphicsApi = {
   templates: () =>
     fetch("/api/hf/templates").then((r) => J<{ templates: string[] }>(r)),
+  // The editable ‹PLACEHOLDER› field set for a composition (scaffolds the JSON when the
+  // layout dropdown changes — no LLM needed).
+  templateFields: (composition: string) =>
+    fetch(`/api/hf/templates/${encodeURIComponent(composition)}/fields`)
+      .then((r) => J<{ composition: string; placeholders: string[]; fields: Record<string, string> }>(r)),
   cardTypes: () =>
     fetch("/api/card-types").then((r) => J<{ card_types: string[] }>(r)),
   // On-demand Ollama: write deadpan card text (the five HF fields) for a card type.

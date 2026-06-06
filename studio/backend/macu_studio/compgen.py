@@ -46,13 +46,37 @@ Return ONLY the complete `index.html` — no markdown fences, no commentary, no 
     `textContent`, or set `rotation`). Pick fixed start/end values from the brief — never random.
 - `data-duration` on `#root` and `.clip` MUST equal the timeline's total length. Keep it 4–8s
   unless the brief says otherwise.
+- It MUST expose EVERY piece of human-readable copy as a `‹UPPER_SNAKE›` placeholder (see next
+  section). A composition with zero placeholders is INVALID and will be rejected — the operator
+  edits the card only through these tokens, so baked-in literal text is unusable.
 
-## Editable text = placeholders
-Any text the operator should be able to re-edit later MUST be a placeholder token of the form
-`‹UPPER_SNAKE›` (e.g. `‹TITLE_LINE_1›`, `‹HOME_TEAM›`, `‹HOME_SCORE›`, `‹SUB›`). The pipeline
-substitutes these before render. Use placeholders for names/scores/labels; hard-code only truly
-fixed chrome (e.g. the show wordmark, a static "LIVE" tag). Numbers that animate: put the START
-value in a placeholder and the END value in a second placeholder, and tween between them.
+## Editable text = placeholders (STRICT — this is the #1 thing models get wrong)
+EVERY visible word the card displays — every name, score, label, kicker, title line, sub,
+date, corner stamp — MUST be written as a placeholder token `‹UPPER_SNAKE›`, NOT as literal
+text. The pipeline substitutes the operator's values into these tokens before rendering. If you
+type the actual words from the brief into the HTML, the operator can never change them and the
+card is thrown away.
+
+DO (every reading is a token):
+  `<div class="kicker">‹KICKER›</div>`
+  `<div class="macu-title"><span>‹TITLE_LINE_1›</span><span>‹TITLE_LINE_2›</span></div>`
+  `<div class="team">‹HOME_TEAM›</div><div class="score">‹HOME_SCORE›</div>`
+  `<div class="idtag">‹IDTAG›</div>`
+DON'T (literal copy from the brief — REJECTED):
+  `<div class="kicker">CRATER BOWL</div>`
+  `<div class="team">SECTOR NINE GLOW BOYS</div><div class="score">40</div>`
+
+Rules:
+- Pick a clear UPPER_SNAKE name per field from its meaning (`HOME_TEAM`, `AWAY_SCORE`,
+  `STATUS`, `KICKER`, `TITLE_LINE_1`, `SUB`, `IDTAG`). Reuse the same token if the same value
+  appears twice.
+- Hard-code ONLY truly fixed chrome that is the SAME on every episode (the show wordmark
+  "THE MACU / REPORT", a static "LIVE" pill). When in doubt, make it a placeholder.
+- A number that ANIMATES (a score going 2→1, a counter, a wheel angle): put the START value in
+  one placeholder and the END value in a second placeholder (e.g. `‹HOME_SCORE_FROM›` /
+  `‹HOME_SCORE_TO›`) and tween between them — never hard-code either endpoint.
+- Aim for at least 3–4 placeholders on any real card; a title card has 5
+  (`‹KICKER› ‹TITLE_LINE_1› ‹TITLE_LINE_2› ‹SUB› ‹IDTAG›`).
 
 ## MACU house style (mandatory — match the example's look)
 - Pure black field (`#000`/`#0c0c10`), monochrome only. No color.
@@ -126,13 +150,39 @@ value in a placeholder and the END value in a second placeholder, and tween betw
 
 ## Before you answer
 - Re-check the contract: one `#root` (data-composition-id="main", correct duration), one `.clip`,
-  one paused GSAP timeline on `window.__timelines["main"]`, no random/time/raf, placeholders for
-  editable text, the four FX layers, 1024×1024.
+  one paused GSAP timeline on `window.__timelines["main"]`, no random/time/raf, the four FX
+  layers, 1024×1024.
+- PLACEHOLDER AUDIT: scan every visible text node. Is each name/score/label/line wrapped in a
+  `‹UPPER_SNAKE›` token? If you see literal copy from the brief anywhere in the markup, replace
+  it with a token now. There must be at least one placeholder; a card with none is invalid.
 - Output ONLY the final `index.html`."""
 
 _FENCE_RE = re.compile(r"^\s*```[a-zA-Z]*\s*\n|\n?```\s*$")
 _PLACEHOLDER_RE = re.compile(r"‹([A-Z0-9_]+)›")
 _NAME_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,48}$")
+
+# Visible text that's allowed to be hard-coded (fixed broadcast chrome, same every episode).
+# Everything else the card displays should be a ‹PLACEHOLDER›; literal content here means the
+# model baked the brief's data into the HTML.
+_FIXED_CHROME = {"THE", "MACU", "REPORT", "THE MACU", "MACU REPORT", "THE MACU REPORT", "LIVE", "ON AIR"}
+_TEXT_NODE_RE = re.compile(r">([^<>]+)<")
+_TAG_BLOCK_RE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
+
+
+def _content_literals(html: str) -> list[str]:
+    """Visible text nodes that are hard-coded CONTENT (not ‹tokens›, not fixed chrome).
+    A non-empty list means the card isn't fully editable — the model baked words in."""
+    body = html[html.lower().find("<body"):] if "<body" in html.lower() else html
+    body = _TAG_BLOCK_RE.sub("", body)
+    out: list[str] = []
+    for node in _TEXT_NODE_RE.findall(body):
+        stripped = _PLACEHOLDER_RE.sub("", node).strip()  # drop tokens; keep literal remainder
+        if not re.search(r"[A-Za-z0-9]", stripped):
+            continue  # pure punctuation / whitespace
+        if stripped.upper() in _FIXED_CHROME:
+            continue  # allowed fixed chrome
+        out.append(stripped)
+    return out
 
 
 def ensure_prompt_seeded() -> None:
@@ -166,24 +216,57 @@ def generate(slug: str, key: str, brief: str) -> dict:
         {"role": "system", "content": prompts.load_or_seed(prompts.COMPOSITION_FILE, SYSTEM)},
         {"role": "user", "content": f"Brief for the card (key `{key}`):\n\n{brief.strip()}\n\nReturn only the index.html."},
     ]
+    def _contract_ok(h: str) -> bool:
+        return len(h) >= 400 and not [
+            s for s in ('data-composition-id', '__timelines', '<html', 'data-duration') if s not in h]
+
     llm.start()
     try:
-        raw = llm.chat_text(messages, temperature=0.4)
+        html = _strip_fences(llm.chat_text(messages, temperature=0.4))
+        placeholders = sorted(set(_PLACEHOLDER_RE.findall(html)))
+        literals = _content_literals(html)
+        # The 7B model routinely bakes the brief's data (team names, scores, subs) into the HTML
+        # as literal text instead of ‹PLACEHOLDER› tokens — producing a card the operator can't
+        # edit. Trigger ONE corrective pass whenever there are no placeholders OR any baked
+        # content literal, and keep the retry only if it's a strict improvement + still valid.
+        if not placeholders or literals:
+            shown = ", ".join(f'"{t}"' for t in literals[:8]) or "(none, but no placeholders were used)"
+            fix = messages + [
+                {"role": "assistant", "content": html},
+                {"role": "user", "content": (
+                    "That composition hard-codes editable text instead of using ‹UPPER_SNAKE› "
+                    f"placeholders. These literal strings must each become a token: {shown}. "
+                    "Rewrite the SAME card with identical layout, motion, and style, but replace "
+                    "EVERY name / score / label / title line / sub / corner-stamp with a "
+                    "‹UPPER_SNAKE› token (e.g. ‹KICKER›, ‹TITLE_LINE_1›, ‹TITLE_LINE_2›, "
+                    "‹HOME_TEAM›, ‹HOME_SCORE›, ‹AWAY_TEAM›, ‹AWAY_SCORE›, ‹SUB›, ‹IDTAG›). "
+                    "An animated number gets a _FROM and _TO token. Hard-code ONLY the fixed show "
+                    "wordmark. Return ONLY the index.html."
+                )},
+            ]
+            html2 = _strip_fences(llm.chat_text(fix, temperature=0.2))
+            ph2 = sorted(set(_PLACEHOLDER_RE.findall(html2)))
+            lit2 = _content_literals(html2)
+            # accept the retry only if valid and strictly better (more tokens AND fewer literals)
+            if ph2 and _contract_ok(html2) and (len(ph2) >= len(placeholders)) and (len(lit2) < len(literals) or not placeholders):
+                html, placeholders, literals = html2, ph2, lit2
     finally:
         llm.stop()
 
-    html = _strip_fences(raw)
     # Minimal contract validation — fail loudly so the operator retries rather than render junk.
     missing = [s for s in ('data-composition-id', '__timelines', '<html', 'data-duration')
                if s not in html]
     if missing or len(html) < 400:
         raise RuntimeError(f"model output isn't a valid composition (missing: {missing or 'too short'})")
+    if not placeholders:
+        raise RuntimeError(
+            "the model hard-coded all text (no ‹PLACEHOLDER› tokens) even after a retry — "
+            "the card would not be editable. Try regenerating, or simplify the brief.")
 
     template_dir = hyperframes.TEMPLATES / key
     template_dir.mkdir(parents=True, exist_ok=True)
     (template_dir / "index.html").write_text(html)
 
-    placeholders = sorted(set(_PLACEHOLDER_RE.findall(html)))
     fields = {p.lower(): "" for p in placeholders}
 
     # Create the title_asset so the card appears in the Graphics grid immediately (as an
