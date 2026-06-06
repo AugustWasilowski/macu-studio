@@ -77,6 +77,7 @@ export interface TitleAsset {
   exists: boolean;
   mtime: number | null;
   configured?: boolean; // object-form HyperFrames entry → regennable directly
+  composition?: string | null; // present on configured (object-form) cards
 }
 
 export interface PipelineStage {

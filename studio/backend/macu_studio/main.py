@@ -831,6 +831,14 @@ app.include_router(routes_docs.router)
 app.include_router(routes_gitsync.router)
 
 
+# ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------
+# Lets the New/Edit title-card modal show a live iframe of a composition's layout
+# (placeholders render as literal ‹TOKENS›, so you can see where each field lands).
+_HF_TEMPLATES = SHARES / "assets" / "hyperframes" / "templates"
+if _HF_TEMPLATES.exists():
+    app.mount("/api/hf/template-assets", StaticFiles(directory=str(_HF_TEMPLATES)), name="hf-templates")
+
+
 # ---------- SPA static mount (last, after API routes) ----------
 
 if FRONTEND_DIST.exists():

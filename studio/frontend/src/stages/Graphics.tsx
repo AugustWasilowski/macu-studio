@@ -13,6 +13,14 @@ import { IRegen } from "../components/Icons";
 
 interface HFEvent { ts: number; kind: string; n?: number; name?: string; line?: string; error?: string; [k: string]: unknown }
 
+// One-liners for the AI card types (mirror backend cardgen.CARD_TYPES). These are card
+// ARCHETYPES, not just tone — each pins a composition the AI writer snaps to.
+const CARD_TYPE_BLURB: Record<string, string> = {
+  macu_title: "Recurring show-open (intro layout). Wordmark is locked to “THE MACU / REPORT”; AI writes only the kicker tease + a station-ID sub.",
+  fresh_title: "Per-episode segment title (intro layout). AI writes the two big title lines (short, all-caps, ominous) + kicker + a logline from the script.",
+  weather: "Forecast segment (weather layout). A deadpan post-apocalyptic weather report.",
+};
+
 export function Graphics({ slug }: { slug: string }) {
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
@@ -287,21 +295,41 @@ export function Graphics({ slug }: { slug: string }) {
             </div>
             <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1 text-[12px] flex-none">
               <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
+              <span className="label-tiny">layout</span>
+              <span className="font-mono">
+                {cur.configured
+                  ? (cur.composition ?? "—")
+                  : <span className="text-txt-faint">bespoke — no editable layout</span>}
+              </span>
               <span className="label-tiny">scope</span><span>{cur.scope}</span>
               <span className="label-tiny">status</span><span>{cur.status}</span>
             </div>
             <div className="flex items-center gap-2 flex-none">
               {cur.configured ? (
-                <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]} onClick={() => regen.mutate(cur.key)}>
-                  <IRegen /> Regen
-                </button>
+                <>
+                  <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]}
+                    title="Re-render this card from its saved layout + fields"
+                    onClick={() => regen.mutate(cur.key)}>
+                    <IRegen /> Regen
+                  </button>
+                  <button className="btn"
+                    title="Edit this card's layout or text, then re-render"
+                    onClick={() => openNewFor(cur.key)}>Edit…</button>
+                  <RegenNotes onSubmit={() => regen.mutate(cur.key)} />
+                </>
               ) : (
-                <button className="btn btn-cyan" onClick={() => openNewFor(cur.key)}>
+                <button className="btn btn-cyan"
+                  title="This card has no saved layout/text yet — set them up once, then it becomes Regen-able"
+                  onClick={() => openNewFor(cur.key)}>
                   <IRegen /> Configure + generate
                 </button>
               )}
-              {cur.configured && <RegenNotes onSubmit={() => regen.mutate(cur.key)} />}
             </div>
+            {!cur.configured && (
+              <p className="text-txt-faint text-[11px] flex-none -mt-1">
+                Shows “Configure” (not “Regen”) because this card was authored as a description, not from an editable layout. Configure it once to make it Regen-able.
+              </p>
+            )}
           </>
         ) : (
           <div className="flex-1 grid place-items-center text-txt-faint">No title selected — pick one from the cards on the right.</div>
@@ -351,7 +379,9 @@ export function Graphics({ slug }: { slug: string }) {
                     <span onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
                       <button
                         className="btn p-1"
-                        title={t.configured ? "Regen via HyperFrames" : "Configure + generate"}
+                        title={t.configured
+                          ? "Regen — re-render from saved layout + fields"
+                          : "Configure — this card has no editable layout yet; set it up to make it regen-able"}
                         disabled={isBusy}
                         onClick={() => (t.configured ? regen.mutate(t.key) : openNewFor(t.key))}
                       ><IRegen /></button>
@@ -426,63 +456,100 @@ export function Graphics({ slug }: { slug: string }) {
       <Modal
         open={newOpen}
         onClose={() => setNewOpen(false)}
+        width={640}
         title={editMode ? "Edit title card" : "New title card"}
         footer={
           <>
+            <span className="text-txt-faint text-[11px] mr-auto">
+              {editMode ? "Saves your changes and re-renders the card." : "Saves the card and renders it as an mp4."}
+            </span>
             <button className="btn" onClick={() => setNewOpen(false)}>Cancel</button>
             <button className="btn btn-cyan"
               disabled={newTitle.isPending || (!!newBrief.trim() && !compGenerated)}
-              title={(!!newBrief.trim() && !compGenerated) ? "You wrote a brief — click 'Generate composition' first, or clear the brief to render the selected composition" : ""}
+              title={(!!newBrief.trim() && !compGenerated) ? "You wrote a brief in step 2 — click 'Generate composition' first, or clear the brief to use the selected layout" : ""}
               onClick={submitNewTitle}>{editMode ? "Save + render" : "Create + render"}</button>
           </>
         }
       >
-        <div className="flex flex-col gap-3">
-          {editMode ? (
-            <div className="flex items-center gap-2 text-[12px]"><span className="label-tiny">key</span><span className="font-mono text-amber">{newKey}</span></div>
-          ) : (
-            <Field label="key" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
-          )}
-          {legacyNote && (
-            <div className="hairline-soft rounded p-2 text-[11px] text-txt-dim">
-              <span className="label-tiny text-amber">no saved fields</span> — this card was authored as a description, not from a composition. Pick a composition + fill the fields to configure it (or keep generating it from a prompt).
-              <div className="mt-1 font-mono text-txt-faint break-words">{legacyNote}</div>
-            </div>
-          )}
-          <Field
-            label="composition"
-            value={newComp}
-            onChange={setNewComp}
-            options={Array.from(new Set([newComp, ...templateOptions].filter(Boolean))) as string[]}
-          />
-          {/* Generate a whole NEW composition (animated card HTML) from a brief, via local Qwen.
-              Needs a key (used as the new composition's name). */}
-          <div className="hairline-soft rounded p-2 flex flex-col gap-2">
-            <div className="label-tiny">generate a new composition with AI <span className="text-txt-faint normal-case tracking-normal">(local Qwen → HyperFrames HTML)</span></div>
-            <Field label="brief" value={newBrief} onChange={(v) => { setNewBrief(v); setCompGenerated(false); }} rows={3}
-              placeholder="e.g. a Crater Bowl scoreboard: SECTOR NINE SLAGS vs SECTOR FOUR GLOWBOYS, score ticks 2 → 1, ‘PLAYERS REMAINING’ underneath" />
-            {newBrief.trim() && !compGenerated && (
-              <div className="text-[10px] text-amber">↑ click Generate composition to use this brief — otherwise "Create + render" uses the composition selected above, ignoring the brief.</div>
+        <div className="flex flex-col gap-4">
+          {/* STEP 1 — name */}
+          <Step n={1} title="Name this card" hint="A short id, used as the filename. e.g. lower_third, scoreboard.">
+            {editMode ? (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="font-mono text-amber">{newKey}</span>
+                <span className="text-txt-faint text-[11px]">— can't rename; make a new card to change the id</span>
+              </div>
+            ) : (
+              <Field label="" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
             )}
-            <button
-              className="btn btn-amber self-start"
-              disabled={genComp.isPending || !newKey.trim() || !newBrief.trim()}
-              title="Generate a brand-new HyperFrames composition from this brief (saved as the composition named by the key above)"
-              onClick={() => genComp.mutate({ key: newKey.trim(), brief: newBrief })}
-            >✨ {genComp.isPending ? "Generating…" : "Generate composition"}</button>
-          </div>
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <Field label="AI card type" value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
+          </Step>
+
+          {/* STEP 2 — layout (composition) */}
+          <Step n={2} title="Pick a layout" hint="A “composition” is the animated template — it decides where the text sits and how it moves. The preview shows the chosen layout; ‹TOKENS› mark where your step-3 text lands.">
+            {legacyNote && (
+              <div className="hairline-soft rounded p-2 text-[11px] text-txt-dim mb-2">
+                <span className="label-tiny text-amber">bespoke card</span> — this one was authored as a description, not from a saved layout, so there are no editable fields yet. Pick a layout below + fill the text to make it editable (or design a new layout with AI).
+                <div className="mt-1 font-mono text-txt-faint break-words">{legacyNote}</div>
+              </div>
+            )}
+            <div className="grid grid-cols-[1fr_180px] gap-3 items-start">
+              <Field
+                label="composition"
+                value={newComp}
+                onChange={setNewComp}
+                options={Array.from(new Set([newComp, ...templateOptions].filter(Boolean))) as string[]}
+              />
+              <CompPreview comp={newComp} />
             </div>
-            <button
-              className="btn btn-amber whitespace-nowrap"
-              disabled={genText.isPending}
-              title="Write deadpan card text (the five fields) with the local LLM from this episode's script"
-              onClick={() => genText.mutate({ card_type: newCardType, target: "title" })}
-            >✨ {genText.isPending ? "Writing…" : "Write fields with AI"}</button>
-          </div>
-          <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
+            {/* Generate a whole NEW composition (animated card HTML) from a brief, via local Qwen. */}
+            <details className="hairline-soft rounded mt-2">
+              <summary className="px-2 py-1.5 cursor-pointer label-tiny select-none">✨ or design a brand-new layout with AI</summary>
+              <div className="p-2 border-t hairline-soft flex flex-col gap-2">
+                <p className="text-txt-faint text-[11px]">
+                  Only needed when no layout above fits. Describe the card; the local model (Qwen) writes a new HyperFrames layout and saves it under the name from step 1. You'll still fill the text in step 3.
+                </p>
+                <Field label="describe the card (brief)" value={newBrief} onChange={(v) => { setNewBrief(v); setCompGenerated(false); }} rows={3}
+                  placeholder="e.g. a Crater Bowl scoreboard: SECTOR NINE SLAGS vs SECTOR FOUR GLOWBOYS, big score numbers ticking 2 → 1, ‘PLAYERS REMAINING’ underneath" />
+                <button
+                  className="btn btn-amber self-start"
+                  disabled={genComp.isPending || !newKey.trim() || !newBrief.trim()}
+                  title="Generate a brand-new HyperFrames layout from this brief, saved under the name in step 1"
+                  onClick={() => genComp.mutate({ key: newKey.trim(), brief: newBrief })}
+                >✨ {genComp.isPending ? "Generating… (~30-60s)" : "Generate composition"}</button>
+                {!newKey.trim() && newBrief.trim() && (
+                  <div className="text-[10px] text-amber">↑ name the card in step 1 first — it becomes the new layout's name.</div>
+                )}
+                {newBrief.trim() && !compGenerated && newKey.trim() && (
+                  <div className="text-[10px] text-amber">Click "Generate composition" to build this layout. Until you do, "Create + render" uses the layout selected above and ignores this brief.</div>
+                )}
+                {compGenerated && (
+                  <div className="text-[10px] text-emerald-400">✓ layout "{newKey.trim()}" created and selected above — now fill the text in step 3.</div>
+                )}
+              </div>
+            </details>
+          </Step>
+
+          {/* STEP 3 — text (fields) */}
+          <Step n={3} title="Fill in the text" hint="These values replace the ‹TOKENS› in the layout. Type them, or let the AI draft them from this episode's script.">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Field label="card type (for the AI draft)" value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
+              </div>
+              <button
+                className="btn btn-amber whitespace-nowrap"
+                disabled={genText.isPending}
+                title="Drafts the text below from this episode's script, in this card type's voice"
+                onClick={() => genText.mutate({ card_type: newCardType, target: "title" })}
+              >✨ {genText.isPending ? "Writing…" : "Write text with AI"}</button>
+            </div>
+            {CARD_TYPE_BLURB[newCardType] && (
+              <p className="text-txt-faint text-[10px] mt-1">{CARD_TYPE_BLURB[newCardType]}</p>
+            )}
+            <p className="text-txt-faint text-[10px]">
+              Card type only matters if you click “Write text with AI” — it picks the voice, which fields get written, <span className="text-amber/80">and snaps the layout to that card type's composition</span>. Typing the fields yourself ignores it.
+            </p>
+            <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
+          </Step>
         </div>
       </Modal>
 
@@ -522,6 +589,56 @@ export function Graphics({ slug }: { slug: string }) {
         livePreviewUrl={`${graphicsApi.ythumbPreviewUrl(slug)}?b=${thumbBust}`}
         onChanged={() => { setThumbOverride(null); setThumbBust((n) => n + 1); qc.invalidateQueries({ queryKey: ["manifest", slug] }); }}
       />
+    </div>
+  );
+}
+
+/** A numbered step block for the New/Edit title-card modal — keeps the workflow legible. */
+function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline gap-2">
+        <span className="grid place-items-center w-5 h-5 rounded-full bg-bg-2 hairline-soft text-[11px] text-amber font-mono flex-none self-center">{n}</span>
+        <span className="text-[13px] text-txt">{title}</span>
+      </div>
+      {hint && <p className="text-txt-faint text-[11px] pl-7 -mt-1">{hint}</p>}
+      <div className="pl-7">{children}</div>
+    </div>
+  );
+}
+
+/** Live thumbnail of a HyperFrames composition, served read-only from the template dir.
+ * Renders the template HTML in a sandboxed iframe scaled to fit; ‹TOKENS› show where each
+ * field lands. We jump the GSAP timeline to its final frame so the card is fully revealed
+ * (templates start paused at frame 0 for deterministic seek-rendering). */
+function CompPreview({ comp }: { comp: string }) {
+  if (!comp) {
+    return (
+      <div className="hairline-soft rounded bg-black grid place-items-center text-txt-faint text-[10px]" style={{ width: 180, height: 180 }}>
+        pick a layout
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1 flex-none">
+      <div className="hairline-soft rounded bg-black overflow-hidden" style={{ width: 180, height: 180 }}>
+        <iframe
+          key={comp}
+          title={`preview of ${comp}`}
+          src={`/api/hf/template-assets/${encodeURIComponent(comp)}/index.html`}
+          sandbox="allow-scripts allow-same-origin"
+          scrolling="no"
+          onLoad={(e) => {
+            try {
+              const w = (e.currentTarget as HTMLIFrameElement).contentWindow as any;
+              const tl = w?.__timelines?.main;
+              if (tl?.progress) tl.progress(1); // jump to fully-revealed frame
+            } catch { /* no timeline / blocked — leave as the template renders it */ }
+          }}
+          style={{ width: 1024, height: 1024, transform: "scale(0.17578)", transformOrigin: "top left", border: 0, pointerEvents: "none" }}
+        />
+      </div>
+      <span className="label-tiny text-center text-txt-faint">live layout · ‹…› = your text</span>
     </div>
   );
 }
