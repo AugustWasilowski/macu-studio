@@ -1,6 +1,6 @@
 {
   "episode": "ep-023",
-  "title": "The MACU Report \u2014 Episode 23 \u2014 \"The Lemonade Stand\"",
+  "title": "The MACU Report — Episode 23 — \"The Lemonade Stand\"",
   "version": 1,
   "authored_by": "Mayor Awesome",
   "season": 4,
@@ -113,8 +113,18 @@
   "title_assets": {
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
-    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
-    "the_lemonade_stand": "episodes/ep-023/titles/the_lemonade_stand.mp4 (NEW \u2014 Hyperframes house-style THE LEMONADE STAND card; flag for build)"
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "the_lemonade_stand": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "THE CRYSTAL REPORT",
+        "title_line_1": "THE LEMONADE",
+        "title_line_2": "STAND",
+        "sub": "CONFLICT OF INTEREST",
+        "idtag": "EP 23 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -192,12 +202,21 @@
   },
   "broll": {
     "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
-    "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
+    "lemonade_stand": {
+      "prompt": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
+      "seed": 8218
+    },
     "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
-    "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+    "crystal_pitcher": {
+      "prompt": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+      "seed": 2139
+    },
     "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
     "glass_water": "a plain glass of clear water on an empty news desk",
-    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+    "stride_watch": {
+      "prompt": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+      "seed": 1160
+    },
     "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
     "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
     "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
@@ -207,7 +226,7 @@
       "id": "c01",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "Good evening, MACU. Big changes here at the Report. You'll notice we've got a fresh look at the desk tonight \u2014 a little hospitality. Walter, pour you one?",
+      "vo": "Good evening, MACU. Big changes here at the Report. You'll notice we've got a fresh look at the desk tonight — a little hospitality. Walter, pour you one?",
       "shots": [
         {
           "id": "c01_s1",
@@ -273,7 +292,7 @@
       "id": "c05",
       "segment": "cold_open",
       "speaker": "RON",
-      "vo": "Anyway! The news. First broadcast's on the house. Brought to you by \u2014 well. We'll get to it.",
+      "vo": "Anyway! The news. First broadcast's on the house. Brought to you by — well. We'll get to it.",
       "shots": [
         {
           "id": "c05_s1",
@@ -306,7 +325,7 @@
       "id": "c07",
       "segment": "the_franchise",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "A NEWSMAN movin' weight on the AIR, baby?! That's GENIUS! He says \"the story,\" everybody drinks! He says \"developing,\" everybody drinks AGAIN! He's not reportin' the epidemic, baby \u2014 he IS the distribution! Welcome to the practice, Ron.",
+      "vo": "A NEWSMAN movin' weight on the AIR, baby?! That's GENIUS! He says \"the story,\" everybody drinks! He says \"developing,\" everybody drinks AGAIN! He's not reportin' the epidemic, baby — he IS the distribution! Welcome to the practice, Ron.",
       "shots": [
         {
           "id": "c07_s1",
@@ -320,7 +339,7 @@
       "id": "c08",
       "segment": "the_franchise",
       "speaker": "RON",
-      "vo": "Now MACU, full transparency \u2014 and transparency is what I'm ABOUT \u2014 tonight's broadcast is brought to you by crystal. Pure crystal. From a name you trust \u2014 me. You trust me. You've trusted me for years. Nothing's changed. And if you've been on the fence, here's the news you can use: the first pour's on the house. The second one's a conversation.",
+      "vo": "Now MACU, full transparency — and transparency is what I'm ABOUT — tonight's broadcast is brought to you by crystal. Pure crystal. From a name you trust — me. You trust me. You've trusted me for years. Nothing's changed. And if you've been on the fence, here's the news you can use: the first pour's on the house. The second one's a conversation.",
       "shots": [
         {
           "id": "c08_s1",
@@ -394,7 +413,7 @@
       "id": "c13",
       "segment": "the_stand_in",
       "speaker": "ROSCOE",
-      "vo": "The LINE is the LINE, brother! You cut the line at Ron's stand, you JOIN the product! The last man who cut in front is now SERVED in a CUP! We don't say which cup! Could be ANY cup! Drink up, MACU \u2014 OHHH YEAHHH!",
+      "vo": "The LINE is the LINE, brother! You cut the line at Ron's stand, you JOIN the product! The last man who cut in front is now SERVED in a CUP! We don't say which cup! Could be ANY cup! Drink up, MACU — OHHH YEAHHH!",
       "shots": [
         {
           "id": "c13_s1",
@@ -408,7 +427,7 @@
       "id": "c14",
       "segment": "the_warner",
       "speaker": "THE WARNER",
-      "vo": "Ron \u2014 I saw the number on the air, the streak, the six days, and I had to come down here, somebody has to say it \u2014 it's drink mix. It's just powdered drink mix. I read the packet, I read the whole label, and there's nothing\u2014",
+      "vo": "Ron — I saw the number on the air, the streak, the six days, and I had to come down here, somebody has to say it — it's drink mix. It's just powdered drink mix. I read the packet, I read the whole label, and there's nothing—",
       "shots": [
         {
           "id": "c14_s1",
@@ -464,7 +483,7 @@
       "id": "c18",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "Your forecast: warm, still, and clear, a high of seventy-four. A perfect day to stand in a long line for several hours, which is, conveniently, the only event on the settlement calendar. Humidity rising \u2014 mostly from the pitchers. One small craft advisory remains in effect. There are no longer any small craft. Out of an abundance of caution. Condition rating: extremely mild.",
+      "vo": "Your forecast: warm, still, and clear, a high of seventy-four. A perfect day to stand in a long line for several hours, which is, conveniently, the only event on the settlement calendar. Humidity rising — mostly from the pitchers. One small craft advisory remains in effect. There are no longer any small craft. Out of an abundance of caution. Condition rating: extremely mild.",
       "shots": [
         {
           "id": "c18_s1",
@@ -483,7 +502,7 @@
       "id": "c19",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "That's our broadcast, MACU. A new partnership, a new stand, and a settlement that's never been more refreshed. Stay thirsty. No. Stay informed. Both. Stay both. From all of us here \u2014 and from Sweet, who I'm told is very pleased \u2014 that's the news. The first broadcast's free, MACU. The second one's a conversation.",
+      "vo": "That's our broadcast, MACU. A new partnership, a new stand, and a settlement that's never been more refreshed. Stay thirsty. No. Stay informed. Both. Stay both. From all of us here — and from Sweet, who I'm told is very pleased — that's the news. The first broadcast's free, MACU. The second one's a conversation.",
       "shots": [
         {
           "id": "c19_s1",
@@ -502,7 +521,7 @@
       "id": "c20",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "Several viewers wrote in to ask if Ron is alright. We poured their letters into the pitcher. Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck.",
+      "vo": "Several viewers wrote in to ask if Ron is alright. We poured their letters into the pitcher. Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
       "shots": [
         {
           "id": "c20_s1",
