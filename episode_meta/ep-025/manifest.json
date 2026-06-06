@@ -1,6 +1,6 @@
 {
   "episode": "ep-025",
-  "title": "The MACU Report \u2014 Episode 25 \u2014 \"The Last Pitcher\"",
+  "title": "The MACU Report — Episode 25 — \"The Last Pitcher\"",
   "version": 1,
   "authored_by": "Mayor Awesome",
   "season": 4,
@@ -113,8 +113,18 @@
   "title_assets": {
     "macu_report_title": "auto-resolves from shared assets/titles",
     "macu_report_bumper": "auto-resolves from shared assets/titles",
-    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
-    "the_last_pitcher": "episodes/ep-025/titles/the_last_pitcher.mp4 (NEW \u2014 Hyperframes house-style THE LAST PITCHER card; flag for build)"
+    "macu_weather": "REUSE — auto-resolves from shared assets/titles",
+    "the_last_pitcher": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "THE CRYSTAL REPORT",
+        "title_line_1": "THE LAST",
+        "title_line_2": "PITCHER",
+        "sub": "SEASON FINALE",
+        "idtag": "EP 25 • MACU"
+      }
+    }
   },
   "music": {
     "enabled": true,
@@ -191,13 +201,25 @@
     }
   },
   "broll": {
-    "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+    "crystal_packets": {
+      "prompt": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+      "seed": 8715
+    },
     "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
     "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
-    "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+    "crystal_pitcher": {
+      "prompt": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+      "seed": 3553
+    },
     "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
-    "glass_water": "a plain glass of clear water on an empty news desk",
-    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+    "glass_water": {
+      "prompt": "a plain glass of clear water on an empty news desk",
+      "seed": 7599
+    },
+    "stride_watch": {
+      "prompt": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+      "seed": 4348
+    },
     "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
     "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
     "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
@@ -268,7 +290,7 @@
       "id": "c05",
       "segment": "act_1",
       "speaker": "WALTER",
-      "vo": "To the markets, where crystal has collapsed entirely. Once the settlement learned there was nothing in it, demand evaporated. It turns out people will chase anything \u2014 except a thing they're told is fine. Tooth futures are up. Everyone's biting again.",
+      "vo": "To the markets, where crystal has collapsed entirely. Once the settlement learned there was nothing in it, demand evaporated. It turns out people will chase anything — except a thing they're told is fine. Tooth futures are up. Everyone's biting again.",
       "shots": [
         {
           "id": "c05_s1",
@@ -295,7 +317,7 @@
       "id": "c07",
       "segment": "act_1",
       "speaker": "DR. GOLDTOOTH",
-      "vo": "Crystal's DEAD, baby, I'm not gonna pretend! But Dr. Goldtooth don't MOURN, Dr. Goldtooth PIVOTS! Found a whole CRATE of this in the SAME warehouse \u2014 little brown crystals, you put 'em in HOT water, baby, and you do NOT sleep for TWO DAYS! They call it... \"instant.\" I call it the FUTURE. First cup's on the house! Side effects are minimal, baby. Some shakin'. The hearing comes back. Mostly.",
+      "vo": "Crystal's DEAD, baby, I'm not gonna pretend! But Dr. Goldtooth don't MOURN, Dr. Goldtooth PIVOTS! Found a whole CRATE of this in the SAME warehouse — little brown crystals, you put 'em in HOT water, baby, and you do NOT sleep for TWO DAYS! They call it... \"instant.\" I call it the FUTURE. First cup's on the house! Side effects are minimal, baby. Some shakin'. The hearing comes back. Mostly.",
       "shots": [
         {
           "id": "c07_s1",
@@ -422,7 +444,7 @@
       "id": "c15",
       "segment": "act_2",
       "speaker": "STRIDE",
-      "vo": "Ron. You missed every hydration reminder I sent this month. I just deleted them. Your heart rate hasn't been this calm since I started counting. Whatever you just poured out \u2014 that one's not mine to log.",
+      "vo": "Ron. You missed every hydration reminder I sent this month. I just deleted them. Your heart rate hasn't been this calm since I started counting. Whatever you just poured out — that one's not mine to log.",
       "shots": [
         {
           "id": "c15_s1",
@@ -519,7 +541,7 @@
       "id": "c22",
       "segment": "weather",
       "speaker": "WALTER",
-      "vo": "And your forecast \u2014 a clear, settled weekend. Highs in the pleasant, a soft breeze, and for the first time all week, nobody standing on a corner waiting for anything. The settlement is just... outside. Drinking water. Looking up. Condition rating: extremely mild \u2014 and for once, that's a compliment.",
+      "vo": "And your forecast — a clear, settled weekend. Highs in the pleasant, a soft breeze, and for the first time all week, nobody standing on a corner waiting for anything. The settlement is just... outside. Drinking water. Looking up. Condition rating: extremely mild — and for once, that's a compliment.",
       "shots": [
         {
           "id": "c22_s1",
@@ -557,7 +579,7 @@
       "id": "c24",
       "segment": "signoff",
       "speaker": "RON",
-      "vo": "And to anyone out there still waiting on a corner for something to make the quiet go away \u2014 it's sugar-free. There was never anything in the packet but what you brought to it. So skip the second pour, and pour yourself a glass of water. It's boring. Turns out that's the part that's supposed to save you.",
+      "vo": "And to anyone out there still waiting on a corner for something to make the quiet go away — it's sugar-free. There was never anything in the packet but what you brought to it. So skip the second pour, and pour yourself a glass of water. It's boring. Turns out that's the part that's supposed to save you.",
       "shots": [
         {
           "id": "c24_s1",
@@ -571,7 +593,7 @@
       "id": "c25",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "Well said. Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck.",
+      "vo": "Well said. Anyway. Goodnight, MACU — stay safe, stay strong, and good luck.",
       "shots": [
         {
           "id": "c25_s1",
@@ -585,7 +607,7 @@
       "id": "c26",
       "segment": "signoff",
       "speaker": "WALTER",
-      "vo": "And tune in next week for a new installment of the Mayor Awesome Cinematic Universe \u2014 whatever the settlement gets itself into next. Knowing us... something.",
+      "vo": "And tune in next week for a new installment of the Mayor Awesome Cinematic Universe — whatever the settlement gets itself into next. Knowing us... something.",
       "shots": [
         {
           "id": "c26_s1",
