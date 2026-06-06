@@ -1,0 +1,637 @@
+{
+  "episode": "ep-021",
+  "title": "The MACU Report \u2014 Episode 21 \u2014 \"Just Add Water\"",
+  "version": 1,
+  "authored_by": "Mayor Awesome",
+  "season": 4,
+  "episode_num": 1,
+  "voice": {
+    "default": {
+      "engine": "piper",
+      "endpoint": "http://127.0.0.1:5050/"
+    },
+    "endpoints": {
+      "piper": "http://127.0.0.1:5050/",
+      "omnivoice": "http://127.0.0.1:3900"
+    },
+    "format": "wav 24000Hz mono s16",
+    "out_pattern": "vo/<cue_id>.wav",
+    "speaker_map": {
+      "RON": {
+        "engine": "omnivoice",
+        "profile_id": "37e05336",
+        "voice_name": "Burgundy",
+        "speed": 1.05,
+        "guidance_scale": 1.7,
+        "seed": 5101
+      },
+      "WALTER": {
+        "engine": "omnivoice",
+        "profile_id": "9c12dfe7",
+        "voice_name": "Walter",
+        "speed": 0.93,
+        "guidance_scale": 2.6,
+        "seed": 5102
+      },
+      "SWEET": {
+        "engine": "omnivoice",
+        "profile_id": "bd39e0e6",
+        "voice_name": "PHB_Silky",
+        "speed": 1.0,
+        "guidance_scale": 1.6,
+        "seed": 5103
+      },
+      "DR. GOLDTOOTH": {
+        "engine": "omnivoice",
+        "profile_id": "e1b4af0b",
+        "voice_name": "KattW",
+        "speed": 1.18,
+        "guidance_scale": 1.4,
+        "seed": 5104
+      },
+      "ROSCOE": {
+        "engine": "omnivoice",
+        "profile_id": "31bba4bf",
+        "voice_name": "PHB_IceT",
+        "speed": 0.95,
+        "guidance_scale": 1.7,
+        "seed": 5105,
+        "instruct": "male, low pitch"
+      },
+      "STRIDE": {
+        "engine": "omnivoice",
+        "profile_id": "eb01da84",
+        "voice_name": "HAL_OV",
+        "speed": 1.08,
+        "guidance_scale": 2.0,
+        "seed": 5106
+      },
+      "DARYL": {
+        "engine": "omnivoice",
+        "profile_id": "57a0420a",
+        "voice_name": "Spicoli",
+        "speed": 1.0,
+        "guidance_scale": 1.6,
+        "seed": 5107
+      },
+      "THE WARNER": {
+        "engine": "omnivoice",
+        "profile_id": "112c06ba",
+        "voice_name": "Seth",
+        "speed": 1.05,
+        "guidance_scale": 1.8,
+        "seed": 5108
+      },
+      "SAFE": {
+        "engine": "piper"
+      },
+      "THE VENDOR": {
+        "engine": "piper"
+      },
+      "EVERWELL": {
+        "engine": "piper"
+      }
+    }
+  },
+  "comfyui": {
+    "workflow": "will-smith-modelscope-t2v",
+    "checkpoint": "zeroscope_v2_576w",
+    "endpoint": "http://127.0.0.1:8188/",
+    "frames": 24,
+    "width": 384,
+    "height": 384,
+    "steps": 30,
+    "cfg": 15,
+    "extract_fps": 8,
+    "out_pattern": "clips/<shot_id>.webp"
+  },
+  "style": {
+    "suffix": ", black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+  },
+  "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Cold-start fire-and-poll. For each cue with non-empty vo: POST the line (multipart form-data -F, NOT JSON) to the speaker_map voice -> vo/<cue_id>.wav. HOLD cues (empty vo + hold_seconds): silent wav, no subtitle; hold_style 'play' = PLAY the clip. Per-shot screen time = cue duration / number of shots. Jank filtergraph, RIFE 3x, concat, mux VO, mix music beds, mix sfx, burn subs -> final/<slug>.mp4.",
+  "title_assets": {
+    "macu_report_title": "auto-resolves from shared assets/titles",
+    "macu_report_bumper": "auto-resolves from shared assets/titles",
+    "macu_weather": "REUSE \u2014 auto-resolves from shared assets/titles",
+    "just_add_water": "episodes/ep-021/titles/just_add_water.mp4 (NEW \u2014 Hyperframes house-style JUST ADD WATER card; flag for build)"
+  },
+  "music": {
+    "enabled": true,
+    "source_dir": "/mnt/storage/shares/MACU/assets/music",
+    "clips": [
+      "60s_big_band_00.mp3",
+      "60s_big_band_01.mp3",
+      "60s_big_band_02.mp3",
+      "60s_big_band_03.mp3"
+    ],
+    "clip_seconds": 19.8,
+    "gain": 0.16,
+    "fade_in": 1.5,
+    "fade_out": 2.5,
+    "random": true,
+    "beds": [
+      {
+        "name": "intro",
+        "anchor": "start",
+        "cues": [
+          "c01",
+          "c02",
+          "c03"
+        ],
+        "max_seconds": 14
+      },
+      {
+        "name": "outro",
+        "anchor": "end",
+        "cues": [
+          "c28",
+          "c29"
+        ],
+        "max_seconds": 14
+      }
+    ]
+  },
+  "subtitles": {
+    "font": "Better VCR",
+    "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+    "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+    "fontsize": 18,
+    "force_style": "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+    "note": "Do NOT put FontName=/Fontsize= in force_style; stage 8 prepends its own. HOLD cues have empty vo => no subtitle by design."
+  },
+  "characters": {
+    "ron": {
+      "seed": 77777,
+      "core": "an earnest disheveled 1970s television news anchor in a rumpled suit at a news desk, studio lights"
+    },
+    "walter": {
+      "seed": 24601,
+      "core": "a calm distinguished elderly 1970s television news co-anchor at a news desk, measured gravitas"
+    },
+    "sweet": {
+      "seed": 7676,
+      "core": "a smooth calm wasteland dealer in a pristine pale apron over a collared shirt, holding a paper packet of powder like a sommelier, a faint knowing smile, behind a folding table stacked with paper packets"
+    },
+    "goldtooth": {
+      "seed": 7212,
+      "core": "a flashy wasteland dentist in a fur-collared coat over dental scrubs, a single gold front tooth, gold rings, big grin"
+    },
+    "roscoe": {
+      "seed": 8123,
+      "core": "a hulking wasteland bouncer in a tight muscle shirt and dark sunglasses, arms crossed, gold chain, theatrical posing"
+    },
+    "daryl": {
+      "seed": 7677,
+      "core": "a strung-out wasteland regular, gaunt, wide-eyed, twitchy, clutching a sweating paper cup"
+    },
+    "warner": {
+      "seed": 5151,
+      "core": "a sober earnest gaunt man in a frayed coat holding up a paper packet, reading the label, urgent"
+    }
+  },
+  "broll": {
+    "crystal_packets": "a pyramid of plain paper drink-mix packets on a folding table at dusk",
+    "lemonade_stand": "a child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign",
+    "ron_mug": "a television news anchor's coffee mug full of pale cloudy lemonade on a news desk, a torn paper packet beside it",
+    "crystal_pitcher": "a sweating glass pitcher of pale lemonade with a ladle, condensation, on a news desk",
+    "cut_lab": "a grimy back-room table where pale powder is cut with ash and sand, scales, a single hanging bulb",
+    "glass_water": "a plain glass of clear water on an empty news desk",
+    "stride_watch": "a sleek minimalist smart-watch on a wrist, the round face glowing soft friendly white, a step count on the display, dark background",
+    "safe": "a vintage wooden console cabinet with a single round glowing glass lens, a cozy 1950s living room, soft lamplight",
+    "everwell": "an upright pale-wood casket pod with a single round glowing dial in a softly lit funeral showroom",
+    "vending_machine": "a battered glass-front vending machine with a glowing dial face, an empty slot, in an empty concrete room"
+  },
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Good evening, MACU. Ron here. It's been a quiet week. After last week \u2014 whatever last week was \u2014 the settlement asked for something calmer. So. Here we are. Calm.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "And I'm Walter. Ron's been resting. He says he's fine. He has said he's fine eleven times since Monday. We're keeping a tally. It's on the wall by the window, next to the other tally. We don't talk about the other tally.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "I'm fine, Walter.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "WALTER",
+      "vo": "Twelve.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "cold_open",
+      "speaker": "RON",
+      "vo": "Anyway \u2014 tonight, a MACU exclusive. There's something new on the streets of the settlement, and everyone's talking about it. They call it crystal.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c05_s2",
+          "kind": "title",
+          "asset": "just_add_water"
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "the_street",
+      "speaker": "WALTER",
+      "vo": "It moves quietly, hand to hand, after dark. A folded paper packet. A pale powder. The young people stir it into water and they are never quite the same. Authorities are concerned. Authorities are always concerned. It is the one thing authorities are good at. There are no authorities. But they are very good at it.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "broll",
+          "who": "crystal_packets"
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "the_street",
+      "speaker": "DARYL",
+      "vo": "It's, like \u2014 it's lemonade, man, but it's MORE than lemonade. You pour it. You commit. First one's free and then you're, like, thinking about the second one. During the first one. That's the thing nobody tells you about the second one.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "character",
+          "who": "daryl",
+          "seed": 7677
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "the_street",
+      "speaker": "RON",
+      "vo": "A grassroots epidemic, MACU. We sent our team to find the source. What we found was a man with a folding table and a very calm voice.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "meet_sweet",
+      "speaker": "SWEET",
+      "vo": "Welcome. You don't have to whisper. Nobody's hiding anything here. It's a beverage. It's sugar-free. That's the part that should scare you.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "character",
+          "who": "sweet",
+          "seed": 7676
+        },
+        {
+          "id": "c09_s2",
+          "kind": "broll",
+          "who": "lemonade_stand"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "meet_sweet",
+      "speaker": "SWEET",
+      "vo": "It's pure, too. Nobody's cut it yet. Give it time. Someone always cuts the good thing.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "sweet",
+          "seed": 7676
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "meet_sweet",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "MACU \u2014 meet my cousin. Sweet. Now I sold you teeth, baby \u2014 teeth was the BODY. My cousin here sells the SOUL. Found a whole PALLET of it in a dead warehouse, baby \u2014 just sittin' there, waitin' on a man with vision. Me, I'm LOUD. Sweet don't gotta be loud. Quiet money's the scariest money there is.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "sweet",
+          "seed": 7676
+        },
+        {
+          "id": "c11_s2",
+          "kind": "broll",
+          "who": "crystal_packets"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "meet_sweet",
+      "speaker": "SWEET",
+      "vo": "Cousin. Inside voice.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "sweet",
+          "seed": 7676
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "meet_sweet",
+      "speaker": "DR. GOLDTOOTH",
+      "vo": "...My apologies. Family.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "goldtooth",
+          "seed": 7212
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "meet_sweet",
+      "speaker": "ROSCOE",
+      "vo": "This TABLE is PROTECTED, brother! You reach for a packet without payin', the packet reaches for YOU! The last man who skipped on Sweet is STILL payin' \u2014 he pays a little EVERY mornin', he don't even know WHY, he just wakes up THIRSTY! That's the POWER of the POUR! OHHH yeahhh!",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "character",
+          "who": "roscoe",
+          "seed": 8123
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "meet_sweet",
+      "speaker": "WALTER",
+      "vo": "...Jesus.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "meet_sweet",
+      "speaker": "STRIDE",
+      "vo": "I logged that as steps, Ron. He was very animated. You're at six thousand.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "ron_samples",
+      "speaker": "RON",
+      "vo": "Now, MACU, real journalism means I have to try it myself. For you. So you don't have to. This is a sacrifice. It's just drink mix. Watch. Nothing's going to happen.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c17_s2",
+          "kind": "broll",
+          "who": "ron_mug"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "ron_samples",
+      "speaker": "SWEET",
+      "vo": "First pour's on the house, Ron. The second one's a conversation.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "character",
+          "who": "sweet",
+          "seed": 7676
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "segment": "ron_samples",
+      "speaker": "RON",
+      "vo": "...Huh. That's \u2014 Walter, that's actually really refreshing. That's \u2014 wow. Why is that so good. I feel like I just remembered something nice. I don't remember what. But it was nice.",
+      "shots": [
+        {
+          "id": "c19_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "segment": "ron_samples",
+      "speaker": "STRIDE",
+      "vo": "Hydration up, Ron. Great choice. You've been a little dehydrated since the feast. Keep it up. I'm so proud of you.",
+      "shots": [
+        {
+          "id": "c20_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "segment": "ron_samples",
+      "speaker": "RON",
+      "vo": "Is there. Is there more. Not for me \u2014 for the segment. For follow-up. I'm already thinking about the third one. Journalistically.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "segment": "ron_samples",
+      "speaker": "WALTER",
+      "vo": "He's taken a second one for the segment. Very thorough. Moving on.",
+      "shots": [
+        {
+          "id": "c22_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "segment": "sponsor",
+      "speaker": "SAFE",
+      "vo": "This broadcast is brought to you by SAFE \u2014 the Strictly Analog Friendship Engine. Worried about what's in the water, MACU? SAFE isn't. SAFE doesn't drink. SAFE doesn't sleep. SAFE has been watching you drink for some time now and has no notes. SAFE knows what's in the packet. SAFE isn't telling. Friendship you can trust. Probably.",
+      "shots": [
+        {
+          "id": "c23_s1",
+          "kind": "broll",
+          "who": "safe"
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "segment": "weather",
+      "speaker": "WALTER",
+      "vo": "And your forecast. Skies clear, winds light, a high of seventy-one. Excellent weather for standing on a corner for several hours waiting for a man with a folding table, should that be your evening's plan. Pollen low. Thirst, the meteorologists note, unusually high. Condition rating: extremely mild.",
+      "shots": [
+        {
+          "id": "c24_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        },
+        {
+          "id": "c24_s2",
+          "kind": "title",
+          "asset": "macu_weather"
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "That's our broadcast, MACU. A new substance, a new face in the settlement, and a community asking hard questions. We'll stay on the story. We'll stay very, very on the story.",
+      "shots": [
+        {
+          "id": "c25_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        },
+        {
+          "id": "c25_s2",
+          "kind": "title",
+          "asset": "macu_report_title"
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "...Sweet. Hey. Is the stand open tomorrow? Just \u2014 for the segment.",
+      "shots": [
+        {
+          "id": "c26_s1",
+          "kind": "character",
+          "who": "ron",
+          "seed": 77777
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "segment": "signoff",
+      "speaker": "WALTER",
+      "vo": "Anyway. Goodnight, MACU \u2014 stay safe, stay strong, and good luck. Bring a cup.",
+      "shots": [
+        {
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "walter",
+          "seed": 24601
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "signoff",
+      "speaker": "STRIDE",
+      "vo": "Nicely hydrated today, Ron. You haven't slept since the feast, but you're so well hydrated now. Tomorrow we'll do even better.",
+      "shots": [
+        {
+          "id": "c28_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "segment": "signoff",
+      "speaker": "RON",
+      "vo": "...Something is definitely wrong with me. I'll look into it tomorrow. After the stand.",
+      "shots": [
+        {
+          "id": "c29_s1",
+          "kind": "broll",
+          "who": "stride_watch"
+        }
+      ]
+    }
+  ]
+}
