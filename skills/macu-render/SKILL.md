@@ -10,17 +10,17 @@ End-to-end render driver for MACU Report episodes. Reads `episodes/<slug>/manife
 
 ## Trigger
 
-- **Slash command:** `/macu-render <slug>` — e.g. `/macu-render ep5`. The slug is the directory name under `/mnt/storage/shares/MACU/episodes/`.
+- **Slash command:** `/macu-render <slug>` — e.g. `/macu-render ep-011`. The slug is the directory name under `/mnt/storage/shares/MACU/episodes/` (or, for a non-default show, under that show's `episodes_dir` — see Multi-show).
 - **Vikunja:** when a task is assigned to Max in project 3 with `[MACU]` + `render` in the title, the ss-channels session should read the task description for the episode slug and invoke this skill.
 - **Phrase:** "render MACU episode <slug>" / "render macu <slug>" — same behavior.
 
 ## Usage
 
 ```
-/macu-render ep5                    # run all 8 stages, idempotent (cache-aware)
-/macu-render ep5 --from 5           # restart from stage 5 (music) — useful for sub/music tweaks
-/macu-render ep5 --only 8           # rebuild only the sub-burn (when manifest.subtitles changed)
-/macu-render ep5 --no-stackchan     # disable the StackChan LED progress bar (also via MACU_NO_STACKCHAN env var)
+/macu-render ep-011                 # run all 8 stages, idempotent (cache-aware)
+/macu-render ep-011 --from 5        # restart from stage 5 (music) — useful for sub/music tweaks
+/macu-render ep-011 --only 8        # rebuild only the sub-burn (when manifest.subtitles changed)
+/macu-render ep-011 --no-stackchan  # disable the StackChan LED progress bar (also via MACU_NO_STACKCHAN env var)
 ```
 
 ## What it does
@@ -32,26 +32,39 @@ Invokes `/mnt/storage/shares/MACU/pipeline/run.py <slug>` which runs in order:
 | 1 | `vo`       | manifest.cues[].vo + manifest.voice.speaker_map | vo/<cue>.wav (per-speaker dispatch: OmniVoice clones at :3900 or Piper HAL at :5050, serial). Auto-starts the `omnivoice` container if any non-cached cue needs it and stops it again on the way out (~4.6 GB VRAM released for stage 2). Cues with `hold_seconds: N` emit a silent wav of N seconds via ffmpeg anullsrc (no TTS dispatch). | ~80s for a ~4-min ep (+ ~15-30s OmniVoice cold start on first cue) |
 | 2 | `masters`  | manifest.characters / .broll      | clips/<key>_master.zs.webp (ComfyUI fire-and-poll) | ~7-8 min for ~12 keys, serialized on the 2080 Ti |
 | 3 | `rife`     | clips/*.zs.webp                   | .rife_frames/<key>_out/ (RIFE 3x to 72f) | ~35s for ~12 masters via rife-ncnn-vulkan |
-| 4 | `assemble` | manifest.cues + RIFE PNG dirs     | .work/<slug>_nosubs.mp4 (per-cue ffmpeg w/ jank filter, VO mux, concat) | ~2 min |
+| 4 | `assemble` | manifest.cues + RIFE PNG dirs + manifest.overlays[] | .work/<slug>_nosubs.mp4 (per-cue ffmpeg w/ jank filter, VO mux, concat). Then bakes any spanning title-card graphics via `stage_4b_graphics.apply()` (no-op when `manifest.overlays[]` is empty) and snapshots `.work/<slug>_nosubs_clean.mp4` so an overlay-only edit can re-composite without a full re-assemble. | ~2 min |
 | 5 | `music`    | manifest.music (optional) + manifest.sfx[] (optional) | .work/<slug>_music_nosubs.mp4 (random clip+offset per bed, amix). SFX one-shots from `assets/sfx/<file>` pin to a cue at start/end with optional `delay`/`gain`/`fade_*`; they ride the same amix chain as the beds and work even with music.enabled=false. | ~2-5s |
 | 6 | `whisper`  | music_nosubs audio                | /tmp/macu_whisper_<slug>.json (faster-whisper large-v3 CPU int8) | ~10 min |
 | 7 | `srt`      | whisper + manifest.cues[].vo      | final/<slug>.srt (difflib alignment, max 7 words / 3s per cue) | <1s |
 | 8 | `burn`     | manifest.subtitles + music_nosubs | final/<slug>.mp4 (h264_nvenc cq 22, Better VCR font) | ~12s |
 
-After all stages, `run.py` builds a 7-up `_thumbs.jpg` strip and writes `/tmp/macu_render_<slug>_report.json` with per-stage timings.
+After all stages, `run.py` builds a 7-up `final/<slug>_thumbs.jpg` strip, derives a 1920×1080 YouTube still `final/<slug>_thumb.png` from the episode's wide/square thumb card (`titles/thumb_wide.mp4` → fallback `titles/thumb.mp4`; skipped if neither exists), and writes `/tmp/macu_render_<slug>_report.json` with per-stage timings + output paths.
 
 ## Cache strategy (each stage detects and skips)
 
 - VO: skip cues whose `vo/<cue>.wav` exists AND whose sidecar hash in `vo/.cache.json` matches the cue's current hash (text + speaker + voice engine/profile/voice_name, or hold_seconds for silent cues). A manifest edit that doesn't change *that cue's* inputs does NOT invalidate it. First-run migration seeds the sidecar from existing wavs — no forced full regen when this version of the pipeline first runs on an episode dir. Hand-tuned/swapped wavs (e.g. copying c25.wav over c23.wav to fix audio masking) survive any manifest edit that doesn't change c23's own text/voice — no more `--from 4` dance after edits.
 - Masters: skip keys whose `clips/<key>_master.zs.webp` exists
 - RIFE: skip masters whose `.rife_frames/<key>_out/` has the expected frame count
-- Assemble: skip if `.work/<slug>_nosubs.mp4` is newer than the manifest
+- Assemble: skip if `.work/<slug>_nosubs.mp4` is newer than the manifest. The stage-4b graphics bake (spanning title-card overlays) runs inside this stage off `manifest.overlays[]`; it's a no-op when there are no overlays.
 - Music: pass-through if `manifest.music.enabled` is false (no music block)
 - Whisper: skip if `/tmp/macu_whisper_<slug>.json` is newer than the audio source
 - SRT: always runs (cheap; <1s)
 - Burn: always runs (this is where you iterate sub style)
 
 `--from N` lets you force re-run from stage N onward. `--only N` runs just one stage. Use these for sub/music/style iteration without re-rendering shots.
+
+## Multi-show (MACU_EPISODES)
+
+MACU Studio gained a multi-show layer (2026-06-06): episodes for shows *other than* **The MACU Report** live outside the default `episodes/` dir. `run.py` (via `lib.episode_paths`) resolves the episodes dir from the **`MACU_EPISODES`** env var (`lib.EPISODES_ROOT`), defaulting to `/mnt/storage/shares/MACU/episodes` — so **the-macu-report renders exactly as before with no env set; this skill's default behavior is unchanged.**
+
+To render an episode of a *different* show from this skill, point `MACU_EPISODES` at that show's episodes dir before invoking `run.py`:
+
+```
+MACU_EPISODES=/mnt/storage/shares/MACU/shows/<show-id>/episodes \
+    python3 /mnt/storage/shares/MACU/pipeline/run.py <slug>
+```
+
+The per-show episodes dir is recorded in the registry at `studio/shows.json` (each entry's `episodes_dir`). Slugs are globally unique across shows, so the slug alone is unambiguous — `MACU_EPISODES` only tells `run.py` *where* the dir lives. **Studio-driven renders set this automatically** (the macu-render HTTP service injects the per-job `episodes_dir` into the stage subprocess env); the manual `export` above is only needed for the **CLI/skill** path on a non-default show.
 
 ## Hard-won gotchas (encoded in the stage scripts)
 
@@ -142,9 +155,12 @@ Send the thumb strip with `SendUserFile` immediately, so August has it without o
 | `/mnt/storage/shares/MACU/pipeline/stackchan.py` | StackChan LED progress driver (zones + paint) |
 | `http://10.0.0.134/leds/buffer` | firmware endpoint the pipeline POSTs to (single-call paint) |
 
+## Related: the macu-render HTTP service
+
+The **HTTP service is built and running** — `pipeline/serve.py` as systemd `macu-render.service` on `:8773`. `POST /render {slug, from_stage?, only?, episodes_dir?}` queues a job (single-worker GPU queue) and re-runs `run.py` as a subprocess with `--events-out`; `GET /events/<job_id>` streams the same `stage.started`/`stage.done`/`job.error` events as SSE. **MACU Studio** drives renders through this service (and supplies `episodes_dir` for non-default shows — see Multi-show above). This skill, by contrast, invokes `run.py` directly; the two share the exact same stage code and caches, so a Studio render and a `/macu-render` CLI run are interchangeable on the same episode dir.
+
 ## Future hooks
 
-- **HTTP service** (`pipeline/serve.py`) for trigger pattern #3 from SSA-87 comment #141 — POST `{slug}` returns SSE/WS event stream with `stage.done`/`error` events. Not built yet.
 - **Movietone 1.19:1** crop (SSA-87 deferred) — add `crop=1024:861:0:81` to stage 8 between the subtitles filter and the encode when `manifest.assembly.output_crop` is set.
 
 See also: `/mnt/storage/shares/MACU/pipeline/README.md` for the deeper rationale, and Max's memory files [zeroscope_drop_in_for_modelscope], [rife_ncnn_vulkan_recipe], [macu_movietone_aspect_ratio].
