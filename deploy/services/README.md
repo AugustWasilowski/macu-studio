@@ -1,14 +1,15 @@
-# MACU GPU services (OmniVoice · Ollama · ComfyUI)
+# MACU local services (OmniVoice · Ollama · ComfyUI · Piper HAL)
 
-The three local GPU services MACU Studio + the render pipeline depend on, as
-compose stacks **in the repo**. Bringing one up on a new machine is
-`docker compose up -d` from the service's dir — no hand-reconstruction.
+The local services MACU Studio + the render pipeline depend on, as compose stacks
+**in the repo**. Bringing one up on a new machine is `docker compose up -d` from
+the service's dir — no hand-reconstruction.
 
 | Service | Image | Lifecycle | Port (loopback) | Data |
 |---|---|---|---|---|
 | **omnivoice** | `ghcr.io/debpalash/omnivoice-studio` (+ 2 in-repo patches) | on-demand (backend/pipeline start/stop) | 3900 | `${MACU_DATA_ROOT}/omnivoice/{state,data,hf-cache}` |
 | **ollama** | `ollama/ollama` | on-demand | 11434 | `${MACU_DATA_ROOT}/ollama` |
 | **comfyui** | local build (`Dockerfile` here) | long-lived | 8188 | `${MACU_DATA_ROOT}/comfyui/{ComfyUI,models,output,input,user,custom_nodes}` |
+| **piper** | local build (`Dockerfile` here) | long-lived | 5050 | none — HAL-9000 voice baked into the image (CPU-only) |
 
 ## Config
 
@@ -32,6 +33,10 @@ docker compose --env-file ../.env -f omnivoice/docker-compose.yml up -d
   fetch step for importing the existing MACU voices.
 - **comfyui:** needs its source + models first (see below), then
   `docker compose -f comfyui/docker-compose.yml build && … up -d`.
+- **piper:** `docker compose -f piper/docker-compose.yml up -d --build`. The
+  HAL-9000 voice (`campwill/HAL-9000-Piper-TTS`) is downloaded into the image at
+  build time, so there's nothing to fetch — it's the default voice engine and
+  stays up.
 
 ### ComfyUI first-run (the model/asset fetch step does this)
 

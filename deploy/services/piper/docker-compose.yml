@@ -1,0 +1,18 @@
+# Piper HAL — synthetic/machine voice (engine "piper", model "hal") on :5050.
+# Locally BUILT (Dockerfile here) with the HAL-9000 voice baked in. CPU-only and
+# lightweight, so it's a long-lived service (restart unless-stopped) — the default
+# voice engine, always available, no lifecycle juggling. The pipeline reaches it at
+# http://127.0.0.1:5050/ (override with MACU_PIPER_URL). LAN-only: bound to loopback.
+#
+# Build + start:  docker compose -f docker-compose.yml up -d --build
+services:
+  piper:
+    build:
+      context: .
+    image: piper-hal:local
+    container_name: piper_tts
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5050:5050
+    environment:
+      - TZ=${TZ:-America/Chicago}

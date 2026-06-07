@@ -19,8 +19,8 @@ cat <<'BANNER'
 
    Mayor Awesome Cinematic Universe — Studio installer
 
-   This downloads several GB of models and stands up local GPU services
-   (ComfyUI, OmniVoice, Ollama) via Docker. Beta software — you're on your own.
+   This downloads several GB of models and stands up local services
+   (ComfyUI, OmniVoice, Ollama, Piper HAL) via Docker. Beta software — you're on your own.
 
 BANNER
 
@@ -77,9 +77,12 @@ docker compose -f deploy/services/omnivoice/docker-compose.yml pull
 echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
 ./deploy/fetch-models.sh
 
-echo; echo ">>> [5/6] build + start ComfyUI (long-lived service)"
+echo; echo ">>> [5/6] build + start long-lived services (ComfyUI + Piper HAL)"
 docker compose -f deploy/services/comfyui/docker-compose.yml build
 docker compose -f deploy/services/comfyui/docker-compose.yml up -d
+# Piper HAL — the default synthetic voice (engine "piper") on :5050. CPU-only, the
+# HAL-9000 voice is baked into the image. Build + start it the same way.
+docker compose -f deploy/services/piper/docker-compose.yml up -d --build
 
 echo; echo ">>> [6/6] MACU Studio app (venv + frontend build)"
 ./studio/scripts/install.sh
