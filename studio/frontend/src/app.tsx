@@ -17,6 +17,7 @@ import { ManifestDrawer } from "./components/ManifestDrawer";
 import { LogDrawer } from "./components/LogDrawer";
 import { TerminalDrawer } from "./components/TerminalDrawer";
 import { UpdateModal } from "./components/UpdateModal";
+import { DiagnosticsModal } from "./components/DiagnosticsModal";
 import { useRoute, Page } from "./route";
 import { useStore } from "./store";
 import { UIStage } from "./types";
@@ -107,6 +108,7 @@ function Shell() {
       <LogDrawer />
       <TerminalDrawer />
       <UpdateModal />
+      <DiagnosticsModal />
       {settingsOpen && <Settings show={activeShow} onClose={() => setSettingsOpen(false)} />}
       {tourOpen && <Tour slug={slug} go={go} onClose={() => setTourOpen(false)} />}
     </div>

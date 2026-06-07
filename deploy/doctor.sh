@@ -30,18 +30,29 @@ else
   pv=$(python3 -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null)
   FAIL python3 "need >=3.11 (have ${pv:-?}) — the installer can add it (deadsnakes)"
 fi
-# Pick the NEWEST node across PATH + every nvm install — a too-old system node on
-# PATH (e.g. an apt node 16) must not hide a newer nvm node 20.
-node_bin=""; node_major=0
+# Pick the BEST node across PATH + every nvm install: highest FULL version with a
+# WORKING npm. A too-old system node (apt node 16) must not hide an nvm node 20, and
+# a half-removed npm (dangling symlink, no npm-cli.js — happens with two same-major
+# nvm installs) must not pass as healthy: the frontend build needs npm, so this is
+# the same selection studio/scripts/install.sh uses.
+node_bin=""; node_major=0; best_key=0; node_seen=0
 for cand in "$(command -v node 2>/dev/null)" $(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null); do
   [ -x "$cand" ] || continue
-  maj=$("$cand" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
-  if [ "${maj:-0}" -gt "$node_major" ] 2>/dev/null; then node_major=$maj; node_bin="$cand"; fi
+  ver=$("$cand" -p 'process.versions.node' 2>/dev/null) || continue
+  node_seen=1
+  maj=${ver%%.*}; rest=${ver#*.}; min=${rest%%.*}; pat=${rest#*.}; pat=${pat%%[-+]*}
+  [ "${maj:-0}" -ge 20 ] 2>/dev/null || continue
+  dir="$(dirname "$cand")"
+  [ -f "$dir/../lib/node_modules/npm/bin/npm-cli.js" ] || continue   # npm must be runnable
+  key=$(( maj * 1000000 + ${min:-0} * 1000 + ${pat:-0} ))
+  if [ "$key" -gt "$best_key" ]; then best_key=$key; node_bin="$cand"; node_major=$maj; fi
 done
-if [ -n "$node_bin" ] && [ "$node_major" -ge 20 ]; then
+if [ -n "$node_bin" ]; then
   PASS node "v$("$node_bin" -v 2>/dev/null|tr -d v)$([ "$node_bin" != "$(command -v node 2>/dev/null)" ] && echo ' (nvm)')"
+elif [ "$node_seen" -eq 1 ]; then
+  FAIL node "found node but none is >=20 with a working npm — repair with 'nvm install --lts'"
 else
-  FAIL node "need >=20 (Studio frontend build; have ${node_major:-?}) — the installer can add it (nvm)"
+  FAIL node "need >=20 (Studio frontend build) — the installer can add it (nvm)"
 fi
 
 echo

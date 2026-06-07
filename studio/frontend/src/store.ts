@@ -34,6 +34,7 @@ interface State {
   logOpen: boolean;
   terminalOpen: boolean;
   updateOpen: boolean;
+  diagnosticsOpen: boolean;
   toasts: Toast[];
   log: LogEntry[];
   activeSlug: string | null;
@@ -59,6 +60,8 @@ interface Actions {
   toggleTerminal: () => void;
   openUpdate: () => void;
   closeUpdate: () => void;
+  openDiagnostics: () => void;
+  closeDiagnostics: () => void;
   setActiveSlug: (slug: string | null) => void;
   setActiveShow: (show: string) => void;
   pushToast: (text: string, kind?: ToastKind) => void;
@@ -81,6 +84,7 @@ export const useStore = create<State & Actions>((set) => ({
   logOpen: false,
   terminalOpen: false,
   updateOpen: false,
+  diagnosticsOpen: false,
   toasts: [],
   log: [],
   activeSlug: null,
@@ -105,6 +109,8 @@ export const useStore = create<State & Actions>((set) => ({
   toggleTerminal: () => set((s) => ({ terminalOpen: !s.terminalOpen, drawerOpen: false, logOpen: false })),
   openUpdate: () => set({ updateOpen: true }),
   closeUpdate: () => set({ updateOpen: false }),
+  openDiagnostics: () => set({ diagnosticsOpen: true }),
+  closeDiagnostics: () => set({ diagnosticsOpen: false }),
   setActiveSlug: (slug) => set({ activeSlug: slug }),
   setActiveShow: (show) => { localStorage.setItem("macu.show", show); set({ activeShow: show }); },
   pushToast: (text, kind = "info") => {
