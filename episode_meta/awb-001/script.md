@@ -1,20 +1,21 @@
-# As The World Burns — awb-001 — "The Widow at the Gate" (Pilot) — v3
+# As The World Burns — awb-001 — "The Widow at the Gate" (Pilot) — v4
 
-_Draft 2026-06-06. **v3 — Police Squad pass** (on the writers'-room v2). Series pilot. Brick's funeral; the
-will + the Pitcher; Mona arrives from the ash claiming to be his widow; button — Brick walks in alive.
-Resurrection Engine install #1._
+_Draft 2026-06-06. **v4 — writers'-room pass 2 (final).** Pipeline: writers' room → Police Squad pass →
+writers' room. Series pilot. Brick's funeral; the will + the Pitcher; Mona arrives from the ash claiming to
+be his widow; button — Brick walks in alive. Resurrection Engine install #1._
 
-_Police Squad pass added (deadpan / ZAZ density): the fake title card (spoken title ≠ burned card); the
-murdered special-guest-star (Roland Fitch, dead at the door — recurring runner, ties to the '09 accord); the
-plover; Vivian's literalized "over my dead body"; the butler tallying-and-crossing-out sight gag; Mona's
-"dead feet / you develop a system"; an anti-comedy hold after the hollow line; Brick's walnut/cedar casket
-appreciation; the "good posture — that part is unusual" button tag; door-wait specificity merged into the
-Act 2 hinge. All protected lines intact._
+_Final-pass cuts (subtraction to let the keepers breathe): (1) Cut the Roland Fitch dead-guest-star from the
+cold open — it competed with the title-card mismatch (both "announce-then-negate" jokes); the title card
+leads alone. The murdered-special-guest-star runner is BANKED for a future episode (see Story_Arcs.md).
+(2) Cut Vivian's "It became logistically complicated" (her explaining her own joke). Protected against
+trim-notes: "He has died before" (the Engine install), "Brick loved the strata" (now pays off on Brick's
+entrance), the plover, the 4-second hold, the butler sight gag, and "I was dead, yes. But I got better."
+(canon engine line — kept over a craft note flagging the Python echo)._
 
 _Tone law: bone dry, played dead-straight; the insane facts stated flat; nobody winks, nobody explains._
 
 Cast: NARRATOR (soap announcer, grave) · VIVIAN VANDERMEER (matriarch) · MONA (the widow at the gate) ·
-BRICK VANDERMEER (the cursed heir) · ROLAND FITCH (the special guest; non-speaking; dead). Speaker → » shot core.
+BRICK VANDERMEER (the cursed heir). Speaker → » shot core.
 
 ---
 
@@ -23,9 +24,6 @@ BRICK VANDERMEER (the cursed heir) · ROLAND FITCH (the special guest; non-speak
 **NARRATOR:** _(grave, unhurried, the voice of a thousand afternoons)_ Like ash through the hourglass… these are the days of what's left of our lives. _(a beat)_ Tonight's episode: "A Gathering of Friends."
 » b-roll: lake_mirabel — a vast cracked clay basin under a flat grey sky, the dead lakebed lovely in the dim light → AS THE WORLD BURNS title card, the burned text reading **EPISODE ONE — "THE FUNERAL WENT WELL"** (held two beats too long)
 
-**NARRATOR:** _(warm, hosting)_ And tonight, a very special guest: renowned water sommelier and accord-of-'09 signatory, Roland Fitch. _(a beat, unchanged register)_ Mr. Fitch will not be appearing this evening.
-» b-roll: the_bunker — ROLAND FITCH in a good coat at the blast door, an open briefcase at his feet, the briefcase empty; he is already dead, and has been for some time
-
 **VIVIAN:** _(presiding, immaculate, mid-eulogy, not a tremor)_ Brick Vandermeer was my son. He was thirty-one. He died, as the Vandermeer men always die, doing something he had been specifically told not to do. We will miss him. We have a great deal of him to miss. He has died before.
 » Vivian core, in mourning black, standing at the head of an upright pale-wood casket in a candlelit bunker ballroom
 
@@ -33,7 +31,7 @@ BRICK VANDERMEER (the cursed heir) · ROLAND FITCH (the special guest; non-speak
 » Vivian core, gesturing to a porthole window framing the grey clay basin
 
 **NARRATOR:** _(over the room)_ The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake. They are not lying. There is simply no lake. _(a beat, no inflection)_ There was, once — fourteen feet across, six inches deep. A plover lived on it. They called it the lake. The plover did not survive.
-» b-roll: the_bunker — a heavy blast door dressed with funeral wreaths and good crystal, chandelier light, a butler in tails (Roland Fitch's open briefcase still visible at the edge of frame)
+» b-roll: the_bunker — a heavy blast door dressed with funeral wreaths and good crystal, chandelier light, a butler in tails
 
 ---
 
@@ -45,7 +43,7 @@ BRICK VANDERMEER (the cursed heir) · ROLAND FITCH (the special guest; non-speak
 **VIVIAN:** _(rising, ceremonial, lifting a tall glass pitcher from a velvet plinth)_ And with the estate passes… the Pitcher.
 » Vivian core, both hands raising an ornate glass pitcher off a velvet display cushion, the room hushed
 
-**VIVIAN:** _(the warmth of a corrected recipe note)_ Brick died over this. As did his father. As did his father's father. In each case, quite literally. We stopped saying "over my dead body" at family meetings after '87. It became logistically complicated.
+**VIVIAN:** _(the warmth of a corrected recipe note)_ Brick died over this. As did his father. As did his father's father. In each case, quite literally. We stopped saying "over my dead body" at family meetings after '87.
 » Vivian core, the Pitcher held aloft, perfectly serene
 
 **NARRATOR:** _(reverent)_ The Pitcher. From the great barge that circled the dead world for forty years and ran aground in the founder's garden. They control the last drink powder on Earth. They call it, simply, the Product. Wars have been fought over the Raspberry Lemonade reserves. The accord of '09 is not spoken of.

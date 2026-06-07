@@ -62,7 +62,9 @@
   "music": {
     "enabled": true,
     "source_dir": "/mnt/storage/shares/MACU/assets/music",
-    "clips": [],
+    "clips": [
+      "soap_opera_theme_music.wav"
+    ],
     "beds": []
   },
   "characters": {
