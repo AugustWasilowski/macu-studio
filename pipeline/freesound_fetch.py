@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""freesound_fetch.py — CC0 SFX acquisition helper for the MACU pipeline.
+"""freesound_fetch.py — CC0 SFX acquisition helper for MACU Studio.
 
 Usage:
   freesound_fetch.py <query> <out_basename> [--duration-max N] [--license cc0|all]

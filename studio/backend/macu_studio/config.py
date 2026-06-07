@@ -20,7 +20,7 @@ RENDER_URL = os.environ.get("MACU_RENDER_URL", "http://127.0.0.1:8773").rstrip("
 STUDIO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = STUDIO_ROOT / "frontend" / "dist"
 
-# The macu-pipeline repo root (studio/ lives inside it). `docs/` is the canon dir.
+# The macu-studio repo root (studio/ lives inside it). `docs/` is the canon dir.
 REPO_ROOT = STUDIO_ROOT.parent
 
 HOST = os.environ.get("MACU_STUDIO_HOST", "0.0.0.0")

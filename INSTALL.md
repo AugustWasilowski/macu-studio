@@ -10,8 +10,8 @@ stack (OmniVoice, Ollama, ComfyUI, Piper) and fetches its models.
 ## Quick start
 
 ```bash
-git clone <repo-url> macu-pipeline
-cd macu-pipeline
+git clone <repo-url> macu-studio
+cd macu-studio
 
 ./deploy/install.sh          # one shot: preflight (offers to install missing prereqs) →
                              # models (~8 GB) → build → app. No editing needed.

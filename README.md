@@ -1,8 +1,8 @@
-# MACU Pipeline
+# MACU Studio
 
-MACU Pipeline is a self-hosted, GPU-backed system for producing stylized short-form video from a script. Its
+MACU Studio is a self-hosted, GPU-backed system for producing stylized short-form video from a script. Its
 built-in look is a black-and-white, retro-futurist analog-TV aesthetic. It pairs an 8-stage render pipeline
-with **MACU Studio**, a web app that drives the whole process from a browser.
+with a browser-based web app that drives the whole process.
 
 | Dir | What it is |
 |---|---|
@@ -61,8 +61,8 @@ MACU is portable: every path and endpoint is env-driven (copy `.env.example` →
 — *not* macOS (no CUDA). `deploy/doctor.sh` checks all of it.
 
 ```bash
-git clone <repo-url> macu-pipeline
-cd macu-pipeline
+git clone <repo-url> macu-studio
+cd macu-studio
 
 ./deploy/install.sh        # doctor (offers to auto-install missing prereqs) → pull images →
                            # fetch models (~8 GB) → build ComfyUI/Piper → app. Storage defaults

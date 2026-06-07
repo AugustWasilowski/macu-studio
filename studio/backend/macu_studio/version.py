@@ -1,4 +1,4 @@
-"""Self-update: check the *code* repo (macu-pipeline) for a newer version and apply it.
+"""Self-update: check the *code* repo (macu-studio) for a newer version and apply it.
 
 Operates on the git checkout the running code lives in (``config.REPO_ROOT``) — this is
 the CODE repo, distinct from the episode CONTENT repo handled by ``gitsync.py``.

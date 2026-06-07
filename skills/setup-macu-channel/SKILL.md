@@ -67,7 +67,7 @@ so no Studio config edit is needed beyond this token.
 Prefer a **systemd --user** service so it survives logout; fall back to `nohup`
 where user-systemd isn't available (e.g. some WSL setups).
 ```bash
-REPO="$(cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)" && pwd)"   # the macu-pipeline checkout
+REPO="$(cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)" && pwd)"   # the macu-studio checkout
 CLAUDE_BIN="$(command -v claude)"    # ABSOLUTE path — systemd --user PATH omits ~/.local/bin
 # systemd --user path:
 mkdir -p ~/.config/systemd/user

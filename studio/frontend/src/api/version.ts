@@ -1,5 +1,5 @@
 // Self-update API — talks to the backend's routes_version.py. Operates on the CODE
-// repo (macu-pipeline), distinct from the per-episode git-sync (content repo).
+// repo (macu-studio), distinct from the per-episode git-sync (content repo).
 
 export interface VersionCurrent {
   commit: string;

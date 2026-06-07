@@ -1,4 +1,4 @@
-"""StackChan WS2812 progress-bar driver for the MACU pipeline.
+"""StackChan WS2812 progress-bar driver for MACU Studio.
 
 Paints the 30-LED Port C strip as an 8-zone progress bar — one color per pipeline
 stage. POSTs /leds/buffer to the device at STACKCHAN_URL (optional hardware; unset
