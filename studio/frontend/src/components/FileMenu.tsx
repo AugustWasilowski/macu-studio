@@ -4,7 +4,7 @@ import { IChevron } from "./Icons";
 import { Modal } from "./Modal";
 import { Field } from "./Field";
 import { useStore } from "../store";
-import { showsApi, exportUrl } from "../api/shows";
+import { showsApi, exportUrl, cloneVoiceRef } from "../api/shows";
 import { api } from "../api";
 import type { Route } from "../route";
 
@@ -22,6 +22,7 @@ type Dialog = null | "new-show" | "new-episode" | "export" | "shutdown";
 export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial, onGoAssembly }: Props) {
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [cloneVoices, setCloneVoices] = useState<{ show: string; names: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const setActiveShow = useStore((s) => s.setActiveShow);
   const pushToast = useStore((s) => s.pushToast);
@@ -50,6 +51,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         r.created.length ? `${r.created.length} new` : "",
         r.updated.length ? `${r.updated.length} updated` : "",
         r.templates?.length ? `${r.templates.length} template${r.templates.length > 1 ? "s" : ""}` : "",
+        r.voices?.length ? `${r.voices.length} voice${r.voices.length > 1 ? "s" : ""}` : "",
         r.created_show ? `show '${r.show}' created` : "",
       ].filter(Boolean).join(", ");
       pushToast(`import → ${r.show}: ${bits || "no episodes"}`, r.errors.length ? "info" : "ok");
@@ -63,6 +65,8 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         setActiveShow(r.show);
         go({ page: "stage", slug: imported[0], stage: "script" });
       }
+      // Voices arrive as reference clips — offer the optional GPU re-clone step.
+      if (r.voices?.length) setCloneVoices({ show: r.show, names: r.voices });
     } catch (err) {
       pushToast(`import failed: ${err instanceof Error ? err.message : String(err)}`, "err");
     }
@@ -151,7 +155,93 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         <ExportDialog show={activeShow} slug={slug} onClose={() => setDialog(null)} />
       )}
       {dialog === "shutdown" && <ShutdownDialog onClose={() => setDialog(null)} />}
+      {cloneVoices && (
+        <CloneVoicesModal show={cloneVoices.show} names={cloneVoices.names} onClose={() => setCloneVoices(null)} />
+      )}
     </div>
+  );
+}
+
+function CloneVoicesModal({ show, names, onClose }: { show: string; names: string[]; onClose: () => void }) {
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(0);
+  const [current, setCurrent] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
+  const pushToast = useStore((s) => s.pushToast);
+
+  async function run() {
+    setRunning(true);
+    const fails: string[] = [];
+    for (const name of names) {
+      setCurrent(name);
+      try {
+        await cloneVoiceRef(name, show);
+      } catch {
+        fails.push(name);
+      }
+      setDone((d) => d + 1);
+    }
+    setCurrent(null);
+    setFailed(fails);
+    setFinished(true);
+    setRunning(false);
+    pushToast(
+      fails.length ? `cloned ${names.length - fails.length}/${names.length} voices (${fails.length} failed)`
+                   : `cloned ${names.length} voice${names.length > 1 ? "s" : ""}`,
+      fails.length ? "err" : "ok",
+    );
+  }
+
+  const pct = names.length ? Math.round((done / names.length) * 100) : 0;
+
+  return (
+    <Modal
+      open
+      onClose={running ? () => {} : onClose}
+      title="Import voices"
+      width={460}
+      footer={running ? undefined : finished ? (
+        <button className="btn btn-amber" onClick={onClose}>Close</button>
+      ) : (
+        <>
+          <button className="btn" onClick={onClose}>Later</button>
+          <button className="btn btn-amber" onClick={run}>Clone {names.length} voice{names.length > 1 ? "s" : ""}</button>
+        </>
+      )}
+    >
+      {!finished ? (
+        <div className="flex flex-col gap-3">
+          <p className="label-tiny leading-relaxed">
+            This import brought <span className="text-amber">{names.length}</span> voice
+            {names.length > 1 ? "s" : ""} as reference clips. Re-cloning rebuilds them in
+            this machine's OmniVoice and re-points <span className="font-mono">{show}</span>'s
+            speakers at them. <span className="text-amber">It starts OmniVoice and uses the GPU</span>
+            {" "}(~a few seconds per voice). You can do it later from the voice picker.
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {names.map((n) => <span key={n} className="label-tiny px-1.5 py-0.5 bg-bg-3 rounded">{n}</span>)}
+          </div>
+          {running && (
+            <div className="flex flex-col gap-1">
+              <div className="h-2 bg-bg-3 rounded overflow-hidden">
+                <div className="h-full bg-amber transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="label-tiny">{done}/{names.length} — cloning {current ?? "…"}</div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 py-1">
+          <div className="text-[13px]">Cloned {names.length - failed.length}/{names.length} voices into OmniVoice.</div>
+          {failed.length > 0 && (
+            <p className="label-tiny text-err leading-relaxed">
+              Failed: {failed.join(", ")}. Re-run from the voice picker once OmniVoice is healthy.
+            </p>
+          )}
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -289,8 +379,9 @@ function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onC
     <Modal open onClose={onClose} title="Export project" width={420}>
       <div className="flex flex-col gap-2">
         <p className="label-tiny leading-relaxed">
-          Bundles text files (script, manifest, youtube) into a .zip. Re-import it later to
-          merge into this or another instance. Generated media is not included.
+          Bundles text files (script, manifest, youtube) + the title-card templates and
+          OmniVoice reference clips the show uses into a .zip. Re-import it elsewhere; the
+          import offers to re-clone the voices. Generated media is not included.
         </p>
         <button className="btn btn-amber justify-center" disabled={!slug} onClick={() => dl(exportUrl.episode(slug))}>
           Export this episode ({slug || "—"})
@@ -298,6 +389,12 @@ function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onC
         <button className="btn justify-center" onClick={() => dl(exportUrl.show(show))}>
           Export whole show ({show})
         </button>
+        <button className="btn justify-center" onClick={() => dl(exportUrl.voicesAll())}>
+          Export all voices
+        </button>
+        <p className="label-tiny leading-relaxed opacity-70">
+          (A single voice can be exported from the Audio page's voice picker.)
+        </p>
       </div>
     </Modal>
   );

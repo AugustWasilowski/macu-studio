@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { voicesApi } from "../api/voices";
+import { exportUrl } from "../api/shows";
 import { useStore } from "../store";
 
 /** Deterministic color per character (same palette as the cue rows). */
@@ -126,6 +127,19 @@ export function VoicePicker({ slug }: { slug: string }) {
         />
         <button className="btn" onClick={addChar} disabled={!newName.trim()}>Add</button>
       </div>
+
+      {voiceOptions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t hairline-soft">
+          <span className="label-tiny text-txt-faint">Export voice (ref clip .zip):</span>
+          {voiceOptions.map((o) => (
+            <a key={o.id} href={exportUrl.voice(o.name)} download
+               className="label-tiny px-1.5 py-0.5 bg-bg-3 rounded hover:brightness-125"
+               title={`Download ${o.name}'s reference clip — re-importable on another machine`}>
+              {o.name} ↓
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

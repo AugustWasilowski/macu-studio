@@ -36,4 +36,15 @@ export const showsApi = {
 export const exportUrl = {
   episode: (slug: string) => `/api/episodes/${slug}/export`,
   show: (show: string) => `/api/shows/${show}/export`,
+  voicesAll: () => `/api/voices/export`,
+  voice: (name: string) => `/api/voices/export?name=${encodeURIComponent(name)}`,
 };
+
+// Re-clone one imported voice reference into the local OmniVoice (GPU) and rebind a
+// show's speaker_map for it. Called once per voice so the UI can show progress.
+export function cloneVoiceRef(name: string, show?: string) {
+  return fetch("/api/voices/clone-ref", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, show }),
+  }).then((r) => J<{ ok: boolean; id: string; name: string; rebound: number }>(r));
+}
