@@ -37,12 +37,18 @@ nohup ttyd -W -p 7682 tmux new-session -A -s claude claude >~/.macu-ttyd.log 2>&
 ## Security
 
 ttyd here has **no auth** and serves an interactive Claude session — i.e. shell access
-(via Claude's tools) to anyone who can reach `:7682`. It binds all interfaces by
-default so the drawer works however you reach Studio. Lock it down for your setup:
+(via Claude's tools) to anyone who can reach `:7682`. It therefore ships
+**loopback-only** (`-i 127.0.0.1` in the unit): reachable from the machine running
+Studio — including WSL from the Windows host, via localhost forwarding — but **not**
+from the LAN. The frontend default targets `127.0.0.1:7682` to match.
 
-- **Solo machine:** add `-i 127.0.0.1` to the unit's ExecStart (loopback only).
-- **Shared LAN:** add `-c user:pass` for HTTP basic auth.
-- **Never** expose `:7682` on the public internet. Studio is LAN-only by design.
+To use the drawer from **another machine over the LAN**:
+
+1. Remove `-i 127.0.0.1` from the unit's ExecStart (and add `-c user:pass` for HTTP
+   basic auth — strongly recommended, since this is shell access).
+2. Rebuild the SPA with `VITE_TERMINAL_URL=http://<lan-host>:7682/`.
+
+**Never** expose `:7682` on the public internet. Studio is LAN-only by design.
 
 ## Customizing the port / session
 

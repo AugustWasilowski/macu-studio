@@ -6,12 +6,12 @@
 # falls back to launching ttyd under nohup.)
 #
 # SECURITY: ttyd serves an INTERACTIVE Claude session with NO AUTH — that's shell
-# access (via Claude's tools) to anyone who can reach the port. It binds all
-# interfaces by default so the drawer works however you reach Studio (the iframe
-# uses the same hostname). For a solo machine, constrain it to loopback by adding
-#   -i 127.0.0.1
-# to ExecStart; to require a password, add  -c user:pass . NEVER expose :7682 on the
-# WAN. (Studio itself is LAN-only by design.)
+# access (via Claude's tools) to anyone who can reach the port. It binds LOOPBACK
+# (127.0.0.1) ONLY by default (the `-i 127.0.0.1` below), so it's reachable from the
+# machine running Studio — including WSL from the Windows host, via localhost
+# forwarding — but NOT from the LAN. To use the drawer from ANOTHER machine over the
+# LAN, remove `-i 127.0.0.1` (and add `-c user:pass`), and point the frontend at the
+# LAN host with VITE_TERMINAL_URL. NEVER expose :7682 on the WAN.
 [Unit]
 Description=MACU terminal (ttyd + tmux running Claude Code, for Studio's TERMINAL drawer)
 After=default.target
@@ -19,7 +19,7 @@ After=default.target
 [Service]
 Type=simple
 Environment=PATH=__PATH__
-ExecStart=__TTYD_BIN__ -W -p 7682 tmux new-session -A -s claude __CLAUDE_BIN__
+ExecStart=__TTYD_BIN__ -i 127.0.0.1 -W -p 7682 tmux new-session -A -s claude __CLAUDE_BIN__
 Restart=on-failure
 RestartSec=5
 

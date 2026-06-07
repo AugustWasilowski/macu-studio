@@ -8,14 +8,15 @@ import { ITerminal, IX } from "./Icons";
 // with "refuses to connect" — that's the missing ttyd service, not a frontend bug.
 // Configurable at build time (Vite): VITE_TERMINAL_URL (full URL), or
 // VITE_TERMINAL_PORT (default 7682) + VITE_TERMINAL_SESSION (the tmux session name,
-// shown in the UI). Defaults serve ttyd on the same host the page was loaded from,
-// forced to http (ttyd is http-only) — LAN-only by design.
+// shown in the UI). The default targets 127.0.0.1 to match ttyd's loopback-only bind
+// (the shipped default) — works on the machine running Studio, incl. WSL from the
+// Windows host via localhost forwarding. To reach the terminal from ANOTHER machine
+// over the LAN, open ttyd's bind (deploy/macu-ttyd/) and set VITE_TERMINAL_URL to the
+// LAN host. http only (ttyd is http-only). LAN-only by design — never expose on WAN.
 const _ENV = ((import.meta as any).env ?? {}) as Record<string, string | undefined>;
 const TERMINAL_PORT = _ENV.VITE_TERMINAL_PORT || "7682";
 const TERMINAL_SESSION = _ENV.VITE_TERMINAL_SESSION || "claude";
-const TERMINAL_URL =
-  _ENV.VITE_TERMINAL_URL ||
-  `http://${typeof window !== "undefined" ? window.location.hostname : "localhost"}:${TERMINAL_PORT}/`;
+const TERMINAL_URL = _ENV.VITE_TERMINAL_URL || `http://127.0.0.1:${TERMINAL_PORT}/`;
 
 /* Right-hand slide-in panel (mirrors ManifestDrawer/LogDrawer) that embeds the
    ttyd web terminal. Connecting mounts the iframe → ttyd opens a WebSocket and

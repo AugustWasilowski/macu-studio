@@ -126,7 +126,7 @@ sed -e "s#__TTYD_BIN__#$TTYD_BIN#" -e "s#__CLAUDE_BIN__#$CLAUDE_BIN#" -e "s#__PA
 systemctl --user daemon-reload
 systemctl --user enable --now macu-ttyd
 # (fallback if user-systemd is unavailable, e.g. some WSL:
-#   nohup "$TTYD_BIN" -W -p 7682 tmux new-session -A -s claude "$CLAUDE_BIN" >~/.macu-ttyd.log 2>&1 &  )
+#   nohup "$TTYD_BIN" -i 127.0.0.1 -W -p 7682 tmux new-session -A -s claude "$CLAUDE_BIN" >~/.macu-ttyd.log 2>&1 &  )
 ```
 
 ### 9. Verify the terminal
@@ -137,11 +137,13 @@ tmux ls                           # -> claude: 1 windows ...
 If `:7682` answers, open Studio and click **Connect** in the TERMINAL drawer — it
 should attach to the claude session.
 
-> **Security:** ttyd here is unauthenticated and serves an interactive Claude session
-> (= shell access via Claude's tools). It binds all interfaces by default so the drawer
-> works however you reach Studio. For a solo machine, add `-i 127.0.0.1` to the unit's
-> ExecStart (loopback); for a shared LAN, add `-c user:pass`. NEVER expose `:7682` on
-> the WAN. See `deploy/macu-ttyd/README.md`.
+> **Security:** ttyd is unauthenticated and serves an interactive Claude session (=
+> shell access via Claude's tools), so it ships **loopback-only** (`-i 127.0.0.1`) —
+> reachable from the machine running Studio, incl. WSL from the Windows host via
+> localhost forwarding, but not from the LAN. To reach the drawer from ANOTHER machine,
+> remove `-i 127.0.0.1` from the unit (add `-c user:pass`) and rebuild the SPA with
+> `VITE_TERMINAL_URL` pointing at the LAN host. NEVER expose `:7682` on the WAN. See
+> `deploy/macu-ttyd/README.md`.
 
 ### 10. Done
 Tell the user that in Studio the **chat tile**, **writers' room**, AND the **TERMINAL
