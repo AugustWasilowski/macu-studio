@@ -113,6 +113,16 @@ else
   echo "Studio TERMINAL drawer (optional; the rest of Studio works without it)."
 fi
 
+# Final flourish — the AWESOME poster as terminal art (color if the terminal
+# supports it, else the plain block fallback). Printed before the next-steps so the
+# instructions stay at the bottom of the screen.
+echo
+if [ -t 1 ] && [ "$(tput colors 2>/dev/null || echo 0)" -ge 8 ] && [ -f "$REPO/deploy/assets/awesome.ans" ]; then
+  cat "$REPO/deploy/assets/awesome.ans"
+elif [ -f "$REPO/deploy/assets/awesome.txt" ]; then
+  cat "$REPO/deploy/assets/awesome.txt"
+fi
+
 cat <<'EOF'
 
 ######## install complete ########
