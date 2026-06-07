@@ -26,8 +26,8 @@ BANNER
 
 if [ "$AUTO" = 0 ]; then
   if [ -t 0 ]; then
-    read -r -p "   Cool to continue? [y/N] " ans
-    case "$ans" in [yY]|[yY][eE][sS]) ;; *) echo "   Aborted."; exit 1 ;; esac
+    read -r -p "   Cool to continue? [Y/n] " ans
+    case "$ans" in [nN]|[nN][oO]) echo "   Aborted."; exit 1 ;; *) ;; esac
   else
     echo "   Non-interactive shell — re-run with -y to proceed."; exit 1
   fi
