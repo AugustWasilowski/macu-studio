@@ -60,3 +60,11 @@ studio/frontend/pnpm-lock.yaml
 
 # Author-private design notes (agent topology / infra) — kept locally, not shipped
 docs/_common/MACU_Pipeline_Design.md
+
+# Creative content — the author's episodes + show-specific authoring skills. Kept on
+# disk locally (gitsync writes episode_meta/<slug> there for the user's own copy), but
+# not shipped. A clone starts with no episodes and only the generic render/channel skills.
+episode_meta/
+skills/macu-report/
+skills/comedy-writers-room/
+skills/police-squad-pass/
