@@ -2,9 +2,37 @@
 # Top-level MACU installer. Runs the mechanical stages in order on a fresh machine;
 # each stage skips work already done. The un-scriptable parts (systemd units, the
 # Claude Code channel) are printed at the end for you to finish by hand.
+# Usage: ./deploy/install.sh [-y|--yes]   (-y skips the confirm prompt)
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
-echo "######## MACU install ########"
+
+AUTO=0
+case "${1:-}" in -y|--yes) AUTO=1 ;; esac
+
+cat <<'BANNER'
+
+   ██    ██   ██████    ██████   ██    ██
+   ███  ███  ██    ██  ██        ██    ██
+   ██ ██ ██  ████████  ██        ██    ██
+   ██    ██  ██    ██  ██        ██    ██
+   ██    ██  ██    ██   ██████    ██████
+
+   Mayor Awesome Cinematic Universe — Studio installer
+
+   This downloads several GB of models and stands up local GPU services
+   (ComfyUI, OmniVoice, Ollama) via Docker. Beta software — you're on your own.
+
+BANNER
+
+if [ "$AUTO" = 0 ]; then
+  if [ -t 0 ]; then
+    read -r -p "   Cool to continue? [y/N] " ans
+    case "$ans" in [yY]|[yY][eE][sS]) ;; *) echo "   Aborted."; exit 1 ;; esac
+  else
+    echo "   Non-interactive shell — re-run with -y to proceed."; exit 1
+  fi
+fi
+echo
 
 echo; echo ">>> [1/6] preflight"
 ./deploy/doctor.sh || { echo "Install the missing prerequisites above, then re-run."; exit 1; }
