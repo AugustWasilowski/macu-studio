@@ -1,4 +1,4 @@
-<!-- Per-card-type briefs for THE MACU REPORT card-text generator.
+<!-- Per-card-type briefs for the show card-text generator.
      Each `## <card_type>` section below is the brief handed to the LLM on
      top of the card-text system prompt (PROMPT_card-text.md). Edit the
      prose under each heading; keep the `## ` headings exactly as named.

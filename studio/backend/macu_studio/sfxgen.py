@@ -52,7 +52,7 @@ SCHEMA = {
     "required": ["sfx"],
 }
 
-SYSTEM = """You are the sound-effects designer for THE MACU REPORT, a black-and-white
+SYSTEM = """You are the sound-effects designer for the show, a black-and-white
 1970s-broadcast faux-newscast. Treat the script as a RADIO PLAY: read each spoken line
 (a cue) and find the moments where a sound effect would land — an action named or
 implied (a door, an impact, machinery, a bell, a crowd, footsteps, a switch, weather),

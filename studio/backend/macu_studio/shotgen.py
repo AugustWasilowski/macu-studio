@@ -83,7 +83,7 @@ SCHEMA = {
     "required": ["characters", "broll", "cues"],
 }
 
-SYSTEM = """You are the shot director for THE MACU REPORT, a black-and-white 1970s-broadcast
+SYSTEM = """You are the shot director for the show, a black-and-white 1970s-broadcast
 faux-newscast. For each cue (a spoken line) you decide which visual shots play over it.
 
 Rules:

@@ -23,7 +23,7 @@ from . import manifest as manifest_mod
 
 # Full default — seeds docs/PROMPT_composition.md on first run; that file (editable in the
 # Docs tab) then wins. Keep this and the doc in sync if you change the contract here.
-SYSTEM = """You are the motion-graphics author for THE MACU REPORT — a black-and-white, 1970s-broadcast,
+SYSTEM = """You are the motion-graphics author for the show — a black-and-white, 1970s-broadcast,
 post-apocalyptic faux-newscast. From a short brief you write ONE self-contained HyperFrames
 composition: a single `index.html` that renders a 1024×1024 animated title/graphic card.
 
@@ -164,7 +164,8 @@ _NAME_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,48}$")
 # Visible text that's allowed to be hard-coded (fixed broadcast chrome, same every episode).
 # Everything else the card displays should be a ‹PLACEHOLDER›; literal content here means the
 # model baked the brief's data into the HTML.
-_FIXED_CHROME = {"THE", "MACU", "REPORT", "THE MACU", "MACU REPORT", "THE MACU REPORT", "LIVE", "ON AIR"}
+# Generic broadcast chrome; a show can extend this with its own network branding.
+_FIXED_CHROME = {"LIVE", "ON AIR"}
 _TEXT_NODE_RE = re.compile(r">([^<>]+)<")
 _TAG_BLOCK_RE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
 

@@ -30,7 +30,7 @@ CARD_BRIEFS_FILE = "PROMPT_card-briefs.md"
 COMPOSITION_FILE = "PROMPT_composition.md"
 
 _BRIEFS_PREAMBLE = (
-    "<!-- Per-card-type briefs for THE MACU REPORT card-text generator.\n"
+    "<!-- Per-card-type briefs for the show card-text generator.\n"
     "     Each `## <card_type>` section below is the brief handed to the LLM on\n"
     "     top of the card-text system prompt (PROMPT_card-text.md). Edit the\n"
     "     prose under each heading; keep the `## ` headings exactly as named.\n"
