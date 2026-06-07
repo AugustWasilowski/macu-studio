@@ -1,0 +1,28 @@
+# This project runs on Linux / WSL. Shell scripts, Python, and config files MUST
+# keep LF line endings or their shebangs break on checkout — e.g. a clone onto a
+# Windows drive with core.autocrlf=true turns "#!/usr/bin/env bash" into
+# "bash\r", and you get: /usr/bin/env: 'bash\r': No such file or directory.
+#
+# Forcing eol=lf here makes every clone check out LF regardless of the user's git
+# config, so this can't happen.
+
+# Default: detect text, and force LF on checkout for anything textual.
+* text=auto eol=lf
+
+# Explicitly LF for the executable / interpreted files (belt and suspenders).
+*.sh       text eol=lf
+*.py       text eol=lf
+*.service  text eol=lf
+*.bash     text eol=lf
+
+# Binary assets — never normalize line endings.
+*.ttf  binary
+*.wav  binary
+*.mp3  binary
+*.mp4  binary
+*.webp binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.onnx binary
