@@ -23,8 +23,8 @@
       },
       "MONA": {
         "engine": "omnivoice",
-        "profile_id": "974c45ac",
-        "voice_name": "GG_Sophia"
+        "profile_id": "0cde2573",
+        "voice_name": "GG_Dorothy"
       },
       "VIVIAN": {
         "engine": "omnivoice",
@@ -82,9 +82,18 @@
     }
   },
   "broll": {
-    "lake_mirabel": "a vast cracked dry clay lakebed under a flat grey sky, the dead basin stretching to the horizon",
-    "the_bunker": "a heavy steel blast door dressed with funeral wreaths and crystal, a chandelier, a butler in tails, opulent interior",
-    "the_product": "a single sealed foil sachet of pale drink powder displayed under glass like a sacred relic, soft votive light"
+    "lake_mirabel": {
+      "prompt": "a vast cracked dry clay lakebed under a flat grey sky, the dead basin stretching to the horizon",
+      "seed": 9453
+    },
+    "the_bunker": {
+      "prompt": "a heavy steel blast door dressed with funeral wreaths and crystal, a chandelier, a butler in tails, opulent interior",
+      "seed": 6621
+    },
+    "the_product": {
+      "prompt": "a single sealed foil sachet of pale drink powder displayed under glass like a sacred relic, soft votive light",
+      "seed": 6985
+    }
   },
   "title_assets": {},
   "cues": [
@@ -102,13 +111,27 @@
       ]
     },
     {
-      "id": "c02",
+      "id": "c30",
       "segment": "cold_open",
       "speaker": "VIVIAN",
-      "vo": "Brick Vandermeer was my son. He was thirty-one. He died, as the Vandermeer men always die, doing something he had been specifically told not to do. We will miss him. We have a great deal of him to miss. He has died before.",
+      "vo": "Brick Vandermeer was my son. He was thirty-one. He died, as the Vandermeer men always die, doing something he had been specifically told not to do. We will miss him.",
       "shots": [
         {
-          "id": "c02_s1",
+          "id": "c30_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "segment": "cold_open",
+      "speaker": "VIVIAN",
+      "vo": "We have a great deal of him to miss. He has died before.",
+      "shots": [
+        {
+          "id": "c31_s1",
           "kind": "character",
           "who": "vivian",
           "seed": 81001
@@ -130,13 +153,26 @@
       ]
     },
     {
-      "id": "c20",
+      "id": "c32",
       "segment": "cold_open",
       "speaker": "NARRATOR",
-      "vo": "The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake. They are not lying. There is simply no lake. There was, once — fourteen feet across, six inches deep. A plover lived on it. They called it the lake. The plover did not survive.",
+      "vo": "The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake.",
       "shots": [
         {
-          "id": "c20_s1",
+          "id": "c32_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "segment": "cold_open",
+      "speaker": "NARRATOR",
+      "vo": "They are not lying. There is simply no lake. There was, once — fourteen feet across, six inches deep. A plover lived on it. They called it the lake. The plover did not survive.",
+      "shots": [
+        {
+          "id": "c33_s1",
           "kind": "broll",
           "who": "the_bunker"
         }
@@ -185,13 +221,26 @@
       ]
     },
     {
-      "id": "c07",
+      "id": "c34",
       "segment": "act_1",
       "speaker": "NARRATOR",
-      "vo": "The Pitcher. From the great barge that circled the dead world for forty years and ran aground in the founder's garden. They control the last drink powder on Earth. They call it, simply, the Product. Wars have been fought over the Raspberry Lemonade reserves. The accord of '09 is not spoken of.",
+      "vo": "The Pitcher. From the great barge that circled the dead world for forty years and ran aground in the founder's garden. They control the last drink powder on Earth.",
       "shots": [
         {
-          "id": "c07_s1",
+          "id": "c34_s1",
+          "kind": "broll",
+          "who": "the_product"
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "segment": "act_1",
+      "speaker": "NARRATOR",
+      "vo": "They call it, simply, the Product. Wars have been fought over the Raspberry Lemonade reserves. The accord of '09 is not spoken of.",
+      "shots": [
+        {
+          "id": "c35_s1",
           "kind": "broll",
           "who": "the_product"
         }
@@ -212,26 +261,52 @@
       ]
     },
     {
-      "id": "c22",
+      "id": "c36",
       "segment": "act_2",
       "speaker": "NARRATOR",
-      "vo": "The mixing seals the door; by custom it does not open until the Product has settled, not one grain sooner. The Vandermeer blast door weighs four metric tons. Mona had knocked with her left hand, and switched to her right after the first hour. She ran out of things to think about after the second. By the third she had begun to feel she was owed a glass of water. She did not ask for one. She knew the customs by then.",
+      "vo": "The mixing seals the door; by custom it does not open until the Product has settled, not one grain sooner. The Vandermeer blast door weighs four metric tons.",
       "shots": [
         {
-          "id": "c22_s1",
+          "id": "c36_s1",
           "kind": "broll",
           "who": "the_bunker"
         }
       ]
     },
     {
-      "id": "c23",
+      "id": "c37",
       "segment": "act_2",
-      "speaker": "MONA",
-      "vo": "My name is Mona. I walked eleven days. My feet went dead somewhere on the second; you develop a system. I'm Brick's wife — his widow now, I suppose. I ran a grain depot before it burned. I know how a thing is counted, and how it's owed. I've come for what's mine.",
+      "speaker": "NARRATOR",
+      "vo": "Mona had knocked with her left hand, and switched to her right after the first hour. She ran out of things to think about after the second.",
       "shots": [
         {
-          "id": "c23_s1",
+          "id": "c37_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "segment": "act_2",
+      "speaker": "NARRATOR",
+      "vo": "By the third she had begun to feel she was owed a glass of water. She did not ask for one. She knew the customs by then.",
+      "shots": [
+        {
+          "id": "c38_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "segment": "act_2",
+      "speaker": "MONA",
+      "vo": "My name is Mona. I walked eleven days. My feet went dead somewhere on the second; you develop a system. I'm Brick's wife — his widow now, I suppose.",
+      "shots": [
+        {
+          "id": "c39_s1",
           "kind": "character",
           "who": "mona",
           "seed": 81002
@@ -239,13 +314,41 @@
       ]
     },
     {
-      "id": "c24",
+      "id": "c40",
       "segment": "act_2",
-      "speaker": "VIVIAN",
-      "vo": "My son had a wife. How wonderful. He never mentioned it — then again, he never mentioned a great deal. He was very handsome and almost entirely hollow. You'd have gotten on. The estate is settled, dear. There is nothing here that is yours.",
+      "speaker": "MONA",
+      "vo": "I ran a grain depot before it burned. I know how a thing is counted, and how it's owed. I've come for what's mine.",
       "shots": [
         {
-          "id": "c24_s1",
+          "id": "c40_s1",
+          "kind": "character",
+          "who": "mona",
+          "seed": 81002
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "segment": "act_2",
+      "speaker": "VIVIAN",
+      "vo": "My son had a wife. How wonderful. He never mentioned it — then again, he never mentioned a great deal. He was very handsome and almost entirely hollow. You'd have gotten on.",
+      "shots": [
+        {
+          "id": "c41_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "segment": "act_2",
+      "speaker": "VIVIAN",
+      "vo": "The estate is settled, dear. There is nothing here that is yours.",
+      "shots": [
+        {
+          "id": "c42_s1",
           "kind": "character",
           "who": "vivian",
           "seed": 81001
@@ -350,13 +453,26 @@
       ]
     },
     {
-      "id": "c29",
+      "id": "c43",
       "segment": "button",
       "speaker": "NARRATOR",
-      "vo": "Next week, on As The World Burns: Brick drinks the funeral Product. A line is crossed. And somewhere, far out on the clay… something is walking in. It is walking at roughly two miles per hour. It has been walking for some time. It has very good posture. That part is unusual.",
+      "vo": "Next week, on As The World Burns: Brick drinks the funeral Product. A line is crossed. And somewhere, far out on the clay… something is walking in.",
       "shots": [
         {
-          "id": "c29_s1",
+          "id": "c43_s1",
+          "kind": "broll",
+          "who": "lake_mirabel"
+        }
+      ]
+    },
+    {
+      "id": "c44",
+      "segment": "button",
+      "speaker": "NARRATOR",
+      "vo": "It is walking at roughly two miles per hour. It has been walking for some time. It has very good posture. That part is unusual.",
+      "shots": [
+        {
+          "id": "c44_s1",
           "kind": "broll",
           "who": "lake_mirabel"
         }
