@@ -28,7 +28,28 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 PIPELINE = os.path.dirname(os.path.abspath(__file__))
-JOBS_ROOT = "/var/lib/macu-render/jobs"
+
+
+def _jobs_root() -> str:
+    """Per-job state dir (events/log/meta). MACU_RENDER_JOBS wins; else prefer the
+    system path /var/lib/macu-render/jobs (Max/systemd), falling back to an XDG
+    state dir under $HOME when /var/lib isn't writable — e.g. a fresh non-root
+    install on WSL, where creating under /var/lib raises PermissionError."""
+    env = os.environ.get("MACU_RENDER_JOBS")
+    if env:
+        return env
+    sys_default = "/var/lib/macu-render/jobs"
+    try:
+        os.makedirs(sys_default, exist_ok=True)
+        if os.access(sys_default, os.W_OK):
+            return sys_default
+    except OSError:
+        pass
+    base = os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
+    return os.path.join(base, "macu-render", "jobs")
+
+
+JOBS_ROOT = _jobs_root()
 # Default episodes dir; a job may override it (multi-show support). Sourced from
 # lib (single source of truth, env-driven via MACU_EPISODES). Importing lib also
 # loads the repo-root .env.

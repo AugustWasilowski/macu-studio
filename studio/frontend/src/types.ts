@@ -71,6 +71,7 @@ export interface ImportResult {
   created_show: boolean;
   created: string[];
   updated: string[];
+  templates?: string[];
   errors: string[];
 }
 

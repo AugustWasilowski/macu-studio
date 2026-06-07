@@ -27,11 +27,54 @@ from fastapi.responses import StreamingResponse
 
 from . import shows as shows_mod
 from . import episodes as ep_mod
+from . import config
 
 router = APIRouter()
 
 TEXT_FILES = ("script.md", "manifest.json", "youtube.txt")
 EXPORT_VERSION = 1
+
+# Shared hyperframes title-card templates (index.html + any local assets) live
+# outside the episode dir. Exports bundle the ones an episode references so the
+# title cards render on import; imports unpack them create-if-absent.
+HYPERFRAMES_TEMPLATES = config.SHARES / "assets" / "hyperframes" / "templates"
+TEMPLATE_ARC_PREFIX = "assets/hyperframes/templates/"
+
+
+def _manifest_template_names(ep_dir: Path) -> set[str]:
+    """Hyperframes composition names an episode's title_assets reference."""
+    names: set[str] = set()
+    mf = ep_dir / "manifest.json"
+    if not mf.exists():
+        return names
+    try:
+        data = json.loads(mf.read_text())
+    except Exception:
+        return names
+    ta = data.get("title_assets")
+    if isinstance(ta, dict):
+        for v in ta.values():
+            if isinstance(v, dict) and v.get("source") == "hyperframes":
+                comp = v.get("composition")
+                if isinstance(comp, str) and comp:
+                    names.add(comp)
+    return names
+
+
+def _add_templates(zf: zipfile.ZipFile, names: set[str], seen: set[str]) -> None:
+    """Bundle each referenced template dir under assets/hyperframes/templates/<name>/.
+    `seen` dedupes across episodes in a show export."""
+    for name in sorted(names):
+        if name in seen:
+            continue
+        seen.add(name)
+        tdir = HYPERFRAMES_TEMPLATES / name
+        if not tdir.is_dir():
+            continue
+        for f in sorted(tdir.rglob("*")):
+            if f.is_file():
+                rel = f.relative_to(HYPERFRAMES_TEMPLATES)
+                zf.write(f, f"{TEMPLATE_ARC_PREFIX}{rel.as_posix()}")
 
 
 # --------------------------------------------------------------------------- #
@@ -115,6 +158,7 @@ def export_episode(slug: str):
             "version": EXPORT_VERSION, "exported_at": time.time(),
         }, indent=2))
         _add_episode_text(zf, ep_dir, f"episodes/{slug}/")
+        _add_templates(zf, _manifest_template_names(ep_dir), set())
     return _zip_response(buf, f"{show_id}__{slug}.zip")
 
 
@@ -129,10 +173,12 @@ def export_show(show: str):
     slugs: list[str] = []
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("show.json", json.dumps(cfg, indent=2, ensure_ascii=False))
+        seen_templates: set[str] = set()
         if ep_root.exists():
             for entry in sorted(ep_root.iterdir(), key=lambda p: p.name):
                 if entry.is_dir() and (entry / "manifest.json").exists():
                     _add_episode_text(zf, entry, f"episodes/{entry.name}/")
+                    _add_templates(zf, _manifest_template_names(entry), seen_templates)
                     slugs.append(entry.name)
         zf.writestr("export.json", json.dumps({
             "kind": "show", "show": show, "name": cfg.get("name"),
@@ -239,6 +285,23 @@ async def import_zip(file: UploadFile = File(...)):
         except ValueError as e:
             errors.append(f"{slug}: {e}")
 
+    # Unpack bundled hyperframes templates into the shared templates dir. Create-
+    # if-absent so a local edit to an existing template isn't clobbered by an import.
+    templates: set[str] = set()
+    base = HYPERFRAMES_TEMPLATES.resolve()
+    for n in names:
+        if not n.startswith(TEMPLATE_ARC_PREFIX) or n.endswith("/"):
+            continue
+        rel = n[len(TEMPLATE_ARC_PREFIX):]
+        dest = (HYPERFRAMES_TEMPLATES / rel).resolve()
+        if not str(dest).startswith(str(base) + "/"):   # zip path-traversal guard
+            continue
+        if dest.exists():
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(zf.read(n))
+        templates.add(rel.split("/")[0])
+
     return {
         "ok": not errors or bool(created or updated),
         "show": show_id,
@@ -246,5 +309,6 @@ async def import_zip(file: UploadFile = File(...)):
         "created_show": created_show,
         "created": sorted(created),
         "updated": sorted(updated),
+        "templates": sorted(templates),
         "errors": errors,
     }

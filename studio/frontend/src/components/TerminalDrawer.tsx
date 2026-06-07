@@ -9,7 +9,7 @@ const TERMINAL_URL = `http://${typeof window !== "undefined" ? window.location.h
 
 /* Right-hand slide-in panel (mirrors ManifestDrawer/LogDrawer) that embeds the
    ttyd web terminal. Connecting mounts the iframe → ttyd opens a WebSocket and
-   tmux-attaches to ss-channels (talking to Max directly); disconnecting unmounts
+   tmux-attaches to ss-channels (talking to Claude directly); disconnecting unmounts
    it → the WebSocket closes and the tmux client detaches. The drawer stays
    mounted while closed, so a connected session keeps running in the background. */
 export function TerminalDrawer() {
@@ -30,7 +30,7 @@ export function TerminalDrawer() {
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title flex items-center gap-2">
             <ITerminal /> TERMINAL
-            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ tmux: ss-channels — talks to Max</span>
+            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ tmux: ss-channels — talks to Claude</span>
           </div>
           <div className="flex items-center gap-2">
             <span
@@ -59,7 +59,7 @@ export function TerminalDrawer() {
             <div className="grid place-items-center h-full text-txt-faint text-[12px] p-6 text-center">
               <div>
                 Detached. Click <span className="text-cyan">Connect</span> to attach to the
-                {" "}<span className="font-mono">ss-channels</span> tmux session and talk to Max directly.
+                {" "}<span className="font-mono">ss-channels</span> tmux session and talk to Claude directly.
                 <div className="mt-2 text-[11px] text-txt-faint">
                   Detach without closing: <span className="font-mono">Ctrl-b d</span> · LAN-only ({TERMINAL_URL})
                 </div>

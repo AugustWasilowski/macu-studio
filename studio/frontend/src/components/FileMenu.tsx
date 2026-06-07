@@ -49,6 +49,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       const bits = [
         r.created.length ? `${r.created.length} new` : "",
         r.updated.length ? `${r.updated.length} updated` : "",
+        r.templates?.length ? `${r.templates.length} template${r.templates.length > 1 ? "s" : ""}` : "",
         r.created_show ? `show '${r.show}' created` : "",
       ].filter(Boolean).join(", ");
       pushToast(`import → ${r.show}: ${bits || "no episodes"}`, r.errors.length ? "info" : "ok");
