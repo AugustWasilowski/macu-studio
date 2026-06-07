@@ -13,8 +13,8 @@
 #   - Ollama shot-gen model     -> qwen2.5:7b-instruct-q4_K_M (into the ollama volume)
 #   - Subtitle font             -> $MACU_ASSETS/fonts/BetterVCR.ttf (bundled in repo)
 #
-# Personal data (your cloned VOICES + music/sfx kits) is NOT fetched here — it's
-# yours; see deploy/sync-personal-data.sh to copy it from an existing box.
+# Personal data (cloned VOICES + music/sfx kits) is NOT fetched here — clone your
+# own voices in the app's Create Voice panel.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -91,4 +91,3 @@ if [ ! -f "$MACU_ASSETS/fonts/BetterVCR.ttf" ]; then
 else echo "BetterVCR.ttf already present — skip"; fi
 
 say "Done. Next: docker compose -f deploy/services/comfyui/docker-compose.yml build && up -d"
-echo "Voices/asset-kits are personal data — see deploy/sync-personal-data.sh (optional)."

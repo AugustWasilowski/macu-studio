@@ -56,9 +56,7 @@ Then start Studio with **`./deploy/start-studio.sh`** and open `http://localhost
 ## The two halves a script can't do
 
 - **Voices.** The installer ships **no** cloned voices — clone your own with the
-  *Create Voice* button in the Audio page. If you're setting up a **second machine
-  you own**, copy your existing voice store + asset kits instead (exact voices/ids):
-  `deploy/sync-personal-data.sh <user@your-existing-box>`.
+  *Create Voice* button in the Audio page.
 - **The Claude Code coupling.** The chat tile + writers' room route to a Claude
   Code session over a channel — wiring that touches Claude Code's config and needs
   permission approvals, so it's done **inside Claude Code**: run the
