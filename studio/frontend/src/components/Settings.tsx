@@ -5,39 +5,42 @@ import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi } from "../api/shows";
 import { THEMES, currentTheme, setTheme } from "../theme";
+import { useT, LOCALES } from "../i18n";
 
-type Tab = "theme" | "show" | "git" | "comfy";
+type Tab = "theme" | "show" | "git" | "comfy" | "language";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "theme", label: "Appearance" },
-  { id: "show", label: "Show metadata" },
-  { id: "git", label: "Git repository" },
-  { id: "comfy", label: "ComfyUI models" },
-];
+const TAB_IDS: Tab[] = ["theme", "show", "git", "comfy", "language"];
+const TAB_KEY: Record<Tab, string> = {
+  theme: "settings.tabs.theme",
+  show: "settings.tabs.show",
+  git: "settings.tabs.git",
+  comfy: "settings.tabs.comfy",
+  language: "settings.tabs.language",
+};
 
 export function Settings({ show, onClose }: { show: string; onClose: () => void }) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("theme");
   return (
-    <Modal open onClose={onClose} title="Settings" width={680}>
+    <Modal open onClose={onClose} title={t("settings.title")} width={680}>
       <div className="flex gap-3 min-h-[320px]">
         <div className="flex flex-col gap-1 w-[150px] shrink-0 border-r hairline-soft pr-2">
-          {TABS.map((t) => (
+          {TAB_IDS.map((id) => (
             <button
-              key={t.id}
-              className={"text-left px-2 py-1.5 rounded text-[12px] " + (tab === t.id ? "btn-amber" : "hover:bg-bg-3")}
-              onClick={() => setTab(t.id)}
+              key={id}
+              className={"text-left px-2 py-1.5 rounded text-[12px] " + (tab === id ? "btn-amber" : "hover:bg-bg-3")}
+              onClick={() => setTab(id)}
             >
-              {t.label}
+              {t(TAB_KEY[id])}
             </button>
           ))}
         </div>
         <div className="flex-1 min-w-0">
           {tab === "theme" && <ThemePanel />}
+          {tab === "language" && <LanguagePanel />}
           {tab === "show" && <ShowPanel show={show} onClose={onClose} />}
-          {tab === "git" && <Stub title="Git repository"
-            body="Configure the remote URL and branch the Studio syncs script/manifest/youtube to. Credentials use the box's existing SSH key. Coming soon." />}
-          {tab === "comfy" && <Stub title="ComfyUI model manager"
-            body="Browse checkpoints on the ComfyUI server (:8188) and pick a default per show. Coming soon." />}
+          {tab === "git" && <Stub title={t("settings.tabs.git")} body={t("settings.git.stub")} />}
+          {tab === "comfy" && <Stub title={t("settings.comfy.title")} body={t("settings.comfy.stub")} />}
         </div>
       </div>
     </Modal>
@@ -45,21 +48,51 @@ export function Settings({ show, onClose }: { show: string; onClose: () => void 
 }
 
 function ThemePanel() {
+  const t = useT();
   const [sel, setSel] = useState(currentTheme());
   return (
     <div className="flex flex-col gap-3">
-      <div className="label-tiny">Color theme</div>
-      <p className="label-tiny leading-relaxed">Recolors the primary accent. Applies instantly and is remembered on this device.</p>
+      <div className="label-tiny">{t("settings.theme.title")}</div>
+      <p className="label-tiny leading-relaxed">{t("settings.theme.help")}</p>
       <div className="flex flex-col gap-2">
-        {THEMES.map((t) => (
+        {THEMES.map((th) => (
           <button
-            key={t.id}
-            className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (sel === t.id ? "btn-amber" : "hover:bg-bg-3")}
-            onClick={() => { setTheme(t.id); setSel(t.id); }}
+            key={th.id}
+            className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (sel === th.id ? "btn-amber" : "hover:bg-bg-3")}
+            onClick={() => { setTheme(th.id); setSel(th.id); }}
           >
-            <span className="rounded-full" style={{ width: 16, height: 16, background: t.accent, boxShadow: `0 0 7px ${t.accent}` }} />
-            <span className="text-[12px]">{t.label}</span>
-            {sel === t.id && <span className="label-tiny ml-auto">active</span>}
+            <span className="rounded-full" style={{ width: 16, height: 16, background: th.accent, boxShadow: `0 0 7px ${th.accent}` }} />
+            <span className="text-[12px]">{th.label}</span>
+            {sel === th.id && <span className="label-tiny ml-auto">{t("common.active")}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LanguagePanel() {
+  const t = useT();
+  const locale = useStore((s) => s.locale);
+  const setLocale = useStore((s) => s.setLocale);
+  return (
+    <div className="flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1">
+      <div className="label-tiny">{t("settings.lang.title")}</div>
+      <p className="label-tiny leading-relaxed">{t("settings.lang.help")}</p>
+      <div className="flex flex-col gap-2">
+        {LOCALES.map((l) => (
+          <button
+            key={l.code}
+            dir={l.dir}
+            className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (locale === l.code ? "btn-amber" : "hover:bg-bg-3")}
+            onClick={() => setLocale(l.code)}
+          >
+            <span className="text-[12px]">{l.nativeName}</span>
+            <span className="label-tiny text-txt-dim">{l.englishName}</span>
+            {l.completeness < 1 && (
+              <span className="label-tiny text-amber">{t("settings.lang.partial", { pct: Math.round(l.completeness * 100) })}</span>
+            )}
+            {locale === l.code && <span className="label-tiny ml-auto">{t("common.active")}</span>}
           </button>
         ))}
       </div>
@@ -68,6 +101,7 @@ function ThemePanel() {
 }
 
 function ShowPanel({ show, onClose }: { show: string; onClose: () => void }) {
+  const t = useT();
   const qc = useQueryClient();
   const pushToast = useStore((s) => s.pushToast);
   const cfg = useQuery({ queryKey: ["show-config", show], queryFn: () => showsApi.config(show) });
@@ -115,35 +149,35 @@ function ShowPanel({ show, onClose }: { show: string; onClose: () => void }) {
   }
 
   async function save() {
-    if (advErr) { pushToast("fix the episode_defaults JSON first", "err"); return; }
+    if (advErr) { pushToast(t("toast.fixJson"), "err"); return; }
     setBusy(true);
     try {
       await showsApi.putConfig(show, { name, title_prefix: prefix, assets_dir: assets, episode_defaults: defaults });
-      pushToast(`show '${show}' saved`, "ok");
+      pushToast(t("toast.showSaved", { show }), "ok");
       qc.invalidateQueries({ queryKey: ["show-config", show] });
       qc.invalidateQueries({ queryKey: ["shows"] });
     } catch (e) {
-      pushToast(`save failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+      pushToast(t("toast.saveFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
     } finally { setBusy(false); }
   }
 
-  if (cfg.isLoading) return <div className="text-txt-dim p-4">Loading…</div>;
-  if (cfg.isError) return <div className="text-red p-4">Failed to load show config.</div>;
+  if (cfg.isLoading) return <div className="text-txt-dim p-4">{t("common.loading")}</div>;
+  if (cfg.isError) return <div className="text-red p-4">{t("settings.show.loadFail")}</div>;
 
   return (
     <div className="flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1">
-      <div className="label-tiny">{show}{cfg.data?.id === "the-macu-report" ? " (default)" : ""}</div>
-      <Field label="Display name" value={name} onChange={setName} />
-      <Field label="Episode title prefix" value={prefix} onChange={setPrefix} placeholder="My Show — " />
-      <Field label="Assets dir (fonts/music/sfx)" value={assets} onChange={setAssets} monospace />
-      <div className="label-tiny pt-1 border-t hairline-soft">Episode defaults (seed new episodes)</div>
-      <Field label="Style suffix" value={get(["style", "suffix"])} onChange={(v) => setPath(["style", "suffix"], v)} rows={3} />
-      <Field label="Style negative" value={get(["style", "negative"])} onChange={(v) => setPath(["style", "negative"], v)} rows={3} />
-      <Field label="ComfyUI checkpoint" value={get(["comfyui", "checkpoint"])} onChange={(v) => setPath(["comfyui", "checkpoint"], v)} />
-      <Field label="Music source dir" value={get(["music", "source_dir"])} onChange={(v) => setPath(["music", "source_dir"], v)} monospace />
+      <div className="label-tiny">{show}{cfg.data?.id === "the-macu-report" ? t("settings.show.defaultSuffix") : ""}</div>
+      <Field label={t("settings.show.name")} value={name} onChange={setName} />
+      <Field label={t("settings.show.prefix")} value={prefix} onChange={setPrefix} placeholder={t("settings.show.prefixPh")} />
+      <Field label={t("settings.show.assets")} value={assets} onChange={setAssets} monospace />
+      <div className="label-tiny pt-1 border-t hairline-soft">{t("settings.show.defaults")}</div>
+      <Field label={t("settings.show.styleSuffix")} value={get(["style", "suffix"])} onChange={(v) => setPath(["style", "suffix"], v)} rows={3} />
+      <Field label={t("settings.show.styleNegative")} value={get(["style", "negative"])} onChange={(v) => setPath(["style", "negative"], v)} rows={3} />
+      <Field label={t("settings.show.checkpoint")} value={get(["comfyui", "checkpoint"])} onChange={(v) => setPath(["comfyui", "checkpoint"], v)} />
+      <Field label={t("settings.show.musicDir")} value={get(["music", "source_dir"])} onChange={(v) => setPath(["music", "source_dir"], v)} monospace />
 
       <button className="btn justify-center" onClick={() => setAdvanced((a) => !a)}>
-        {advanced ? "Hide" : "Show"} advanced (full episode_defaults JSON — voices, characters)
+        {t("settings.show.advanced", { action: advanced ? t("common.hide") : t("common.show") })}
       </button>
       {advanced && (
         <>
@@ -153,13 +187,13 @@ function ShowPanel({ show, onClose }: { show: string; onClose: () => void }) {
             value={advText}
             onChange={(e) => onAdv(e.target.value)}
           />
-          {advErr && <span className="label-tiny text-red">JSON error: {advErr}</span>}
+          {advErr && <span className="label-tiny text-red">{t("settings.show.jsonError", { msg: advErr })}</span>}
         </>
       )}
 
       <div className="flex justify-end gap-2 pt-2 border-t hairline-soft sticky bottom-0 bg-bg-1 py-2">
-        <button className="btn" onClick={onClose}>Close</button>
-        <button className="btn btn-amber" disabled={busy || !!advErr} onClick={save}>Save</button>
+        <button className="btn" onClick={onClose}>{t("common.close")}</button>
+        <button className="btn btn-amber" disabled={busy || !!advErr} onClick={save}>{t("common.save")}</button>
       </div>
     </div>
   );

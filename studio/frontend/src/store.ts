@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { applyLocale } from "./i18n";
 
 export type ToastKind = "info" | "ok" | "run" | "err";
 export interface Toast {
@@ -39,6 +40,7 @@ interface State {
   log: LogEntry[];
   activeSlug: string | null;
   activeShow: string;
+  locale: string;
   selectedCueId: string | null;
   selectedShotKey: string | null;
   selectedTitleKey: string | null;
@@ -64,6 +66,7 @@ interface Actions {
   closeDiagnostics: () => void;
   setActiveSlug: (slug: string | null) => void;
   setActiveShow: (show: string) => void;
+  setLocale: (locale: string) => void;
   pushToast: (text: string, kind?: ToastKind) => void;
   dropToast: (id: number) => void;
   selectCue: (id: string | null) => void;
@@ -89,6 +92,7 @@ export const useStore = create<State & Actions>((set) => ({
   log: [],
   activeSlug: null,
   activeShow: localStorage.getItem("macu.show") || "the-macu-report",
+  locale: localStorage.getItem("macu.locale") || "en",
   selectedCueId: null,
   selectedShotKey: null,
   selectedTitleKey: null,
@@ -113,6 +117,9 @@ export const useStore = create<State & Actions>((set) => ({
   closeDiagnostics: () => set({ diagnosticsOpen: false }),
   setActiveSlug: (slug) => set({ activeSlug: slug }),
   setActiveShow: (show) => { localStorage.setItem("macu.show", show); set({ activeShow: show }); },
+  // Persist immediately, load the catalog + flip <html> lang/dir, THEN update state so
+  // the re-render reads a populated catalog (avoids a flash of raw keys).
+  setLocale: (locale) => { localStorage.setItem("macu.locale", locale); applyLocale(locale).then(() => set({ locale })); },
   pushToast: (text, kind = "info") => {
     const id = toastSeq++;
     const entry: LogEntry = { id, ts: Date.now(), text, kind };
