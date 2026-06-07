@@ -863,5 +863,23 @@
   "youtube.notConfiguredBody": "Add an API key + channel id to <0>~/.config/macu-studio/youtube.json</0> (or set <1>YOUTUBE_API_KEY</1> / <2>YOUTUBE_CHANNEL_ID</2>) to show matched uploads here.",
   "youtube.noMatch": "No matched upload for {slug}.",
   "youtube.noThumbnail": "no thumbnail",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+
+  "youtube.captions.title": "Captions",
+  "youtube.captions.clientHelp": "One-time: create an OAuth client of type \"TVs and Limited Input devices\" in your Google Cloud project (the one with the YouTube Data API enabled), then paste its ID + secret here.",
+  "youtube.captions.clientId": "Client ID",
+  "youtube.captions.clientSecret": "Client secret",
+  "youtube.captions.connectBtn": "Connect YouTube",
+  "youtube.captions.connected": "Connected to YouTube",
+  "youtube.captions.deviceGo": "On any device, open:",
+  "youtube.captions.waiting": "Waiting for you to approve…",
+  "youtube.captions.noVideo": "No matched YouTube video for this episode.",
+  "youtube.captions.noTracks": "No subtitle tracks yet — localize this episode first.",
+  "youtube.captions.onYoutube": "on YouTube",
+  "youtube.captions.upload": "Upload",
+  "youtube.captions.uploadAll": "Upload all captions",
+  "youtube.captions.uploading": "Uploading…",
+  "youtube.captions.uploaded": "uploaded {n} caption track(s)",
+  "youtube.captions.quotaNote": "Each upload uses ~400 of YouTube's daily quota (~25 uploads/day on the default limit).",
+  "youtube.captions.disconnect": "Disconnect"
 }
