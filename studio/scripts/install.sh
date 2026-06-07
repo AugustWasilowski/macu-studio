@@ -41,4 +41,4 @@ echo "  sudo systemctl daemon-reload"
 echo "  sudo systemctl enable --now macu-studio"
 echo "  sudo touch /var/log/macu-studio.log && sudo chown mayorawesome:mayorawesome /var/log/macu-studio.log"
 echo
-echo "Then open: http://10.0.0.245:8774/"
+echo "Then open: http://localhost:8774/  (or http://<this-host>:8774/)"

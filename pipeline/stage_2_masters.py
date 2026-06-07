@@ -7,7 +7,7 @@ Usage: python3 stage_2_masters.py <slug>
 import sys, os, json, time, urllib.request, random, glob, shutil
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs, COMFY_URL,
-                 COMFY_OUT, staged_master_webp, progress_tick)
+                 COMFY_OUT, COMFY_OUTPUT_ROOT, staged_master_webp, progress_tick)
 
 STYLE_NEG_FALLBACK = (
     "shutterstock, watermark, text, caption, logo, color, colour, modern, "
@@ -163,7 +163,7 @@ def main(slug):
                         src = os.path.join(COMFY_OUT, slug, files[0]["filename"])
                         if not os.path.exists(src):
                             # ComfyUI puts it under output/<subfolder>/<filename>
-                            src = os.path.join("/mnt/storage/comfyui/output",
+                            src = os.path.join(COMFY_OUTPUT_ROOT,
                                                 files[0]["subfolder"], files[0]["filename"])
                         shutil.copy2(src, j["target"])
                         done.add(j["key"])
@@ -171,7 +171,7 @@ def main(slug):
                         progress_tick(2, "masters", len(done) / len(jobs))
             else:
                 # PID submission failed but cold-load probably still ran. Look for the file by prefix.
-                pattern = "/mnt/storage/comfyui/output/macu/{}/{}*.webp".format(slug, os.path.basename(j["prefix"]))
+                pattern = "{}/{}/{}*.webp".format(COMFY_OUT, slug, os.path.basename(j["prefix"]))
                 matches = sorted(glob.glob(pattern))
                 if matches:
                     shutil.copy2(matches[-1], j["target"])

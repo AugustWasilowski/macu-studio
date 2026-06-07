@@ -24,10 +24,8 @@ Invoked automatically at the tail of stage 4; also runnable standalone for testi
 """
 import sys, os, json, shutil, time
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import episode_paths, load_manifest, probe_dur, run
+from lib import episode_paths, load_manifest, probe_dur, run, SHARES
 from stage_4_assemble import title_shot
-
-SHARES = "/mnt/storage/shares/MACU"
 
 # overlay-mode screen positions → ffmpeg overlay x:y expressions (W/H base, w/h card)
 _POS = {

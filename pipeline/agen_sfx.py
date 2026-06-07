@@ -13,7 +13,7 @@ Usage:
   basename      output filename (no ext), e.g. "iron_door_slam"
   --duration    seconds (default 3.0)
   --seed        reproducible seed (default: derived from the prompt, so re-runs match)
-  --dest        output dir (default: /mnt/storage/shares/MACU/assets/sfx)
+  --dest        output dir (default: $MACU_ASSETS/sfx)
 
 Provenance: agen audio is de-novo / public-domain (local model, no third-party samples),
 so it needs no license attribution — but the prompt + seed are logged so any clip can be
@@ -29,8 +29,9 @@ import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from freesound_fetch import normalize  # reuse the kit normalize (24k mono s16, −3 dBFS)
 import agen_lib
+import lib
 
-DEFAULT_DEST = pathlib.Path("/mnt/storage/shares/MACU/assets/sfx")
+DEFAULT_DEST = pathlib.Path(lib.ASSETS) / "sfx"
 
 
 def _probe_dur(p: pathlib.Path) -> float:

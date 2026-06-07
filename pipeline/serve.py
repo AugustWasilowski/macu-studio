@@ -29,9 +29,12 @@ from urllib.parse import urlparse, parse_qs
 
 PIPELINE = os.path.dirname(os.path.abspath(__file__))
 JOBS_ROOT = "/var/lib/macu-render/jobs"
-# Default episodes dir; a job may override it (multi-show support). Default is the
-# old hardcoded path so existing MACU renders are unchanged.
-SHARES_EP = os.environ.get("MACU_EPISODES", "/mnt/storage/shares/MACU/episodes")
+# Default episodes dir; a job may override it (multi-show support). Sourced from
+# lib (single source of truth, env-driven via MACU_EPISODES). Importing lib also
+# loads the repo-root .env.
+sys.path.insert(0, PIPELINE)
+import lib  # noqa: E402
+SHARES_EP = lib.EPISODES_ROOT
 RUN_PY = f"{PIPELINE}/run.py"
 PORT = 8773
 

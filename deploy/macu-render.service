@@ -10,6 +10,10 @@ Type=simple
 User=mayorawesome
 Group=mayorawesome
 WorkingDirectory=/mnt/storage/macu-pipeline/pipeline
+# Optional repo-root .env (leading '-' = no-op if absent). This injects the env
+# vars into the render service's SYSTEM python3, so the pipeline is configured on
+# a new machine without needing python-dotenv installed system-wide.
+EnvironmentFile=-/mnt/storage/macu-pipeline/.env
 ExecStart=/usr/bin/python3 /mnt/storage/macu-pipeline/pipeline/serve.py
 Restart=on-failure
 RestartSec=5

@@ -37,8 +37,8 @@ async def kick(slug: str) -> dict:
         )
 
     script = _script_text(slug)
-    script_path = f"/mnt/storage/shares/MACU/episodes/{slug}/script.md"
-    notes_path = f"/mnt/storage/shares/MACU/episodes/{slug}/writers_room.md"
+    script_path = str(episode_dir(slug) / "script.md")
+    notes_path = str(episode_dir(slug) / "writers_room.md")
     text = (
         f"[writers' room] Run the writers'-room critique pass (the comedy-writers-room "
         f"skill / the macu-report writers'-room pass) on MACU episode '{slug}'. "

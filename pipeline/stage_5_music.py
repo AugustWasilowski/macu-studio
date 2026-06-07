@@ -14,9 +14,9 @@ Usage: python3 stage_5_music.py <slug>
 """
 import sys, os, json, random, subprocess, shutil
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import episode_paths, load_manifest, ensure_dirs, probe_dur
+from lib import episode_paths, load_manifest, ensure_dirs, probe_dur, ASSETS
 
-SFX_DIR = "/mnt/storage/shares/MACU/assets/sfx"
+SFX_DIR = f"{ASSETS}/sfx"
 
 
 def run(cmd, timeout=900):

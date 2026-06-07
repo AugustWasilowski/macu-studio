@@ -24,8 +24,9 @@ import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from freesound_fetch import normalize
 import agen_lib
+import lib
 
-DEFAULT_DEST = pathlib.Path("/mnt/storage/shares/MACU/assets/music")
+DEFAULT_DEST = pathlib.Path(lib.ASSETS) / "music"
 README_HEADER = """# MACU music beds
 
 Background music beds referenced from `manifest.music.clips[]`; stage 5 random-windows

@@ -1,6 +1,17 @@
 import os
 from pathlib import Path
 
+# Load a single repo-root .env so the backend + pipeline share one machine-config
+# file. Must run BEFORE the os.environ.get calls below. No-op on Max (no .env
+# present) → every default below keeps its current Max value. dotenv defaults to
+# override=False, so systemd Environment= lines still win.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+try:
+    from dotenv import load_dotenv
+    load_dotenv(_REPO_ROOT / ".env")
+except ModuleNotFoundError:
+    pass
+
 SHARES = Path(os.environ.get("MACU_SHARES", "/mnt/storage/shares/MACU"))
 EPISODES = Path(os.environ.get("MACU_EPISODES", str(SHARES / "episodes")))
 PIPELINE = Path(os.environ.get("MACU_PIPELINE", str(SHARES / "pipeline")))

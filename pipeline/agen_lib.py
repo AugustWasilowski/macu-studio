@@ -9,9 +9,10 @@ if the GPU doesn't have enough headroom, a render is almost certainly active, so
 """
 from __future__ import annotations
 
+import os
 import subprocess
 
-AGEN = "/mnt/storage/audio-gen/agen"
+AGEN = os.environ.get("MACU_AGEN", "/mnt/storage/audio-gen/agen")
 MIN_FREE_MIB = 6500  # agen-medium needs ~6 GB; if less is free, a render is likely running
 
 

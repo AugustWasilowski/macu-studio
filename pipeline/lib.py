@@ -4,24 +4,36 @@ All stage scripts accept <slug> as argv and read paths relative to
 /mnt/storage/shares/MACU/episodes/<slug>/.
 """
 import os, json, socket, subprocess, time, glob, urllib.request, urllib.error
+from pathlib import Path
+
+# Load the repo-root .env (the pipeline has no config.py). Wrapped so Max's SYSTEM
+# python — which has no python-dotenv — still imports lib fine; there the literal
+# defaults below ARE the current Max values. On a new machine set .env, or inject
+# the vars via the systemd unit's EnvironmentFile=. dotenv won't override vars the
+# environment already set, so systemd Environment= lines still win.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+except ModuleNotFoundError:
+    pass
 
 # Data lives on the storage drive's MACU share (Windows-visible S:\MACU); the
-# pipeline CODE lives in this repo at /mnt/storage/macu-pipeline. They're separate
-# on purpose — episodes/assets are big binary data, the repo is code.
-SHARES = "/mnt/storage/shares/MACU"
-ASSETS = f"{SHARES}/assets"
+# pipeline CODE lives in this repo. Env-driven; the default = the current Max path,
+# so Max with no .env is byte-identical to before.
+SHARES = os.environ.get("MACU_SHARES", "/mnt/storage/shares/MACU")
+ASSETS = os.environ.get("MACU_ASSETS", f"{SHARES}/assets")
 # Where episodes live. Defaults to the MACU flat dir; the render server (serve.py)
-# overrides this per-job via the MACU_EPISODES env var so a non-default show whose
-# episodes live elsewhere renders without any other code change. The default value
-# is byte-identical to the old hardcoded path, so MACU renders are unaffected.
+# overrides this per-job via MACU_EPISODES so a non-default show whose episodes
+# live elsewhere renders with no other code change.
 EPISODES_ROOT = os.environ.get("MACU_EPISODES", f"{SHARES}/episodes")
-# Services are all local on the box. Loopback (not the LAN IP) so this survives an
-# IP change like the .72 -> .245 host move.
-COMFY_URL = "http://127.0.0.1:8188"
-PIPER_URL = "http://127.0.0.1:5050"
-OMNIVOICE_URL = "http://127.0.0.1:3900"  # bound 127.0.0.1 only on max — stages run local
-OMNIVOICE_CONTAINER = "omnivoice"
-COMFY_OUT = "/mnt/storage/comfyui/output/macu"
+# Services are all local on the box. Loopback default (survives an IP change like
+# the .72 -> .245 host move); override only if a service is remote.
+COMFY_URL = os.environ.get("MACU_COMFY_URL", "http://127.0.0.1:8188")
+PIPER_URL = os.environ.get("MACU_PIPER_URL", "http://127.0.0.1:5050")
+OMNIVOICE_URL = os.environ.get("MACU_OMNIVOICE_URL", "http://127.0.0.1:3900")
+OMNIVOICE_CONTAINER = os.environ.get("MACU_OMNIVOICE_CONTAINER", "omnivoice")
+COMFY_OUT = os.environ.get("MACU_COMFY_OUT", "/mnt/storage/comfyui/output/macu")
+COMFY_OUTPUT_ROOT = os.environ.get("MACU_COMFY_OUTPUT_ROOT", "/mnt/storage/comfyui/output")
 
 
 def omnivoice_start(wait_timeout=180, poll_interval=2):

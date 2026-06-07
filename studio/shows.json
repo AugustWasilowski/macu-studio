@@ -126,8 +126,8 @@
           },
           "MONA": {
             "engine": "omnivoice",
-            "profile_id": "31bba4bf",
-            "voice_name": "PHB_IceT"
+            "profile_id": "0cde2573",
+            "voice_name": "GG_Dorothy"
           },
           "VIVIAN": {
             "engine": "omnivoice",

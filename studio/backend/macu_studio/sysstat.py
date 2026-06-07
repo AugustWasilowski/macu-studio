@@ -32,7 +32,7 @@ def _storage_dev() -> str | None:
         with open("/proc/mounts") as f:
             for line in f:
                 p = line.split()
-                if len(p) >= 2 and p[1] == "/mnt/storage":
+                if len(p) >= 2 and p[1] == os.environ.get("MACU_STORAGE_MOUNT", "/mnt/storage"):
                     dev = os.path.basename(p[0])  # /dev/sda1 -> sda1
                     break
     except Exception:

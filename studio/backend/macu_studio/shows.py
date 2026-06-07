@@ -51,6 +51,80 @@ _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,48}$")
 
 
 # --------------------------------------------------------------------------- #
+# Portability — resolve machine-specific paths/endpoints at read time so one
+# git-tracked shows.json works on any machine. The committed file holds Max-shaped
+# values; on a different machine (MACU_SHARES set in .env) paths rebase to the live
+# SHARES and LAN-IP service endpoints localize to loopback. Identity on Max.
+# --------------------------------------------------------------------------- #
+
+_DEFAULT_SHARES = "/mnt/storage/shares/MACU"  # the value baked into the committed shows.json
+_LAN_ENDPOINT_RE = re.compile(r"^(https?)://(?:10\.0\.0\.\d+|0\.0\.0\.0)(:\d+)?(/.*)?$")
+
+
+def _rebase(p: str | None) -> str | None:
+    """If a stored absolute path is under the committed default SHARES, swap that
+    prefix for the live config.SHARES. No-op on Max (SHARES == default)."""
+    if not isinstance(p, str) or not p:
+        return p
+    live = str(config.SHARES)
+    if p == _DEFAULT_SHARES:
+        return live
+    if p.startswith(_DEFAULT_SHARES + "/"):
+        return live + p[len(_DEFAULT_SHARES):]
+    return p
+
+
+def _localize_endpoint(url: str | None) -> str | None:
+    """Rewrite a stored LAN service endpoint (10.0.0.x / 0.0.0.0) to loopback;
+    services run locally on whatever machine reads this. Leaves other hosts alone."""
+    if not isinstance(url, str):
+        return url
+    m = _LAN_ENDPOINT_RE.match(url)
+    if not m:
+        return url
+    scheme, port, path = m.group(1), m.group(2) or "", m.group(3) or ""
+    return f"{scheme}://127.0.0.1{port}{path}"
+
+
+def _portablize_defaults(defaults: dict[str, Any]) -> dict[str, Any]:
+    """In-place: localize endpoints + rebase paths inside an episode_defaults block."""
+    if not isinstance(defaults, dict):
+        return defaults
+    voice = defaults.get("voice")
+    if isinstance(voice, dict):
+        if "endpoint" in voice:
+            voice["endpoint"] = _localize_endpoint(voice.get("endpoint"))
+        eps = voice.get("endpoints")
+        if isinstance(eps, dict):
+            for k, v in list(eps.items()):
+                eps[k] = _localize_endpoint(v)
+    comfy = defaults.get("comfyui")
+    if isinstance(comfy, dict) and "endpoint" in comfy:
+        comfy["endpoint"] = _localize_endpoint(comfy.get("endpoint"))
+    subs = defaults.get("subtitles")
+    if isinstance(subs, dict):
+        for key in ("font_file", "fontsdir"):
+            if key in subs:
+                subs[key] = _rebase(subs.get(key))
+    music = defaults.get("music")
+    if isinstance(music, dict) and "source_dir" in music:
+        music["source_dir"] = _rebase(music.get("source_dir"))
+    return defaults
+
+
+def _portablize(show: dict[str, Any]) -> dict[str, Any]:
+    """In-place: make one show entry machine-local (paths + endpoints)."""
+    if not isinstance(show, dict):
+        return show
+    if "episodes_dir" in show:
+        show["episodes_dir"] = _rebase(show.get("episodes_dir"))
+    if "assets_dir" in show:
+        show["assets_dir"] = _rebase(show.get("assets_dir"))
+    _portablize_defaults(show.get("episode_defaults") or {})
+    return show
+
+
+# --------------------------------------------------------------------------- #
 # Registry load / save
 # --------------------------------------------------------------------------- #
 
@@ -95,23 +169,30 @@ def _default_registry() -> list[dict[str, Any]]:
     }]
 
 
-def load_registry() -> list[dict[str, Any]]:
-    """Read shows.json, auto-seeding it with the default show on first run."""
+def load_registry(raw: bool = False) -> list[dict[str, Any]]:
+    """Read shows.json, auto-seeding it with the default show on first run.
+
+    Returns values PORTABLIZED for reading — paths rebased to config.SHARES and
+    LAN service endpoints localized to loopback — so the one committed file works
+    on any machine. Mutators pass raw=True to get the canonical on-disk values
+    (so they write canonical, not machine-local, data back)."""
     if not REGISTRY.exists():
-        reg = _default_registry()
-        _write_registry(reg)
-        return reg
-    try:
-        data = json.loads(REGISTRY.read_text())
-    except Exception:
-        data = []
-    if not isinstance(data, list):
-        data = []
-    # Guarantee the default show is always present (even if the file got hand-edited).
-    if not any(s.get("id") == DEFAULT_SHOW for s in data):
-        data = _default_registry() + data
+        data = _default_registry()
         _write_registry(data)
-    return data
+    else:
+        try:
+            data = json.loads(REGISTRY.read_text())
+        except Exception:
+            data = []
+        if not isinstance(data, list):
+            data = []
+        # Guarantee the default show is always present (even if hand-edited out).
+        if not any(s.get("id") == DEFAULT_SHOW for s in data):
+            data = _default_registry() + data
+            _write_registry(data)
+    if raw:
+        return data
+    return [_portablize(s) for s in data]
 
 
 def _write_registry(reg: list[dict[str, Any]]) -> None:
@@ -222,7 +303,7 @@ def create_show(show_id: str, name: str) -> dict[str, Any]:
     show_id = (show_id or "").strip().lower()
     if not _SLUG_RE.match(show_id):
         raise ValueError("show id must be lowercase letters/digits/dashes (2-49 chars)")
-    reg = load_registry()
+    reg = load_registry(raw=True)
     if any(s.get("id") == show_id for s in reg):
         raise ValueError(f"show already exists: {show_id}")
     base = config.SHARES / "shows" / show_id
@@ -275,7 +356,7 @@ def set_default_speaker_voice(show_id: str, speaker: str, cfg: dict[str, Any] | 
     so FUTURE episodes inherit it (create_episode deep-copies episode_defaults).
     cfg=None clears the speaker. Returns True if the show was found. Existing extra
     fields (speed/seed/...) for that speaker are preserved on update."""
-    reg = load_registry()
+    reg = load_registry(raw=True)
     for s in reg:
         if s.get("id") != show_id:
             continue
@@ -302,7 +383,7 @@ def set_default_speaker_voice(show_id: str, speaker: str, cfg: dict[str, Any] | 
 def save_show_config(show_id: str, cfg: dict[str, Any]) -> dict[str, Any]:
     """Update the editable fields of a show (name/title_prefix/assets_dir +
     episode_defaults). episodes_dir and id are immutable here."""
-    reg = load_registry()
+    reg = load_registry(raw=True)
     for s in reg:
         if s.get("id") == show_id:
             for k in ("name", "title_prefix", "assets_dir"):

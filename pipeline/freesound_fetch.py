@@ -11,7 +11,7 @@ Usage:
   --license       "cc0" (default; strict — only Creative Commons 0)
                   or "all" (also accepts CC-BY / CC-Sampling+)
   --no-normalize  Skip the 24kHz mono PCM s16 + −3 dBFS step (keep original)
-  --dest          Output dir (default: /mnt/storage/shares/MACU/assets/sfx/)
+  --dest          Output dir (default: $MACU_ASSETS/sfx)
 
 Returns 0 on success, 2 if nothing matched the filter, 3 on auth error.
 Top match wins (sorted by score). Mark the catalog row in assets/sfx/README.md
@@ -23,8 +23,11 @@ client id is informational).
 
 import argparse, json, os, pathlib, shutil, subprocess, sys, tempfile, urllib.parse, urllib.request
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import lib  # env-driven asset/share paths (loads the repo-root .env)
+
 CREDS_PATH = pathlib.Path.home() / ".config/freesound/credentials.env"
-DEFAULT_DEST = pathlib.Path("/mnt/storage/shares/MACU/assets/sfx")
+DEFAULT_DEST = pathlib.Path(lib.ASSETS) / "sfx"
 API = "https://freesound.org/apiv2"
 
 CC0_URIS = {

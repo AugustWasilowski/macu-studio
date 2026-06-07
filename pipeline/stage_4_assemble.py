@@ -8,7 +8,7 @@ Usage: python3 stage_4_assemble.py <slug>
 import sys, os, glob, subprocess, time, json
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs,
-                 jank_filter, probe_dur, staged_master_dir)
+                 jank_filter, probe_dur, staged_master_dir, ASSETS)
 
 def run(cmd):
     try:
@@ -126,7 +126,7 @@ def main(slug):
                 # Per-episode titles dir wins; fall back to shared assets/titles/
                 tm = f"{p['titles']}/{sh['asset']}.mp4"
                 if not os.path.exists(tm):
-                    shared = f"/mnt/storage/shares/MACU/assets/titles/{sh['asset']}.mp4"
+                    shared = f"{ASSETS}/titles/{sh['asset']}.mp4"
                     if os.path.exists(shared):
                         tm = shared
                 # fill:"loop" loops the card to fill its slot (the intro open);

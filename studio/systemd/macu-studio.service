@@ -13,6 +13,10 @@ WorkingDirectory=/mnt/storage/macu-pipeline/studio
 Environment=MACU_RENDER_URL=http://127.0.0.1:8773
 Environment=MACU_EPISODES=/mnt/storage/shares/MACU/episodes
 Environment=PYTHONUNBUFFERED=1
+# Optional repo-root .env (the leading '-' makes it a no-op if absent). On a new
+# machine, point this at the cloned repo's .env. The inline Environment= lines
+# above are the Max defaults and take precedence over the file.
+EnvironmentFile=-/mnt/storage/macu-pipeline/.env
 ExecStart=/mnt/storage/macu-pipeline/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
 Restart=on-failure
 RestartSec=5
