@@ -58,6 +58,20 @@ COMFY_OUT = os.environ.get("MACU_COMFY_OUT", "/mnt/storage/comfyui/output/macu")
 COMFY_OUTPUT_ROOT = os.environ.get("MACU_COMFY_OUTPUT_ROOT", "/mnt/storage/comfyui/output")
 
 
+def _omnivoice_compose_up():
+    """Create + start the OmniVoice container from its compose file — for a fresh
+    install where the image was pulled but no container was ever created (so
+    `docker start` finds nothing). Uses deploy/services/.env for MACU_DATA_ROOT."""
+    repo = Path(__file__).resolve().parents[1]
+    compose = repo / "deploy" / "services" / "omnivoice" / "docker-compose.yml"
+    envfile = repo / "deploy" / "services" / ".env"
+    cmd = ["docker", "compose"]
+    if envfile.exists():
+        cmd += ["--env-file", str(envfile)]
+    cmd += ["-f", str(compose), "up", "-d"]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
 def omnivoice_start(wait_timeout=180, poll_interval=2):
     """Bring the OmniVoice container up and wait until :3900 responds.
 
@@ -68,8 +82,13 @@ def omnivoice_start(wait_timeout=180, poll_interval=2):
     r = subprocess.run(["docker", "start", OMNIVOICE_CONTAINER],
                        capture_output=True, text=True)
     if r.returncode != 0:
-        raise RuntimeError(f"docker start {OMNIVOICE_CONTAINER} failed: "
-                           f"{r.stderr.strip() or r.stdout.strip()}")
+        # Fresh install: only the image was pulled, no container yet — create it.
+        if "no such container" in (r.stderr + r.stdout).lower():
+            print("[omnivoice] no container yet — creating it via compose ...")
+            r = _omnivoice_compose_up()
+        if r.returncode != 0:
+            raise RuntimeError(f"could not start {OMNIVOICE_CONTAINER}: "
+                               f"{r.stderr.strip() or r.stdout.strip()}")
     deadline = time.time() + wait_timeout
     last_err = None
     while time.time() < deadline:

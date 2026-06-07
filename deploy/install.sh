@@ -92,9 +92,13 @@ case "$REPO" in
 esac
 echo "  (override the data location in .env / deploy/services/.env if you want it elsewhere)"
 
-echo; echo ">>> [3/6] pull on-demand service images (ollama + omnivoice)"
+echo; echo ">>> [3/6] pull + create on-demand service containers (ollama + omnivoice)"
 docker compose -f deploy/services/ollama/docker-compose.yml pull
 docker compose -f deploy/services/omnivoice/docker-compose.yml pull
+# Create the containers (stopped) so the on-demand `docker start omnivoice` works
+# later — pulling the image alone leaves no container to start.
+docker compose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null || true
+docker compose -f deploy/services/omnivoice/docker-compose.yml create 2>/dev/null || true
 
 echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
 ./deploy/fetch-models.sh

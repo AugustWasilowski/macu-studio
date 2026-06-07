@@ -57,13 +57,30 @@ def is_running(timeout: float = 1.5) -> bool:
         return False
 
 
+def _compose_up() -> subprocess.CompletedProcess:
+    """Create + start the OmniVoice container from its compose file — for a fresh
+    install where the image was pulled but no container exists yet."""
+    repo = config.STUDIO_ROOT.parent
+    compose = repo / "deploy" / "services" / "omnivoice" / "docker-compose.yml"
+    envfile = repo / "deploy" / "services" / ".env"
+    cmd = ["docker", "compose"]
+    if envfile.exists():
+        cmd += ["--env-file", str(envfile)]
+    cmd += ["-f", str(compose), "up", "-d"]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
 def ensure_up(wait_timeout: int = 180, poll_interval: int = 2) -> None:
-    """`docker start omnivoice` and wait until GET /profiles answers. Idempotent."""
+    """Start OmniVoice (create the container first if a fresh install never did) and
+    wait until GET /profiles answers. Idempotent."""
     if is_running():
         return
     r = subprocess.run(["docker", "start", OMNIVOICE_CONTAINER], capture_output=True, text=True)
     if r.returncode != 0:
-        raise RuntimeError(f"docker start {OMNIVOICE_CONTAINER} failed: {r.stderr.strip() or r.stdout.strip()}")
+        if "no such container" in (r.stderr + r.stdout).lower():
+            r = _compose_up()  # no container yet — create it via compose
+        if r.returncode != 0:
+            raise RuntimeError(f"could not start {OMNIVOICE_CONTAINER}: {r.stderr.strip() or r.stdout.strip()}")
     deadline = time.time() + wait_timeout
     last = None
     while time.time() < deadline:
