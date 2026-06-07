@@ -71,8 +71,8 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Commits this episode's text — script, manifest, youtube.txt — into the repo and pushes it. Generated media stays local; this is the portable source of truth.",
   },
   {
-    target: null,
-    title: "That's the tour",
-    body: "Reopen it anytime from the project menu → Tutorial. Have fun.",
+    target: '[data-tour="file-menu"]',
+    title: "Ready to start",
+    body: "You're all set — begin by creating a new show from scratch: open the project menu and pick New show…. Reopen this tour anytime from the same menu → Tutorial. Have fun.",
   },
 ];

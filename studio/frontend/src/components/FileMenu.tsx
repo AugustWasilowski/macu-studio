@@ -222,8 +222,8 @@ function NewShowDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
         <Field label="Show id (folder-safe)" value={effId}
                onChange={(v) => { setIdTouched(true); setId(v); }} placeholder="my-new-show" />
         <p className="label-tiny leading-relaxed">
-          Episodes will live in a new folder. Voice/render defaults are copied from The
-          MACU Report — edit them under Settings → Show metadata.
+          Episodes will live in a new folder. Voice/render defaults are copied from the
+          current default show — edit them under Settings → Show metadata.
         </p>
       </div>
     </Modal>

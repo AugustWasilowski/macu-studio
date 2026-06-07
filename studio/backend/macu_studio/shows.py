@@ -37,8 +37,18 @@ REGISTRY = config.STUDIO_ROOT / "shows.json"
 # only globs _common + shows/<id>).
 DOC_TEMPLATE_DIR = config.REPO_ROOT / "docs" / "_templates" / "show"
 SHOW_DOCS_ROOT = config.REPO_ROOT / "docs" / "shows"
+
+# DEFAULT_SHOW is the legacy owner-id of the flat episodes dir (config.EPISODES) on
+# long-lived installs. It is NOT force-created — a fresh checkout seeds STARTER_SHOW
+# instead (see load_registry). Kept as a constant so existing code/imports resolve.
 DEFAULT_SHOW = "the-macu-report"
 DEFAULT_SHOW_NAME = "The MACU Report"
+
+# What a fresh-clone install seeds when shows.json is absent or empty: one neutral
+# starter show with working technical defaults and NO creative content. shows.json
+# and docs/shows/<id>/ are gitignored, so a clone ships none of the author's shows.
+STARTER_SHOW = "example-show"
+STARTER_SHOW_NAME = "Example Show"
 
 # Show-level manifest blocks copied into a new episode's manifest. Episode-only
 # blocks (cues/sfx/overlays/episode/title/season/episode_num) are NOT seeded.
@@ -128,45 +138,83 @@ def _portablize(show: dict[str, Any]) -> dict[str, Any]:
 # Registry load / save
 # --------------------------------------------------------------------------- #
 
-def _seed_macu_defaults() -> dict[str, Any]:
-    """Build the-macu-report's episode_defaults from a representative manifest
-    (the highest-numbered ep-### with a manifest). Best-effort: returns {} if
-    none is found, so a fresh checkout still works."""
-    if not config.EPISODES.exists():
-        return {}
-    candidates = sorted(
-        (p for p in config.EPISODES.iterdir()
-         if p.is_dir() and (p / "manifest.json").exists()),
-        key=lambda p: p.name,
-    )
-    if not candidates:
-        return {}
-    try:
-        data = json.loads((candidates[-1] / "manifest.json").read_text())
-    except Exception:
-        return {}
-    out: dict[str, Any] = {}
-    for k in _DEFAULTS_KEYS:
-        if k in data:
-            out[k] = data[k]
-    # Episode-specific cast lists shouldn't ride along as a "default" — keep the
-    # voice endpoints/default but blank the per-episode speaker_map.
-    if isinstance(out.get("voice"), dict):
-        out["voice"] = dict(out["voice"])
-        if "speaker_map" in out["voice"]:
-            out["voice"]["speaker_map"] = {}
-    return out
+def _starter_defaults() -> dict[str, Any]:
+    """Built-in technical episode_defaults for a fresh install: working pipeline
+    config (loopback service endpoints, the bundled B&W analog look, the Better VCR
+    subtitle font) with empty creative blocks. Paths use config.SHARES so they land
+    on whatever machine reads them. Ships NO show-specific cast/canon."""
+    assets = config.SHARES / "assets"
+    return {
+        "voice": {
+            "engine": "piper",
+            "model": "hal",
+            "endpoint": "http://127.0.0.1:5050/",
+            "method": "POST",
+            "body": "{\"text\": \"<line>\"}",
+            "format": "wav 22050Hz mono s16",
+            "out_pattern": "vo/<cue_id>.wav",
+        },
+        "comfyui": {
+            "workflow": "will-smith-modelscope-t2v",
+            "checkpoint": "zeroscope_v2_576w",
+            "endpoint": "http://127.0.0.1:8188/",
+            "frames": 24, "width": 384, "height": 384,
+            "steps": 30, "cfg": 15, "extract_fps": 8,
+            "out_pattern": "clips/<shot_id>.webp",
+        },
+        "style": {
+            "suffix": ", black and white, grainy vintage analog television footage, "
+                      "1970s broadcast, retro futurism, low resolution, washed out, soft focus",
+            "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, "
+                        "smartphone, digital screen, hd, 4k, sharp, blurry, low quality, "
+                        "distorted, deformed, mutated, extra limbs, extra fingers",
+        },
+        "subtitles": {
+            "font": "Better VCR",
+            "font_file": str(assets / "fonts" / "BetterVCR.ttf"),
+            "fontsdir": str(assets / "fonts"),
+            "fontsize": 18,
+            "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,"
+                           "OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,"
+                           "MarginV=32,Alignment=2",
+        },
+        "music": {
+            "enabled": False,
+            "source_dir": str(assets / "music"),
+            "clips": [], "gain": 0.16, "fade_in": 1.5, "fade_out": 2.5,
+            "random": True, "beds": [],
+        },
+        "characters": {},
+        "broll": {},
+        "title_assets": {},
+    }
 
 
-def _default_registry() -> list[dict[str, Any]]:
+def _starter_registry() -> list[dict[str, Any]]:
+    """Seed registry for a fresh install: a single neutral example show. Its
+    episodes live under SHARES/shows/example-show/episodes (not the legacy flat dir)."""
+    base = config.SHARES / "shows" / STARTER_SHOW
     return [{
-        "id": DEFAULT_SHOW,
-        "name": DEFAULT_SHOW_NAME,
-        "episodes_dir": str(config.EPISODES),
+        "id": STARTER_SHOW,
+        "name": STARTER_SHOW_NAME,
+        "episodes_dir": str(base / "episodes"),
         "assets_dir": str(config.SHARES / "assets"),
-        "title_prefix": f"{DEFAULT_SHOW_NAME} — ",
-        "episode_defaults": _seed_macu_defaults(),
+        "title_prefix": "",
+        "episode_defaults": _starter_defaults(),
     }]
+
+
+def _seed_base_defaults() -> dict[str, Any]:
+    """Technical episode_defaults a brand-new show inherits: the live default show's
+    tuned blocks if that show exists (long-lived install), else the built-in starter
+    config (fresh install). The caller blanks the creative blocks."""
+    try:
+        base = get_show(DEFAULT_SHOW).get("episode_defaults") or {}
+        if base:
+            return base
+    except KeyError:
+        pass
+    return _starter_defaults()
 
 
 def load_registry(raw: bool = False) -> list[dict[str, Any]]:
@@ -177,7 +225,7 @@ def load_registry(raw: bool = False) -> list[dict[str, Any]]:
     on any machine. Mutators pass raw=True to get the canonical on-disk values
     (so they write canonical, not machine-local, data back)."""
     if not REGISTRY.exists():
-        data = _default_registry()
+        data = _starter_registry()
         _write_registry(data)
     else:
         try:
@@ -186,9 +234,11 @@ def load_registry(raw: bool = False) -> list[dict[str, Any]]:
             data = []
         if not isinstance(data, list):
             data = []
-        # Guarantee the default show is always present (even if hand-edited out).
-        if not any(s.get("id") == DEFAULT_SHOW for s in data):
-            data = _default_registry() + data
+        # Seed the neutral starter only when the registry is genuinely empty. We do
+        # NOT force any specific show to exist — that force-injection is what kept
+        # re-creating The MACU Report on installs that had legitimately removed it.
+        if not data:
+            data = _starter_registry()
             _write_registry(data)
     if raw:
         return data
@@ -217,8 +267,13 @@ def _write_registry(reg: list[dict[str, Any]]) -> None:
 def list_shows() -> list[dict[str, Any]]:
     """Registry view for the UI — id/name/episodes_dir + episode count. The big
     episode_defaults block is omitted here (fetch it via get_show)."""
+    reg = load_registry()
+    # The default marker falls back to the first show when the legacy default is
+    # absent (fresh installs have no the-macu-report).
+    eff_default = (DEFAULT_SHOW if any(s.get("id") == DEFAULT_SHOW for s in reg)
+                   else (reg[0]["id"] if reg else DEFAULT_SHOW))
     out = []
-    for s in load_registry():
+    for s in reg:
         ep_dir = Path(s.get("episodes_dir", ""))
         try:
             count = sum(1 for p in ep_dir.iterdir()
@@ -232,7 +287,7 @@ def list_shows() -> list[dict[str, Any]]:
             "assets_dir": s.get("assets_dir"),
             "title_prefix": s.get("title_prefix", ""),
             "episode_count": count,
-            "is_default": s.get("id") == DEFAULT_SHOW,
+            "is_default": s.get("id") == eff_default,
         })
     return out
 
@@ -268,7 +323,10 @@ def show_of(slug: str) -> str:
     try:
         return resolve_episode(slug)[0]
     except FileNotFoundError:
-        return DEFAULT_SHOW
+        reg = load_registry()
+        if any(s.get("id") == DEFAULT_SHOW for s in reg):
+            return DEFAULT_SHOW
+        return reg[0]["id"] if reg else DEFAULT_SHOW
 
 
 # --------------------------------------------------------------------------- #
@@ -309,10 +367,10 @@ def create_show(show_id: str, name: str) -> dict[str, Any]:
     base = config.SHARES / "shows" / show_id
     episodes_dir = base / "episodes"
     episodes_dir.mkdir(parents=True, exist_ok=True)
-    # Seed a fresh show's episode_defaults from the default show's technical
-    # blocks (comfyui/voice endpoints/subtitles) but blank the creative ones so
-    # the new show isn't accidentally a MACU clone.
-    macu = get_show(DEFAULT_SHOW).get("episode_defaults", {})
+    # Seed a fresh show's episode_defaults from working technical blocks
+    # (comfyui/voice endpoints/subtitles) but blank the creative ones so the new
+    # show isn't accidentally a clone of an existing show.
+    macu = _seed_base_defaults()
     defaults: dict[str, Any] = {}
     if isinstance(macu.get("comfyui"), dict):
         defaults["comfyui"] = dict(macu["comfyui"])

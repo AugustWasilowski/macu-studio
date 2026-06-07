@@ -40,6 +40,12 @@ EP3/
 EP4/
 Commercials/
 
+# Per-install content — the author's shows + per-show creative canon. A clone ships
+# none of these; they're created at runtime (shows.json seeds a neutral starter show;
+# docs/shows/<id>/ is scaffolded from docs/_templates/show/ on show creation).
+studio/shows.json
+docs/shows/
+
 # studio
 studio/frontend/node_modules/
 studio/frontend/dist/
