@@ -7,11 +7,10 @@ import { PlayBtn } from "../components/PlayBtn";
 import { usePreview } from "./AudioSfx";
 import { drawerDrag } from "./trackEditor";
 import type { Selection } from "./trackEditor";
+import { useT } from "../i18n";
 
 type Tab = "shots" | "vo" | "music" | "sfx" | "card";
-const TABS: [Tab, string][] = [
-  ["shots", "SHOTS"], ["vo", "VO"], ["music", "MUSIC"], ["sfx", "SFX"], ["card", "GRAPHICS CARDS"],
-];
+const TAB_KEYS: Tab[] = ["shots", "vo", "music", "sfx", "card"];
 
 /** The bottom asset drawer: tabbed Music / SFX / Graphics-card lists. Rows are
  * draggable onto their matching timeline track (sets the module-level drawerDrag),
@@ -22,6 +21,14 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
   onSelect: (s: Selection) => void;
   removeActive?: boolean;
 }) {
+  const t = useT();
+  const TAB_LABELS: Record<Tab, string> = {
+    shots: t("asset.tabShots"),
+    vo: t("asset.tabVo"),
+    music: t("asset.tabMusic"),
+    sfx: t("asset.tabSfx"),
+    card: t("asset.tabCard"),
+  };
   const [tab, setTab] = useState<Tab>("shots");
   const [filter, setFilter] = useState("");
   // "All episodes" pulls shots/VO/cards from the whole corpus (SFX/music are already
@@ -74,31 +81,31 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
     <section className="panel flex flex-col min-h-0 relative">
       <header className="flex items-center justify-between px-3 py-2 border-b hairline">
         <div className="flex gap-1">
-          {TABS.map(([k, label]) => (
+          {TAB_KEYS.map((k) => (
             <button key={k} onClick={() => setTab(k)}
               className={"tab px-2 h-[24px] hairline-soft rounded-[3px] text-[10px] uppercase tracking-wider " + (tab === k ? "active" : "")}
               style={tab === k ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}>
-              {label}
+              {TAB_LABELS[k]}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-0.5 mr-1" title="Asset tile size">
+          <span className="inline-flex items-center gap-0.5 mr-1" title={t("asset.tileSizeTitle")}>
             <button className="btn px-1.5 py-0.5" onClick={() => bumpTile(-12)}>−</button>
             <span className="text-txt-faint text-[10px] w-6 text-center tabular-nums">{tileW}</span>
             <button className="btn px-1.5 py-0.5" onClick={() => bumpTile(12)}>+</button>
           </span>
           <label className="flex items-center gap-1 text-[10px] text-txt-dim cursor-pointer select-none uppercase tracking-wider"
-            title="Shots / VO / cards: show assets from EVERY episode (not just this one). SFX & music are always shared.">
+            title={t("asset.allEpsTitle")}>
             <input type="checkbox" checked={allEp} onChange={toggleAllEp} />
-            All eps
+            {t("asset.allEps")}
           </label>
           <label className="flex items-center gap-1 text-[10px] text-txt-dim cursor-pointer select-none uppercase tracking-wider"
-            title="SHOTS tab: also list the non-live takes (earlier generations) of each shot. Drag one in to use that take.">
+            title={t("asset.altsTitle")}>
             <input type="checkbox" checked={altOn} onChange={toggleAlt} />
-            Alts
+            {t("asset.alts")}
           </label>
-          <input className="input text-[11px] w-40" placeholder="filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <input className="input text-[11px] w-40" placeholder={t("asset.filterPlaceholder")} value={filter} onChange={(e) => setFilter(e.target.value)} />
         </div>
       </header>
 
@@ -114,7 +121,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                   onDragStart={() => drawerDrag.set({ kind: "shot", key: s.key, shotKind, slug: s.slug })}
                   onDragEnd={() => drawerDrag.clear()}
                   className="flex-none hairline-soft rounded overflow-hidden cursor-grab" style={{ width: tileW }}
-                  title={`drag ${s.key} onto a cue in the SHOTS track${foreign ? ` (imports from ${s.slug})` : ""}`}>
+                  title={foreign ? t("asset.shotDragForeign", { key: s.key, slug: s.slug }) : t("asset.shotDrag", { key: s.key })}>
                   <div className="bg-black grid place-items-center relative" style={{ aspectRatio: "1/1" }}>
                     {s.webp_exists ? (
                       <img src={mediaUrl.shotPreview(src, s.key, s.webp_mtime)} alt={s.key} className="w-full h-full object-contain pointer-events-none" />
@@ -133,7 +140,11 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                   onDragStart={() => drawerDrag.set({ kind: "shot", key: a.key, shotKind, slug: a.slug, version: a.v })}
                   onDragEnd={() => drawerDrag.clear()}
                   className="flex-none hairline-soft rounded overflow-hidden cursor-grab" style={{ width: tileW }}
-                  title={`${a.key} — take v${a.v}${foreign ? ` from ${a.slug}` : ""}${a.seed != null ? ` (seed ${a.seed})` : ""} · drag onto a cue to use this take`}>
+                  title={
+                    t("asset.altDrag", { key: a.key, v: a.v })
+                    + (foreign ? " " + t("asset.altFrom", { slug: a.slug }) : "")
+                    + (a.seed != null ? " " + t("asset.altSeed", { seed: a.seed }) : "")
+                  }>
                   <div className="bg-black grid place-items-center relative" style={{ aspectRatio: "1/1" }}>
                     <img src={versionsApi.mediaUrl(a.slug, "shot", a.key, a.v)} alt={a.key} className="w-full h-full object-contain pointer-events-none" />
                     <span className="absolute top-0.5 right-0.5 text-[9px] font-mono px-1 rounded bg-cyan text-black">v{a.v}</span>
@@ -143,7 +154,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                 </div>
               );
             })}
-            {shownShots.length === 0 && shownAlts.length === 0 && <div className="text-txt-faint text-[12px] p-1">No shots — add them on the Video tab.</div>}
+            {shownShots.length === 0 && shownAlts.length === 0 && <div className="text-txt-faint text-[12px] p-1">{t("asset.noShots")}</div>}
           </div>
         ) : tab === "vo" ? (
           <div className="flex gap-2 flex-wrap">
@@ -157,7 +168,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                   onClick={() => c.wav_exists && preview.toggle(url)}
                   className={"flex-none hairline-soft rounded overflow-hidden " + (c.wav_exists ? "cursor-pointer hover:border-cyan" : "")}
                   style={{ width: tileW, opacity: c.wav_exists ? 1 : 0.45 }}
-                  title={`${c.id} · ${c.speaker}${foreign ? ` · ${c.slug}` : ""}\n${c.text || "(no script text)"}${c.wav_exists ? "" : "\n(no VO wav yet)"}`}>
+                  title={`${c.id} · ${c.speaker}${foreign ? ` · ${c.slug}` : ""}\n${c.text || t("asset.voNoText")}${c.wav_exists ? "" : "\n" + t("asset.voNoWav")}`}>
                   <div className="bg-black grid place-items-center relative" style={{ aspectRatio: "1/1" }}>
                     <span className="font-mono text-cyan text-[14px]">{c.id}</span>
                     <span className="absolute bottom-1 right-1 pointer-events-none"><PlayBtn playing={playing} onClick={() => {}} /></span>
@@ -170,31 +181,31 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                 </div>
               );
             })}
-            {shownVo.length === 0 && <div className="text-txt-faint text-[12px] p-1">No cues yet.</div>}
+            {shownVo.length === 0 && <div className="text-txt-faint text-[12px] p-1">{t("asset.noCues")}</div>}
           </div>
         ) : tab === "card" ? (
           <div className="flex gap-2 flex-wrap">
-            {shownCards.map((t: any) => {
-              const src = t.slug ?? slug;
-              const foreign = !!t.slug && t.slug !== slug;
+            {shownCards.map((card: any) => {
+              const src = card.slug ?? slug;
+              const foreign = !!card.slug && card.slug !== slug;
               return (
-                <div key={`${src}/${t.key}`} draggable
-                  onDragStart={() => drawerDrag.set({ kind: "card", asset: t.key, slug: t.slug })}
+                <div key={`${src}/${card.key}`} draggable
+                  onDragStart={() => drawerDrag.set({ kind: "card", asset: card.key, slug: card.slug })}
                   onDragEnd={() => drawerDrag.clear()}
-                  onClick={() => onSelect({ t: "lib", kind: "card", item: { file: t.key, duration_s: null } })}
+                  onClick={() => onSelect({ t: "lib", kind: "card", item: { file: card.key, duration_s: null } })}
                   className="flex-none hairline-soft rounded overflow-hidden cursor-grab" style={{ width: tileW }}
-                  title={`drag ${t.key} onto the GRAPHICS track${foreign ? ` (imports from ${t.slug})` : ""}`}>
+                  title={foreign ? t("asset.cardDragForeign", { key: card.key, slug: card.slug }) : t("asset.cardDrag", { key: card.key })}>
                   <div className="bg-black grid place-items-center relative" style={{ aspectRatio: "1/1" }}>
-                    {t.exists ? (
-                      <video src={mediaUrl.titlePreview(src, t.key)} muted loop autoPlay playsInline className="w-full h-full object-contain pointer-events-none" />
-                    ) : <span className="label-tiny p-1 text-center">{t.key}</span>}
-                    {foreign && <span className="absolute top-0.5 left-0.5 text-[9px] font-mono px-1 rounded bg-amber text-black">{t.slug}</span>}
+                    {card.exists ? (
+                      <video src={mediaUrl.titlePreview(src, card.key)} muted loop autoPlay playsInline className="w-full h-full object-contain pointer-events-none" />
+                    ) : <span className="label-tiny p-1 text-center">{card.key}</span>}
+                    {foreign && <span className="absolute top-0.5 left-0.5 text-[9px] font-mono px-1 rounded bg-amber text-black">{card.slug}</span>}
                   </div>
-                  <div className="px-1 py-0.5 bg-bg-2 font-mono text-[10px] truncate">{t.key}</div>
+                  <div className="px-1 py-0.5 bg-bg-2 font-mono text-[10px] truncate">{card.key}</div>
                 </div>
               );
             })}
-            {shownCards.length === 0 && <div className="text-txt-faint text-[12px] p-1">No title cards.</div>}
+            {shownCards.length === 0 && <div className="text-txt-faint text-[12px] p-1">{t("asset.noCards")}</div>}
           </div>
         ) : (
           <div className="flex gap-2 flex-wrap">
@@ -207,7 +218,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                   onDragEnd={() => drawerDrag.clear()}
                   onClick={() => onSelect({ t: "lib", kind: tab as "music" | "sfx", item: a })}
                   className="flex-none hairline-soft rounded overflow-hidden cursor-grab hover:border-cyan" style={{ width: tileW }}
-                  title={`drag ${a.file} onto the ${isMusic ? "MUSIC" : "SFX"} track · click for info`}>
+                  title={t(isMusic ? "asset.musicDrag" : "asset.sfxDrag", { file: a.file })}>
                   <div className="bg-black grid place-items-center relative" style={{ aspectRatio: "1/1" }}>
                     <span className="text-2xl" style={{ color: isMusic ? "#c7a3ff" : "#6fe0e0" }}>{isMusic ? "♫" : "♪"}</span>
                     <span className="absolute bottom-1 right-1" onClick={(e) => e.stopPropagation()}>
@@ -221,7 +232,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
                 </div>
               );
             })}
-            {shownAudio.length === 0 && <div className="text-txt-faint text-[12px] p-1">No {tab} assets.</div>}
+            {shownAudio.length === 0 && <div className="text-txt-faint text-[12px] p-1">{t("asset.noAudioAssets", { tab })}</div>}
           </div>
         )}
       </div>
@@ -229,7 +240,7 @@ export function AssetDrawer({ slug, onSelect, removeActive }: {
       {removeActive && (
         <div className="absolute inset-0 z-30 grid place-items-center pointer-events-none"
           style={{ background: "rgba(255,77,77,0.12)", outline: "2px dashed var(--red)", outlineOffset: -4 }}>
-          <span className="text-[13px] font-semibold tracking-wider uppercase" style={{ color: "var(--red)" }}>Drop to remove from timeline</span>
+          <span className="text-[13px] font-semibold tracking-wider uppercase" style={{ color: "var(--red)" }}>{t("asset.dropToRemove")}</span>
         </div>
       )}
     </section>

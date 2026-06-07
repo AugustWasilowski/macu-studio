@@ -12,6 +12,7 @@ import { SysStat } from "./SysStat";
 import { JobStatus } from "./JobStatus";
 import { FileMenu } from "./FileMenu";
 import type { Route } from "../route";
+import { useT } from "../i18n";
 
 interface Props {
   episodes: EpisodeSummary[];
@@ -28,13 +29,12 @@ interface Props {
   onStartTutorial: () => void;
 }
 
-const TOP_PAGE_LABELS: Record<TopPage, string> = { youtube: "YouTube", docs: "Docs" };
-
 function nowClock() {
   return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, onStage, onPage, onHome, onOpenSettings, onStartTutorial }: Props) {
+  const t = useT();
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -56,13 +56,13 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
     setSyncing(true);
     try {
       const r = await gitsyncApi.sync(slug);
-      if (!r.ok) pushToast(`git sync failed: ${r.log.split("\n").pop() || ""}`, "err");
-      else if (r.committed) pushToast(`synced ${slug} → ${r.commit}`, "ok");
-      else pushToast(`${slug} already in sync`, "info");
+      if (!r.ok) pushToast(t("toast.gitSyncFailed", { msg: r.log.split("\n").pop() || "" }), "err");
+      else if (r.committed) pushToast(t("toast.gitSynced", { slug, commit: r.commit }), "ok");
+      else pushToast(t("toast.gitSyncAlready", { slug }), "info");
       // refresh the picker's sync dots
       qc.invalidateQueries({ queryKey: ["episodes"] });
     } catch (e) {
-      pushToast(`git sync error: ${e instanceof Error ? e.message : String(e)}`, "err");
+      pushToast(t("toast.gitSyncError", { msg: e instanceof Error ? e.message : String(e) }), "err");
     } finally {
       setSyncing(false);
     }
@@ -70,17 +70,17 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
 
   async function onStop() {
     if (stopping) return;
-    if (!window.confirm("EMERGENCY STOP — kill the active render, clear the ComfyUI queue, and free GPU memory?")) return;
+    if (!window.confirm(t("topbar.stopConfirm"))) return;
     setStopping(true);
-    pushToast("emergency stop — killing render + freeing GPU…", "run");
+    pushToast(t("toast.emergencyStopStart"), "run");
     try {
       const r = await api.emergencyStop();
-      pushToast("emergency stop complete — render killed, queue cleared, GPU freed", "ok");
+      pushToast(t("toast.emergencyStopDone"), "ok");
       // surface the per-step detail in the activity log
       Object.entries(r.report).forEach(([k, v]) => pushToast(`${k}: ${v}`, v.startsWith("err") ? "err" : "info"));
       qc.invalidateQueries({ queryKey: ["pipeline"] });
     } catch (e) {
-      pushToast(`emergency stop failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+      pushToast(t("toast.emergencyStopFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
     } finally {
       setStopping(false);
     }
@@ -116,7 +116,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
         className="btn p-0.5"
         disabled={!prevEp}
         onClick={() => prevEp && onPick(prevEp.slug)}
-        title={prevEp ? `Previous episode (${prevEp.slug})` : "No previous episode"}
+        title={prevEp ? t("topbar.prevEp", { slug: prevEp.slug }) : t("topbar.noPrevEp")}
       >
         <IChevron size={14} style={{ transform: "rotate(90deg)" }} />
       </button>
@@ -142,7 +142,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
                     background: e.synced === false ? "var(--red)" : "var(--green)",
                     boxShadow: `0 0 5px ${e.synced === false ? "var(--red)" : "var(--green)"}`,
                   }}
-                  title={e.synced === false ? "Pending changes — not synced to git" : "Synced to git"}
+                  title={e.synced === false ? t("topbar.syncDotPending") : t("topbar.syncDotSynced")}
                 />
                 <span className="text-amber font-bold w-12">{e.slug}</span>
                 <span className="seg-readout cyan text-[10px] w-[52px] text-center">{e.se_label ?? ""}</span>
@@ -157,7 +157,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
         className="btn p-0.5"
         disabled={!nextEp}
         onClick={() => nextEp && onPick(nextEp.slug)}
-        title={nextEp ? `Next episode (${nextEp.slug})` : "No next episode"}
+        title={nextEp ? t("topbar.nextEp", { slug: nextEp.slug }) : t("topbar.noNextEp")}
       >
         <IChevron size={14} style={{ transform: "rotate(-90deg)" }} />
       </button>
@@ -174,7 +174,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
               style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", color: "var(--amber)" } : {}}
             >
               <span className={`tab-num ${done ? "done" : ""}`}>{done ? "✓" : s.n}</span>
-              <span className="font-semibold tracking-wider uppercase text-[11px]">{s.label}</span>
+              <span className="font-semibold tracking-wider uppercase text-[11px]">{t("stage." + s.key)}</span>
             </button>
           );
         })}
@@ -189,7 +189,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
               className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (active ? "active" : "")}
               style={active ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}
             >
-              <span className="font-semibold tracking-wider uppercase text-[11px]">{TOP_PAGE_LABELS[p]}</span>
+              <span className="font-semibold tracking-wider uppercase text-[11px]">{t("toppage." + p)}</span>
             </button>
           );
         })}
@@ -200,10 +200,10 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           data-tour="stop"
           onClick={onStop}
           disabled={stopping}
-          title="Emergency stop: kill the active render, clear the ComfyUI queue, and free GPU memory"
+          title={t("topbar.stopTitle")}
           style={{ borderColor: "var(--red)", color: "var(--red)", boxShadow: "0 0 6px rgba(255,77,77,.35)" }}
         >
-          <span className="font-semibold tracking-wider uppercase text-[11px]">{stopping ? "Stopping…" : "■ Stop"}</span>
+          <span className="font-semibold tracking-wider uppercase text-[11px]">{stopping ? t("topbar.stopping") : t("topbar.stop")}</span>
         </button>
         <JobStatus />
         <SysStat />
@@ -212,31 +212,31 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           data-tour="git-sync"
           onClick={onSync}
           disabled={syncing || !slug}
-          title="Sync script + manifest + youtube.txt to git"
+          title={t("topbar.gitSyncTitle")}
         >
           <span className="font-semibold tracking-wider uppercase text-[11px]">
-            {syncing ? "Syncing…" : "Git sync"}
+            {syncing ? t("topbar.syncing") : t("topbar.gitSync")}
           </span>
         </button>
         {updateAvailable && (
           <button
             className="btn btn-cyan"
             onClick={openUpdate}
-            title={`Update available — ${version.data?.check.behind} new commit(s). Click to review and install.`}
+            title={t("topbar.updateTitle", { behind: version.data?.check.behind })}
             style={{ borderColor: "var(--cyan)", color: "var(--cyan)", boxShadow: "var(--glow-cyan)" }}
           >
             <span className="led-dot pulse" style={{ "--led-c": "#33ddff", marginRight: 6 } as React.CSSProperties} />
-            <span className="font-semibold tracking-wider uppercase text-[11px]">Update</span>
+            <span className="font-semibold tracking-wider uppercase text-[11px]">{t("topbar.update")}</span>
           </button>
         )}
         <span className="seg-readout cyan">{clock}</span>
-        <button className="btn" data-tour="drawers" onClick={toggleTerminal} title="Open terminal (tmux into Max)">
+        <button className="btn" data-tour="drawers" onClick={toggleTerminal} title={t("topbar.terminalTitle")}>
           <ITerminal />
         </button>
-        <button className="btn" onClick={toggleLog} title="Open activity log">
+        <button className="btn" onClick={toggleLog} title={t("topbar.logTitle")}>
           <IList />
         </button>
-        <button className="btn" onClick={toggleDrawer} title="Open manifest drawer">
+        <button className="btn" onClick={toggleDrawer} title={t("topbar.drawerTitle")}>
           <IBrace />
         </button>
       </div>

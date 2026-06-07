@@ -5,6 +5,7 @@ import type { SfxProposal, SfxProposalEntry } from "../api";
 import { useStore } from "../store";
 import { Modal } from "../components/Modal";
 import { IX } from "../components/Icons";
+import { useT } from "../i18n";
 
 /** Review modal for LLM-proposed sound-effect lists. Calls /sfx/generate on open (slow —
  * the local LLM cold-starts), reads the script as a radio play, shows the SFX it wants to
@@ -12,6 +13,7 @@ import { IX } from "../components/Icons";
  * acquire-query and per-row remove, then /sfx/apply on confirm. Applied effects land in
  * manifest.sfx[] in the same shape as a drag-drop, so they appear in the Audio timeline. */
 export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boolean; onClose: () => void }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const [phase, setPhase] = useState<"idle" | "loading" | "review" | "applying" | "error">("idle");
@@ -42,13 +44,13 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
     setPhase("applying");
     try {
       const r = await api.applySfx(slug, p);
-      const acq = r.acquire.length ? `, ${r.acquire.length} to acquire` : "";
-      push(`SFX list applied — ${r.placed} placed (${r.reused} from library${acq})`, "ok");
+      const acq = r.acquire.length ? t("sfxgen.toast.appliedAcq", { count: r.acquire.length }) : "";
+      push(t("sfxgen.toast.applied", { placed: r.placed, reused: r.reused, acq }), "ok");
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["assets", "sfx"] });
       onClose();
     } catch (e: any) {
-      push("apply failed: " + (e?.message ?? "error"), "err");
+      push(t("toast.applyFailed", { msg: e?.message ?? "error" }), "err");
       setPhase("review");
     }
   };
@@ -58,60 +60,60 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
   const acquire = entries.map((e, i) => ({ e, i })).filter((o) => o.e.need);
 
   return (
-    <Modal open={open} onClose={onClose} width={720} title="GENERATE SFX LIST"
+    <Modal open={open} onClose={onClose} width={720} title={t("sfxgen.title")}
       footer={
         <>
-          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn" onClick={onClose}>{t("common.close")}</button>
           {phase === "review" || phase === "applying" ? (
             <button className="btn btn-cyan" disabled={phase !== "review" || !p || entries.length === 0} onClick={apply}>
-              {phase === "applying" ? "Applying…" : `Add ${entries.length} to timeline`}
+              {phase === "applying" ? t("sfxgen.footer.applying") : t("sfxgen.footer.addToTimeline", { count: entries.length })}
             </button>
           ) : (
             <button className="btn btn-cyan" disabled={phase === "loading"} onClick={begin}>
-              {phase === "loading" ? "Working…" : phase === "error" ? "Retry" : "Begin"}
+              {phase === "loading" ? t("sfxgen.footer.working") : phase === "error" ? t("sfxgen.footer.retry") : t("sfxgen.footer.begin")}
             </button>
           )}
         </>
       }>
       {phase === "idle" && (
         <div className="text-txt-dim text-[13px] py-6 text-center">
-          Read the script as a radio play and propose sound effects, favoring your existing kit.<br />
-          <span className="text-txt-faint text-[11px]">Press <b>Begin</b> to start — spins up Ollama on the GPU, ~30-60s.</span>
+          {t("sfxgen.idle.body")}<br />
+          <span className="text-txt-faint text-[11px]">{t("sfxgen.idle.hint")}</span>
         </div>
       )}
       {phase === "loading" && (
         <div className="text-txt-dim text-[13px] py-6 text-center">
-          Asking the local LLM (Qwen2.5-7B) to read the script as a radio play…<br />
-          <span className="text-txt-faint text-[11px]">starts Ollama on the GPU, ~30-60s</span>
+          {t("sfxgen.loading.body")}<br />
+          <span className="text-txt-faint text-[11px]">{t("sfxgen.loading.hint")}</span>
         </div>
       )}
       {phase === "error" && (
         <div className="text-red text-[12px] whitespace-pre-wrap py-3">
           {err.includes("409") || err.toLowerCase().includes("busy")
-            ? "GPU is busy — a render is active. Try again when it's idle."
-            : `Generation failed: ${err}`}
+            ? t("sfxgen.error.gpuBusy")
+            : t("sfxgen.error.failed", { err })}
         </div>
       )}
       {(phase === "review" || phase === "applying") && p && (
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-2 text-[12px]">
-            <Stat label="opportunities" value={entries.length} />
-            <Stat label="from library" value={reuse.length} />
-            <Stat label="to acquire" value={acquire.length} accent={acquire.length > 0} />
+            <Stat label={t("sfxgen.stat.opportunities")} value={entries.length} />
+            <Stat label={t("sfxgen.stat.fromLibrary")} value={reuse.length} />
+            <Stat label={t("sfxgen.stat.toAcquire")} value={acquire.length} accent={acquire.length > 0} />
           </div>
 
           {entries.length === 0 && (
-            <div className="text-txt-faint text-[12px] py-3">No sound-effect opportunities found — the model judged the script needs none, or everything is already placed.</div>
+            <div className="text-txt-faint text-[12px] py-3">{t("sfxgen.review.empty")}</div>
           )}
 
           {reuse.length > 0 && (
-            <Section title={`USING EXISTING SFX (${reuse.length}) — already in the kit`}>
+            <Section title={t("sfxgen.section.existing", { count: reuse.length })}>
               {reuse.map(({ e, i }) => <Row key={i} e={e} onGain={(g) => editEntry(i, { gain: g })} onRemove={() => removeEntry(i)} />)}
             </Section>
           )}
 
           {acquire.length > 0 && (
-            <Section title={`NEEDS ACQUIRING (${acquire.length}) — edit the search, fetch later from the library`}>
+            <Section title={t("sfxgen.section.acquire", { count: acquire.length })}>
               {acquire.map(({ e, i }) => (
                 <div key={i} className="flex flex-col gap-1 mb-2 hairline-soft rounded px-2 py-1.5">
                   <div className="flex items-center gap-2 text-[11px]">
@@ -119,10 +121,10 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
                     <span className="text-txt-faint">{e.at}</span>
                     <span className="font-mono text-amber flex-1 truncate" title={e.file}>{e.file}</span>
                     <GainInput value={e.gain} onChange={(g) => editEntry(i, { gain: g })} />
-                    <button className="btn p-0.5" title="drop this effect" onClick={() => removeEntry(i)}><IX /></button>
+                    <button className="btn p-0.5" title={t("sfxgen.row.drop")} onClick={() => removeEntry(i)}><IX /></button>
                   </div>
                   <label className="flex items-center gap-1 text-txt-faint text-[10px]">
-                    freesound query
+                    {t("sfxgen.row.freesoundQuery")}
                     <input className="input flex-1 text-[11px] py-0 font-mono text-cyan" value={e.query}
                       onChange={(ev) => editEntry(i, { query: ev.target.value })} />
                   </label>
@@ -133,10 +135,7 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
           )}
 
           <p className="text-txt-faint text-[11px]">
-            Apply inserts these into the audio timeline (manifest.sfx[]) exactly like a drag-drop —
-            per-gap delays are auto-staggered. Library effects play immediately; “to acquire” effects
-            are placeholders until you fetch them (Library → Add → Freesound) under the shown filename;
-            a render skips any sound not yet on disk.
+            {t("sfxgen.review.helpText")}
           </p>
         </div>
       )}
@@ -145,6 +144,7 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
 }
 
 function Row({ e, onGain, onRemove }: { e: SfxProposalEntry; onGain: (g: number) => void; onRemove: () => void }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-0.5 mb-1.5">
       <div className="flex items-center gap-2 text-[11px]">
@@ -152,7 +152,7 @@ function Row({ e, onGain, onRemove }: { e: SfxProposalEntry; onGain: (g: number)
         <span className="text-txt-faint">{e.at}</span>
         <span className="font-mono text-cyan flex-1 truncate" title={e.file}>{e.file}</span>
         <GainInput value={e.gain} onChange={onGain} />
-        <button className="btn p-0.5" title="drop this effect" onClick={onRemove}><IX /></button>
+        <button className="btn p-0.5" title={t("sfxgen.row.drop")} onClick={onRemove}><IX /></button>
       </div>
       {e.reason && <div className="text-txt-faint text-[10px] italic pl-11">{e.reason}</div>}
     </div>
@@ -160,9 +160,10 @@ function Row({ e, onGain, onRemove }: { e: SfxProposalEntry; onGain: (g: number)
 }
 
 function GainInput({ value, onChange }: { value: number; onChange: (g: number) => void }) {
+  const t = useT();
   return (
-    <label className="flex items-center gap-1 text-txt-faint text-[10px]" title="gain — 0–1 linear">
-      g
+    <label className="flex items-center gap-1 text-txt-faint text-[10px]" title={t("sfxgen.gain.title")}>
+      {t("sfxgen.gain.label")}
       <input className="input w-16 text-[11px] py-0" type="number" step="0.05" value={value}
         onChange={(e) => { const v = parseFloat(e.target.value); onChange(Number.isFinite(v) ? v : 0.4); }} />
     </label>

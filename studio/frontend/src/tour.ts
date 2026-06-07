@@ -6,8 +6,8 @@ import type { TopPage } from "./route";
 // the step shows — the spotlighted control itself always lives in the topbar.
 export interface TourStep {
   target: string | null;
-  title: string;
-  body: string;
+  titleKey: string;
+  bodyKey: string;
   stage?: UIStage;
   topPage?: TopPage;
 }
@@ -15,64 +15,64 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     target: '[data-tour="file-menu"]',
-    title: "Project menu",
-    body: "New or open shows and episodes, import/export a project, and settings — all live here. Studio can hold multiple shows now.",
+    titleKey: "tour.projectMenu.title",
+    bodyKey: "tour.projectMenu.body",
   },
   {
     target: '[data-tour="episode-picker"]',
-    title: "Episode picker",
-    body: "Pick an episode; the ◀ ▶ arrows step through them. The dot is its git-sync state — green means pushed, red means local changes.",
+    titleKey: "tour.episodePicker.title",
+    bodyKey: "tour.episodePicker.body",
   },
   {
     target: '[data-tour="tab-script"]',
-    title: "Script",
-    body: "Write the episode in Markdown, then hit Generate manifest to turn it into cues the pipeline can render.",
+    titleKey: "tour.script.title",
+    bodyKey: "tour.script.body",
     stage: "script",
   },
   {
     target: '[data-tour="tab-audio"]',
-    title: "Audio",
-    body: "Per-cue voiceover — play it, regenerate a line, and drop sound effects into the gaps between cues.",
+    titleKey: "tour.audio.title",
+    bodyKey: "tour.audio.body",
     stage: "audio",
   },
   {
     target: '[data-tour="tab-graphics"]',
-    title: "Graphics",
-    body: "Title cards and on-screen overlays. Generate card text and render the compositions that get composited over the video.",
+    titleKey: "tour.graphics.title",
+    bodyKey: "tour.graphics.body",
     stage: "graphics",
   },
   {
     target: '[data-tour="tab-video"]',
-    title: "Video",
-    body: "The shot list — every character and b-roll clip. Render the missing or stale ones; the preview shows each result.",
+    titleKey: "tour.video.title",
+    bodyKey: "tour.video.body",
     stage: "video",
   },
   {
     target: '[data-tour="tab-assembly"]',
-    title: "Assembly",
-    body: "The render dashboard. Runs the full pipeline end-to-end to a finished video, with live per-stage progress. It's the deep end — explore it once the rest clicks.",
+    titleKey: "tour.assembly.title",
+    bodyKey: "tour.assembly.body",
     stage: "assembly",
   },
   {
     target: '[data-tour="tab-youtube"]',
-    title: "YouTube",
-    body: "Match episodes to their uploads and manage the video title/description metadata.",
+    titleKey: "tour.youtube.title",
+    bodyKey: "tour.youtube.body",
     topPage: "youtube",
   },
   {
     target: '[data-tour="tab-docs"]',
-    title: "Docs",
-    body: "The canon — character bible, prompt docs, and pipeline notes. Reference, not editing.",
+    titleKey: "tour.docs.title",
+    bodyKey: "tour.docs.body",
     topPage: "docs",
   },
   {
     target: '[data-tour="git-sync"]',
-    title: "Git sync",
-    body: "Commits this episode's text — script, manifest, youtube.txt — into the repo and pushes it. Generated media stays local; this is the portable source of truth.",
+    titleKey: "tour.gitSync.title",
+    bodyKey: "tour.gitSync.body",
   },
   {
     target: '[data-tour="file-menu"]',
-    title: "Ready to start",
-    body: "You're all set — begin by creating a new show from scratch: open the project menu and pick New show…. Reopen this tour anytime from the same menu → Tutorial. Have fun.",
+    titleKey: "tour.ready.title",
+    bodyKey: "tour.ready.body",
   },
 ];

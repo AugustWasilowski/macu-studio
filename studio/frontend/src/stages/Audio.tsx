@@ -16,6 +16,7 @@ import { CreateVoiceModal } from "./CreateVoiceModal";
 import { VoicePicker } from "./VoicePicker";
 import { useCuePlayback } from "./useCuePlayback";
 import type { Cue, PipelineEvent } from "../types";
+import { useT } from "../i18n";
 
 interface SpeakerInfo {
   color: string;
@@ -34,6 +35,7 @@ function colorForSpeaker(name: string): string {
 }
 
 export function Audio({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const busy = useStore((s) => s.busy);
@@ -75,15 +77,17 @@ export function Audio({ slug }: { slug: string }) {
   const precache = async () => {
     if (precaching) return;
     const urls = sfx.precacheUrls();
-    if (!urls.length) { push("No audio to cache yet", "info"); return; }
+    if (!urls.length) { push(t("toast.noAudioToCache"), "info"); return; }
     const need = urls.filter((u) => !isCached(u));
-    if (!need.length) { push(`All ${urls.length} clips already cached`, "ok"); return; }
+    if (!need.length) { push(t("toast.allClipsCached", { count: urls.length }), "ok"); return; }
     setPrecaching({ done: 0, total: need.length });
-    push(`Pre-caching ${need.length} audio clips…`, "run");
+    push(t("toast.preCaching", { count: need.length }), "run");
     const r = await precacheMedia(urls, (p) => setPrecaching({ done: p.done, total: p.total }));
     setPrecaching(null);
     push(
-      `Audio cached: ${r.done - r.failed}/${r.total}${r.failed ? ` · ${r.failed} failed` : ""}`,
+      r.failed
+        ? t("toast.audioCachedWithFailed", { done: r.done - r.failed, total: r.total, failed: r.failed })
+        : t("toast.audioCached", { done: r.done - r.failed, total: r.total }),
       r.failed ? "err" : "ok",
     );
   };
@@ -113,11 +117,11 @@ export function Audio({ slug }: { slug: string }) {
           setBusy(key, false);
           qc.invalidateQueries({ queryKey: ["cues", slug] });
           qc.invalidateQueries({ queryKey: ["versions", "cue", slug, cueId] });
-          push(`VO ${cueId} regenerated`, "ok");
+          push(t("toast.voRegenerated", { cueId }), "ok");
           release();
         } else if (ev.kind === "stage.error" || ev.kind === "job.error") {
           setBusy(key, false);
-          push(`VO ${cueId} regen failed: ${ev.error}`, "err");
+          push(t("toast.voRegenFailed", { cueId, error: ev.error }), "err");
           release();
         }
       };
@@ -133,9 +137,9 @@ export function Audio({ slug }: { slug: string }) {
 
   const regen = useMutation({
     mutationFn: (cueId: string) => api.regenCue(slug, cueId),
-    onMutate: (cueId) => { setBusy(`cue:${cueId}`, true); push(`VO cue ${cueId} → pipeline`, "run"); },
+    onMutate: (cueId) => { setBusy(`cue:${cueId}`, true); push(t("toast.voCuePipeline", { cueId }), "run"); },
     onSuccess: (r, cueId) => watchJob(r.job_id, cueId),
-    onError: (e: Error, cueId) => { setBusy(`cue:${cueId}`, false); push(`regen failed: ${e.message}`, "err"); },
+    onError: (e: Error, cueId) => { setBusy(`cue:${cueId}`, false); push(t("toast.regenFailed", { message: e.message }), "err"); },
   });
 
   // Edit a cue's VO text (the line the TTS reads) and save the manifest, like the script editor.
@@ -155,16 +159,16 @@ export function Audio({ slug }: { slug: string }) {
       if (r?.saved) {
         qc.invalidateQueries({ queryKey: ["manifest", slug] });
         qc.invalidateQueries({ queryKey: ["cues", slug] });
-        push("VO text saved", "ok");
+        push(t("toast.voTextSaved"), "ok");
       }
     },
-    onError: (e: Error) => push("save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.saveFailed", { msg: e.message }), "err"),
   });
 
   const regenAllMissing = () => {
     const missing = cues.data?.cues.filter((c) => c.status === "missing") ?? [];
-    if (!missing.length) { push("No missing VO cues", "info"); return; }
-    push(`Queuing ${missing.length} VO regenerations`, "run");
+    if (!missing.length) { push(t("toast.noMissingVo"), "info"); return; }
+    push(t("toast.queuingRegens", { count: missing.length }), "run");
     missing.forEach((c, i) => setTimeout(() => regen.mutate(c.id), i * 250));
   };
 
@@ -206,36 +210,36 @@ export function Audio({ slug }: { slug: string }) {
         {/* VOICEOVER + interleaved SFX */}
         <section className="panel flex flex-col min-h-0">
           <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-            <div className="panel-title">VOICEOVER <span className="text-txt-faint">/ per cue · drop SFX between cues</span></div>
+            <div className="panel-title">{t("audio.sectionTitle")} <span className="text-txt-faint">{t("audio.sectionSubtitle")}</span></div>
             <div className="flex items-center gap-2">
-              <span className="seg-readout">{String(genCount).padStart(2, "0")}<span className="text-txt-faint">/{cueList.length}</span> CUES</span>
-              <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop playback" : "Play VO + SFX in sequence"}>
-                {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
+              <span className="seg-readout">{String(genCount).padStart(2, "0")}<span className="text-txt-faint">/{cueList.length}</span> {t("audio.cuesLabel")}</span>
+              <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? t("audio.stopPlaybackTitle") : t("audio.playAllTitle")}>
+                {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? t("audio.stop") : t("audio.playAll")}
               </button>
-              <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play continues to the next clip (off = one clip only)">
+              <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title={t("audio.continuousTitle")}>
                 <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} />
-                Continuous
+                {t("audio.continuous")}
               </label>
-              <button className="btn btn-amber" onClick={regenAllMissing}><IRegen /> Regen missing</button>
+              <button className="btn btn-amber" onClick={regenAllMissing}><IRegen /> {t("audio.regenMissing")}</button>
               <button className="btn btn-cyan" onClick={() => setSfxGenOpen(true)}
-                title="Use the local LLM to read the script as a radio play and propose sound effects — favoring the kit you already have. Inserts them into the timeline on apply.">
-                <IRegen /> Generate SFX list
+                title={t("audio.generateSfxTitle")}>
+                <IRegen /> {t("audio.generateSfx")}
               </button>
               <button className={"btn " + (voicesOpen ? "btn-amber" : "")} onClick={() => setVoicesOpen((v) => !v)}
-                title="Assign a cloned voice to each speaker (writes manifest.voice.speaker_map).">
-                Voices
+                title={t("audio.voicesTitle")}>
+                {t("audio.voices")}
               </button>
               <button className="btn" onClick={() => setCreateVoiceOpen(true)}
-                title="Clone a voice: upload a short clean clip (mp3/wav/m4a/mp4) and OmniVoice creates a profile you can assign to a character.">
-                Create voice
+                title={t("audio.createVoiceTitle")}>
+                {t("audio.createVoice")}
               </button>
               <button
                 className="btn"
                 onClick={precache}
                 disabled={!!precaching}
-                title="Load all of this episode's audio into the browser so playback is instant over the Cloudflare proxy"
+                title={t("audio.preCacheTitle")}
               >
-                <IDL /> {precaching ? `Caching ${precaching.done}/${precaching.total}` : "Pre-cache audio"}
+                <IDL /> {precaching ? t("audio.caching", { done: precaching.done, total: precaching.total }) : t("audio.preCacheAudio")}
               </button>
             </div>
           </header>
@@ -244,14 +248,14 @@ export function Audio({ slug }: { slug: string }) {
             <table className="w-full text-[12px]">
               <thead className="sticky top-0 bg-bg-1">
                 <tr className="label-tiny text-left border-b hairline-soft">
-                  <th className="px-2 py-1">CUE</th>
-                  <th className="px-2 py-1">SPEAKER</th>
-                  <th className="px-2 py-1">VO TEXT</th>
-                  <th className="px-2 py-1">WAVE</th>
-                  <th className="px-2 py-1">DUR</th>
-                  <th className="px-2 py-1">STATUS</th>
+                  <th className="px-2 py-1">{t("audio.colCue")}</th>
+                  <th className="px-2 py-1">{t("audio.colSpeaker")}</th>
+                  <th className="px-2 py-1">{t("audio.colVoText")}</th>
+                  <th className="px-2 py-1">{t("audio.colWave")}</th>
+                  <th className="px-2 py-1">{t("audio.colDur")}</th>
+                  <th className="px-2 py-1">{t("audio.colStatus")}</th>
                   <th className="px-2 py-1"></th>
-                  <th className="px-2 py-1">VER</th>
+                  <th className="px-2 py-1">{t("audio.colVer")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -275,7 +279,7 @@ export function Audio({ slug }: { slug: string }) {
                           </span>
                         </td>
                         <td className="px-2 py-1.5 max-w-[400px] truncate" title={c.text}>
-                          {c.is_hold ? <span className="text-txt-faint italic">[HOLD {c.hold_seconds}s]</span> : c.text}
+                          {c.is_hold ? <span className="text-txt-faint italic">{t("audio.holdLabel", { seconds: c.hold_seconds })}</span> : c.text}
                         </td>
                         <td className="px-2 py-1.5">
                           <Waveform seed={(parseInt(c.id.replace(/\D/g, ""), 10) || 1) + 7} w={120} h={26} playing={isPlaying} dense={70} />
@@ -284,8 +288,8 @@ export function Audio({ slug }: { slug: string }) {
                         <td className="px-2 py-1.5"><Badge status={isBusy ? "running" : c.status} /></td>
                         <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1">
-                            <PlayBtn playing={isPlaying} onClick={() => togglePlay(c.id)} title={c.wav_exists ? "Play" : "No wav yet"} />
-                            <button className="btn p-1" title="Regenerate" disabled={isBusy} onClick={() => regen.mutate(c.id)}><IRegen /></button>
+                            <PlayBtn playing={isPlaying} onClick={() => togglePlay(c.id)} title={c.wav_exists ? t("audio.play") : t("audio.noWavYet")} />
+                            <button className="btn p-1" title={t("audio.regenerate")} disabled={isBusy} onClick={() => regen.mutate(c.id)}><IRegen /></button>
                             <RegenNotes onSubmit={(_) => regen.mutate(c.id)} />
                           </div>
                         </td>
@@ -301,7 +305,7 @@ export function Audio({ slug }: { slug: string }) {
                 })}
               </tbody>
             </table>
-            {cueList.length === 0 && <div className="p-4 text-txt-faint">No cues in manifest yet.</div>}
+            {cueList.length === 0 && <div className="p-4 text-txt-faint">{t("audio.noCues")}</div>}
           </div>
         </section>
       </div>
@@ -309,7 +313,7 @@ export function Audio({ slug }: { slug: string }) {
       {/* Right column: inspector (top) + library (bottom) */}
       <aside className="flex flex-col gap-3 min-h-0">
         <div className="panel p-3 flex flex-col gap-3 overflow-y-auto" style={{ maxHeight: "55%" }}>
-          <div className="panel-title">MANIFEST PREVIEW</div>
+          <div className="panel-title">{t("audio.manifestPreview")}</div>
           {selCue ? (
             <CueInspector
               key={selCue.id}
@@ -323,7 +327,7 @@ export function Audio({ slug }: { slug: string }) {
               onSaveText={(text) => saveCueText.mutate({ id: selCue.id, text })}
             />
           ) : (
-            <div className="text-txt-faint">Select a cue on the left to see its full metadata.</div>
+            <div className="text-txt-faint">{t("audio.selectCueHint")}</div>
           )}
         </div>
         <Library slug={slug} previewUrl={preview.previewUrl} onPreview={preview.toggle} />
@@ -346,6 +350,7 @@ function CueInspector({
   onRegen: () => void;
   onSaveText: (text: string) => void;
 }) {
+  const t = useT();
   void slug;
   // Local draft; the component is keyed by cue.id so this resets when you select another cue.
   const [draft, setDraft] = useState(cue.text);
@@ -365,16 +370,16 @@ function CueInspector({
       </div>
       <div className="flex items-center gap-2">
         <PlayBtn playing={isPlaying} onClick={onPlay} />
-        <button className="btn" onClick={onRegen} disabled={isBusy}><IRegen /> Regen</button>
+        <button className="btn" onClick={onRegen} disabled={isBusy}><IRegen /> {t("audio.regen")}</button>
         <RegenNotes onSubmit={() => onRegen()} />
       </div>
       <div className="flex flex-col gap-1">
-        <span className="label-tiny">cue.text <span className="text-txt-faint">/ VO — saves on blur</span></span>
+        <span className="label-tiny">cue.text <span className="text-txt-faint">{t("audio.cueTextHint")}</span></span>
         <textarea
           className="input w-full text-amber"
           style={{ minHeight: 80, resize: "vertical", whiteSpace: "pre-wrap" }}
           value={draft}
-          placeholder={cue.is_hold ? "(hold cue — typing here adds spoken VO)" : "VO line the TTS reads…"}
+          placeholder={cue.is_hold ? t("audio.holdPlaceholder") : t("audio.voPlaceholder")}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={saveIfChanged}
           onKeyDown={(e) => {

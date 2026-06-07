@@ -7,6 +7,7 @@ import type { MusicBed, SfxEntry } from "../api/library";
 import { versionsApi } from "../api/assets";
 import { useStore } from "../store";
 import { IPlay, IPause } from "../components/Icons";
+import { useT } from "../i18n";
 import {
   cueOffsets, overlayWindow, cueAtSecond, makeOverlay,
   bedWindow, cuesInRange, makeBed, sfxWindow, repinSfx,
@@ -26,6 +27,7 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).p
 type DragState = { track: TrackKind; idx: number; kind: "move" | "l" | "r"; startX: number; start: number; end: number };
 
 export function Timeline({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
 
@@ -68,9 +70,9 @@ export function Timeline({ slug }: { slug: string }) {
   }, [playT, playing, pps]);
 
   // ---- persistence ----
-  const putOverlays = useMutation({ mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
-  const putBeds = useMutation({ mutationFn: (next: MusicBed[]) => libraryApi.putBeds(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
-  const putSfx = useMutation({ mutationFn: (next: SfxEntry[]) => libraryApi.putSfx(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push("save failed: " + e.message, "err") });
+  const putOverlays = useMutation({ mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push(t("toast.saveFailed", { msg: e.message }), "err") });
+  const putBeds = useMutation({ mutationFn: (next: MusicBed[]) => libraryApi.putBeds(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push(t("toast.saveFailed", { msg: e.message }), "err") });
+  const putSfx = useMutation({ mutationFn: (next: SfxEntry[]) => libraryApi.putSfx(slug, next), onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }), onError: (e: Error) => push(t("toast.saveFailed", { msg: e.message }), "err") });
   const commitTrack = (track: TrackKind, items: any[]) => {
     if (track === "graphics") putOverlays.mutate(items);
     else if (track === "music") putBeds.mutate(items);
@@ -81,7 +83,7 @@ export function Timeline({ slug }: { slug: string }) {
   const putShots = useMutation({
     mutationFn: (cuesMap: Record<string, any[]>) => versionsApi.putCueShots(slug, cuesMap),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["cues", slug] }); qc.invalidateQueries({ queryKey: ["manifest", slug] }); },
-    onError: (e: Error) => push("shots save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.shotsSaveFailed", { msg: e.message }), "err"),
   });
   const cueById = (id: string) => cueList.find((c) => c.id === id);
   // Shot ids encode their cue + position (e.g. c12_s1); re-mint after any membership/order change.
@@ -117,7 +119,7 @@ export function Timeline({ slug }: { slug: string }) {
         } else {
           push(`${d.key} → ${targetId}`, "ok");
         }
-      } catch (err: any) { push("import failed: " + (err?.message ?? "error"), "err"); return; }
+      } catch (err: any) { push(t("toast.importFailed", { msg: err?.message ?? "error" }), "err"); return; }
       const next = [...tshots];
       next.splice(shotInsertIdx(sec, tcue, next.length), 0, { id: "", kind: d.shotKind, who: d.key });
       putShots.mutate({ [targetId]: remintShots(targetId, next) });
@@ -134,7 +136,7 @@ export function Timeline({ slug }: { slug: string }) {
         const tgtNext = [...tshots];
         tgtNext.splice(shotInsertIdx(sec, tcue, tgtNext.length), 0, moving);
         putShots.mutate({ [d.cueId]: remintShots(d.cueId, srcNext), [targetId]: remintShots(targetId, tgtNext) });
-        push(`shot → ${targetId}`, "ok");
+        push(t("toast.shotMovedTo", { targetId }), "ok");
       }
     }
     drawerDrag.clear();
@@ -148,7 +150,7 @@ export function Timeline({ slug }: { slug: string }) {
     if (!src) { drawerDrag.clear(); return; }
     const next = (src.shots as any[]).filter((s: any) => s.id !== d.shotId);
     putShots.mutate({ [d.cueId]: remintShots(d.cueId, next) });
-    push("shot removed", "ok");
+    push(t("toast.shotRemoved"), "ok");
     drawerDrag.clear();
   };
 
@@ -235,7 +237,7 @@ export function Timeline({ slug }: { slug: string }) {
       const next = working.items.filter((_, i) => i !== d.idx);
       commitTrack(d.track, next);
       setSelection(null);
-      push("removed from timeline", "ok");
+      push(t("toast.removedFromTimeline"), "ok");
     } else {
       commitTrack(d.track, working.items);
     }
@@ -258,15 +260,15 @@ export function Timeline({ slug }: { slug: string }) {
         push(r.master_copied ? `pulled ${d.asset} from ${d.slug} — ready`
              : r.already ? `${d.asset} already in this episode`
              : `imported ${d.asset} from ${d.slug} — render it on the Graphics tab`, "ok");
-      } catch (err: any) { push("import failed: " + (err?.message ?? "error"), "err"); return; }
+      } catch (err: any) { push(t("toast.importFailed", { msg: err?.message ?? "error" }), "err"); return; }
     }
     const ov = makeOverlay(d.asset, anchor, 3);
     ov.start_offset = round2(sec - (cum[anchor] ?? 0));
     commitTrack("graphics", [...overlays, ov]);
-    if (!d.slug || d.slug === slug) push(`${d.asset} → graphic`, "ok");
+    if (!d.slug || d.slug === slug) push(t("toast.graphicAdded", { asset: d.asset, cueId: anchor }), "ok");
   };
-  const onDropMusic = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "music") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; commitTrack("music", [...beds, makeBed(d.file, anchor, cueDurOf(anchor))]); push(`${d.file} → music bed`, "ok"); drawerDrag.clear(); };
-  const onDropSfx = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "sfx") return; const sec = secFromClientX(e.clientX); const cue = cueAtSecond(sec, cueList, cum); if (!cue) return; const entry = repinSfx({ file: d.file, cue, at: "start", gain: 0.4, source: "library" } as SfxEntry, sec, cueList, cum); commitTrack("sfx", [...sfxList, entry]); push(`${d.file} → sfx @ ${cue}`, "ok"); drawerDrag.clear(); };
+  const onDropMusic = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "music") return; const sec = secFromClientX(e.clientX); const anchor = cueAtSecond(sec, cueList, cum); if (!anchor) return; commitTrack("music", [...beds, makeBed(d.file, anchor, cueDurOf(anchor))]); push(t("toast.musicBedAdded", { file: d.file }), "ok"); drawerDrag.clear(); };
+  const onDropSfx = (e: React.DragEvent) => { e.preventDefault(); const d = drawerDrag.get(); if (d?.kind !== "sfx") return; const sec = secFromClientX(e.clientX); const cue = cueAtSecond(sec, cueList, cum); if (!cue) return; const entry = repinSfx({ file: d.file, cue, at: "start", gain: 0.4, source: "library" } as SfxEntry, sec, cueList, cum); commitTrack("sfx", [...sfxList, entry]); push(t("toast.sfxAdded", { file: d.file, cue }), "ok"); drawerDrag.clear(); };
 
   const cueThumb = (c: Cue): string | null => { for (const s of (c.shots || []) as any[]) { if ((s.kind === "character" || s.kind === "broll") && s.who) return mediaUrl.shotPreview(slug, s.who); } return null; };
 
@@ -278,9 +280,9 @@ export function Timeline({ slug }: { slug: string }) {
       {/* PREVIEW */}
       <section className="panel flex flex-col min-h-0 flex-1 p-2 gap-2">
         <div className="flex items-center justify-between">
-          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ rendered output · click a cue to play · audio/graphic edits show after a re-render</span></div>
+          <div className="panel-title">{t("timeline.previewTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">{t("timeline.previewSubtitle")}</span></div>
           <div className="flex items-center gap-3">
-            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? "Pause" : "Play"}>{playing ? <IPause /> : <IPlay />} {playing ? "Pause" : "Play"}</button>
+            <button className="btn btn-cyan" disabled={!finalExists} onClick={togglePlay} title={playing ? t("timeline.pause") : t("timeline.play")}>{playing ? <IPause /> : <IPlay />} {playing ? t("timeline.pause") : t("timeline.play")}</button>
             <span className="font-mono tabular-nums text-[12px]">{fmt(playT)} <span className="text-txt-faint">/ {fmt(dur)}</span></span>
           </div>
         </div>
@@ -288,32 +290,32 @@ export function Timeline({ slug }: { slug: string }) {
           {finalExists ? (
             <video ref={videoRef} src={mediaUrl.finalVideo(slug)} className="max-h-full max-w-full object-contain" playsInline
               onTimeUpdate={(e) => setPlayT((e.currentTarget as HTMLVideoElement).currentTime)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
-          ) : <div className="text-txt-faint text-[12px] text-center px-3">No rendered video yet — run the episode (Assembly → Run) to enable the synced preview.</div>}
+          ) : <div className="text-txt-faint text-[12px] text-center px-3">{t("timeline.noVideoYet")}</div>}
         </div>
       </section>
 
       {/* TIMELINE */}
       <section className="panel flex flex-col flex-none relative">
-        <CollapseTab open={timelineOpen} onToggle={toggleTimeline} label="timeline" />
+        <CollapseTab open={timelineOpen} onToggle={toggleTimeline} label={t("timeline.sectionLabel")} />
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">TIMELINE <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag assets from the drawer onto a track · scrub on the ruler · drag clips to move, edges to trim</span></div>
+          <div className="panel-title">{t("timeline.timelineTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">{t("timeline.timelineSubtitle")}</span></div>
           <div className="flex items-center gap-2 text-[11px]">
             <span className="seg-readout">{cueList.reduce((a, c) => a + ((c.shots ?? []).length), 0)} ▦ · {shownOverlays.length} GFX · {shownBeds.length} ♫ · {shownSfx.length} ♪ · {total.toFixed(1)}s</span>
-            <button className="btn p-1" title="zoom out" onClick={() => setPps((z) => Math.max(12, z - 12))}>−</button>
+            <button className="btn p-1" title={t("timeline.zoomOut")} onClick={() => setPps((z) => Math.max(12, z - 12))}>−</button>
             <span className="text-txt-faint">{pps}px/s</span>
-            <button className="btn p-1" title="zoom in" onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
+            <button className="btn p-1" title={t("timeline.zoomIn")} onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
           </div>
         </header>
         {timelineOpen && (
         <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
           <div style={{ width }} className="select-none relative">
             {/* ruler — the only scrub surface */}
-            <div className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint cursor-pointer" onClick={(e) => seekTo(secFromClientX(e.clientX))} title="click to scrub">
+            <div className="relative h-5 border-b hairline-soft text-[10px] text-txt-faint cursor-pointer" onClick={(e) => seekTo(secFromClientX(e.clientX))} title={t("timeline.rulerScrub")}>
               {ticks.map((t) => <div key={t} className="absolute top-0 h-full border-l border-[var(--line-soft)] pl-1" style={{ left: t * pps }}>{t}s</div>)}
             </div>
 
             {/* CUES — filmstrip, click to select */}
-            <TrackLabel label="CUES" />
+            <TrackLabel label={t("timeline.trackCues")} />
             <div className="relative h-16 border-b hairline-soft">
               {cueList.map((c) => {
                 const left = (cum[c.id] ?? 0) * pps; const w = (c.duration_s ?? 0) * pps; const thumb = cueThumb(c);
@@ -322,7 +324,7 @@ export function Timeline({ slug }: { slug: string }) {
                   <div key={c.id} onClick={() => setSelection({ t: "cue", cue: c })}
                     className="absolute top-0.5 rounded-sm overflow-hidden cursor-pointer hairline-soft"
                     style={{ left, width: Math.max(2, w), height: "calc(100% - 4px)", backgroundColor: "var(--bg-2)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%", outline: active ? "1px solid var(--amber)" : undefined }}
-                    title={`${c.id} · ${c.speaker} — click for metadata`}>
+                    title={`${c.id} · ${c.speaker} — ${t("timeline.cueMetaTip")}`}>
                     <div className="absolute inset-x-0 bottom-0 px-1 text-[9px] leading-tight" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
                       <span className="text-amber font-bold">{c.id}</span> <span className="text-txt-dim">{c.speaker}</span>
                     </div>
@@ -332,24 +334,24 @@ export function Timeline({ slug }: { slug: string }) {
             </div>
 
             {/* VO — read-only: each cue's narration clip; click to audition */}
-            <TrackLabel label="VO" />
+            <TrackLabel label={t("timeline.trackVo")} />
             <div className="relative h-7 border-b hairline-soft">
               {cueList.map((c) => {
                 if ((c.duration_s ?? 0) <= 0) return null;
                 const { start, end } = voWindow(c, cum); const left = start * pps; const w = Math.max(4, (end - start) * pps);
                 return (
-                  <div key={c.id} onClick={() => playVo(c)} title={`${c.id} VO${c.wav_exists ? " — click to audition" : " (no wav yet)"}`}
+                  <div key={c.id} onClick={() => playVo(c)} title={`${c.id} VO${c.wav_exists ? ` — ${t("timeline.voAuditionTip")}` : ` (${t("timeline.voNoWavTip")})`}`}
                     className="absolute top-0.5 h-6 rounded-sm overflow-hidden cursor-pointer flex items-center px-1 bg-[#23303a]"
                     style={{ left, width: w, outline: "1px solid var(--line-soft)", opacity: c.wav_exists ? 1 : 0.45 }}>
                     <span className="font-mono text-[10px] truncate pointer-events-none text-[#9ad6ff]">{c.id}</span>
                   </div>
                 );
               })}
-              {cueList.length === 0 && <Empty label="VO appears once cues have audio" />}
+              {cueList.length === 0 && <Empty label={t("timeline.emptyVo")} />}
             </div>
 
             {/* SHOTS — per-cue, move/reorder/add/remove (no resize); width is the computed slice */}
-            <TrackLabel label="SHOTS" />
+            <TrackLabel label={t("timeline.trackShots")} />
             <div className="relative h-12 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropShots}>
               {cueList.map((c) => {
                 const shots = (c.shots ?? []) as any[];
@@ -364,17 +366,17 @@ export function Timeline({ slug }: { slug: string }) {
                       onClick={() => setSelection({ t: "cue", cue: c })}
                       className="absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#1c2b1c]"
                       style={{ left, width: w, outline: "1px solid var(--line-soft)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%" }}
-                      title={`${key} (${c.id}) — drag to move/reorder · drop on the drawer to remove`}>
+                      title={`${key} (${c.id}) — ${t("timeline.shotMoveTip")}`}>
                       <span className="font-mono text-[9px] truncate pointer-events-none px-1 rounded" style={{ background: "rgba(0,0,0,0.6)" }}>{key}</span>
                     </div>
                   );
                 });
               })}
-              {cueList.every((c) => !((c.shots ?? []) as any[]).length) && <Empty label="drag a shot here" />}
+              {cueList.every((c) => !((c.shots ?? []) as any[]).length) && <Empty label={t("timeline.emptyShots")} />}
             </div>
 
             {/* GRAPHICS — editable overlay bars */}
-            <TrackLabel label="GRAPHICS" />
+            <TrackLabel label={t("timeline.trackGraphics")} />
             <div className="relative h-12 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropGraphics}>
               {shownOverlays.map((ov, idx) => {
                 const { start, end } = overlayWindow(ov, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
@@ -390,11 +392,11 @@ export function Timeline({ slug }: { slug: string }) {
                   </div>
                 );
               })}
-              {shownOverlays.length === 0 && <Empty label="drag a graphics card here" />}
+              {shownOverlays.length === 0 && <Empty label={t("timeline.emptyGraphics")} />}
             </div>
 
             {/* MUSIC — editable beds */}
-            <TrackLabel label="MUSIC" />
+            <TrackLabel label={t("timeline.trackMusic")} />
             <div className="relative h-8 border-b hairline-soft" onDragOver={(e) => e.preventDefault()} onDrop={onDropMusic}>
               {shownBeds.map((b, idx) => {
                 const { start, end } = bedWindow(b, cueList, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
@@ -409,11 +411,11 @@ export function Timeline({ slug }: { slug: string }) {
                   </div>
                 );
               })}
-              {shownBeds.length === 0 && <Empty label="drag a music clip here" />}
+              {shownBeds.length === 0 && <Empty label={t("timeline.emptyMusic")} />}
             </div>
 
             {/* SFX — point markers, move only */}
-            <TrackLabel label="SFX" />
+            <TrackLabel label={t("timeline.trackSfx")} />
             <div className="relative h-7" onDragOver={(e) => e.preventDefault()} onDrop={onDropSfx}>
               {shownSfx.map((e2, idx) => {
                 const { start, end } = sfxWindow(e2, cueList, cum); const left = start * pps; const w = Math.max(10, (end - start) * pps);
@@ -426,7 +428,7 @@ export function Timeline({ slug }: { slug: string }) {
                   </div>
                 );
               })}
-              {shownSfx.length === 0 && <Empty label="drag a sound effect here" />}
+              {shownSfx.length === 0 && <Empty label={t("timeline.emptySfx")} />}
             </div>
 
             {/* playhead */}
@@ -440,7 +442,7 @@ export function Timeline({ slug }: { slug: string }) {
           internally (instead of bleeding off-page) and the preview's flex-1 gets correct
           leftover space above it. */}
       <div className="relative flex-none" style={{ height: bottomOpen ? 240 : 16 }}>
-        <CollapseTab open={bottomOpen} onToggle={toggleBottom} label="drawer" />
+        <CollapseTab open={bottomOpen} onToggle={toggleBottom} label={t("timeline.drawerLabel")} />
         {bottomOpen && (
           <div className="grid grid-cols-[1fr_320px] grid-rows-[minmax(0,1fr)] gap-3 h-full min-h-0">
             <div ref={drawerRef} className="min-h-0 min-w-0"
@@ -456,10 +458,11 @@ export function Timeline({ slug }: { slug: string }) {
 }
 
 function CollapseTab({ open, onToggle, label }: { open: boolean; onToggle: () => void; label: string }) {
+  const t = useT();
   return (
     <button
       onClick={onToggle}
-      title={(open ? "Collapse " : "Expand ") + label}
+      title={open ? t("timeline.collapseTitle", { label }) : t("timeline.expandTitle", { label })}
       className="absolute left-1/2 z-30 flex items-center justify-center"
       style={{
         transform: "translateX(-50%)", top: -8, width: 56, height: 15,

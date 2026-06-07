@@ -1,5 +1,6 @@
 import { useStore, ToastKind } from "../store";
 import { IList, IX } from "./Icons";
+import { useT } from "../i18n";
 
 const KIND_COLOR: Record<ToastKind, string> = {
   info: "var(--txt-dim)",
@@ -26,6 +27,7 @@ function fmtTime(ts: number) {
    notification pushed via the store (newest first) so they aren't lost when the
    3.2s toast auto-dismisses. */
 export function LogDrawer() {
+  const t = useT();
   const open = useStore((s) => s.logOpen);
   const close = useStore((s) => s.closeLog);
   const log = useStore((s) => s.log);
@@ -44,8 +46,8 @@ export function LogDrawer() {
       >
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title flex items-center gap-2">
-            <IList /> ACTIVITY LOG
-            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {log.length} event{log.length === 1 ? "" : "s"}</span>
+            <IList /> {t("log.title")}
+            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {t("log.eventCount", { count: log.length })}</span>
           </div>
           <div className="flex items-center gap-2">
             <button className="btn p-1" onClick={close}><IX /></button>
@@ -53,7 +55,7 @@ export function LogDrawer() {
         </header>
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
           {entries.length === 0 && (
-            <div className="text-txt-faint p-3">No activity yet. Toasts and notifications will collect here.</div>
+            <div className="text-txt-faint p-3">{t("log.empty")}</div>
           )}
           {entries.map((e) => (
             <div key={e.id} className="flex items-start gap-2 px-2 py-1.5 hairline-soft rounded text-[12px]">

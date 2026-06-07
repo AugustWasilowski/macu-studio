@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "./Modal";
 import { useStore } from "../store";
 import { versionApi, UpdateState } from "../api/version";
+import { useT } from "../i18n";
 
 // Shared query key so the Topbar badge and this modal read the same cache.
 export const VERSION_KEY = ["version"];
@@ -23,6 +24,7 @@ function shortIso(iso: string | null): string {
    When the backend enters the "restarting" phase it exits and systemd relaunches it;
    we wait for /api/health to come back on the NEW process, then reload the page. */
 export function UpdateModal() {
+  const t = useT();
   const open = useStore((s) => s.updateOpen);
   const close = useStore((s) => s.closeUpdate);
   const qc = useQueryClient();
@@ -51,7 +53,7 @@ export function UpdateModal() {
       await versionApi.check();
       await qc.invalidateQueries({ queryKey: VERSION_KEY });
     } catch (e) {
-      pushToast(`check failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+      pushToast(t("toast.checkFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
     } finally {
       setChecking(false);
     }
@@ -63,7 +65,7 @@ export function UpdateModal() {
       await versionApi.update();
       setJob({ phase: "pulling", log: [], error: null, started: Date.now() });
     } catch (e) {
-      pushToast(`update failed to start: ${e instanceof Error ? e.message : String(e)}`, "err");
+      pushToast(t("toast.updateStartFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
     }
   }
 
@@ -97,11 +99,11 @@ export function UpdateModal() {
         }
       }
     };
-    const t = setInterval(tick, 1500);
+    const timer = setInterval(tick, 1500);
     tick();
     return () => {
       alive = false;
-      clearInterval(t);
+      clearInterval(timer);
     };
   }, [job?.phase, job !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -128,22 +130,22 @@ export function UpdateModal() {
     <Modal
       open
       onClose={running ? () => {} : close}
-      title="Software update"
+      title={t("update.title")}
       width={560}
       footer={
         running ? undefined : job?.phase === "error" ? (
-          <button className="btn btn-amber" onClick={() => setJob(null)}>Back</button>
+          <button className="btn btn-amber" onClick={() => setJob(null)}>{t("common.back")}</button>
         ) : job?.phase === "restart-needed" ? (
-          <button className="btn btn-amber" onClick={close}>Close</button>
+          <button className="btn btn-amber" onClick={close}>{t("common.close")}</button>
         ) : (
           <>
             <button className="btn" onClick={onCheck} disabled={checking}>
-              {checking ? "Checking…" : "Check for updates"}
+              {checking ? t("update.checking") : t("update.checkBtn")}
             </button>
             {chk?.update_available && !dirty && (
-              <button className="btn btn-amber" onClick={onUpdate}>Update &amp; restart</button>
+              <button className="btn btn-amber" onClick={onUpdate}>{t("update.updateBtn")}</button>
             )}
-            <button className="btn" onClick={close}>Close</button>
+            <button className="btn" onClick={close}>{t("common.close")}</button>
           </>
         )
       }
@@ -152,11 +154,11 @@ export function UpdateModal() {
       {job ? (
         <div className="flex flex-col gap-2">
           <div className="text-[13px]">
-            {job.phase === "pulling" && <span className="text-amber">Pulling latest code…</span>}
-            {job.phase === "building" && <span className="text-amber">Rebuilding (deps + UI)… this can take a minute.</span>}
-            {job.phase === "restarting" && <span className="text-amber">Restarting — the page will reload automatically.</span>}
-            {job.phase === "restart-needed" && <span className="text-cyan">Update built. Restart the server manually to load it.</span>}
-            {job.phase === "error" && <span className="text-err">Update failed.</span>}
+            {job.phase === "pulling" && <span className="text-amber">{t("update.phasePulling")}</span>}
+            {job.phase === "building" && <span className="text-amber">{t("update.phaseBuilding")}</span>}
+            {job.phase === "restarting" && <span className="text-amber">{t("update.phaseRestarting")}</span>}
+            {job.phase === "restart-needed" && <span className="text-cyan">{t("update.phaseRestartNeeded")}</span>}
+            {job.phase === "error" && <span className="text-err">{t("update.phaseFailed")}</span>}
           </div>
           {job.error && <div className="label-tiny text-err leading-relaxed">{job.error}</div>}
           <div
@@ -170,7 +172,7 @@ export function UpdateModal() {
         /* ---- Idle: current version + check result ---- */
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <div className="label-tiny">Installed</div>
+            <div className="label-tiny">{t("update.installed")}</div>
             <div className="text-[13px]">
               <span className="font-mono text-amber">{cur?.short ?? "…"}</span>
               <span className="text-txt-dim"> · {cur?.branch}</span>
@@ -181,17 +183,16 @@ export function UpdateModal() {
 
           {dirty && (
             <p className="label-tiny text-err leading-relaxed">
-              This checkout has uncommitted local changes — auto-update is disabled to avoid
-              clobbering them. Commit or discard them (or update from a terminal) first.
+              {t("update.dirtyWarning")}
             </p>
           )}
 
           {chk?.error ? (
-            <p className="label-tiny text-err leading-relaxed">Couldn't check: {chk.error}</p>
+            <p className="label-tiny text-err leading-relaxed">{t("update.checkError", { error: chk.error })}</p>
           ) : chk?.update_available ? (
             <div className="flex flex-col gap-1">
               <div className="text-[13px] text-cyan">
-                Update available — {chk.behind} new commit{chk.behind === 1 ? "" : "s"}
+                {t("update.available", { count: chk.behind })}
                 {chk.remote_short && <span className="font-mono text-txt-dim"> → {chk.remote_short}</span>}
               </div>
               <div className="bg-black/40 rounded p-2 max-h-[200px] overflow-y-auto flex flex-col gap-0.5">
@@ -203,18 +204,17 @@ export function UpdateModal() {
                 ))}
               </div>
               <p className="label-tiny opacity-70 leading-relaxed mt-1">
-                "Update &amp; restart" pulls, rebuilds the UI, and relaunches the service
-                (~1 min). The page reloads itself when it's back.
+                {t("update.updateHint")}
               </p>
             </div>
           ) : upToDate ? (
-            <div className="text-[13px] text-green">You're on the latest version.</div>
+            <div className="text-[13px] text-green">{t("update.upToDate")}</div>
           ) : (
-            <div className="label-tiny opacity-70">Click "Check for updates" to look for a newer build.</div>
+            <div className="label-tiny opacity-70">{t("update.idleHint")}</div>
           )}
 
           {chk?.ts && (
-            <div className="label-tiny opacity-50">Last checked {shortIso(new Date(chk.ts * 1000).toISOString())}</div>
+            <div className="label-tiny opacity-50">{t("update.lastChecked", { date: shortIso(new Date(chk.ts * 1000).toISOString()) })}</div>
           )}
         </div>
       )}

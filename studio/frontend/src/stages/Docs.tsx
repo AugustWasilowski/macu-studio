@@ -3,10 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { docsApi, type DocSummary, type DocScope } from "../api/docs";
 import { useStore } from "../store";
 import { Markdown } from "../components/Markdown";
+import { useT } from "../i18n";
 
 interface Sel { name: string; scope: DocScope; }
 
 export function Docs() {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const activeShow = useStore((s) => s.activeShow);
@@ -47,11 +49,11 @@ export function Docs() {
     mutationFn: () => docsApi.put(sel!.name, text, activeShow, sel!.scope),
     onSuccess: () => {
       setSaved(true);
-      push(`${sel!.name} saved`, "ok");
+      push(t("toast.docSaved", { name: sel!.name }), "ok");
       qc.invalidateQueries({ queryKey: ["docs", activeShow] });
       qc.invalidateQueries({ queryKey: ["doc", activeShow, sel!.scope, sel!.name] });
     },
-    onError: (e: Error) => push("save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.saveFailed", { msg: e.message }), "err"),
   });
 
   // Ctrl/Cmd+S
@@ -67,7 +69,7 @@ export function Docs() {
   }, [saved, sel, saveMut]);
 
   const selectDoc = (d: DocSummary) => {
-    if (!saved && !confirm("Discard unsaved changes?")) return;
+    if (!saved && !confirm(t("docs.discardChangesConfirm"))) return;
     setSel({ name: d.name, scope: d.scope });
   };
 
@@ -78,10 +80,10 @@ export function Docs() {
       {/* LEFT — docs list */}
       <section className="panel flex flex-col min-h-0">
         <header className="px-3 py-2 border-b hairline">
-          <div className="panel-title">CANON DOCS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {activeShow}</span></div>
+          <div className="panel-title">{t("docs.panelTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {activeShow}</span></div>
         </header>
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
-          {listQ.isLoading && <div className="text-txt-faint p-2">Loading…</div>}
+          {listQ.isLoading && <div className="text-txt-faint p-2">{t("common.loading")}</div>}
           {docs.map((d: DocSummary) => {
             const active = sel?.name === d.name && sel?.scope === d.scope;
             return (
@@ -94,7 +96,7 @@ export function Docs() {
                 <div className="flex items-center gap-1.5">
                   <div className="font-mono text-[12px] truncate flex-1">{d.name}</div>
                   {d.scope === "common" && (
-                    <span className="label-tiny px-1 rounded bg-[var(--bg-2)] text-txt-faint shrink-0" title="Shared across all shows">SHARED</span>
+                    <span className="label-tiny px-1 rounded bg-[var(--bg-2)] text-txt-faint shrink-0" title={t("docs.sharedBadgeTitle")}>{t("docs.sharedBadge")}</span>
                   )}
                 </div>
                 <div className="label-tiny text-txt-faint">{fmtBytes(d.bytes)}</div>
@@ -102,7 +104,7 @@ export function Docs() {
             );
           })}
           {!listQ.isLoading && docs.length === 0 && (
-            <div className="text-txt-faint p-2">No docs for {activeShow}.</div>
+            <div className="text-txt-faint p-2">{t("docs.noDocs", { show: activeShow })}</div>
           )}
         </div>
       </section>
@@ -113,29 +115,29 @@ export function Docs() {
           <div className="panel-title flex items-center gap-2">
             {sel?.name || "—"}
             {isCommon && (
-              <span className="label-tiny px-1 rounded normal-case tracking-normal" style={{ color: "var(--amber)", border: "1px solid var(--amber)" }} title="Editing this changes it for every show">SHARED · all shows</span>
+              <span className="label-tiny px-1 rounded normal-case tracking-normal" style={{ color: "var(--amber)", border: "1px solid var(--amber)" }} title={t("docs.sharedEditorTitle")}>{t("docs.sharedAllShows")}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
             <span className={"text-[11px] " + (saved ? "text-green" : "text-amber")}>
-              {saved ? "● SAVED" : "○ UNSAVED"}
+              {saved ? t("docs.savedIndicator") : t("docs.unsavedIndicator")}
             </span>
-            <button className={"btn " + (!preview ? "btn-amber" : "")} onClick={() => setPreview(false)}>Edit</button>
-            <button className={"btn " + (preview ? "btn-amber" : "")} onClick={() => setPreview(true)}>Preview</button>
+            <button className={"btn " + (!preview ? "btn-amber" : "")} onClick={() => setPreview(false)}>{t("docs.editBtn")}</button>
+            <button className={"btn " + (preview ? "btn-amber" : "")} onClick={() => setPreview(true)}>{t("docs.previewBtn")}</button>
             <button
               className="btn"
               disabled={saved || !sel || saveMut.isPending}
               onClick={() => saveMut.mutate()}
             >
-              {saveMut.isPending ? "Saving…" : "Save"}
+              {saveMut.isPending ? t("docs.savingBtn") : t("common.save")}
             </button>
           </div>
         </header>
         <div className="flex-1 min-h-0">
           {!sel ? (
-            <div className="h-full grid place-items-center text-txt-faint">Select a doc.</div>
+            <div className="h-full grid place-items-center text-txt-faint">{t("docs.selectPrompt")}</div>
           ) : docQ.isLoading ? (
-            <div className="h-full grid place-items-center text-txt-faint">Loading…</div>
+            <div className="h-full grid place-items-center text-txt-faint">{t("common.loading")}</div>
           ) : preview ? (
             <div className="h-full overflow-y-auto p-4 text-[13px] leading-relaxed">
               <Markdown text={text} />
@@ -151,8 +153,8 @@ export function Docs() {
           )}
         </div>
         <footer className="flex items-center gap-3 px-3 py-1.5 border-t hairline">
-          <span className="label-tiny">{text.length} chars</span>
-          <span className="label-tiny ml-auto">UTF-8 · markdown · LF · Ctrl/Cmd+S to save</span>
+          <span className="label-tiny">{t("docs.charCount", { count: text.length })}</span>
+          <span className="label-tiny ml-auto">{t("docs.editorHint")}</span>
         </footer>
       </section>
     </div>

@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { useStore } from "../store";
 import { diagnosticsApi, DiagnosticsResult } from "../api/diagnostics";
+import { useT } from "../i18n";
+import { Trans } from "../i18n/Trans";
 
 /* Host preflight on demand — runs deploy/doctor.sh server-side and shows the report
    (git/ffmpeg/python/node, Docker + nvidia runtime, GPU/VRAM, optional chat/terminal
    deps). Auto-runs when opened; "Re-run" repeats it after the user fixes something. */
 export function DiagnosticsModal() {
+  const t = useT();
   const open = useStore((s) => s.diagnosticsOpen);
   const close = useStore((s) => s.closeDiagnostics);
 
@@ -37,27 +40,27 @@ export function DiagnosticsModal() {
   if (!open) return null;
 
   const banner = running
-    ? { text: "Running diagnostics…", cls: "text-amber" }
+    ? { text: t("diagnostics.bannerRunning"), cls: "text-amber" }
     : error
-    ? { text: "Couldn't run diagnostics.", cls: "text-err" }
+    ? { text: t("diagnostics.bannerError"), cls: "text-err" }
     : result
     ? result.ok
-      ? { text: "All required checks passed.", cls: "text-green" }
-      : { text: "Some required checks failed — see below.", cls: "text-err" }
+      ? { text: t("diagnostics.bannerOk"), cls: "text-green" }
+      : { text: t("diagnostics.bannerFailed"), cls: "text-err" }
     : { text: "", cls: "" };
 
   return (
     <Modal
       open
       onClose={close}
-      title="System diagnostics"
+      title={t("diagnostics.title")}
       width={620}
       footer={
         <>
           <button className="btn" onClick={run} disabled={running}>
-            {running ? "Running…" : "Re-run"}
+            {running ? t("diagnostics.btnRunning") : t("diagnostics.btnRerun")}
           </button>
-          <button className="btn btn-amber" onClick={close}>Close</button>
+          <button className="btn btn-amber" onClick={close}>{t("common.close")}</button>
         </>
       }
     >
@@ -67,11 +70,14 @@ export function DiagnosticsModal() {
         </div>
         {error && <div className="label-tiny text-err leading-relaxed">{error}</div>}
         <div className="font-mono text-[11px] leading-relaxed bg-black/50 rounded p-2 max-h-[400px] overflow-y-auto whitespace-pre-wrap">
-          {running && !result ? "…" : result ? result.output || "(no output)" : ""}
+          {running && !result ? "…" : result ? result.output || t("diagnostics.noOutput") : ""}
         </div>
         <p className="label-tiny opacity-70 leading-relaxed">
-          This runs the installer preflight (<span className="font-mono">deploy/doctor.sh</span>)
-          on the host. It only checks — it never installs anything.
+          <Trans
+            k="diagnostics.preflightNote"
+            vars={{ cmd: "deploy/doctor.sh" }}
+            tags={[(c) => <span className="font-mono">{c}</span>]}
+          />
         </p>
       </div>
     </Modal>

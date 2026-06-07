@@ -1,14 +1,16 @@
 import { useRef, useState } from "react";
+import { useT } from "../i18n";
 import { INote, IRegen } from "./Icons";
 import { Popover } from "./Popover";
 
 export function RegenNotes({
-  onSubmit, placeholder = "guidance for the pipeline…", seedNote,
+  onSubmit, placeholder, seedNote,
 }: {
   onSubmit: (text: string) => void;
   placeholder?: string;
   seedNote?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [txt, setTxt] = useState(seedNote ?? "");
   const btn = useRef<HTMLButtonElement>(null);
@@ -27,26 +29,26 @@ export function RegenNotes({
       <button
         ref={btn}
         className="btn p-1"
-        title="Regenerate with notes…"
+        title={t("regennotes.buttonTitle")}
         onClick={toggle}
       >
         <INote />
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} title="Regenerate with notes" width={300} anchor={anchor}>
+      <Popover open={open} onClose={() => setOpen(false)} title={t("regennotes.popoverTitle")} width={300} anchor={anchor}>
         <textarea
           className="input w-full"
           style={{ height: 80, resize: "vertical" }}
           value={txt}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("regennotes.placeholder")}
           onChange={(e) => setTxt(e.target.value)}
         />
         <div className="flex justify-end gap-2 mt-2">
-          <button className="btn" onClick={() => setOpen(false)}>Cancel</button>
+          <button className="btn" onClick={() => setOpen(false)}>{t("common.cancel")}</button>
           <button
             className="btn btn-amber"
             onClick={() => { onSubmit(txt); setOpen(false); }}
           >
-            <IRegen /> Regen
+            <IRegen /> {t("regennotes.regen")}
           </button>
         </div>
       </Popover>

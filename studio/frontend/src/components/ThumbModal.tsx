@@ -5,6 +5,7 @@ import { graphicsApi } from "../api/graphics";
 import { useStore } from "../store";
 import { Modal } from "./Modal";
 import { IChevron } from "./Icons";
+import { useT } from "../i18n";
 
 /* Enlarged YouTube-thumbnail viewer: big image + version browser (newer/older +
    "Use this version") + the composition/fields metadata that produced each
@@ -20,6 +21,7 @@ export function ThumbModal({
   livePreviewUrl: string;          // already cache-busted
   onChanged: () => void;           // invalidate manifest/preview after a promote
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const [idx, setIdx] = useState(0); // 0 = live, 1..n = history newest→oldest
@@ -59,29 +61,29 @@ export function ThumbModal({
       qc.invalidateQueries({ queryKey: ["versions", "ythumb", slug, slug] });
       setIdx(0);
       onChanged();
-      push(`promoted v${entry.v} → live thumbnail`, "ok");
+      push(t("toast.thumbPromoted", { v: entry.v }), "ok");
     } catch (e: any) {
-      push("promote failed: " + (e?.message ?? "error"), "err");
+      push(t("toast.thumbPromoteFailed", { msg: e?.message ?? "error" }), "err");
     }
     setPromoting(false);
   };
 
   return (
-    <Modal open={open} onClose={onClose} width={760} title="YOUTUBE THUMBNAIL">
+    <Modal open={open} onClose={onClose} width={760} title={t("thumb.title")}>
       <div className="flex flex-col gap-3">
         <div className="bg-black hairline-soft rounded overflow-hidden grid place-items-center" style={{ aspectRatio: "16/9" }}>
-          <img key={imgUrl} src={imgUrl} alt="youtube thumbnail" className="w-full h-full object-contain" />
+          <img key={imgUrl} src={imgUrl} alt={t("thumb.imgAlt")} className="w-full h-full object-contain" />
         </div>
 
         <div className="flex items-center justify-between gap-2">
           <div className="inline-flex items-center gap-1 text-[12px]">
-            <button className="btn p-1" disabled={total <= 1} onClick={() => go(clamped - 1)} title="Newer">
+            <button className="btn p-1" disabled={total <= 1} onClick={() => go(clamped - 1)} title={t("thumb.newer")}>
               <IChevron size={13} style={{ transform: "rotate(90deg)" }} />
             </button>
             <span className="font-mono tabular-nums px-1" style={{ minWidth: 70, textAlign: "center" }}>
               {label} <span className="text-txt-faint">{clamped + 1}/{Math.max(1, total)}</span>
             </span>
-            <button className="btn p-1" disabled={total <= 1} onClick={() => go(clamped + 1)} title="Older">
+            <button className="btn p-1" disabled={total <= 1} onClick={() => go(clamped + 1)} title={t("thumb.older")}>
               <IChevron size={13} style={{ transform: "rotate(-90deg)" }} />
             </button>
           </div>
@@ -89,23 +91,23 @@ export function ThumbModal({
             className="btn btn-amber"
             disabled={!viewingHistory || promoting}
             onClick={promote}
-            title={viewingHistory ? "Make this version the live thumbnail" : "Browse to an older version to select it"}
+            title={viewingHistory ? t("thumb.promoteTip") : t("thumb.browseToOlderTip")}
           >
-            {promoting ? "Selecting…" : "Use this version"}
+            {promoting ? t("thumb.selecting") : t("thumb.useThisVersion")}
           </button>
         </div>
 
         <div className="hairline-soft rounded p-2 flex flex-col gap-2">
           <div className="grid grid-cols-[90px_1fr] gap-1 text-[12px]">
-            <span className="label-tiny">version</span><span className="font-mono">{label}{!viewingHistory && total > 1 ? " (current)" : ""}</span>
-            <span className="label-tiny">template</span><span className="font-mono">{meta.composition ?? <span className="text-txt-faint">— not recorded</span>}</span>
+            <span className="label-tiny">{t("thumb.versionLabel")}</span><span className="font-mono">{label}{!viewingHistory && total > 1 ? t("thumb.currentSuffix") : ""}</span>
+            <span className="label-tiny">{t("thumb.templateLabel")}</span><span className="font-mono">{meta.composition ?? <span className="text-txt-faint">{t("thumb.notRecorded")}</span>}</span>
           </div>
           <div>
-            <span className="label-tiny">fields (JSON)</span>
+            <span className="label-tiny">{t("thumb.fieldsLabel")}</span>
             <pre className="logtail mt-1" style={{ maxHeight: 200 }}>
               {meta.fields && Object.keys(meta.fields).length
                 ? JSON.stringify(meta.fields, null, 2)
-                : "— not recorded (rendered before metadata tracking, or no fields)"}
+                : t("thumb.fieldsNotRecorded")}
             </pre>
           </div>
         </div>

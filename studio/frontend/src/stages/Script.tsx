@@ -4,10 +4,13 @@ import { api, type GenManifestSummary, type ScriptVersion, type ScriptDiffLine }
 import { useStore } from "../store";
 import { Modal } from "../components/Modal";
 import { Markdown } from "../components/Markdown";
+import { useT, t as tFn } from "../i18n";
+import { Trans } from "../i18n/Trans";
 
 const WPM = 150;
 
 export function Script({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
 
@@ -42,7 +45,7 @@ export function Script({ slug }: { slug: string }) {
     mutationFn: () => api.putScript(slug, text),
     onSuccess: () => {
       setSaved(true);
-      push("script.md saved", "ok");
+      push(t("toast.scriptSaved"), "ok");
       qc.invalidateQueries({ queryKey: ["script", slug] });
     },
     onError: (e: Error) => push("save failed: " + e.message, "err"),
@@ -63,7 +66,7 @@ export function Script({ slug }: { slug: string }) {
     mutationFn: () => api.genManifest(slug, true),
     onSuccess: (r) => {
       const s = r.summary;
-      push(`manifest written — ${s.new_cue_count} cues (${s.cues_added} new, ${s.cues_reshot} reshot)`, "ok");
+      push(t("toast.manifestWritten", { cues: s.new_cue_count, added: s.cues_added, reshot: s.cues_reshot }), "ok");
       setGen(null);
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["cues", slug] });
@@ -98,30 +101,30 @@ export function Script({ slug }: { slug: string }) {
           </div>
           <div className="flex items-center gap-2">
             <span className={"text-[11px] " + (saved ? "text-green" : "text-amber")}>
-              {saved ? "● SAVED" : "○ UNSAVED"}
+              {saved ? t("script.saved") : t("script.unsaved")}
             </span>
-            <span className="inline-flex items-center gap-0.5 mr-1" title="Script text size">
+            <span className="inline-flex items-center gap-0.5 mr-1" title={t("script.fontSizeTitle")}>
               <button className="btn px-1.5 py-0.5" onClick={() => bumpFont(-1)}>A−</button>
               <span className="text-txt-faint text-[10px] w-6 text-center tabular-nums">{fontPx}</span>
               <button className="btn px-1.5 py-0.5" onClick={() => bumpFont(1)}>A+</button>
             </span>
-            <button className={"btn " + (mode === "edit" ? "btn-amber" : "")} onClick={() => setMode("edit")}>Edit</button>
-            <button className={"btn " + (mode === "preview" ? "btn-amber" : "")} onClick={() => setMode("preview")}>Preview</button>
-            <button className={"btn " + (mode === "diff" ? "btn-amber" : "")} onClick={() => setMode("diff")} title="Compare synced versions (green added / red cut)">Diff</button>
+            <button className={"btn " + (mode === "edit" ? "btn-amber" : "")} onClick={() => setMode("edit")}>{t("script.modeEdit")}</button>
+            <button className={"btn " + (mode === "preview" ? "btn-amber" : "")} onClick={() => setMode("preview")}>{t("script.modePreview")}</button>
+            <button className={"btn " + (mode === "diff" ? "btn-amber" : "")} onClick={() => setMode("diff")} title={t("script.modeDiffTitle")}>{t("script.modeDiff")}</button>
             <button
               className="btn"
               disabled={saved || saveMut.isPending}
               onClick={() => saveMut.mutate()}
             >
-              {saveMut.isPending ? "Saving…" : "Save"}
+              {saveMut.isPending ? t("script.saving") : t("common.save")}
             </button>
             <button
               className="btn btn-cyan"
               disabled={genMut.isPending}
-              title="Re-parse script.md into manifest cues (preview before writing)"
+              title={t("script.generateTitle")}
               onClick={() => genMut.mutate()}
             >
-              {genMut.isPending ? "Reading script…" : "Generate manifest"}
+              {genMut.isPending ? t("script.readingScript") : t("script.generateManifest")}
             </button>
           </div>
         </header>
@@ -144,10 +147,10 @@ export function Script({ slug }: { slug: string }) {
           )}
         </div>
         <footer className="flex items-center gap-3 px-3 py-1.5 border-t hairline">
-          <span className="seg-readout">{String(cueCount).padStart(2, "0")} CUES</span>
-          <span className="seg-readout cyan">{mm}:{ss} <span className="text-txt-faint">EST RUNTIME</span></span>
-          <span className="label-tiny">{words} words</span>
-          <span className="label-tiny ml-auto">UTF-8 · markdown · LF</span>
+          <span className="seg-readout">{String(cueCount).padStart(2, "0")} {t("script.cues", { count: cueCount })}</span>
+          <span className="seg-readout cyan">{mm}:{ss} <span className="text-txt-faint">{t("script.estRuntime")}</span></span>
+          <span className="label-tiny">{t("script.words", { count: words })}</span>
+          <span className="label-tiny ml-auto">{t("script.encoding")}</span>
         </footer>
       </section>
 
@@ -169,19 +172,20 @@ function GenManifestModal({
   onApply: () => void;
   applying: boolean;
 }) {
+  const t = useT();
   const s = summary;
   const noChange = !!s && s.cues_added === 0 && s.cues_reshot === 0 && !s.renumbered;
   return (
     <Modal
       open={!!s}
       onClose={onClose}
-      title={<>GENERATE MANIFEST <span className="text-cyan ml-2 text-[10px]">● from script.md</span></>}
+      title={<>{t("script.modalTitle")} <span className="text-cyan ml-2 text-[10px]">{t("script.modalTitleSub")}</span></>}
       width={560}
       footer={
         <>
-          <button className="btn" onClick={onClose} disabled={applying}>Cancel</button>
+          <button className="btn" onClick={onClose} disabled={applying}>{t("common.cancel")}</button>
           <button className="btn btn-amber" onClick={onApply} disabled={applying || noChange}>
-            {applying ? "Writing…" : noChange ? "No changes" : "Apply — write manifest.json"}
+            {applying ? t("script.writing") : noChange ? t("script.noChanges") : t("script.applyManifest")}
           </button>
         </>
       }
@@ -189,36 +193,34 @@ function GenManifestModal({
       {s && (
         <div className="flex flex-col gap-3 text-[13px]">
           <div className="flex items-center gap-3">
-            <span className="seg-readout">{s.old_cue_count} → {s.new_cue_count} CUES</span>
-            <span className="label-tiny text-green">{s.cues_added} new</span>
-            <span className="label-tiny text-amber">{s.cues_reshot} reshot</span>
-            {s.renumbered && <span className="label-tiny text-amber">⚠ renumbered (VO cache may rebuild)</span>}
+            <span className="seg-readout">{s.old_cue_count} → {s.new_cue_count} {t("script.cuesStat")}</span>
+            <span className="label-tiny text-green">{s.cues_added} {t("script.cuesNew")}</span>
+            <span className="label-tiny text-amber">{s.cues_reshot} {t("script.cuesReshot")}</span>
+            {s.renumbered && <span className="label-tiny text-amber">{t("script.renumbered")}</span>}
           </div>
 
           <p className="text-txt-dim text-[12px]">
-            Cues are re-parsed from <code>script.md</code> and merged in; voice profiles, character
-            seeds, b-roll, comfyui/style/music and title assets are preserved. A timestamped
-            <code> manifest.json.bak</code> is written before applying.
+            <Trans k="script.mergeHelp" tags={[(c) => <code key="0">{c}</code>, (c) => <code key="1">{c}</code>]} />
           </p>
 
           {s.unmapped_speakers.length > 0 && (
             <div className="rounded-[3px] p-2" style={{ background: "rgba(245,166,35,0.08)", borderLeft: "2px solid var(--amber)" }}>
-              <div className="label-tiny text-amber mb-1">SPEAKERS WITH NO VOICE MAPPING</div>
+              <div className="label-tiny text-amber mb-1">{t("script.unmappedLabel")}</div>
               <div className="text-[12px]">{s.unmapped_speakers.join(", ")}</div>
-              <div className="label-tiny text-txt-faint mt-1">Add them to voice.speaker_map (Manifest drawer) or those cues won't get VO.</div>
+              <div className="label-tiny text-txt-faint mt-1">{t("script.unmappedHint")}</div>
             </div>
           )}
 
           {s.warnings.length > 0 && (
             <div className="rounded-[3px] p-2 max-h-32 overflow-y-auto" style={{ background: "rgba(255,122,89,0.06)", borderLeft: "2px solid #ff7a59" }}>
-              <div className="label-tiny mb-1" style={{ color: "#ff7a59" }}>WARNINGS ({s.warnings.length})</div>
+              <div className="label-tiny mb-1" style={{ color: "#ff7a59" }}>{t("script.warningsLabel", { count: s.warnings.length })}</div>
               {s.warnings.map((w, i) => <div key={i} className="text-[12px] text-txt-dim">{w}</div>)}
             </div>
           )}
 
           {s.changes.length > 0 ? (
             <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
-              <div className="label-tiny">CHANGED CUES</div>
+              <div className="label-tiny">{t("script.changedCues")}</div>
               {s.changes.map((c) => (
                 <div key={c.id} className="flex items-baseline gap-2 text-[12px]">
                   <span className="seg-readout" style={{ minWidth: 38 }}>{c.id}</span>
@@ -229,7 +231,7 @@ function GenManifestModal({
               ))}
             </div>
           ) : (
-            <div className="text-txt-faint text-[12px]">Script matches the manifest — nothing to write.</div>
+            <div className="text-txt-faint text-[12px]">{t("script.noChangesDetail")}</div>
           )}
         </div>
       )}
@@ -245,8 +247,8 @@ function ScriptPreview({ text }: { text: string }) {
 
 // ---- Diff mode: step through synced versions (git) + the live working copy ----
 
-function vlabel(v: ScriptVersion): string {
-  if (v.kind === "working") return "Working copy (unsynced)";
+function vlabel(v: ScriptVersion, t: typeof tFn): string {
+  if (v.kind === "working") return t("script.workingCopy");
   const when = v.iso
     ? new Date(v.iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
     : "";
@@ -258,6 +260,7 @@ function Pad({ children }: { children: ReactNode }) {
 }
 
 function DiffView({ slug, fontPx }: { slug: string; fontPx: number }) {
+  const t = useT();
   const versionsQ = useQuery({
     queryKey: ["scriptVersions", slug],
     queryFn: () => api.scriptVersions(slug),
@@ -275,23 +278,23 @@ function DiffView({ slug, fontPx }: { slug: string; fontPx: number }) {
     enabled: !!base && !!target,
   });
 
-  if (versionsQ.isLoading) return <Pad>loading versions…</Pad>;
+  if (versionsQ.isLoading) return <Pad>{t("script.loadingVersions")}</Pad>;
   if (versions.length === 0)
-    return <Pad>No synced versions yet. Hit the git sync button to snapshot this script, then come back to compare.</Pad>;
+    return <Pad>{t("script.noVersionsYet")}</Pad>;
   if (versions.length === 1)
-    return <Pad>Only one version so far ({vlabel(versions[0])}). Sync again after your next edit to get a diff.</Pad>;
+    return <Pad>{t("script.oneVersionOnly", { label: vlabel(versions[0], t) })}</Pad>;
 
   const d = diffQ.data;
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 px-3 py-2 border-b hairline text-[12px]">
         <button className="btn" disabled={i >= versions.length - 2}
-          onClick={() => setI((n) => Math.min(versions.length - 2, n + 1))} title="Older comparison">◀</button>
+          onClick={() => setI((n) => Math.min(versions.length - 2, n + 1))} title={t("script.olderComparison")}>◀</button>
         <button className="btn" disabled={i <= 0}
-          onClick={() => setI((n) => Math.max(0, n - 1))} title="Newer comparison">▶</button>
-        <span className="text-txt-dim truncate">{vlabel(base)}</span>
+          onClick={() => setI((n) => Math.max(0, n - 1))} title={t("script.newerComparison")}>▶</button>
+        <span className="text-txt-dim truncate">{vlabel(base, t)}</span>
         <span className="text-txt-faint">→</span>
-        <span className="text-txt truncate">{vlabel(target)}</span>
+        <span className="text-txt truncate">{vlabel(target, t)}</span>
         {d && (
           <span className="ml-auto flex gap-2 shrink-0">
             <span style={{ color: "#8fd19e" }}>+{d.added}</span>
@@ -300,8 +303,8 @@ function DiffView({ slug, fontPx }: { slug: string; fontPx: number }) {
         )}
       </div>
       <div className="flex-1 min-h-0 overflow-auto font-mono leading-[1.55]" style={{ fontSize: fontPx }}>
-        {diffQ.isLoading && <Pad>computing diff…</Pad>}
-        {d && d.lines.length === 0 && <Pad>No changes between these two versions.</Pad>}
+        {diffQ.isLoading && <Pad>{t("script.computingDiff")}</Pad>}
+        {d && d.lines.length === 0 && <Pad>{t("script.noDiffChanges")}</Pad>}
         {d && d.lines.map((ln, idx) => <DiffLine key={idx} line={ln} />)}
       </div>
     </div>

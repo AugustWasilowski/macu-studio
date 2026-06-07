@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { versionsApi } from "../api/assets";
 import { useStore } from "../store";
 import { IChevron } from "./Icons";
+import { useT } from "../i18n";
 
 /* Compact ← idx/total → version browser for a single asset, sized to live in a
    table cell. The Graphics page reuses this with kind="ythumb" — keep the prop
@@ -18,6 +19,7 @@ export function VersionArrows({
   onView?: (mediaUrl: string | null, seed?: number | null) => void;
   onChanged?: () => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const [idx, setIdx] = useState(0);
@@ -63,36 +65,36 @@ export function VersionArrows({
       setIdx(0);
       onView?.(null);
       onChanged?.();
-      push(`promoted v${e.v} → live`, "ok");
+      push(t("toast.promoted", { v: e.v }), "ok");
     } catch (err: any) {
-      push("promote failed: " + (err?.message ?? "error"), "err");
+      push(t("toast.promoteFailed", { message: err?.message ?? "error" }), "err");
     }
     setPromoting(false);
   };
 
-  const label = total <= 1 ? "live" : clamped === 0 ? "live" : `v${entries[clamped - 1]?.v}`;
+  const label = total <= 1 ? t("versions.live") : clamped === 0 ? t("versions.live") : `v${entries[clamped - 1]?.v}`;
 
   return (
     <div
       className={"inline-flex items-center gap-1 text-[11px] " + (disabled ? "opacity-40 pointer-events-none" : "")}
-      title={disabled ? "Only one version" : "Browse versions"}
+      title={disabled ? t("versions.onlyOne") : t("versions.browse")}
     >
-      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped - 1)} title="Newer">
+      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped - 1)} title={t("versions.newer")}>
         <IChevron size={12} style={{ transform: "rotate(90deg)" }} />
       </button>
       <span className="font-mono whitespace-nowrap tabular-nums" style={{ minWidth: 52, textAlign: "center" }}>
         {label} <span className="text-txt-faint">{clamped + 1}/{Math.max(1, total)}</span>
       </span>
-      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped + 1)} title="Older">
+      <button className="btn p-0.5" disabled={disabled} onClick={() => go(clamped + 1)} title={t("versions.older")}>
         <IChevron size={12} style={{ transform: "rotate(-90deg)" }} />
       </button>
       <button
         className="btn p-0.5 px-1"
         disabled={disabled || !viewingHistory || promoting}
         onClick={promote}
-        title="Promote this version to live"
+        title={t("versions.promoteTitle")}
       >
-        use
+        {t("versions.useBtn")}
       </button>
     </div>
   );

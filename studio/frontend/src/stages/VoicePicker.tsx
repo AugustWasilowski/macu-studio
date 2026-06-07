@@ -4,6 +4,7 @@ import { api } from "../api";
 import { voicesApi } from "../api/voices";
 import { exportUrl } from "../api/shows";
 import { useStore } from "../store";
+import { useT } from "../i18n";
 
 /** Deterministic color per character (same palette as the cue rows). */
 function colorFor(name: string): string {
@@ -23,6 +24,7 @@ function colorFor(name: string): string {
  * list is cached server-side, so the roster (incl. the Announcer) shows even
  * when OmniVoice is stopped. */
 export function VoicePicker({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const manifestQ = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
@@ -65,11 +67,12 @@ export function VoicePicker({ slug }: { slug: string }) {
         : api.setSpeakerVoice(slug, speaker, "piper"),
     onSuccess: (r, v) => {
       const label = v.profile_id ? (voiceOptions.find((o) => o.id === v.profile_id)?.name ?? "voice") : "unassigned";
-      push(`${v.speaker} → ${label}${r.propagated ? " · saved for all episodes" : ""}`, "ok");
+      const key = r.propagated ? "toast.voiceAssignedPropagated" : "toast.voiceAssigned";
+      push(t(key, { speaker: v.speaker, label }), "ok");
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["cues", slug] });
     },
-    onError: (e: Error) => push("voice update failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.voiceUpdateFailed", { message: e.message }), "err"),
   });
 
   const addChar = () => {
@@ -78,20 +81,20 @@ export function VoicePicker({ slug }: { slug: string }) {
   };
 
   const voiceCountNote = running
-    ? `${voiceOptions.length} voice${voiceOptions.length === 1 ? "" : "s"}`
+    ? t("voicepicker.voiceCount", { count: voiceOptions.length })
     : cached && voiceOptions.length
-      ? `${voiceOptions.length} voices (OmniVoice stopped — cached)`
-      : "OmniVoice stopped — clone or render to list voices";
+      ? t("voicepicker.voiceCountCached", { count: voiceOptions.length })
+      : t("voicepicker.omnivoiceStopped");
 
   return (
     <div className="px-3 py-2 border-b hairline flex flex-col gap-2 bg-bg-1">
       <div className="flex items-center justify-between">
-        <span className="label-tiny">CAST VOICES <span className="text-txt-faint normal-case tracking-normal">— assign a cloned voice per character</span></span>
+        <span className="label-tiny">{t("voicepicker.castVoicesLabel")} <span className="text-txt-faint normal-case tracking-normal">{t("voicepicker.castVoicesSubtitle")}</span></span>
         <span className="label-tiny text-txt-faint">{voiceCountNote}</span>
       </div>
 
       {characters.length === 0 && (
-        <div className="label-tiny text-txt-faint">No characters yet — add one below, or Generate manifest to pull them from the script.</div>
+        <div className="label-tiny text-txt-faint">{t("voicepicker.noCharacters")}</div>
       )}
 
       <div className="grid grid-cols-[minmax(110px,180px)_1fr] gap-x-3 gap-y-1.5 items-center">
@@ -109,7 +112,7 @@ export function VoicePicker({ slug }: { slug: string }) {
                 onChange={(e) => mut.mutate({ speaker: spk, profile_id: e.target.value })}
                 disabled={mut.isPending}
               >
-                <option value="">Select a voice…</option>
+                <option value="">{t("voicepicker.selectVoicePlaceholder")}</option>
                 {voiceOptions.map((o) => (<option key={o.id} value={o.id}>{o.name}</option>))}
               </select>
             </Fragment>
@@ -120,21 +123,21 @@ export function VoicePicker({ slug }: { slug: string }) {
       <div className="flex items-center gap-2 pt-1">
         <input
           className="input py-0.5 text-[12px] w-[200px]"
-          placeholder="+ Add character (e.g. NARRATOR)"
+          placeholder={t("voicepicker.addCharPlaceholder")}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") addChar(); }}
         />
-        <button className="btn" onClick={addChar} disabled={!newName.trim()}>Add</button>
+        <button className="btn" onClick={addChar} disabled={!newName.trim()}>{t("voicepicker.addBtn")}</button>
       </div>
 
       {voiceOptions.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t hairline-soft">
-          <span className="label-tiny text-txt-faint">Export voice (ref clip .zip):</span>
+          <span className="label-tiny text-txt-faint">{t("voicepicker.exportLabel")}</span>
           {voiceOptions.map((o) => (
             <a key={o.id} href={exportUrl.voice(o.name)} download
                className="label-tiny px-1.5 py-0.5 bg-bg-3 rounded hover:brightness-125"
-               title={`Download ${o.name}'s reference clip — re-importable on another machine`}>
+               title={t("voicepicker.exportVoiceTitle", { name: o.name })}>
               {o.name} ↓
             </a>
           ))}

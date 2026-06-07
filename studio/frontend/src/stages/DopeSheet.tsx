@@ -11,12 +11,14 @@ import { cueOffsets, coveredCues, makeOverlay } from "./overlayTiming";
 import { drawerDrag } from "./trackEditor";
 import { versionsApi } from "../api/assets";
 import type { Overlay } from "../types";
+import { useT } from "../i18n";
 
 /** The dope sheet — a cue table where graphics/title cards are dropped onto a cue to
  * place an overlay. Lives on the Assembly tab (left column). Its drag SOURCE is the
  * co-mounted timeline AssetDrawer's GRAPHICS CARDS tab (shared `drawerDrag` payload).
  * Self-contained: owns its own cues/manifest queries, overlay state, and playback. */
 export function DopeSheet({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
 
@@ -44,13 +46,13 @@ export function DopeSheet({ slug }: { slug: string }) {
   const putOverlays = useMutation({
     mutationFn: (next: Overlay[]) => graphicsApi.putOverlays(slug, next),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }),
-    onError: (e: Error) => push("overlays save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("dopesheet.overlaysSaveFailed", { msg: e.message }), "err"),
   });
   const commitOverlays = (next: Overlay[]) => putOverlays.mutate(next);
   const addOverlay = (cueId: string, asset: string) => {
     const c = cueList.find((x) => x.id === cueId);
     commitOverlays([...overlays, makeOverlay(asset, cueId, c?.duration_s ?? 3)]);
-    push(`${asset} → graphic on ${cueId}`, "ok");
+    push(t("toast.graphicAdded", { asset, cueId }), "ok");
   };
   const removeOverlay = (idx: number) => commitOverlays(overlays.filter((_, i) => i !== idx));
   // Card drop source is the timeline's GRAPHICS CARDS drawer tab (drawerDrag, kind "card").
@@ -61,10 +63,10 @@ export function DopeSheet({ slug }: { slug: string }) {
     if (d.slug && d.slug !== slug) {
       try {
         const r = await versionsApi.importTitle(slug, d.slug, d.asset);
-        push(r.master_copied ? `pulled ${d.asset} from ${d.slug} — ready`
-             : r.already ? `${d.asset} already in this episode`
-             : `imported ${d.asset} from ${d.slug} — render it on the Graphics tab`, "ok");
-      } catch (err: any) { push("import failed: " + (err?.message ?? "error"), "err"); return; }
+        push(r.master_copied ? t("toast.graphicPulled", { asset: d.asset, slug: d.slug })
+             : r.already ? t("toast.graphicAlreadyPresent", { asset: d.asset })
+             : t("toast.graphicImported", { asset: d.asset, slug: d.slug }), "ok");
+      } catch (err: any) { push(t("dopesheet.importFailed", { msg: err?.message ?? "error" }), "err"); return; }
     }
     addOverlay(cueId, d.asset);
   };
@@ -82,15 +84,15 @@ export function DopeSheet({ slug }: { slug: string }) {
   return (
     <section className="panel flex flex-col min-h-0">
       <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-        <div className="panel-title">DOPE SHEET <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ drag a card from the timeline drawer onto a cue</span></div>
+        <div className="panel-title">{t("dopesheet.title")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">{t("dopesheet.dragHint")}</span></div>
         <div className="flex items-center gap-2">
-          <span className="seg-readout">{overlays.length} GFX</span>
-          <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? "Stop playback" : "Play VO + SFX in sequence"}>
-            {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? "Stop" : "Play all"}
+          <span className="seg-readout">{t("dopesheet.gfxCount", { count: overlays.length })}</span>
+          <button className="btn btn-cyan" onClick={playAll} title={sequentialPlaying ? t("dopesheet.stopPlaybackTitle") : t("dopesheet.playAllTitle")}>
+            {sequentialPlaying ? <IPause /> : <IPlay />} {sequentialPlaying ? t("dopesheet.stop") : t("dopesheet.playAll")}
           </button>
-          <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title="Row play continues to the next clip (off = one clip only)">
+          <label className="flex items-center gap-1 text-[11px] text-txt-dim cursor-pointer select-none" title={t("dopesheet.continuousTitle")}>
             <input type="checkbox" checked={continuous} onChange={(e) => setContinuous(e.target.checked)} />
-            Continuous
+            {t("dopesheet.continuous")}
           </label>
         </div>
       </header>
@@ -98,10 +100,10 @@ export function DopeSheet({ slug }: { slug: string }) {
         <table className="w-full text-[12px]">
           <thead className="sticky top-0 bg-bg-1">
             <tr className="label-tiny text-left border-b hairline-soft">
-              <th className="px-2 py-1">CUE</th>
-              <th className="px-2 py-1">SPEAKER</th>
-              <th className="px-2 py-1">VO TEXT</th>
-              <th className="px-2 py-1">DUR</th>
+              <th className="px-2 py-1">{t("dopesheet.colCue")}</th>
+              <th className="px-2 py-1">{t("dopesheet.colSpeaker")}</th>
+              <th className="px-2 py-1">{t("dopesheet.colVoText")}</th>
+              <th className="px-2 py-1">{t("dopesheet.colDur")}</th>
               <th className="px-2 py-1"></th>
             </tr>
           </thead>
@@ -130,7 +132,7 @@ export function DopeSheet({ slug }: { slug: string }) {
             })}
           </tbody>
         </table>
-        {cueList.length === 0 && <div className="p-4 text-txt-faint">No cues in manifest yet.</div>}
+        {cueList.length === 0 && <div className="p-4 text-txt-faint">{t("dopesheet.noCues")}</div>}
       </div>
     </section>
   );
@@ -155,6 +157,7 @@ function CueRow({
   cum: Record<string, number>;
   onRemoveOverlay: (idx: number) => void;
 }) {
+  const t = useT();
   const [over, setOver] = useState(false);
   return (
     <>
@@ -169,7 +172,7 @@ function CueRow({
         <td className="px-2 py-1.5 max-w-[360px] truncate" title={text}>{text}</td>
         <td className="px-2 py-1.5 text-cyan whitespace-nowrap">{durationS != null ? `${durationS.toFixed(1)}s` : "—"}</td>
         <td className="px-2 py-1.5">
-          <PlayBtn playing={isPlaying} onClick={onPlay} title={wavExists ? "Play" : "No wav yet"} />
+          <PlayBtn playing={isPlaying} onClick={onPlay} title={wavExists ? t("dopesheet.playTitle") : t("dopesheet.noWavYet")} />
         </td>
       </tr>
       {anchored.length > 0 && (
@@ -191,7 +194,7 @@ function CueRow({
                     <span className="font-mono flex-1 truncate" title={ov.asset}>{ov.asset}</span>
                     <span className={"px-1 rounded text-[10px] " + (ov.mode === "overlay" ? "text-cyan" : "text-amber")}>{ov.mode}</span>
                     <span className="text-txt-faint">{spanLabel} · {(ov.duration ?? 0).toFixed(1)}s</span>
-                    <button className="btn p-0.5" title="remove graphic" onClick={() => onRemoveOverlay(idx)}><IX /></button>
+                    <button className="btn p-0.5" title={t("dopesheet.removeGraphic")} onClick={() => onRemoveOverlay(idx)}><IX /></button>
                   </div>
                 );
               })}

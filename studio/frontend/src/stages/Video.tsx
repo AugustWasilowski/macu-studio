@@ -12,6 +12,7 @@ import { IRegen, IPlus, IDL } from "../components/Icons";
 import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
 import { ShotGenModal } from "./ShotGenModal";
+import { useT } from "../i18n";
 import type { PipelineEvent, Shot } from "../types";
 
 // The Video tab is the shot list. (The timeline moved to the Assembly tab.)
@@ -20,6 +21,7 @@ export function Video({ slug }: { slug: string }) {
 }
 
 function ShotsView({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const busy = useStore((s) => s.busy);
@@ -71,13 +73,13 @@ function ShotsView({ slug }: { slug: string }) {
         try { ev = JSON.parse(m.data); } catch { return; }
         if (ev.kind === "job.done") {
           setBusy(`shot:${key}`, false);
-          push(`shot ${key} rendered`, "ok");
+          push(t("toast.shotRendered", { key }), "ok");
           qc.invalidateQueries({ queryKey: ["shots", slug] });
           qc.invalidateQueries({ queryKey: ["versions", "shot", slug, key] });
           release();
         } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
           setBusy(`shot:${key}`, false);
-          push(`shot ${key} failed: ${ev.error}`, "err");
+          push(t("toast.shotFailed", { key, error: ev.error }), "err");
           release();
         }
       };
@@ -97,7 +99,7 @@ function ShotsView({ slug }: { slug: string }) {
       setBusy(`shot:${key}`, true);
       setShotOverride(key, null);
       setViewSeed(key, undefined);
-      push(`shot ${key} → ComfyUI queue`, "run");
+      push(t("toast.shotQueued", { key }), "run");
     },
     onSuccess: (r, key) => watchJob(r.job_id, key),
     onError: (e: Error, key) => { setBusy(`shot:${key}`, false); push(`regen failed: ${e.message}`, "err"); },
@@ -117,7 +119,7 @@ function ShotsView({ slug }: { slug: string }) {
       return api.putManifest(slug, m);
     },
     onSuccess: (_r, vars) => {
-      push(`seed updated · shot ${vars.key} marked stale`, "ok");
+      push(t("toast.seedUpdated", { key: vars.key }), "ok");
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["shots", slug] });
       setDraftSeed((s) => ({ ...s, [vars.key]: null }));
@@ -140,7 +142,7 @@ function ShotsView({ slug }: { slug: string }) {
       return api.putManifest(slug, m);
     },
     onSuccess: () => {
-      push("prompt written · shot marked stale", "ok");
+      push(t("toast.promptWritten"), "ok");
       setDraftPrompt(null);
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["shots", slug] });
@@ -151,8 +153,8 @@ function ShotsView({ slug }: { slug: string }) {
   const renderAllMissing = () => {
     const ss = shots.data?.shots ?? [];
     const m = ss.filter((s) => s.status === "missing" || s.status === "stale");
-    if (!m.length) { push("Nothing to render", "info"); return; }
-    push(`Queuing ${m.length} shot renders (stage 2 from_stage=2)`, "run");
+    if (!m.length) { push(t("toast.nothingToRender"), "info"); return; }
+    push(t("toast.queuingShots", { count: m.length }), "run");
     // The regen helper hits from_stage=2 anyway; one job covers all missing/stale.
     api.run(slug, { from_stage: 2 }).then((r) => {
       m.forEach((s) => watchJob(r.job_id, s.key));
@@ -167,15 +169,17 @@ function ShotsView({ slug }: { slug: string }) {
     const urls = (shots.data?.shots ?? [])
       .filter((s) => s.webp_exists)
       .map((s) => mediaUrl.shotPreview(slug, s.key, s.webp_mtime));
-    if (!urls.length) { push("No rendered masters to cache yet", "info"); return; }
+    if (!urls.length) { push(t("toast.noMastersToCache"), "info"); return; }
     const need = urls.filter((u) => !isCached(u));
-    if (!need.length) { push(`All ${urls.length} masters already cached`, "ok"); return; }
+    if (!need.length) { push(t("toast.allMastersCached", { count: urls.length }), "ok"); return; }
     setPrecaching({ done: 0, total: need.length });
-    push(`Pre-caching ${need.length} shot masters…`, "run");
+    push(t("toast.precachingMasters", { count: need.length }), "run");
     const r = await precacheMedia(urls, (p) => setPrecaching({ done: p.done, total: p.total }));
     setPrecaching(null);
     push(
-      `Video cached: ${r.done - r.failed}/${r.total}${r.failed ? ` · ${r.failed} failed` : ""}`,
+      r.failed
+        ? t("toast.videoCachedWithErrors", { done: r.done - r.failed, total: r.total, failed: r.failed })
+        : t("toast.videoCached", { done: r.done - r.failed, total: r.total }),
       r.failed ? "err" : "ok",
     );
   };
@@ -194,25 +198,25 @@ function ShotsView({ slug }: { slug: string }) {
       <div className="grid grid-cols-[1fr_380px] gap-3 flex-1 min-h-0">
       <section className="panel flex flex-col min-h-0">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">SHOT LIST <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ characters + broll</span></div>
+          <div className="panel-title">{t("video.shotListTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {t("video.shotListSub")}</span></div>
           <div className="flex items-center gap-2">
-            <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> RENDERED</span>
-            <button className="btn btn-cyan" onClick={() => setGenOpen(true)} title="Use the local LLM to propose a shot list from the script (reuses recurring characters)">
-              <IRegen /> Generate shot list
+            <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> {t("video.rendered")}</span>
+            <button className="btn btn-cyan" onClick={() => setGenOpen(true)} title={t("video.generateShotListTitle")}>
+              <IRegen /> {t("video.generateShotList")}
             </button>
             <button className="btn btn-cyan" onClick={() => setAddOpen(true)}>
-              <IPlus /> Add shot
+              <IPlus /> {t("video.addShot")}
             </button>
             <button className="btn btn-amber" onClick={renderAllMissing}>
-              <IRegen /> Render all missing/stale
+              <IRegen /> {t("video.renderAllMissing")}
             </button>
             <button
               className="btn"
               onClick={precache}
               disabled={!!precaching}
-              title="Load all rendered shot masters into the browser so previews are instant over the Cloudflare proxy"
+              title={t("video.precacheTitle")}
             >
-              <IDL /> {precaching ? `Caching ${precaching.done}/${precaching.total}` : "Pre-cache video"}
+              <IDL /> {precaching ? t("video.caching", { done: precaching.done, total: precaching.total }) : t("video.precacheVideo")}
             </button>
           </div>
         </header>
@@ -220,13 +224,13 @@ function ShotsView({ slug }: { slug: string }) {
           <table className="w-full text-[12px]">
             <thead className="sticky top-0 bg-bg-1">
               <tr className="label-tiny text-left border-b hairline-soft">
-                <th className="px-2 py-1">SHOT</th>
-                <th className="px-2 py-1">KIND</th>
-                <th className="px-2 py-1">PROMPT</th>
-                <th className="px-2 py-1 w-[90px]">SEED</th>
-                <th className="px-2 py-1">STATUS</th>
+                <th className="px-2 py-1">{t("video.colShot")}</th>
+                <th className="px-2 py-1">{t("video.colKind")}</th>
+                <th className="px-2 py-1">{t("video.colPrompt")}</th>
+                <th className="px-2 py-1 w-[90px]">{t("video.colSeed")}</th>
+                <th className="px-2 py-1">{t("video.colStatus")}</th>
                 <th className="px-2 py-1"></th>
-                <th className="px-2 py-1">VER</th>
+                <th className="px-2 py-1">{t("video.colVer")}</th>
               </tr>
             </thead>
             <tbody>
@@ -263,7 +267,7 @@ function ShotsView({ slug }: { slug: string }) {
                         value={viewingVersion ? (vseed ?? "") : seed}
                         placeholder={viewingVersion ? "—" : undefined}
                         readOnly={viewingVersion}
-                        title={viewingVersion ? "Seed of the version being viewed (read-only)" : undefined}
+                        title={viewingVersion ? t("video.seedVersionReadOnly") : undefined}
                         onChange={(e) => {
                           if (viewingVersion) return;
                           const v = parseInt(e.target.value.replace(/\D/g, ""), 10) || 0;
@@ -281,7 +285,7 @@ function ShotsView({ slug }: { slug: string }) {
                       <div className="flex items-center gap-1">
                         <button
                           className="btn p-1"
-                          title="Regenerate (drops master + RIFE → from_stage=2)"
+                          title={t("video.regenTitle")}
                           disabled={isBusy}
                           onClick={() => regen.mutate(s.key)}
                         ><IRegen /></button>
@@ -308,13 +312,13 @@ function ShotsView({ slug }: { slug: string }) {
               })}
             </tbody>
           </table>
-          {list.length === 0 && <div className="p-3 text-txt-faint">No characters or b-roll in manifest.</div>}
+          {list.length === 0 && <div className="p-3 text-txt-faint">{t("video.emptyManifest")}</div>}
         </div>
       </section>
 
       <aside className="panel p-3 flex flex-col gap-3 overflow-y-auto">
         <div className="flex items-center justify-between">
-          <div className="panel-title">PREVIEW</div>
+          <div className="panel-title">{t("video.preview")}</div>
           {cur && <Badge status={busy[`shot:${cur.key}`] ? "running" : cur.status} />}
         </div>
         {cur ? (
@@ -333,23 +337,23 @@ function ShotsView({ slug }: { slug: string }) {
             <div className="flex items-center gap-2">
               <PlayBtn playing={false} onClick={() => { /* webp animates itself */ }} />
               <button className="btn" disabled={!!busy[`shot:${cur.key}`]} onClick={() => regen.mutate(cur.key)}>
-                <IRegen /> Regen
+                <IRegen /> {t("video.regen")}
               </button>
               <RegenNotes onSubmit={() => regen.mutate(cur.key)} />
             </div>
             <div className="grid grid-cols-2 gap-1 text-[12px]">
-              <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
-              <span className="label-tiny">kind</span><span>{cur.kind}</span>
-              <span className="label-tiny">seed</span><span className="text-cyan">{viewSeeds[cur.key] !== undefined ? (viewSeeds[cur.key] ?? "—") : (cur.seed ?? "—")}</span>
-              <span className="label-tiny">file</span><span className="break-all">clips/{cur.key}_master.zs.webp</span>
+              <span className="label-tiny">{t("video.detailKey")}</span><span className="font-mono">{cur.key}</span>
+              <span className="label-tiny">{t("video.detailKind")}</span><span>{cur.kind}</span>
+              <span className="label-tiny">{t("video.detailSeed")}</span><span className="text-cyan">{viewSeeds[cur.key] !== undefined ? (viewSeeds[cur.key] ?? "—") : (cur.seed ?? "—")}</span>
+              <span className="label-tiny">{t("video.detailFile")}</span><span className="break-all">clips/{cur.key}_master.zs.webp</span>
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-baseline justify-between">
-                <span className="label-tiny">prompt (core)</span>
+                <span className="label-tiny">{t("video.promptCore")}</span>
                 <button
                   className="text-cyan text-[11px]"
                   onClick={() => setDraftPrompt(draftPrompt === null ? (cur.prompt ?? "") : null)}
-                >{draftPrompt === null ? "edit" : "cancel"}</button>
+                >{draftPrompt === null ? t("video.editPrompt") : t("common.cancel")}</button>
               </div>
               {draftPrompt === null ? (
                 <p className="whitespace-pre-wrap">{cur.prompt}</p>
@@ -364,13 +368,13 @@ function ShotsView({ slug }: { slug: string }) {
                   <button
                     className="btn btn-amber mt-1"
                     onClick={() => savePrompt.mutate({ key: cur.key, kind: cur.kind, prompt: draftPrompt })}
-                  >Save to manifest</button>
+                  >{t("video.saveToManifest")}</button>
                 </>
               )}
             </div>
           </>
         ) : (
-          <div className="text-txt-faint">No shot selected.</div>
+          <div className="text-txt-faint">{t("video.noShotSelected")}</div>
         )}
       </aside>
 
@@ -395,6 +399,7 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
   slug: string;
   onAdded: () => void;
 }) {
+  const t = useT();
   const push = useStore((s) => s.pushToast);
   const cues = useQuery({
     queryKey: ["cues", slug],
@@ -417,7 +422,7 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
   }, [open]);
 
   const submit = async () => {
-    if (!key.trim()) { push("key is required", "err"); return; }
+    if (!key.trim()) { push(t("video.keyRequired"), "err"); return; }
     setBusy(true);
     try {
       const seedNum = seed.trim() ? parseInt(seed.replace(/\D/g, ""), 10) : null;
@@ -428,7 +433,7 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
         seed: Number.isNaN(seedNum as number) ? null : seedNum,
         attach_to_cue: attach || null,
       });
-      push(`shot ${key.trim()} added`, "ok");
+      push(t("toast.shotAdded", { key: key.trim() }), "ok");
       onAdded();
       onClose();
     } catch (e: any) {
@@ -441,34 +446,36 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
     <Modal
       open={open}
       onClose={onClose}
-      title="ADD SHOT"
+      title={t("video.addShotTitle")}
       width={520}
       footer={
         <>
-          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn" onClick={onClose}>{t("common.close")}</button>
           <button className="btn btn-cyan" disabled={busy || !key.trim()} onClick={submit}>
-            {busy ? "Adding…" : "Add to manifest"}
+            {busy ? t("video.adding") : t("video.addToManifest")}
           </button>
         </>
       }
     >
       <div className="flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
-          <Field label="key" value={key} onChange={setKey} placeholder="e.g. ron / city_ruins" />
-          <Field label="kind" value={kind} onChange={(v) => setKind(v as "character" | "broll")} options={["character", "broll"]} />
+          <Field label={t("video.fieldKey")} value={key} onChange={setKey} placeholder={t("video.fieldKeyPlaceholder")} />
+          <Field label={t("video.fieldKind")} value={kind} onChange={(v) => setKind(v as "character" | "broll")} options={["character", "broll"]} />
         </div>
-        <Field label="prompt" value={prompt} onChange={setPrompt} rows={4} placeholder="describe the shot" />
+        <Field label={t("video.fieldPrompt")} value={prompt} onChange={setPrompt} rows={4} placeholder={t("video.fieldPromptPlaceholder")} />
         <div className="grid grid-cols-2 gap-2">
-          <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" />
+          <Field label={t("video.fieldSeed")} value={seed} onChange={setSeed} type="number" />
           <Field
-            label="attach to cue (optional)"
+            label={t("video.fieldAttachToCue")}
             value={attach}
             onChange={setAttach}
             options={["", ...cueIds]}
           />
         </div>
         <div className="text-[11px] text-txt-faint">
-          Adds a {kind} key to the manifest{attach ? <> and a shot to <span className="text-cyan">@{attach}</span></> : null}. Render it from the SHOT LIST.
+          {attach
+            ? t("video.addShotHelpWithCue", { kind, cue: attach })
+            : t("video.addShotHelp", { kind })}
         </div>
       </div>
     </Modal>

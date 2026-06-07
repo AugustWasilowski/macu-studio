@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { TOUR_STEPS } from "../tour";
 import type { Route } from "../route";
+import { useT } from "../i18n";
 
 export const TOUR_DONE_KEY = "macu.tour.done";
 
@@ -13,6 +14,7 @@ interface Props {
 const PAD = 6;
 
 export function Tour({ slug, go, onClose }: Props) {
+  const t = useT();
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const step = TOUR_STEPS[i];
@@ -93,15 +95,15 @@ export function Tour({ slug, go, onClose }: Props) {
       {/* Coachmark card */}
       <div className="panel p-3 flex flex-col gap-2" style={cardStyle}>
         <div className="flex items-center justify-between">
-          <div className="panel-title">{step.title}</div>
+          <div className="panel-title">{t(step.titleKey)}</div>
           <span className="label-tiny">{i + 1}/{TOUR_STEPS.length}</span>
         </div>
-        <p className="text-[12px] leading-relaxed text-txt">{step.body}</p>
+        <p className="text-[12px] leading-relaxed text-txt">{t(step.bodyKey)}</p>
         <div className="flex items-center justify-between pt-1">
-          <button className="btn" onClick={finish}>{last ? "Close" : "Skip"}</button>
+          <button className="btn" onClick={finish}>{last ? t("common.close") : t("tour.skip")}</button>
           <div className="flex gap-2">
-            {i > 0 && <button className="btn" onClick={() => setI(i - 1)}>Back</button>}
-            <button className="btn btn-amber" onClick={next}>{last ? "Done" : "Next"}</button>
+            {i > 0 && <button className="btn" onClick={() => setI(i - 1)}>{t("common.back")}</button>}
+            <button className="btn btn-amber" onClick={next}>{last ? t("tour.done") : t("tour.next")}</button>
           </div>
         </div>
       </div>

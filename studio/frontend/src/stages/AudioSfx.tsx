@@ -8,6 +8,7 @@ import { Field } from "../components/Field";
 import { PlayBtn } from "../components/PlayBtn";
 import { IPlus, IX } from "../components/Icons";
 import { resolveMedia } from "../mediaCache";
+import { useT } from "../i18n";
 
 // One item in the continuous-playback queue (VO cue or an SFX one-shot).
 export interface PlayItem { url: string; cueId?: string; label: string; }
@@ -34,6 +35,7 @@ export function usePreview() {
 // ---- SFX placement logic (shared by the interleaved cue table) ----
 // SFX live in the GAP after a cue (cN at:end) or before the next (cN+1 at:start).
 export function useSfx(slug: string) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
@@ -86,15 +88,15 @@ export function useSfx(slug: string) {
   const putSfx = useMutation({
     mutationFn: (next: SfxEntry[]) => libraryApi.putSfx(slug, next),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["manifest", slug] }),
-    onError: (e: Error) => push("sfx save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.sfxSaveFailed", { msg: e.message }), "err"),
   });
   const commit = (next: SfxEntry[]) => putSfx.mutate(normalize(next));
 
   const addToGap = (afterId: string | null, file: string) => {
     const cue = afterId ?? cueIds[0] ?? null;
-    if (!cue) { push("no cues to pin to", "err"); return; }
+    if (!cue) { push(t("toast.noCues"), "err"); return; }
     commit([...sfx, { file, cue, at: afterId ? "end" : "start", gain: 0.4, fade: 0, source: "library" }]);
-    push(`${file} → ${afterId ? `after ${afterId}` : `before ${cue}`}`, "ok");
+    push(afterId ? t("toast.sfxPinnedAfter", { file, cueId: afterId }) : t("toast.sfxPinnedBefore", { file, cue }), "ok");
   };
   const moveEntry = (idx: number, afterId: string | null) => {
     const e = sfx[idx]; if (!e) return;
@@ -161,6 +163,7 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, pr
   onPlay: (file: string) => void;
   previewUrl: string | null;
 }) {
+  const t = useT();
   const [over, setOver] = useState(false);
   const empty = entries.length === 0;
   return (
@@ -172,7 +175,7 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, pr
     >
       {empty ? (
         <div className="text-txt-faint text-[10px] italic" style={{ height: over ? 14 : 5, lineHeight: "12px" }}>
-          {over ? "drop SFX here" : ""}
+          {over ? t("sfx.dropHere") : ""}
         </div>
       ) : (
         entries.map(({ x, i }) => {
@@ -183,17 +186,17 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, pr
               <span className="text-cyan">▸</span>
               <PlayBtn playing={previewUrl === url} onClick={() => onPlay(x.file)} />
               <span className="font-mono text-cyan truncate min-w-0 max-w-[260px]" title={x.file}>{x.file}</span>
-              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title="delay nudge — seconds, signed (− earlier / + later from the anchor cue)">
+              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title={t("sfx.delayTitle")}>
                 Δs
                 <input className="input w-14 text-[11px] py-0" type="number" step="0.1" value={x.delay ?? 0}
                   onChange={(e) => { const v = parseFloat(e.target.value); onDelay(i, Number.isFinite(v) ? round2(v) : 0); }} />
               </label>
-              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title="gain — 0–1 linear">
+              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title={t("sfx.gainTitle")}>
                 g
                 <input className="input w-16 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
                   onChange={(e) => onGain(i, parseFloat(e.target.value))} />
               </label>
-              <button className="btn p-0.5 shrink-0" title="remove" onClick={() => onDelete(i)}><IX /></button>
+              <button className="btn p-0.5 shrink-0" title={t("sfx.remove")} onClick={() => onDelete(i)}><IX /></button>
             </div>
           );
         })
@@ -206,6 +209,7 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, pr
 export function Library({ slug, previewUrl, onPreview }: {
   slug: string; previewUrl: string | null; onPreview: (url: string) => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const [tab, setTab] = useState<AssetKind>("sfx");
@@ -217,10 +221,10 @@ export function Library({ slug, previewUrl, onPreview }: {
   const addBed = useMutation({
     mutationFn: (file: string) => libraryApi.addBed(slug, file),
     onSuccess: (r, file) => {
-      push(r.added ? `${file} → music beds` : `${file} already a bed`, r.added ? "ok" : "info");
+      push(r.added ? t("toast.bedAdded", { file }) : t("toast.bedAlready", { file }), r.added ? "ok" : "info");
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
     },
-    onError: (e: Error) => push("add bed failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.addBedFailed", { msg: e.message }), "err"),
   });
   const items = q.data ?? [];
   const fq = filter.trim().toLowerCase();
@@ -234,8 +238,8 @@ export function Library({ slug, previewUrl, onPreview }: {
   return (
     <section className="panel flex flex-col min-h-0 flex-1">
       <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-        <div className="panel-title">LIBRARY <span className="text-txt-faint">/ drag SFX → a cue gap</span></div>
-        <button className="btn btn-cyan" onClick={() => setAddOpen(true)}><IPlus /> Add</button>
+        <div className="panel-title">{t("sfx.libraryTitle")} <span className="text-txt-faint">{t("sfx.libraryHint")}</span></div>
+        <button className="btn btn-cyan" onClick={() => setAddOpen(true)}><IPlus /> {t("sfx.add")}</button>
       </header>
       <div className="flex gap-1 px-2 pt-2">
         {(["sfx", "music"] as const).map((k) => (
@@ -248,14 +252,14 @@ export function Library({ slug, previewUrl, onPreview }: {
       </div>
       <input
         className="input mx-2 mt-2 text-[11px]"
-        placeholder={`filter ${tab}… (name / notes)`}
+        placeholder={t("sfx.filterPlaceholder", { tab })}
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
       />
       <div className="overflow-y-auto flex-1 p-2 text-[12px]">
         {shown.length === 0 ? (
           <div className="text-txt-faint text-[11px] p-1">
-            {q.isLoading ? "loading…" : items.length === 0 ? "empty" : "no match"}
+            {q.isLoading ? t("common.loading") : items.length === 0 ? t("sfx.empty") : t("sfx.noMatch")}
           </div>
         ) : (
           shown.map((a) => {
@@ -269,8 +273,8 @@ export function Library({ slug, previewUrl, onPreview }: {
                 <span className="font-mono flex-1 truncate" title={a.file}>{a.file}</span>
                 <span className="text-txt-faint text-[10px]">{a.duration_s != null ? `${a.duration_s}s` : ""}</span>
                 {tab === "music"
-                  ? <button className="btn p-0.5 px-1 text-[10px]" onClick={() => addBed.mutate(a.file)}>+ bed</button>
-                  : <span className="text-txt-faint text-[10px]" title="drag into a cue gap">⠿</span>}
+                  ? <button className="btn p-0.5 px-1 text-[10px]" onClick={() => addBed.mutate(a.file)}>{t("sfx.addBed")}</button>
+                  : <span className="text-txt-faint text-[10px]" title={t("sfx.dragHint")}>⠿</span>}
               </div>
             );
           })
@@ -297,6 +301,7 @@ export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded, initialSour
   onAdded: () => void;
   initialSource?: AddSource;
 }) {
+  const t = useT();
   const push = useStore((s) => s.pushToast);
   const [source, setSource] = useState<AddSource>(initialSource);
   const [query, setQuery] = useState("");
@@ -347,9 +352,9 @@ export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded, initialSour
       const data = await r.json();
       setResult(data);
       if (r.status === 409) {
-        push("GPU busy — a render is active. Try again when idle.", "err");
+        push(t("toast.gpuBusy"), "err");
       } else if (data.ok) {
-        push(isMusic ? "music bed generated" : isGen ? "SFX generated and pinned" : "SFX fetched and pinned", "ok");
+        push(isMusic ? t("toast.musicGenerated") : isGen ? t("toast.sfxGenerated") : t("toast.sfxFetched"), "ok");
         onAdded();
       } else {
         push(`${verb}: ${data.hint ?? data.detail ?? "no match"}`, "info");
@@ -361,20 +366,20 @@ export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded, initialSour
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="GENERATE / FETCH AUDIO" width={520}
+    <Modal open={open} onClose={onClose} title={t("sfx.dialogTitle")} width={520}
       footer={
         <>
-          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn" onClick={onClose}>{t("common.close")}</button>
           <button className="btn btn-cyan" disabled={busy || !query.trim()} onClick={submit}>
             {busy
-              ? (isMusic || isGen ? "Generating…" : "Fetching…")
-              : (isMusic ? "Generate music" : isGen ? "Generate (agen)" : "Search Freesound")}
+              ? (isMusic || isGen ? t("sfx.generating") : t("sfx.fetching"))
+              : (isMusic ? t("sfx.generateMusic") : isGen ? t("sfx.generateAgen") : t("sfx.searchFreesound"))}
           </button>
         </>
       }>
       <div className="flex flex-col gap-2">
         <div className="flex gap-1">
-          {([["freesound", "Freesound SFX"], ["generate", "Generate SFX"], ["music", "Generate Music"]] as const).map(([s, label]) => (
+          {([["freesound", t("sfx.tabFreesound")], ["generate", t("sfx.tabGenerateSfx")], ["music", t("sfx.tabGenerateMusic")]] as const).map(([s, label]) => (
             <button key={s} onClick={() => pickSource(s)}
               className={"tab px-3 h-[28px] hairline-soft rounded-[3px] text-[11px] uppercase tracking-wider " + (source === s ? "active" : "")}
               style={source === s ? { borderColor: "var(--cyan)", boxShadow: "var(--glow-cyan)", color: "var(--cyan)" } : {}}>
@@ -383,28 +388,28 @@ export function AddSfxDialog({ open, onClose, slug, cueIds, onAdded, initialSour
           ))}
         </div>
         <Field
-          label={isMusic ? "music prompt (MusicGen/Riffusion)" : isGen ? "agen prompt (AudioGen foley)" : "freesound query"}
+          label={isMusic ? t("sfx.fieldMusicPrompt") : isGen ? t("sfx.fieldAgenPrompt") : t("sfx.fieldFreesoundQuery")}
           value={query} onChange={setQuery}
-          placeholder={isMusic ? "e.g. ‘sickly lo-fi big-band waltz, tape hiss, mono’"
-            : isGen ? "e.g. ‘heavy iron door slam, dry, close mic’"
-            : "e.g. ‘old radio transmitter hum’"} />
+          placeholder={isMusic ? t("sfx.phMusicPrompt")
+            : isGen ? t("sfx.phAgenPrompt")
+            : t("sfx.phFreesoundQuery")} />
         <div className="grid grid-cols-2 gap-2">
-          <Field label={isMusic || isGen ? "duration" : "duration max"} value={duration} onChange={setDuration} type="number" suffix="s" />
+          <Field label={isMusic || isGen ? t("sfx.fieldDuration") : t("sfx.fieldDurationMax")} value={duration} onChange={setDuration} type="number" suffix="s" />
           {isMusic
-            ? <Field label="model" value={engine} onChange={(v) => setEngine(v as "music" | "riff")} options={["music", "riff"]} />
+            ? <Field label={t("sfx.fieldModel")} value={engine} onChange={(v) => setEngine(v as "music" | "riff")} options={["music", "riff"]} />
             : isGen
-              ? <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />
-              : <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          {isMusic && <Field label="seed (optional)" value={seed} onChange={setSeed} type="number" placeholder="auto" />}
-          {isGen && <Field label="at" value={at} onChange={setAt} options={["start", "end"]} />}
-          {!isMusic && <Field label="cue pin" value={cue} onChange={setCue} options={cueIds.length ? cueIds : [""]} />}
+              ? <Field label={t("sfx.fieldSeed")} value={seed} onChange={setSeed} type="number" placeholder={t("sfx.phSeed")} />
+              : <Field label={t("sfx.fieldAt")} value={at} onChange={setAt} options={["start", "end"]} />}
+          {isMusic && <Field label={t("sfx.fieldSeed")} value={seed} onChange={setSeed} type="number" placeholder={t("sfx.phSeed")} />}
+          {isGen && <Field label={t("sfx.fieldAt")} value={at} onChange={setAt} options={["start", "end"]} />}
+          {!isMusic && <Field label={t("sfx.fieldCuePin")} value={cue} onChange={setCue} options={cueIds.length ? cueIds : [""]} />}
         </div>
         <div className="text-[11px] text-txt-faint">
           {isMusic
-            ? <>Local {engine === "riff" ? "Riffusion (grittier lo-fi)" : "MusicGen"} → a bed added to <span className="text-cyan">music.clips[]</span> · won't run during a render</>
+            ? <>{t("sfx.helpMusicLocal")} {engine === "riff" ? t("sfx.helpMusicRiff") : t("sfx.helpMusicGen")} {t("sfx.helpMusicBed")} <span className="text-cyan">music.clips[]</span> · {t("sfx.helpMusicNoRender")}</>
             : isGen
-              ? <>Local AudioGen → 24 kHz/−3 dBFS into the kit · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>
-              : <>CC0 clips only · pinned to <span className="text-cyan">{at} of @{cue || "—"}</span> · then drag it from the library</>}
+              ? <>{t("sfx.helpAgen")} <span className="text-cyan">{at} of @{cue || "—"}</span> · {t("sfx.helpThenDrag")}</>
+              : <>{t("sfx.helpFreesound")} <span className="text-cyan">{at} of @{cue || "—"}</span> · {t("sfx.helpThenDrag")}</>}
         </div>
         {result && (
           <pre className="logtail" style={{ height: 140 }}>{result.ok

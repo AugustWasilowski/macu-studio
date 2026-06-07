@@ -7,11 +7,13 @@ import { Collapsible } from "../components/Collapsible";
 import { IDL, IFolder, IRegen } from "../components/Icons";
 import { DopeSheet } from "./DopeSheet";
 import { Timeline } from "./Timeline";
+import { useT } from "../i18n";
 import type { FinalInfo, PipelineEvent, PipelineStage, SrtEntry, StageKey } from "../types";
 
 const STAGE_KEYS: StageKey[] = ["vo", "masters", "rife", "assemble", "music", "whisper", "srt", "burn"];
 
 export function Assembly({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
 
@@ -103,11 +105,11 @@ export function Assembly({ slug }: { slug: string }) {
     onMutate: () => resetRun(slug),
     onSuccess: (r) => {
       patchRun(slug, { jobId: r.job_id });
-      push("RUN queued (" + r.job_id + ")", "run");
+      push(t("toast.runQueued", { jobId: r.job_id }), "run");
     },
     onError: (e: Error) => {
       patchRun(slug, { running: false });
-      push("Render failed: " + e.message, "err");
+      push(t("toast.renderFailed", { message: e.message }), "err");
     },
   });
 
@@ -131,16 +133,16 @@ export function Assembly({ slug }: { slug: string }) {
 
       {/* RIGHT — the assembly controls, re-housed as collapsible panels */}
       <aside className="flex flex-col gap-3 min-h-0 overflow-y-auto">
-        <Collapsible title={`PIPELINE · ${slug}`} storageKey="macu.asm.pipeline" bare>
+        <Collapsible title={t("assembly.pipelineTitle", { slug })} storageKey="macu.asm.pipeline" bare>
           <PipelinePanel stagesView={stagesView} running={running} onRun={onRun} logLines={logLines} />
         </Collapsible>
-        <Collapsible title="SUBTITLES" storageKey="macu.asm.srt" defaultOpen={false} bare>
+        <Collapsible title={t("assembly.subtitlesTitle")} storageKey="macu.asm.srt" defaultOpen={false} bare>
           <SrtPanel slug={slug} entries={srt.data?.entries ?? []} running={running} onRun={onRun}
             onSaved={() => qc.invalidateQueries({ queryKey: ["srt", slug] })} />
         </Collapsible>
-        <Collapsible title="FINAL OUTPUT" storageKey="macu.asm.final" bare>
+        <Collapsible title={t("assembly.finalOutputTitle")} storageKey="macu.asm.final" bare>
           <FinalPanel slug={slug} final={final.data}
-            onCopy={(p) => navigator.clipboard.writeText(p).then(() => push("Path copied", "ok"))} />
+            onCopy={(p) => navigator.clipboard.writeText(p).then(() => push(t("toast.pathCopied"), "ok"))} />
         </Collapsible>
       </aside>
     </div>
@@ -155,12 +157,13 @@ function PipelinePanel({ stagesView, running, onRun, logLines }: {
   onRun: (b: { from_stage?: number; only?: number }) => void;
   logLines: string[];
 }) {
+  const t = useT();
   const [fromStage, setFromStage] = useState(1);
   return (
     <div className="p-3 flex flex-col gap-2">
       <table className="w-full text-[12px]">
         <thead>
-          <tr className="text-left label-tiny"><th>St</th><th>Name</th><th>Last</th><th></th></tr>
+          <tr className="text-left label-tiny"><th>{t("assembly.colStage")}</th><th>{t("assembly.colName")}</th><th>{t("assembly.colLast")}</th><th></th></tr>
         </thead>
         <tbody>
           {stagesView.map((s) => (
@@ -172,7 +175,7 @@ function PipelinePanel({ stagesView, running, onRun, logLines }: {
               </td>
               <td className="py-1.5 text-txt-dim">{s.last}</td>
               <td className="py-1.5">
-                <button className="btn" disabled={running} onClick={() => onRun({ only: s.n })} title={`Run only stage ${s.n}`}>▶</button>
+                <button className="btn" disabled={running} onClick={() => onRun({ only: s.n })} title={t("assembly.runOnlyStage", { n: s.n })}>▶</button>
               </td>
             </tr>
           ))}
@@ -180,13 +183,13 @@ function PipelinePanel({ stagesView, running, onRun, logLines }: {
       </table>
       <div className="flex items-center gap-2 pt-2 border-t border-[var(--line-soft)]">
         <select className="input" value={fromStage} onChange={(e) => setFromStage(parseInt(e.target.value, 10))}>
-          {stagesView.map((s) => <option key={s.key} value={s.n}>From {s.n}. {s.name}</option>)}
+          {stagesView.map((s) => <option key={s.key} value={s.n}>{t("assembly.fromStage", { n: s.n, name: s.name })}</option>)}
         </select>
-        <button className="btn" disabled={running} onClick={() => onRun({ from_stage: fromStage })}>Run</button>
+        <button className="btn" disabled={running} onClick={() => onRun({ from_stage: fromStage })}>{t("assembly.runBtn")}</button>
       </div>
-      <button className="btn btn-amber btn-big mt-2" disabled={running} onClick={() => onRun({})}>RENDER FULL EPISODE</button>
-      <div className="label-tiny mt-2">log tail</div>
-      <pre className="logtail">{logLines.length === 0 ? "(no events yet — click a Run button)" : logLines.join("\n")}</pre>
+      <button className="btn btn-amber btn-big mt-2" disabled={running} onClick={() => onRun({})}>{t("assembly.renderFull")}</button>
+      <div className="label-tiny mt-2">{t("assembly.logTail")}</div>
+      <pre className="logtail">{logLines.length === 0 ? t("assembly.noEvents") : logLines.join("\n")}</pre>
     </div>
   );
 }
@@ -198,13 +201,14 @@ function SrtPanel({ slug, entries, running, onRun, onSaved }: {
   onRun: (b: { from_stage?: number; only?: number }) => void;
   onSaved: () => void;
 }) {
+  const t = useT();
   return (
     <div className="p-3 flex flex-col gap-2">
       <div className="flex items-center justify-end">
-        <button className="btn" disabled={running} onClick={() => onRun({ only: 8 })}><IRegen /> Re-burn subs only</button>
+        <button className="btn" disabled={running} onClick={() => onRun({ only: 8 })}><IRegen /> {t("assembly.reburnSubs")}</button>
       </div>
       <div className="overflow-y-auto max-h-[340px] hairline-soft rounded">
-        {entries.length === 0 && <div className="p-3 text-txt-faint">No SRT yet. Run stage 7 first.</div>}
+        {entries.length === 0 && <div className="p-3 text-txt-faint">{t("assembly.noSrt")}</div>}
         {entries.map((e) => (
           <SrtRow key={e.i} slug={slug} entry={e} onSave={(text) => {
             const next = entries.map((x) => x.i === e.i ? { ...x, text } : x);
@@ -221,11 +225,12 @@ function FinalPanel({ slug, final, onCopy }: {
   final: FinalInfo | undefined;
   onCopy: (path: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="p-3 flex flex-col gap-2">
       <div className="flex items-center justify-end">{final?.exists && <Badge status="rendered" />}</div>
       {!final?.exists ? (
-        <div className="text-txt-faint py-6 grid place-items-center">No final mp4 yet.</div>
+        <div className="text-txt-faint py-6 grid place-items-center">{t("assembly.noFinal")}</div>
       ) : (
         <>
           <video
@@ -236,16 +241,16 @@ function FinalPanel({ slug, final, onCopy }: {
             style={{ aspectRatio: "1 / 1", maxHeight: 320 }}
           />
           <div className="text-[12px] grid grid-cols-2 gap-1.5">
-            <span className="label-tiny">size</span><span className="text-cyan">{final.size_mb ?? "—"} MB</span>
-            <span className="label-tiny">duration</span><span className="text-cyan">{final.duration_s ?? "—"} s</span>
-            <span className="label-tiny">srt</span><span>{final.srt_exists ? "yes" : "no"}</span>
+            <span className="label-tiny">{t("assembly.labelSize")}</span><span className="text-cyan">{final.size_mb ?? "—"} MB</span>
+            <span className="label-tiny">{t("assembly.labelDuration")}</span><span className="text-cyan">{final.duration_s ?? "—"} s</span>
+            <span className="label-tiny">{t("assembly.labelSrt")}</span><span>{final.srt_exists ? t("assembly.yes") : t("assembly.no")}</span>
           </div>
           <div className="flex gap-2">
-            <a className="btn" href={mediaUrl.finalVideo(slug)} download={`${slug}.mp4`}><IDL /> Download</a>
-            <button className="btn" onClick={() => onCopy(final.path)}><IFolder /> Copy path</button>
+            <a className="btn" href={mediaUrl.finalVideo(slug)} download={`${slug}.mp4`}><IDL /> {t("assembly.download")}</a>
+            <button className="btn" onClick={() => onCopy(final.path)}><IFolder /> {t("assembly.copyPath")}</button>
           </div>
           {final.thumb_exists && (
-            <img key={mediaUrl.finalThumb(slug) + (final.mtime ?? "")} src={mediaUrl.finalThumb(slug)} alt="thumbs" className="w-full rounded mt-2 hairline-soft" />
+            <img key={mediaUrl.finalThumb(slug) + (final.mtime ?? "")} src={mediaUrl.finalThumb(slug)} alt={t("assembly.thumbsAlt")} className="w-full rounded mt-2 hairline-soft" />
           )}
           <div className="label-tiny mt-1 break-all">{final.path}</div>
         </>

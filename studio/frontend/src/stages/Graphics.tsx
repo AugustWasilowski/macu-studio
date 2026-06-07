@@ -10,18 +10,20 @@ import { Field } from "../components/Field";
 import { VersionArrows } from "../components/VersionArrows";
 import { ThumbModal } from "../components/ThumbModal";
 import { IRegen } from "../components/Icons";
+import { useT } from "../i18n";
 
 interface HFEvent { ts: number; kind: string; n?: number; name?: string; line?: string; error?: string; [k: string]: unknown }
 
 // One-liners for the AI card types (mirror backend cardgen.CARD_TYPES). These are card
 // ARCHETYPES, not just tone — each pins a composition the AI writer snaps to.
-const CARD_TYPE_BLURB: Record<string, string> = {
-  macu_title: "Recurring show-open (intro layout). Wordmark is locked to “THE MACU / REPORT”; AI writes only the kicker tease + a station-ID sub.",
-  fresh_title: "Per-episode segment title (intro layout). AI writes the two big title lines (short, all-caps, ominous) + kicker + a logline from the script.",
-  weather: "Forecast segment (weather layout). A deadpan post-apocalyptic weather report.",
+const CARD_TYPE_BLURB_KEY: Record<string, string> = {
+  macu_title: "graphics.cardBlurb.macuTitle",
+  fresh_title: "graphics.cardBlurb.freshTitle",
+  weather: "graphics.cardBlurb.weather",
 };
 
 export function Graphics({ slug }: { slug: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
   const busy = useStore((s) => s.busy);
@@ -59,7 +61,7 @@ export function Graphics({ slug }: { slug: string }) {
   const [newCardType, setNewCardType] = useState("fresh_title");
   const cardTypes = useQuery({ queryKey: ["cardTypes"], queryFn: () => graphicsApi.cardTypes() });
   const titleCardTypes = (cardTypes.data?.card_types ?? ["macu_title", "fresh_title", "weather"])
-    .filter((t) => t !== "youtube_thumb");
+    .filter((ct) => ct !== "youtube_thumb");
   useEffect(() => {
     if (!newComp && templateOptions.length) setNewComp(templateOptions[0]);
   }, [templateOptions, newComp]);
@@ -140,12 +142,12 @@ export function Graphics({ slug }: { slug: string }) {
         setLogLines((L) => [...L.slice(-200), `[${key}] ${ev.line}`]);
       } else if (ev.kind === "job.done") {
         setBusy(`title:${key}`, false);
-        push(`title ${key} rendered`, "ok");
+        push(t("toast.titleRendered", { key }), "ok");
         qc.invalidateQueries({ queryKey: ["titles", slug] });
         es.close();
       } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
         setBusy(`title:${key}`, false);
-        push(`title ${key} failed: ${ev.error}`, "err");
+        push(t("toast.titleFailed", { key, error: ev.error }), "err");
         setLogLines((L) => [...L.slice(-200), `[${key}] ERROR: ${ev.error}`]);
         es.close();
       }
@@ -159,7 +161,7 @@ export function Graphics({ slug }: { slug: string }) {
       if (!r.ok) throw new Error(`HTTP ${r.status}: ${text}`);
       return JSON.parse(text);
     }),
-    onMutate: (key) => { setBusy(`title:${key}`, true); push(`title ${key} → HyperFrames`, "run"); },
+    onMutate: (key) => { setBusy(`title:${key}`, true); push(t("toast.titleQueued", { key }), "run"); },
     onError: (e: Error, key) => {
       setBusy(`title:${key}`, false);
       push(`title ${key}: ${e.message}`, "err");
@@ -172,7 +174,7 @@ export function Graphics({ slug }: { slug: string }) {
   const newTitle = useMutation({
     mutationFn: (args: { key: string; composition: string; fields: Record<string, unknown> }) =>
       graphicsApi.newTitle(slug, args),
-    onMutate: (a) => { setBusy(`title:${a.key}`, true); push(`new title ${a.key} → HyperFrames`, "run"); },
+    onMutate: (a) => { setBusy(`title:${a.key}`, true); push(t("toast.newTitleQueued", { key: a.key }), "run"); },
     onError: (e: Error, a) => {
       setBusy(`title:${a.key}`, false);
       push(`new title ${a.key}: ${e.message}`, "err");
@@ -187,7 +189,7 @@ export function Graphics({ slug }: { slug: string }) {
   const regenThumb = useMutation({
     mutationFn: (fields: Record<string, unknown>) =>
       graphicsApi.regenYThumb(slug, { fields }),
-    onMutate: () => { setBusy("ythumb", true); push("thumbnail → HyperFrames", "run"); },
+    onMutate: () => { setBusy("ythumb", true); push(t("toast.thumbQueued"), "run"); },
     onError: (e: Error) => {
       setBusy("ythumb", false);
       push(`thumbnail: ${e.message}`, "err");
@@ -203,14 +205,14 @@ export function Graphics({ slug }: { slug: string }) {
             setLogLines((L) => [...L.slice(-200), `[thumb] ${ev.line}`]);
           } else if (ev.kind === "job.done") {
             setBusy("ythumb", false);
-            push("thumbnail rendered", "ok");
+            push(t("toast.thumbRendered"), "ok");
             setThumbOverride(null);
             setThumbBust((n) => n + 1);
             qc.invalidateQueries({ queryKey: ["versions", "ythumb", slug, slug] });
             es.close();
           } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
             setBusy("ythumb", false);
-            push(`thumbnail failed: ${ev.error}`, "err");
+            push(t("toast.thumbFailed", { error: ev.error }), "err");
             setLogLines((L) => [...L.slice(-200), `[thumb] ERROR: ${ev.error}`]);
             es.close();
           }
@@ -235,7 +237,7 @@ export function Graphics({ slug }: { slug: string }) {
         if (r.composition) setNewComp(r.composition);
       }
       (r.warnings ?? []).forEach((w) => push(w, "info"));
-      push("card text written — review + edit before render", "ok");
+      push(t("toast.cardTextWritten"), "ok");
     },
   });
 
@@ -244,7 +246,7 @@ export function Graphics({ slug }: { slug: string }) {
   // fields so you can fill values and Create + render.
   const genComp = useMutation({
     mutationFn: (args: { key: string; brief: string }) => graphicsApi.genComposition(slug, args),
-    onMutate: () => push("generating composition (local Qwen) — ~30-60s…", "run"),
+    onMutate: () => push(t("toast.genCompStarted"), "run"),
     onError: (e: Error) => push(`composition: ${e.message}`, "err"),
     onSuccess: (r) => {
       setNewComp(r.composition);
@@ -254,42 +256,42 @@ export function Graphics({ slug }: { slug: string }) {
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       selectTitle(r.composition);
       setCompGenerated(true);
-      push(`card "${r.composition}" created (${r.placeholders.length} fields) — fill the values, then Create + render`, "ok");
+      push(t("toast.compCreated", { composition: r.composition, count: r.placeholders.length }), "ok");
     },
   });
 
   function submitNewTitle() {
     let fields: Record<string, unknown> = {};
     try { fields = JSON.parse(newFields || "{}"); }
-    catch { push("fields must be valid JSON", "err"); return; }
-    if (!newKey.trim()) { push("key required", "err"); return; }
-    if (!newComp) { push("composition required", "err"); return; }
+    catch { push(t("toast.fieldsInvalidJson"), "err"); return; }
+    if (!newKey.trim()) { push(t("toast.keyRequired"), "err"); return; }
+    if (!newComp) { push(t("toast.compositionRequired"), "err"); return; }
     newTitle.mutate({ key: newKey.trim(), composition: newComp, fields });
   }
 
   function submitRegenThumb() {
     let fields: Record<string, unknown> = {};
     try { fields = JSON.parse(thumbFields || "{}"); }
-    catch { push("fields must be valid JSON", "err"); return; }
+    catch { push(t("toast.fieldsInvalidJson"), "err"); return; }
     regenThumb.mutate(fields);
   }
 
   const renderAllMissing = () => {
     const ts = (titles.data?.titles ?? []).filter(
-      (t) => t.configured && (t.status === "missing" || t.status === "stale")
+      (ti) => ti.configured && (ti.status === "missing" || ti.status === "stale")
     );
-    if (!ts.length) { push("No missing or stale titles", "info"); return; }
-    push(`Queuing ${ts.length} title renders`, "run");
-    ts.forEach((t, i) => setTimeout(() => regen.mutate(t.key), i * 300));
+    if (!ts.length) { push(t("toast.noMissingTitles"), "info"); return; }
+    push(t("toast.queuingRenders", { count: ts.length }), "run");
+    ts.forEach((ti, i) => setTimeout(() => regen.mutate(ti.key), i * 300));
   };
 
   const list = titles.data?.titles ?? [];
-  const cards = list.filter((t) => t.scope !== "hyperframes");
-  const hfStrip = list.filter((t) => t.scope === "hyperframes");
+  const cards = list.filter((ti) => ti.scope !== "hyperframes");
+  const hfStrip = list.filter((ti) => ti.scope === "hyperframes");
   const renderedCount = cards.filter((c) => c.status === "rendered" || c.status === "shared").length;
 
   const cur = useMemo(
-    () => cards.find((t) => t.key === selectedKey) ?? cards[0],
+    () => cards.find((ti) => ti.key === selectedKey) ?? cards[0],
     [cards, selectedKey],
   );
   useEffect(() => {
@@ -301,7 +303,7 @@ export function Graphics({ slug }: { slug: string }) {
       {/* LEFT — large preview of the selected title card + metadata underneath */}
       <section className="panel flex flex-col min-h-0 p-3 gap-3">
         <div className="flex items-center justify-between flex-none">
-          <div className="panel-title">PREVIEW <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {cur ? cur.key : "select a card →"}</span></div>
+          <div className="panel-title">{t("graphics.previewTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {cur ? cur.key : t("graphics.previewSelectHint")}</span></div>
           {cur && <Badge status={cur.status} />}
         </div>
         {cur ? (
@@ -319,52 +321,52 @@ export function Graphics({ slug }: { slug: string }) {
                   <Badge status={cur.status} />
                   <div className="label-tiny mt-2 break-all px-4">
                     {cur.scope === "shared"
-                      ? "shared assets/titles/ — file not found"
+                      ? t("graphics.sharedFileNotFound")
                       : `episodes/${slug}/titles/${cur.key}.mp4 (not built)`}
                   </div>
                 </div>
               )}
             </div>
             <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1 text-[12px] flex-none">
-              <span className="label-tiny">key</span><span className="font-mono">{cur.key}</span>
-              <span className="label-tiny">layout</span>
+              <span className="label-tiny">{t("graphics.metaKey")}</span><span className="font-mono">{cur.key}</span>
+              <span className="label-tiny">{t("graphics.metaLayout")}</span>
               <span className="font-mono">
                 {cur.configured
                   ? (cur.composition ?? "—")
-                  : <span className="text-txt-faint">bespoke — no editable layout</span>}
+                  : <span className="text-txt-faint">{t("graphics.bespokeNoLayout")}</span>}
               </span>
-              <span className="label-tiny">scope</span><span>{cur.scope}</span>
-              <span className="label-tiny">status</span><span>{cur.status}</span>
+              <span className="label-tiny">{t("graphics.metaScope")}</span><span>{cur.scope}</span>
+              <span className="label-tiny">{t("graphics.metaStatus")}</span><span>{cur.status}</span>
             </div>
             <div className="flex items-center gap-2 flex-none">
               {cur.configured ? (
                 <>
                   <button className="btn btn-cyan" disabled={!!busy[`title:${cur.key}`]}
-                    title="Re-render this card from its saved layout + fields"
+                    title={t("graphics.regenBtnTitle")}
                     onClick={() => regen.mutate(cur.key)}>
-                    <IRegen /> Regen
+                    <IRegen /> {t("graphics.regenBtn")}
                   </button>
                   <button className="btn"
-                    title="Edit this card's layout or text, then re-render"
-                    onClick={() => openNewFor(cur.key)}>Edit…</button>
+                    title={t("graphics.editBtnTitle")}
+                    onClick={() => openNewFor(cur.key)}>{t("graphics.editBtn")}</button>
                   <RegenNotes onSubmit={() => regen.mutate(cur.key)} />
                 </>
               ) : (
                 <button className="btn btn-cyan"
-                  title="This card has no saved layout/text yet — set them up once, then it becomes Regen-able"
+                  title={t("graphics.configureBtnTitle")}
                   onClick={() => openNewFor(cur.key)}>
-                  <IRegen /> Configure + generate
+                  <IRegen /> {t("graphics.configureBtn")}
                 </button>
               )}
             </div>
             {!cur.configured && (
               <p className="text-txt-faint text-[11px] flex-none -mt-1">
-                Shows “Configure” (not “Regen”) because this card was authored as a description, not from an editable layout. Configure it once to make it Regen-able.
+                {t("graphics.bespokeHint")}
               </p>
             )}
           </>
         ) : (
-          <div className="flex-1 grid place-items-center text-txt-faint">No title selected — pick one from the cards on the right.</div>
+          <div className="flex-1 grid place-items-center text-txt-faint">{t("graphics.noTitleSelected")}</div>
         )}
       </section>
 
@@ -372,50 +374,50 @@ export function Graphics({ slug }: { slug: string }) {
       <aside className="flex flex-col gap-3 min-h-0 overflow-y-auto">
         <section className="panel flex flex-col">
           <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-            <div className="panel-title">TITLE CARDS <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ click → preview</span></div>
+            <div className="panel-title">{t("graphics.titleCardsPanel")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {t("graphics.titleCardsClickHint")}</span></div>
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{cards.length}</span></span>
           </header>
           <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))" }}>
-            {cards.map((t) => {
-              const active = selectedKey === t.key;
-              const isBusy = !!busy[`title:${t.key}`];
+            {cards.map((ti) => {
+              const active = selectedKey === ti.key;
+              const isBusy = !!busy[`title:${ti.key}`];
               return (
                 <div
-                  key={t.key}
-                  onClick={() => selectTitle(t.key)}
-                  title="click to preview"
+                  key={ti.key}
+                  onClick={() => selectTitle(ti.key)}
+                  title={t("graphics.cardClickToPreview")}
                   className={"hairline-soft text-left p-0 overflow-hidden rounded transition-colors cursor-pointer " + (active ? "border-amber" : "")}
                   style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)" } : {}}
                 >
                   <div className="bg-black grid place-items-center" style={{ aspectRatio: "1/1" }}>
-                    {t.exists ? (
+                    {ti.exists ? (
                       <video
-                        key={mediaUrl.titlePreview(slug, t.key) + (t.mtime ?? "")}
-                        src={mediaUrl.titlePreview(slug, t.key)}
+                        key={mediaUrl.titlePreview(slug, ti.key) + (ti.mtime ?? "")}
+                        src={mediaUrl.titlePreview(slug, ti.key)}
                         autoPlay muted loop playsInline
                         className="w-full h-full object-contain pointer-events-none"
                       />
                     ) : (
                       <div className="text-center">
-                        <Badge status={isBusy ? "running" : t.status} />
+                        <Badge status={isBusy ? "running" : ti.status} />
                         <div className="label-tiny mt-1">
-                          {t.scope === "shared"
-                            ? (t.status === "missing" ? "shared — not found" : "shared")
-                            : `${t.key}.mp4`}
+                          {ti.scope === "shared"
+                            ? (ti.status === "missing" ? t("graphics.sharedNotFound") : t("graphics.shared"))
+                            : `${ti.key}.mp4`}
                         </div>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center justify-between px-2 py-1 bg-bg-2">
-                    <span className="font-mono text-[11px] truncate" title={t.key}>{t.key}</span>
+                    <span className="font-mono text-[11px] truncate" title={ti.key}>{ti.key}</span>
                     <span onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
                       <button
                         className="btn p-1"
-                        title={t.configured
-                          ? "Regen — re-render from saved layout + fields"
-                          : "Configure — this card has no editable layout yet; set it up to make it regen-able"}
+                        title={ti.configured
+                          ? t("graphics.cardRegenTitle")
+                          : t("graphics.cardConfigureTitle")}
                         disabled={isBusy}
-                        onClick={() => (t.configured ? regen.mutate(t.key) : openNewFor(t.key))}
+                        onClick={() => (ti.configured ? regen.mutate(ti.key) : openNewFor(ti.key))}
                       ><IRegen /></button>
                     </span>
                   </div>
@@ -423,12 +425,12 @@ export function Graphics({ slug }: { slug: string }) {
               );
             })}
             {cards.length === 0 && (
-              <div className="text-txt-faint col-span-full p-2 text-[12px]">No title_assets in manifest.</div>
+              <div className="text-txt-faint col-span-full p-2 text-[12px]">{t("graphics.noTitleAssets")}</div>
             )}
           </div>
           <div className="px-3 py-2 border-t hairline-soft flex items-center gap-2">
-            <button className="btn btn-cyan" onClick={openNew}>+ New title card</button>
-            <button className="btn btn-amber" onClick={renderAllMissing}><IRegen /> Render missing</button>
+            <button className="btn btn-cyan" onClick={openNew}>{t("graphics.newTitleCardBtn")}</button>
+            <button className="btn btn-amber" onClick={renderAllMissing}><IRegen /> {t("graphics.renderMissingBtn")}</button>
           </div>
           {hfStrip.length > 0 && (
             <div className="px-3 py-2 border-t hairline-soft flex items-center gap-2 flex-wrap">
@@ -445,20 +447,20 @@ export function Graphics({ slug }: { slug: string }) {
 
         <section className="panel">
           <div className="flex items-center justify-between px-3 py-2 border-b hairline">
-            <div className="panel-title">YOUTUBE THUMBNAIL</div>
-            <button className="btn btn-cyan" disabled={!!busy.ythumb} onClick={() => setThumbOpen(true)}><IRegen /> Regenerate</button>
+            <div className="panel-title">{t("graphics.youtubeThumbnailPanel")}</div>
+            <button className="btn btn-cyan" disabled={!!busy.ythumb} onClick={() => setThumbOpen(true)}><IRegen /> {t("graphics.regenerateBtn")}</button>
           </div>
           <div className="p-3 flex flex-col gap-2">
             <button
               className="bg-black hairline-soft rounded overflow-hidden grid place-items-center cursor-zoom-in p-0"
               style={{ aspectRatio: "16/9" }}
-              title="Click to enlarge · browse versions · see the template + fields"
+              title={t("graphics.thumbClickTitle")}
               onClick={() => setThumbViewOpen(true)}
             >
               <img
                 key={(thumbOverride ?? graphicsApi.ythumbPreviewUrl(slug)) + `?b=${thumbBust}`}
                 src={thumbOverride ?? `${graphicsApi.ythumbPreviewUrl(slug)}?b=${thumbBust}`}
-                alt="youtube thumbnail"
+                alt={t("graphics.thumbAlt")}
                 className="w-full h-full object-contain"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
                 onLoad={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "visible"; }}
@@ -477,8 +479,8 @@ export function Graphics({ slug }: { slug: string }) {
         {logLines.length > 0 && (
           <section className="panel">
             <div className="px-3 py-1 flex items-center justify-between border-b hairline-soft">
-              <span className="label-tiny">render log tail</span>
-              <button className="btn p-0.5 text-[11px]" onClick={() => setLogLines([])}>clear</button>
+              <span className="label-tiny">{t("graphics.renderLogLabel")}</span>
+              <button className="btn p-0.5 text-[11px]" onClick={() => setLogLines([])}>{t("graphics.clearBtn")}</button>
             </div>
             <pre className="logtail mx-3 my-3" style={{ height: 120 }}>{logLines.join("\n")}</pre>
           </section>
@@ -489,44 +491,44 @@ export function Graphics({ slug }: { slug: string }) {
         open={newOpen}
         onClose={() => setNewOpen(false)}
         width={640}
-        title={editMode ? "Edit title card" : "New title card"}
+        title={editMode ? t("graphics.editModalTitle") : t("graphics.newModalTitle")}
         footer={
           <>
             <span className="text-txt-faint text-[11px] mr-auto">
-              {editMode ? "Saves your changes and re-renders the card." : "Saves the card and renders it as an mp4."}
+              {editMode ? t("graphics.editModalFooterHint") : t("graphics.newModalFooterHint")}
             </span>
-            <button className="btn" onClick={() => setNewOpen(false)}>Cancel</button>
+            <button className="btn" onClick={() => setNewOpen(false)}>{t("common.cancel")}</button>
             <button className="btn btn-cyan"
               disabled={newTitle.isPending || (!!newBrief.trim() && !compGenerated)}
-              title={(!!newBrief.trim() && !compGenerated) ? "You wrote a brief in step 2 — click 'Generate composition' first, or clear the brief to use the selected layout" : ""}
-              onClick={submitNewTitle}>{editMode ? "Save + render" : "Create + render"}</button>
+              title={(!!newBrief.trim() && !compGenerated) ? t("graphics.createPendingBriefTitle") : ""}
+              onClick={submitNewTitle}>{editMode ? t("graphics.saveRenderBtn") : t("graphics.createRenderBtn")}</button>
           </>
         }
       >
         <div className="flex flex-col gap-4">
           {/* STEP 1 — name */}
-          <Step n={1} title="Name this card" hint="A short id, used as the filename. e.g. lower_third, scoreboard.">
+          <Step n={1} title={t("graphics.step1Title")} hint={t("graphics.step1Hint")}>
             {editMode ? (
               <div className="flex items-center gap-2 text-[12px]">
                 <span className="font-mono text-amber">{newKey}</span>
-                <span className="text-txt-faint text-[11px]">— can't rename; make a new card to change the id</span>
+                <span className="text-txt-faint text-[11px]">{t("graphics.cantRenameHint")}</span>
               </div>
             ) : (
-              <Field label="" value={newKey} onChange={setNewKey} placeholder="e.g. lower_third" monospace />
+              <Field label="" value={newKey} onChange={setNewKey} placeholder={t("graphics.keyPlaceholder")} monospace />
             )}
           </Step>
 
           {/* STEP 2 — layout (composition) */}
-          <Step n={2} title="Pick a layout" hint="A “composition” is the animated template — it decides where the text sits and how it moves. The preview shows the chosen layout; ‹TOKENS› mark where your step-3 text lands.">
+          <Step n={2} title={t("graphics.step2Title")} hint={t("graphics.step2Hint")}>
             {legacyNote && (
               <div className="hairline-soft rounded p-2 text-[11px] text-txt-dim mb-2">
-                <span className="label-tiny text-amber">bespoke card</span> — this one was authored as a description, not from a saved layout, so there are no editable fields yet. Pick a layout below + fill the text to make it editable (or design a new layout with AI).
+                <span className="label-tiny text-amber">{t("graphics.bespokeCardLabel")}</span> — {t("graphics.bespokeCardDesc")}
                 <div className="mt-1 font-mono text-txt-faint break-words">{legacyNote}</div>
               </div>
             )}
             <div className="grid grid-cols-[1fr_180px] gap-3 items-start">
               <Field
-                label="composition"
+                label={t("graphics.compositionLabel")}
                 value={newComp}
                 onChange={onPickComposition}
                 options={Array.from(new Set([newComp, ...templateOptions].filter(Boolean))) as string[]}
@@ -535,52 +537,52 @@ export function Graphics({ slug }: { slug: string }) {
             </div>
             {/* Generate a whole NEW composition (animated card HTML) from a brief, via local Qwen. */}
             <details className="hairline-soft rounded mt-2">
-              <summary className="px-2 py-1.5 cursor-pointer label-tiny select-none">✨ or design a brand-new layout with AI</summary>
+              <summary className="px-2 py-1.5 cursor-pointer label-tiny select-none">{t("graphics.designWithAiSummary")}</summary>
               <div className="p-2 border-t hairline-soft flex flex-col gap-2">
                 <p className="text-txt-faint text-[11px]">
-                  Only needed when no layout above fits. Describe the card; the local model (Qwen) writes a new HyperFrames layout and saves it under the name from step 1. You'll still fill the text in step 3.
+                  {t("graphics.designWithAiHelp")}
                 </p>
-                <Field label="describe the card (brief)" value={newBrief} onChange={(v) => { setNewBrief(v); setCompGenerated(false); }} rows={3}
-                  placeholder="e.g. a Crater Bowl scoreboard: SECTOR NINE SLAGS vs SECTOR FOUR GLOWBOYS, big score numbers ticking 2 → 1, ‘PLAYERS REMAINING’ underneath" />
+                <Field label={t("graphics.briefLabel")} value={newBrief} onChange={(v) => { setNewBrief(v); setCompGenerated(false); }} rows={3}
+                  placeholder={t("graphics.briefPlaceholder")} />
                 <button
                   className="btn btn-amber self-start"
                   disabled={genComp.isPending || !newKey.trim() || !newBrief.trim()}
-                  title="Generate a brand-new HyperFrames layout from this brief, saved under the name in step 1"
+                  title={t("graphics.genCompBtnTitle")}
                   onClick={() => genComp.mutate({ key: newKey.trim(), brief: newBrief })}
-                >✨ {genComp.isPending ? "Generating… (~30-60s)" : "Generate composition"}</button>
+                >✨ {genComp.isPending ? t("graphics.generatingComp") : t("graphics.generateCompBtn")}</button>
                 {!newKey.trim() && newBrief.trim() && (
-                  <div className="text-[10px] text-amber">↑ name the card in step 1 first — it becomes the new layout's name.</div>
+                  <div className="text-[10px] text-amber">{t("graphics.nameFirstWarning")}</div>
                 )}
                 {newBrief.trim() && !compGenerated && newKey.trim() && (
-                  <div className="text-[10px] text-amber">Click "Generate composition" to build this layout. Until you do, "Create + render" uses the layout selected above and ignores this brief.</div>
+                  <div className="text-[10px] text-amber">{t("graphics.generateFirstWarning")}</div>
                 )}
                 {compGenerated && (
-                  <div className="text-[10px] text-emerald-400">✓ layout "{newKey.trim()}" created and selected above — now fill the text in step 3.</div>
+                  <div className="text-[10px] text-emerald-400">✓ {t("graphics.compGeneratedSuccess", { key: newKey.trim() })}</div>
                 )}
               </div>
             </details>
           </Step>
 
           {/* STEP 3 — text (fields) */}
-          <Step n={3} title="Fill in the text" hint="These values replace the ‹TOKENS› in the layout. Type them, or let the AI draft them from this episode's script.">
+          <Step n={3} title={t("graphics.step3Title")} hint={t("graphics.step3Hint")}>
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Field label="card type (for the AI draft)" value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
+                <Field label={t("graphics.cardTypeLabel")} value={newCardType} onChange={setNewCardType} options={titleCardTypes} />
               </div>
               <button
                 className="btn btn-amber whitespace-nowrap"
                 disabled={genText.isPending}
-                title="Drafts the text below from this episode's script, in this card type's voice"
+                title={t("graphics.writeTextBtnTitle")}
                 onClick={() => genText.mutate({ card_type: newCardType, target: "title" })}
-              >✨ {genText.isPending ? "Writing…" : "Write text with AI"}</button>
+              >✨ {genText.isPending ? t("graphics.writingText") : t("graphics.writeTextBtn")}</button>
             </div>
-            {CARD_TYPE_BLURB[newCardType] && (
-              <p className="text-txt-faint text-[10px] mt-1">{CARD_TYPE_BLURB[newCardType]}</p>
+            {CARD_TYPE_BLURB_KEY[newCardType] && (
+              <p className="text-txt-faint text-[10px] mt-1">{t(CARD_TYPE_BLURB_KEY[newCardType])}</p>
             )}
             <p className="text-txt-faint text-[10px]">
-              Card type only matters if you click “Write text with AI” — it picks the voice, which fields get written, <span className="text-amber/80">and snaps the layout to that card type's composition</span>. Typing the fields yourself ignores it.
+              {t("graphics.cardTypeNote")}
             </p>
-            <Field label="fields (JSON)" value={newFields} onChange={setNewFields} rows={6} monospace />
+            <Field label={t("graphics.fieldsJsonLabel")} value={newFields} onChange={setNewFields} rows={6} monospace />
           </Step>
         </div>
       </Modal>
@@ -588,28 +590,27 @@ export function Graphics({ slug }: { slug: string }) {
       <Modal
         open={thumbOpen}
         onClose={() => setThumbOpen(false)}
-        title="Regenerate YouTube thumbnail"
+        title={t("graphics.thumbModalTitle")}
         footer={
           <>
-            <button className="btn" onClick={() => setThumbOpen(false)}>Cancel</button>
-            <button className="btn btn-cyan" disabled={regenThumb.isPending} onClick={submitRegenThumb}>Regenerate</button>
+            <button className="btn" onClick={() => setThumbOpen(false)}>{t("common.cancel")}</button>
+            <button className="btn btn-cyan" disabled={regenThumb.isPending} onClick={submitRegenThumb}>{t("graphics.regenerateBtn")}</button>
           </>
         }
       >
         <div className="flex flex-col gap-3">
           <p className="text-txt-dim text-[12px]">
-            Renders the <code>youtube_thumb</code> composition to{" "}
-            <code>final/{slug}_thumb.png</code>. The current thumbnail is archived first.
+            {t("graphics.thumbModalDesc", { slug })}
           </p>
           <div className="flex justify-end">
             <button
               className="btn btn-amber"
               disabled={genText.isPending}
-              title="Write a punchy deadpan thumbnail hook with the local LLM (Ollama)"
+              title={t("graphics.writeThumbBtnTitle")}
               onClick={() => genText.mutate({ card_type: "youtube_thumb", target: "thumb" })}
-            >✨ {genText.isPending ? "Writing…" : "Write with AI"}</button>
+            >✨ {genText.isPending ? t("graphics.writingText") : t("graphics.writeWithAiBtn")}</button>
           </div>
-          <Field label="fields (JSON)" value={thumbFields} onChange={setThumbFields} rows={6} monospace />
+          <Field label={t("graphics.fieldsJsonLabel")} value={thumbFields} onChange={setThumbFields} rows={6} monospace />
         </div>
       </Modal>
 
@@ -644,10 +645,11 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
  * field lands. We jump the GSAP timeline to its final frame so the card is fully revealed
  * (templates start paused at frame 0 for deterministic seek-rendering). */
 function CompPreview({ comp }: { comp: string }) {
+  const t = useT();
   if (!comp) {
     return (
       <div className="hairline-soft rounded bg-black grid place-items-center text-txt-faint text-[10px]" style={{ width: 180, height: 180 }}>
-        pick a layout
+        {t("graphics.pickLayoutHint")}
       </div>
     );
   }
@@ -670,7 +672,7 @@ function CompPreview({ comp }: { comp: string }) {
           style={{ width: 1024, height: 1024, transform: "scale(0.17578)", transformOrigin: "top left", border: 0, pointerEvents: "none" }}
         />
       </div>
-      <span className="label-tiny text-center text-txt-faint">live layout · ‹…› = your text</span>
+      <span className="label-tiny text-center text-txt-faint">{t("graphics.liveLayoutHint")}</span>
     </div>
   );
 }

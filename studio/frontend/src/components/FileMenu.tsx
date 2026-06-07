@@ -7,6 +7,8 @@ import { useStore } from "../store";
 import { showsApi, exportUrl, cloneVoiceRef } from "../api/shows";
 import { api } from "../api";
 import type { Route } from "../route";
+import { useT } from "../i18n";
+import { Trans } from "../i18n/Trans";
 
 interface Props {
   activeShow: string;
@@ -20,6 +22,7 @@ interface Props {
 type Dialog = null | "new-show" | "new-episode" | "export" | "shutdown";
 
 export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial, onGoAssembly }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [cloneVoices, setCloneVoices] = useState<{ show: string; names: string[] } | null>(null);
@@ -46,19 +49,19 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
-    pushToast(`importing ${f.name}…`, "run");
+    pushToast(t("toast.importing", { name: f.name }), "run");
     try {
       const r = await showsApi.importZip(f);
       const bits = [
-        r.created.length ? `${r.created.length} new` : "",
-        r.updated.length ? `${r.updated.length} updated` : "",
-        r.templates?.length ? `${r.templates.length} template${r.templates.length > 1 ? "s" : ""}` : "",
-        r.voices?.length ? `${r.voices.length} voice${r.voices.length > 1 ? "s" : ""}` : "",
-        r.sfx?.length ? `${r.sfx.length} sfx` : "",
-        r.music?.length ? `${r.music.length} music` : "",
-        r.created_show ? `show '${r.show}' created` : "",
+        r.created.length ? t("filemenu.importBitNew", { n: r.created.length }) : "",
+        r.updated.length ? t("filemenu.importBitUpdated", { n: r.updated.length }) : "",
+        r.templates?.length ? t("filemenu.importBitTemplates", { count: r.templates.length }) : "",
+        r.voices?.length ? t("filemenu.importBitVoices", { count: r.voices.length }) : "",
+        r.sfx?.length ? t("filemenu.importBitSfx", { n: r.sfx.length }) : "",
+        r.music?.length ? t("filemenu.importBitMusic", { n: r.music.length }) : "",
+        r.created_show ? t("filemenu.importBitShowCreated", { show: r.show }) : "",
       ].filter(Boolean).join(", ");
-      pushToast(`import → ${r.show}: ${bits || "no episodes"}`, r.errors.length ? "info" : "ok");
+      pushToast(t("toast.importDone", { show: r.show, bits: bits || t("filemenu.importNoEpisodes") }), r.errors.length ? "info" : "ok");
       r.errors.forEach((err) => pushToast(`import: ${err}`, "err"));
       qc.invalidateQueries({ queryKey: ["episodes"] });
       qc.invalidateQueries({ queryKey: ["shows"] });
@@ -94,7 +97,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       <button
         className="panel-title hover:brightness-125 cursor-pointer flex items-center gap-1"
         onClick={() => setOpen((o) => !o)}
-        title="Project menu"
+        title={t("filemenu.menuTitle")}
       >
         MACU STUDIO
         <IChevron size={12} />
@@ -104,7 +107,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         <>
           <div className="fixed inset-0 z-40" onClick={close} />
           <div className="absolute top-[26px] left-0 z-50 panel w-[260px] py-1">
-            <Section label="Show" />
+            <Section label={t("filemenu.sectionShow")} />
             <div className="px-3 py-1 text-[12px] text-amber font-bold truncate">
               {curShow?.name ?? activeShow}
             </div>
@@ -122,22 +125,22 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
                 ))}
               </div>
             )}
-            <Item label="New show…" onClick={() => setDialog("new-show")} />
+            <Item label={t("filemenu.newShow")} onClick={() => setDialog("new-show")} />
 
-            <Section label="Episode" />
-            <Item label="New episode…" onClick={() => setDialog("new-episode")} />
+            <Section label={t("filemenu.sectionEpisode")} />
+            <Item label={t("filemenu.newEpisode")} onClick={() => setDialog("new-episode")} />
 
-            <Section label="Project" />
-            <Item label="Import…" onClick={() => fileRef.current?.click()} hint=".zip" />
-            <Item label="Export…" onClick={() => setDialog("export")} />
+            <Section label={t("filemenu.sectionProject")} />
+            <Item label={t("filemenu.import")} onClick={() => fileRef.current?.click()} hint=".zip" />
+            <Item label={t("filemenu.export")} onClick={() => setDialog("export")} />
 
-            <Section label="More" />
-            <Item label="Settings…" onClick={onOpenSettings} />
-            <Item label="Check for updates…" onClick={openUpdate} />
-            <Item label="Run diagnostics…" onClick={openDiagnostics} />
-            <Item label="Tutorial" onClick={onStartTutorial} />
-            <Item label="Go to Assembly" onClick={onGoAssembly} />
-            <Item label="Shut down Studio…" onClick={() => setDialog("shutdown")} />
+            <Section label={t("filemenu.sectionMore")} />
+            <Item label={t("filemenu.settings")} onClick={onOpenSettings} />
+            <Item label={t("filemenu.checkUpdates")} onClick={openUpdate} />
+            <Item label={t("filemenu.runDiagnostics")} onClick={openDiagnostics} />
+            <Item label={t("filemenu.tutorial")} onClick={onStartTutorial} />
+            <Item label={t("filemenu.goToAssembly")} onClick={onGoAssembly} />
+            <Item label={t("filemenu.shutDown")} onClick={() => setDialog("shutdown")} />
           </div>
         </>
       )}
@@ -169,6 +172,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
 }
 
 function CloneVoicesModal({ show, names, onClose }: { show: string; names: string[]; onClose: () => void }) {
+  const t = useT();
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(0);
   const [current, setCurrent] = useState<string | null>(null);
@@ -193,8 +197,9 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
     setFinished(true);
     setRunning(false);
     pushToast(
-      fails.length ? `cloned ${names.length - fails.length}/${names.length} voices (${fails.length} failed)`
-                   : `cloned ${names.length} voice${names.length > 1 ? "s" : ""}`,
+      fails.length
+        ? t("toast.clonedPartial", { cloned: names.length - fails.length, total: names.length, failed: fails.length })
+        : t("toast.clonedAll", { count: names.length }),
       fails.length ? "err" : "ok",
     );
   }
@@ -205,25 +210,21 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
     <Modal
       open
       onClose={running ? () => {} : onClose}
-      title="Import voices"
+      title={t("filemenu.cloneVoicesTitle")}
       width={460}
       footer={running ? undefined : finished ? (
-        <button className="btn btn-amber" onClick={onClose}>Close</button>
+        <button className="btn btn-amber" onClick={onClose}>{t("common.close")}</button>
       ) : (
         <>
-          <button className="btn" onClick={onClose}>Later</button>
-          <button className="btn btn-amber" onClick={run}>Clone {names.length} voice{names.length > 1 ? "s" : ""}</button>
+          <button className="btn" onClick={onClose}>{t("common.later")}</button>
+          <button className="btn btn-amber" onClick={run}>{t("filemenu.cloneVoicesBtn", { count: names.length })}</button>
         </>
       )}
     >
       {!finished ? (
         <div className="flex flex-col gap-3">
           <p className="label-tiny leading-relaxed">
-            This import brought <span className="text-amber">{names.length}</span> voice
-            {names.length > 1 ? "s" : ""} as reference clips. Re-cloning rebuilds them in
-            this machine's OmniVoice and re-points <span className="font-mono">{show}</span>'s
-            speakers at them. <span className="text-amber">It starts OmniVoice and uses the GPU</span>
-            {" "}(~a few seconds per voice). You can do it later from the voice picker.
+            {t("filemenu.cloneVoicesBody", { count: names.length, show, n: names.length })}
           </p>
           <div className="flex flex-wrap gap-1">
             {names.map((n) => <span key={n} className="label-tiny px-1.5 py-0.5 bg-bg-3 rounded">{n}</span>)}
@@ -233,16 +234,16 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
               <div className="h-2 bg-bg-3 rounded overflow-hidden">
                 <div className="h-full bg-amber transition-all" style={{ width: `${pct}%` }} />
               </div>
-              <div className="label-tiny">{done}/{names.length} — cloning {current ?? "…"}</div>
+              <div className="label-tiny">{t("filemenu.cloneVoicesProgress", { done, total: names.length, current: current ?? "…" })}</div>
             </div>
           )}
         </div>
       ) : (
         <div className="flex flex-col gap-2 py-1">
-          <div className="text-[13px]">Cloned {names.length - failed.length}/{names.length} voices into OmniVoice.</div>
+          <div className="text-[13px]">{t("filemenu.cloneVoicesDone", { cloned: names.length - failed.length, total: names.length })}</div>
           {failed.length > 0 && (
             <p className="label-tiny text-err leading-relaxed">
-              Failed: {failed.join(", ")}. Re-run from the voice picker once OmniVoice is healthy.
+              {t("filemenu.cloneVoicesFailed", { names: failed.join(", ") })}
             </p>
           )}
         </div>
@@ -252,6 +253,7 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
 }
 
 function ShutdownDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [shutting, setShutting] = useState(false);
 
   async function go() {
@@ -263,28 +265,28 @@ function ShutdownDialog({ onClose }: { onClose: () => void }) {
     <Modal
       open
       onClose={shutting ? () => {} : onClose}
-      title="Shut down MACU Studio"
+      title={t("filemenu.shutdownTitle")}
       width={440}
       footer={shutting ? undefined : (
         <>
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-amber" onClick={go}>Shut down</button>
+          <button className="btn" onClick={onClose}>{t("common.cancel")}</button>
+          <button className="btn btn-amber" onClick={go}>{t("filemenu.shutdownBtn")}</button>
         </>
       )}
     >
       {!shutting ? (
         <p className="label-tiny leading-relaxed">
-          This frees the GPU — it stops the ComfyUI, OmniVoice, and Ollama containers —
-          and then stops the Studio server. To use Studio again you'll need to start it
-          from a terminal (<span className="font-mono">./deploy/start-studio.sh</span>, or
-          the systemd service).
+          <Trans
+            k="filemenu.shutdownBody"
+            vars={{ cmd: "./deploy/start-studio.sh" }}
+            tags={[(c) => <span className="font-mono">{c}</span>]}
+          />
         </p>
       ) : (
         <div className="flex flex-col gap-2 py-1">
-          <div className="text-amber text-[13px]">MACU Studio is freeing the GPU and shutting down…</div>
+          <div className="text-amber text-[13px]">{t("filemenu.shuttingDown")}</div>
           <p className="label-tiny leading-relaxed">
-            You can close this browser tab now. Start Studio again from a terminal when you
-            want to come back.
+            {t("filemenu.shuttingDownBody")}
           </p>
         </div>
       )}
@@ -293,6 +295,7 @@ function ShutdownDialog({ onClose }: { onClose: () => void }) {
 }
 
 function NewShowDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [id, setId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -306,7 +309,7 @@ function NewShowDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
     setBusy(true);
     try {
       await showsApi.create(effId, name);
-      pushToast(`show created: ${effId}`, "ok");
+      pushToast(t("toast.showCreated", { id: effId }), "ok");
       onCreated(effId);
     } catch (e) {
       pushToast(`create show failed: ${e instanceof Error ? e.message : String(e)}`, "err");
@@ -315,19 +318,18 @@ function NewShowDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
 
   return (
     <Modal
-      open onClose={onClose} title="New show" width={440}
+      open onClose={onClose} title={t("filemenu.newShowTitle")} width={440}
       footer={<>
-        <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-amber" disabled={busy || !effId} onClick={create}>Create</button>
+        <button className="btn" onClick={onClose}>{t("common.cancel")}</button>
+        <button className="btn btn-amber" disabled={busy || !effId} onClick={create}>{t("common.create")}</button>
       </>}
     >
       <div className="flex flex-col gap-3">
-        <Field label="Display name" value={name} onChange={setName} placeholder="My New Show" />
-        <Field label="Show id (folder-safe)" value={effId}
-               onChange={(v) => { setIdTouched(true); setId(v); }} placeholder="my-new-show" />
+        <Field label={t("filemenu.newShowFieldName")} value={name} onChange={setName} placeholder={t("filemenu.newShowPlaceholderName")} />
+        <Field label={t("filemenu.newShowFieldId")} value={effId}
+               onChange={(v) => { setIdTouched(true); setId(v); }} placeholder={t("filemenu.newShowPlaceholderId")} />
         <p className="label-tiny leading-relaxed">
-          Episodes will live in a new folder. Voice/render defaults are copied from the
-          current default show — edit them under Settings → Show metadata.
+          {t("filemenu.newShowHint")}
         </p>
       </div>
     </Modal>
@@ -335,6 +337,7 @@ function NewShowDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
 }
 
 function NewEpisodeDialog({ show, onClose, onCreated }: { show: string; onClose: () => void; onCreated: (slug: string) => void }) {
+  const t = useT();
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -344,7 +347,7 @@ function NewEpisodeDialog({ show, onClose, onCreated }: { show: string; onClose:
     setBusy(true);
     try {
       const r = await showsApi.createEpisode(show, slug, title);
-      pushToast(`episode created: ${r.slug}`, "ok");
+      pushToast(t("toast.episodeCreated", { slug: r.slug }), "ok");
       onCreated(r.slug);
     } catch (e) {
       pushToast(`create episode failed: ${e instanceof Error ? e.message : String(e)}`, "err");
@@ -353,18 +356,17 @@ function NewEpisodeDialog({ show, onClose, onCreated }: { show: string; onClose:
 
   return (
     <Modal
-      open onClose={onClose} title={`New episode in ${show}`} width={440}
+      open onClose={onClose} title={t("filemenu.newEpisodeTitle", { show })} width={440}
       footer={<>
-        <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-amber" disabled={busy || !slug} onClick={create}>Create</button>
+        <button className="btn" onClick={onClose}>{t("common.cancel")}</button>
+        <button className="btn btn-amber" disabled={busy || !slug} onClick={create}>{t("common.create")}</button>
       </>}
     >
       <div className="flex flex-col gap-3">
-        <Field label="Slug (unique, folder-safe)" value={slug} onChange={setSlug} placeholder="ep-021" />
-        <Field label="Title" value={title} onChange={setTitle} placeholder="The One About Lasers" />
+        <Field label={t("filemenu.newEpisodeFieldSlug")} value={slug} onChange={setSlug} placeholder={t("filemenu.newEpisodePlaceholderSlug")} />
+        <Field label={t("filemenu.newEpisodeFieldTitle")} value={title} onChange={setTitle} placeholder={t("filemenu.newEpisodePlaceholderTitle")} />
         <p className="label-tiny leading-relaxed">
-          Scaffolds a manifest + script seeded from this show's defaults. Then write the
-          script and click Generate manifest.
+          {t("filemenu.newEpisodeHint")}
         </p>
       </div>
     </Modal>
@@ -372,6 +374,7 @@ function NewEpisodeDialog({ show, onClose, onCreated }: { show: string; onClose:
 }
 
 function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onClose: () => void }) {
+  const t = useT();
   const [withAssets, setWithAssets] = useState(true);
   function dl(url: string) {
     const a = document.createElement("a");
@@ -383,30 +386,26 @@ function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onC
     onClose();
   }
   return (
-    <Modal open onClose={onClose} title="Export project" width={440}>
+    <Modal open onClose={onClose} title={t("filemenu.exportTitle")} width={440}>
       <div className="flex flex-col gap-2">
         <p className="label-tiny leading-relaxed">
-          Bundles the show's text (script, manifest, youtube) + the title-card templates.
-          With <b>assets</b> on, it also bundles the binary source the manifest references —
-          OmniVoice voice reference clips, SFX, and music — plus the provenance catalogs, so
-          a recipient can import it and hit the regenerate buttons. Generated media (rendered
-          video / final mp4) is never included.
+          {t("filemenu.exportBody")}
         </p>
         <label className="flex items-center gap-2 text-[12px] cursor-pointer select-none py-1">
           <input type="checkbox" checked={withAssets} onChange={(e) => setWithAssets(e.target.checked)} />
-          Include assets (voices, SFX, music) — bigger zip
+          {t("filemenu.exportAssetsCheckbox")}
         </label>
         <button className="btn btn-amber justify-center" disabled={!slug} onClick={() => dl(exportUrl.episode(slug, withAssets))}>
-          Export this episode ({slug || "—"})
+          {t("filemenu.exportEpisodeBtn", { slug: slug || "—" })}
         </button>
         <button className="btn justify-center" onClick={() => dl(exportUrl.show(show, withAssets))}>
-          Export whole show ({show})
+          {t("filemenu.exportShowBtn", { show })}
         </button>
         <button className="btn justify-center" onClick={() => dl(exportUrl.voicesAll())}>
-          Export all voices
+          {t("filemenu.exportAllVoicesBtn")}
         </button>
         <p className="label-tiny leading-relaxed opacity-70">
-          (A single voice can be exported from the Audio page's voice picker.)
+          {t("filemenu.exportVoiceHint")}
         </p>
       </div>
     </Modal>

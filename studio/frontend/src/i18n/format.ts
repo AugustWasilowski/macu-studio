@@ -1,12 +1,17 @@
 // Pure formatting helpers for the i18n runtime — no React, no state.
 
-export type TParams = { count?: number } & Record<string, string | number>;
+export type TParams = Record<string, string | number | null | undefined> & { count?: number };
 
-// Replace {name} placeholders with params[name]. Unknown placeholders are left as-is
-// (so a missing param renders "{foo}" loudly rather than silently dropping text).
+// Replace {name} placeholders with params[name]. A null/undefined value renders empty;
+// an unknown placeholder is left as-is (so a missing param renders "{foo}" loudly
+// rather than silently dropping text).
 export function interpolate(tpl: string, params?: TParams): string {
   if (!params) return tpl;
-  return tpl.replace(/\{(\w+)\}/g, (m, k) => (k in params ? String(params[k]) : m));
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => {
+    if (!(k in params)) return m;
+    const v = params[k];
+    return v == null ? "" : String(v);
+  });
 }
 
 const _pr: Record<string, Intl.PluralRules> = {};

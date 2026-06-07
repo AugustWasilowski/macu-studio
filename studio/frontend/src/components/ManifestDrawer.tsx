@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { useStore } from "../store";
+import { useT } from "../i18n";
 import { Field } from "./Field";
 import { Dot } from "./Badge";
 import { Collapsible as Section } from "./Collapsible";
 import { IBrace, IPlus, IRegen, IX } from "./Icons";
 
 export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpToStage: (s: string) => void }) {
+  const t = useT();
   const open = useStore((s) => s.drawerOpen);
   const close = useStore((s) => s.closeDrawer);
   const push = useStore((s) => s.pushToast);
@@ -58,13 +60,13 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
     },
     onSuccess: () => {
       setDirty(false);
-      push("manifest.json written", "ok");
+      push(t("toast.manifestSaved"), "ok");
       qc.invalidateQueries({ queryKey: ["manifest", slug] });
       qc.invalidateQueries({ queryKey: ["cues", slug] });
       qc.invalidateQueries({ queryKey: ["shots", slug] });
       qc.invalidateQueries({ queryKey: ["titles", slug] });
     },
-    onError: (e: Error) => push("save failed: " + e.message, "err"),
+    onError: (e: Error) => push(t("toast.manifestSaveFailed", { message: e.message }), "err"),
   });
 
   const speakerMap = useMemo(() => {
@@ -92,22 +94,22 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title flex items-center gap-2">
             <IBrace /> MANIFEST
-            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {slug}/manifest.json {dirty && <span className="text-amber">· UNSAVED</span>}</span>
+            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {slug}/manifest.json {dirty && <span className="text-amber">{t("manifest.unsaved")}</span>}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               className={"btn " + (raw ? "btn-amber" : "")}
               onClick={() => setRaw((v) => !v)}
-            >{raw ? "Form view" : "View raw JSON"}</button>
+            >{raw ? t("manifest.formView") : t("manifest.viewRawJson")}</button>
             <button className="btn p-1" onClick={close}><IX /></button>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-          {manifestQ.isLoading && <div className="text-txt-faint">Loading manifest…</div>}
-          {manifestQ.error && <div className="text-red">Failed to load: {(manifestQ.error as Error).message}</div>}
+          {manifestQ.isLoading && <div className="text-txt-faint">{t("manifest.loading")}</div>}
+          {manifestQ.error && <div className="text-red">{t("manifest.loadFailed", { message: (manifestQ.error as Error).message })}</div>}
           {m && !raw && (
             <>
-              <Section title="Episode metadata">
+              <Section title={t("manifest.sectionEpisodeMeta")}>
                 <Field label="title" value={m.title ?? ""} onChange={(v) => set(["title"], v)} />
                 <div className="grid grid-cols-2 gap-2">
                   <Field label="episode" value={m.episode ?? ""} onChange={(v) => set(["episode"], v)} />
@@ -119,7 +121,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                 )}
               </Section>
 
-              <Section title="Voice">
+              <Section title={t("manifest.sectionVoice")}>
                 {m.voice?.default && (
                   <div className="grid grid-cols-2 gap-2">
                     <Field
@@ -138,7 +140,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                 <div className="label-tiny mt-2">speaker_map</div>
                 <div className="hairline-soft rounded">
                   <div className="grid grid-cols-[110px_90px_90px_1fr_80px_60px] gap-1 px-2 py-1 label-tiny border-b hairline-soft">
-                    <span>SPEAKER</span><span>ENGINE</span><span>SPEED</span><span>VOICE</span><span>PROFILE</span><span></span>
+                    <span>{t("manifest.colSpeaker")}</span><span>{t("manifest.colEngine")}</span><span>{t("manifest.colSpeed")}</span><span>{t("manifest.colVoice")}</span><span>{t("manifest.colProfile")}</span><span></span>
                   </div>
                   {speakerMap.map(({ speaker, cfg }) => (
                     <div key={speaker} className="grid grid-cols-[110px_90px_90px_1fr_80px_60px] gap-1 px-2 py-1 items-center border-b border-[var(--line-soft)]">
@@ -172,7 +174,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                       />
                       <button
                         className="btn p-1"
-                        title="Regenerate sample (defers to Stage 2)"
+                        title={t("manifest.regenSampleTitle")}
                         onClick={() => { onJumpToStage("audio"); close(); }}
                       ><IRegen /></button>
                     </div>
@@ -181,7 +183,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
               </Section>
 
               {m.comfyui && (
-                <Section title="ComfyUI">
+                <Section title={t("manifest.sectionComfyui")}>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label="checkpoint" value={m.comfyui.checkpoint ?? ""} onChange={(v) => set(["comfyui", "checkpoint"], v)} dot="rendered" />
                     <Field label="workflow" value={m.comfyui.workflow ?? ""} onChange={(v) => set(["comfyui", "workflow"], v)} />
@@ -195,14 +197,14 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
               )}
 
               {m.style && (
-                <Section title="Style">
+                <Section title={t("manifest.sectionStyle")}>
                   <Field label="suffix" value={m.style.suffix ?? ""} onChange={(v) => set(["style", "suffix"], v)} rows={3} />
                   <Field label="negative" value={m.style.negative ?? ""} onChange={(v) => set(["style", "negative"], v)} rows={3} />
                 </Section>
               )}
 
               {characters.length > 0 && (
-                <Section title={`Characters (${characters.length})`}>
+                <Section title={t("manifest.sectionCharacters", { n: characters.length })}>
                   {characters.map(({ key, cfg }) => (
                     <div key={key} className="hairline-soft rounded p-2 mb-1.5">
                       <div className="flex items-center justify-between mb-1">
@@ -215,7 +217,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                         />
                       </div>
                       <Field
-                        label="core prompt"
+                        label={t("manifest.fieldCorePrompt")}
                         value={cfg.core ?? ""}
                         onChange={(v) => set(["characters", key, "core"], v)}
                         rows={2}
@@ -226,9 +228,9 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
               )}
 
               {m.music && (
-                <Section title="Music">
+                <Section title={t("manifest.sectionMusic")}>
                   <ToggleRow
-                    label="enabled"
+                    label={t("manifest.toggleEnabled")}
                     on={!!m.music.enabled}
                     onChange={(v) => set(["music", "enabled"], v)}
                   />
@@ -238,7 +240,7 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                     <Field label="fade_in" value={m.music.fade_in ?? 0} type="number" onChange={(v) => set(["music", "fade_in"], parseFloat(v) || 0)} />
                     <Field label="fade_out" value={m.music.fade_out ?? 0} type="number" onChange={(v) => set(["music", "fade_out"], parseFloat(v) || 0)} />
                   </div>
-                  <div className="label-tiny mt-1">clips</div>
+                  <div className="label-tiny mt-1">{t("manifest.clipsLabel")}</div>
                   {(m.music.clips ?? []).map((c: string, i: number) => (
                     <div key={i} className="flex items-center gap-2 py-1">
                       <Dot status="ok" />
@@ -258,13 +260,13 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                     </div>
                   ))}
                   <button className="btn" onClick={() => set(["music", "clips"], [...(m.music.clips ?? []), "new_clip.mp3"])}>
-                    <IPlus /> Add clip
+                    <IPlus /> {t("manifest.addClip")}
                   </button>
                 </Section>
               )}
 
               {m.subtitles && (
-                <Section title="Subtitles">
+                <Section title={t("manifest.sectionSubtitles")}>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label="font" value={m.subtitles.font ?? ""} onChange={(v) => set(["subtitles", "font"], v)} dot="rendered" />
                     <Field label="fontsize" value={m.subtitles.fontsize ?? 0} type="number" onChange={(v) => set(["subtitles", "fontsize"], parseInt(v, 10) || 0)} />
@@ -275,13 +277,13 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                 </Section>
               )}
 
-              <Section title="SFX">
+              <Section title={t("manifest.sectionSfx")}>
                 <div
                   className="hairline-soft rounded p-3 flex items-center justify-between cursor-pointer hover:bg-bg-3"
                   onClick={() => { onJumpToStage("audio"); close(); }}
                 >
-                  <span>{(m.sfx ?? []).length} SFX entries pinned to cues</span>
-                  <span className="text-cyan">Manage in Stage 2 — Audio →</span>
+                  <span>{t("manifest.sfxEntries", { count: (m.sfx ?? []).length })}</span>
+                  <span className="text-cyan">{t("manifest.sfxManage")}</span>
                 </div>
               </Section>
             </>
@@ -294,18 +296,18 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
                 value={rawText}
                 onChange={(e) => { setRawText(e.target.value); setDirty(true); }}
               />
-              {rawErr && <div className="text-red text-[11px] mt-1">JSON error: {rawErr}</div>}
+              {rawErr && <div className="text-red text-[11px] mt-1">{t("manifest.jsonError", { error: rawErr })}</div>}
             </>
           )}
         </div>
         <footer className="flex items-center justify-between px-3 py-2 border-t hairline">
-          <span className="label-tiny">{dirty ? "modified · unsaved" : "in sync with disk"}</span>
+          <span className="label-tiny">{dirty ? t("manifest.footerModified") : t("manifest.footerSynced")}</span>
           <button
             className="btn btn-amber"
             disabled={!dirty || save.isPending}
             onClick={() => save.mutate()}
           >
-            {save.isPending ? "Saving…" : "Save manifest"}
+            {save.isPending ? t("manifest.saving") : t("manifest.saveManifest")}
           </button>
         </footer>
       </aside>
