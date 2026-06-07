@@ -34,7 +34,8 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
-from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices
+from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
 
@@ -507,6 +508,52 @@ async def put_music_beds(slug: str, body: dict = Body(...)):
     return {"ok": True, "count": len(beds)}
 
 
+@app.put("/api/episodes/{slug}/speaker-voice")
+async def put_speaker_voice(slug: str, body: dict = Body(...)):
+    """Assign or clear one speaker's voice in manifest.voice.speaker_map.
+    Body: {speaker, engine, profile_id?, voice_name?}. engine='omnivoice' sets
+    the mapping (preserving any existing speed/seed/etc. for that speaker);
+    engine in (piper/default/empty) CLEARS it so the speaker falls back to the
+    default HAL voice. The render's per-cue VO hash covers engine+profile, so
+    only that speaker's cues re-render."""
+    speaker = (body.get("speaker") or "").strip()
+    if not speaker:
+        raise HTTPException(400, "speaker required")
+    engine = (body.get("engine") or "").strip().lower()
+    m = manifest_mod.load(slug)
+    voice = m.get("voice") if isinstance(m.get("voice"), dict) else {}
+    smap = voice.get("speaker_map") if isinstance(voice.get("speaker_map"), dict) else {}
+    if engine == "omnivoice":
+        pid = (body.get("profile_id") or "").strip()
+        if not pid:
+            raise HTTPException(400, "profile_id required for omnivoice")
+        entry = dict(smap.get(speaker) or {})  # keep speed/seed/guidance/instruct
+        entry["engine"] = "omnivoice"
+        entry["profile_id"] = pid
+        if body.get("voice_name"):
+            entry["voice_name"] = body["voice_name"]
+        smap[speaker] = entry
+        mapped = True
+    else:
+        smap.pop(speaker, None)  # fall back to default (HAL)
+        mapped = False
+    voice["speaker_map"] = smap
+    m["voice"] = voice
+    manifest_mod.save(slug, m)
+    # Propagate to the show defaults so every FUTURE episode of this show inherits
+    # the cast's voice (create_episode deep-copies episode_defaults). Best-effort.
+    propagated = False
+    try:
+        show_id = shows_mod.show_of(slug)
+        cfg = ({"engine": "omnivoice", "profile_id": entry["profile_id"],
+                **({"voice_name": entry["voice_name"]} if entry.get("voice_name") else {})}
+               if mapped else None)
+        propagated = shows_mod.set_default_speaker_voice(show_id, speaker, cfg)
+    except Exception:
+        pass
+    return {"ok": True, "speaker": speaker, "mapped": mapped, "propagated": propagated}
+
+
 # ---------- LLM shot-list generation (Ollama on-demand) ----------
 
 @app.post("/api/episodes/{slug}/shots/generate")
@@ -831,6 +878,7 @@ app.include_router(routes_youtube.router)
 app.include_router(routes_docs.router)
 app.include_router(routes_gitsync.router)
 app.include_router(routes_shows.router)
+app.include_router(routes_voices.router)
 
 
 # ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------

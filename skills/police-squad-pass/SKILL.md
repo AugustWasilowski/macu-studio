@@ -88,6 +88,9 @@ Insert accepted beats into the script in the show's grammar:
 - A fake title card goes in the `»` shot line (`… card`); a held beat becomes a **hold cue** (see
   `docs/_common/MANIFEST_SCHEMA.md`).
 - **Protect the weird** — if a beat is confusing rather than strange, cut it; never sand off the strangeness.
+- **Git-sync this version immediately** once applied, so the pass is its own reviewable commit:
+  `POST /api/episodes/<slug>/git-sync` with `{"message":"<slug> v<N> (Police Squad pass)"}`. One labeled
+  commit per version; commit+push is pre-authorized for script-revision syncs.
 
 ### 5. Bank any runner that became canon
 

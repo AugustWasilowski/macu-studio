@@ -20,6 +20,10 @@ every episode.
   - **Current state (after awb-001):** Stage ① delivered — Brick "got better" at his own funeral. Next
     escalation due = **Stage ②** (the confirmed death → ghost).
 
+- **The fake title card** — ESTABLISHED recurring runner (debuted awb-001). Every episode, the burned-in
+  on-screen title contradicts the title the Narrator speaks, never reconciled. awb-001: Narrator says "A
+  Gathering of Friends"; card reads "THE FUNERAL WENT WELL." Keep doing it; never explain it.
+
 ## Active arcs
 
 - **Mona's secret** — she walked in from the ash claiming to be Brick's widow, with one devastating secret
@@ -30,6 +34,12 @@ every episode.
 
 ## Banked beats / long-fuse plants (pay these off)
 
+- **The murdered special-guest-star** — BANKED runner (a "very special guest" introduced by the Narrator who
+  is dead before the cold open ends, never mentioned again; doubles as a Resurrection Engine seed). Cut from
+  awb-001's cold open in the final writers'-room pass (it competed with the title-card mismatch — two
+  "announce-then-negate" jokes at the top). Deploy in a future episode where it isn't crowding the open. The
+  cut candidate was **Roland Fitch**, "water sommelier and accord-of-'09 signatory," dead at the blast door
+  with an empty briefcase — reuse him or mint a new guest.
 - **"Something is walking in on the clay."** (planted awb-001 closing narration) → a distant figure on the
   horizon at dusk. → [payoff: a returning/new character arriving from the wasteland — Cassius Drake? a past
   Vandermeer? Mona's connection?]

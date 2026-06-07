@@ -41,6 +41,8 @@ How to take AWB from idea → finished episode. The per-show playbook on top of 
 
 1. Write `script.md` (read order above). Run the **writers' room** critique loop, then the
    **Police Squad pass** (`Police_Squad_Pass.md`) to layer in deadpan/ZAZ density — before locking the cast.
+   **Git-sync after EACH numbered version** (v1→v2→v3…) with a labeled message so every revision is its own
+   reviewable commit — see [[feedback_script_revision_git_sync]] / `POST /api/episodes/<slug>/git-sync`.
 2. **Generate manifest** (Script page) → cues. (Pre-seeded style/characters/broll are preserved.)
 3. **Generate shot list** (shotgen) — reads this show's `*Character_Prompt_Bible.md`. Review → apply.
 4. **Voices** — clone Vivian/Mona/Brick/Narrator first (see Voice_Roster.md); until then VO falls back to

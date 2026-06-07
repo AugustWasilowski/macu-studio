@@ -270,6 +270,35 @@ def create_show(show_id: str, name: str) -> dict[str, Any]:
     return entry
 
 
+def set_default_speaker_voice(show_id: str, speaker: str, cfg: dict[str, Any] | None) -> bool:
+    """Set or clear a speaker's voice in a show's episode_defaults.voice.speaker_map
+    so FUTURE episodes inherit it (create_episode deep-copies episode_defaults).
+    cfg=None clears the speaker. Returns True if the show was found. Existing extra
+    fields (speed/seed/...) for that speaker are preserved on update."""
+    reg = load_registry()
+    for s in reg:
+        if s.get("id") != show_id:
+            continue
+        defaults = s.setdefault("episode_defaults", {})
+        voice = defaults.get("voice")
+        if not isinstance(voice, dict):
+            voice = {}
+            defaults["voice"] = voice
+        smap = voice.get("speaker_map")
+        if not isinstance(smap, dict):
+            smap = {}
+            voice["speaker_map"] = smap
+        if cfg is None:
+            smap.pop(speaker, None)
+        else:
+            entry = dict(smap.get(speaker) or {})
+            entry.update(cfg)
+            smap[speaker] = entry
+        _write_registry(reg)
+        return True
+    return False
+
+
 def save_show_config(show_id: str, cfg: dict[str, Any]) -> dict[str, Any]:
     """Update the editable fields of a show (name/title_prefix/assets_dir +
     episode_defaults). episodes_dir and id are immutable here."""

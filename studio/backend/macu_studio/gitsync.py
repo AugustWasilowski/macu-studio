@@ -83,8 +83,11 @@ def _git(*args: str) -> subprocess.CompletedProcess:
     )
 
 
-def sync(slug: str) -> dict:
+def sync(slug: str, message: str | None = None) -> dict:
     """Copy an episode's text files into the repo, commit, and push.
+
+    ``message`` overrides the default commit message — used by per-version script
+    revisions so each version lands as a clearly-labeled commit.
 
     Never raises on a clean no-op; git errors are surfaced in ``log`` with
     ``ok: False``.
@@ -119,7 +122,11 @@ def sync(slug: str) -> dict:
         return {"ok": False, "committed": False, "commit": None,
                 "pushed": False, "log": "\n".join(log_parts)}
 
-    commit = _git("commit", "-m", f"studio: sync {slug} meta")
+    # Scope the commit to ONLY this episode's meta dir so a sync never bundles
+    # unrelated staged work (the repo also holds Studio source + per-show docs).
+    commit = _git("commit", "-m",
+                  message.strip() if (message and message.strip()) else f"studio: sync {slug} meta",
+                  "--", f"episode_meta/{slug}")
     _log(commit)
     committed = False
     short = None

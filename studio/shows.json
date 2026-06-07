@@ -76,5 +76,96 @@
       },
       "render_rule": "For each shot: full_prompt = prompt_core + style.suffix; negative = style.negative; seed = shot.seed. Run via comfyui.workflow with cold-start fire-and-poll. For each cue: POST {text: vo} to voice.endpoint -> vo/<cue_id>.wav. Sequence shots in cue order; per-shot screen duration = cue VO duration / number of shots. Apply the analog-jank filtergraph per shot, RIFE 3x interpolate, concat, mux VO, (music disabled for this bit), burn subs (Better VCR font) from vo text -> final/everwell-bit.mp4."
     }
+  },
+  {
+    "id": "as-the-world-burns",
+    "name": "As The World Burns",
+    "episodes_dir": "/mnt/storage/shares/MACU/shows/as-the-world-burns/episodes",
+    "assets_dir": "/mnt/storage/shares/MACU/assets",
+    "title_prefix": "As The World Burns — ",
+    "episode_defaults": {
+      "comfyui": {
+        "workflow": "will-smith-modelscope-t2v",
+        "checkpoint": "zeroscope_v2_576w",
+        "endpoint": "http://10.0.0.245:8188/",
+        "frames": 24,
+        "width": 384,
+        "height": 384,
+        "steps": 30,
+        "cfg": 15,
+        "extract_fps": 8,
+        "webp_to_frames": "anim_dump -prefix frame_ -folder frames/<shot_id> clips/<shot_id>.webp  (ffmpeg libwebp demuxer chokes on ComfyUI webps)",
+        "out_pattern": "clips/<shot_id>.webp",
+        "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, B&W holds. Rollback: DAMO at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
+      },
+      "subtitles": {
+        "font": "Better VCR",
+        "font_file": "/mnt/storage/shares/MACU/assets/fonts/BetterVCR.ttf",
+        "fontsdir": "/mnt/storage/shares/MACU/assets/fonts",
+        "fontsize": 18,
+        "force_style": "FontName=Better VCR,Fontsize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=32,Alignment=2",
+        "note": "Better VCR (public-domain VCR OSD font). Burn via ffmpeg subtitles filter with fontsdir set."
+      },
+      "voice": {
+        "default": {
+          "engine": "piper"
+        },
+        "endpoints": {},
+        "format": "wav 22050Hz mono s16",
+        "out_pattern": "vo/<cue_id>.wav",
+        "speaker_map": {
+          "NARRATOR": {
+            "engine": "omnivoice",
+            "profile_id": "a39a24a3",
+            "voice_name": "Announcer"
+          },
+          "BRICK": {
+            "engine": "omnivoice",
+            "profile_id": "dde08fad",
+            "voice_name": "Herzog"
+          },
+          "MONA": {
+            "engine": "omnivoice",
+            "profile_id": "31bba4bf",
+            "voice_name": "PHB_IceT"
+          },
+          "VIVIAN": {
+            "engine": "omnivoice",
+            "profile_id": "188691e5",
+            "voice_name": "Joan"
+          }
+        }
+      },
+      "style": {
+        "suffix": ", black and white, grainy vintage analog videotape, 1970s daytime soap opera, soft focus, soft interior lighting, melodramatic, low resolution, washed out",
+        "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
+      },
+      "music": {
+        "enabled": true,
+        "source_dir": "/mnt/storage/shares/MACU/assets/music",
+        "clips": [],
+        "beds": []
+      },
+      "characters": {
+        "vivian": {
+          "seed": 81001,
+          "core": "an elegant elderly matriarch in a black mourning dress and pearls, severe silver chignon, glacial composed expression, candlelit bunker ballroom"
+        },
+        "mona": {
+          "seed": 81002,
+          "core": "a gaunt weary young woman in a tattered grey traveling coat, ash-smudged face, haunted certain eyes, standing in a heavy bunker doorway"
+        },
+        "brick": {
+          "seed": 81003,
+          "core": "a devastatingly handsome young man in a dusty black funeral suit, square jaw, completely unbothered expression, an open pale-wood casket behind him"
+        }
+      },
+      "broll": {
+        "lake_mirabel": "a vast cracked dry clay lakebed under a flat grey sky, the dead basin stretching to the horizon",
+        "the_bunker": "a heavy steel blast door dressed with funeral wreaths and crystal, a chandelier, a butler in tails, opulent interior",
+        "the_product": "a single sealed foil sachet of pale drink powder displayed under glass like a sacred relic, soft votive light"
+      },
+      "title_assets": {}
+    }
   }
 ]

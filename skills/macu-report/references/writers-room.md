@@ -37,6 +37,11 @@ first-time viewer, and which craft checks failed. Resolve conflicts with taste �
 ### Step 4 — Revise the script
 Apply the synthesized notes. Keep what worked; fix or cut what didn't. Note what changed.
 
+**Then git-sync this version immediately** (before the next pass) so each revision is its own reviewable
+commit: `POST /api/episodes/<slug>/git-sync` with `{"message":"<slug> v<N> (writers' room)"}`. August wants a
+labeled commit per version (v1, v2, v3…) — don't batch them at the end; commit+push is pre-authorized for
+script-revision syncs, so don't re-ask.
+
 ### Step 5 — Loop
 Repeat Steps 2–4 until the personas are reacting well and the Showrunner's checks pass — **cap at ~2–3
 iterations** (diminishing returns; don't over-workshop the life out of it). Then lock and continue to the

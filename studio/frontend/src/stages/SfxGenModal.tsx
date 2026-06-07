@@ -14,19 +14,23 @@ import { IX } from "../components/Icons";
 export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
-  const [phase, setPhase] = useState<"loading" | "review" | "applying" | "error">("loading");
+  const [phase, setPhase] = useState<"idle" | "loading" | "review" | "applying" | "error">("idle");
   const [err, setErr] = useState("");
   const [p, setP] = useState<SfxProposal | null>(null);
 
+  // Opening the modal no longer auto-runs — it lands on the idle screen so the
+  // user kicks off the (GPU-spinning) generation deliberately with Begin.
   useEffect(() => {
     if (!open) return;
-    setPhase("loading"); setErr(""); setP(null);
-    let alive = true;
-    api.generateSfx(slug)
-      .then((res) => { if (alive) { setP(res); setPhase("review"); } })
-      .catch((e: Error) => { if (alive) { setErr(e.message); setPhase("error"); } });
-    return () => { alive = false; };
+    setPhase("idle"); setErr(""); setP(null);
   }, [open, slug]);
+
+  const begin = () => {
+    setPhase("loading"); setErr(""); setP(null);
+    api.generateSfx(slug)
+      .then((res) => { setP(res); setPhase("review"); })
+      .catch((e: Error) => { setErr(e.message); setPhase("error"); });
+  };
 
   const editEntry = (idx: number, patch: Partial<SfxProposalEntry>) =>
     setP((pp) => pp && ({ ...pp, sfx: pp.sfx.map((e, i) => (i === idx ? { ...e, ...patch } : e)) }));
@@ -58,11 +62,23 @@ export function SfxGenModal({ slug, open, onClose }: { slug: string; open: boole
       footer={
         <>
           <button className="btn" onClick={onClose}>Close</button>
-          <button className="btn btn-cyan" disabled={phase !== "review" || !p || entries.length === 0} onClick={apply}>
-            {phase === "applying" ? "Applying…" : `Add ${entries.length} to timeline`}
-          </button>
+          {phase === "review" || phase === "applying" ? (
+            <button className="btn btn-cyan" disabled={phase !== "review" || !p || entries.length === 0} onClick={apply}>
+              {phase === "applying" ? "Applying…" : `Add ${entries.length} to timeline`}
+            </button>
+          ) : (
+            <button className="btn btn-cyan" disabled={phase === "loading"} onClick={begin}>
+              {phase === "loading" ? "Working…" : phase === "error" ? "Retry" : "Begin"}
+            </button>
+          )}
         </>
       }>
+      {phase === "idle" && (
+        <div className="text-txt-dim text-[13px] py-6 text-center">
+          Read the script as a radio play and propose sound effects, favoring your existing kit.<br />
+          <span className="text-txt-faint text-[11px]">Press <b>Begin</b> to start — spins up Ollama on the GPU, ~30-60s.</span>
+        </div>
+      )}
       {phase === "loading" && (
         <div className="text-txt-dim text-[13px] py-6 text-center">
           Asking the local LLM (Qwen2.5-7B) to read the script as a radio play…<br />

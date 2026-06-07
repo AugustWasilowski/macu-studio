@@ -72,6 +72,11 @@ export const api = {
     }).then((r) => J<GenManifestResp>(r)),
   cues: (slug: string) =>
     fetch(`/api/episodes/${slug}/cues`).then((r) => J<{ cues: Cue[] }>(r)),
+  setSpeakerVoice: (slug: string, speaker: string, engine: "omnivoice" | "piper", profile_id?: string, voice_name?: string) =>
+    fetch(`/api/episodes/${slug}/speaker-voice`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ speaker, engine, profile_id, voice_name }),
+    }).then((r) => J<{ ok: boolean; speaker: string; mapped: boolean; propagated: boolean }>(r)),
   shots: (slug: string) =>
     fetch(`/api/episodes/${slug}/shots`).then((r) => J<{ shots: Shot[] }>(r)),
   titles: (slug: string) =>

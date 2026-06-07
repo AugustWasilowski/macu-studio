@@ -182,18 +182,18 @@ export function GapZone({ entries, onDrop, onDelete, onGain, onDelay, onPlay, pr
               className="flex items-center gap-2 py-0.5 hover:bg-bg-3 rounded cursor-grab text-[11px]">
               <span className="text-cyan">▸</span>
               <PlayBtn playing={previewUrl === url} onClick={() => onPlay(x.file)} />
-              <span className="font-mono text-cyan flex-1 truncate" title={x.file}>{x.file}</span>
-              <label className="flex items-center gap-1 text-txt-faint text-[10px]" title="delay nudge — seconds, signed (− earlier / + later from the anchor cue)">
+              <span className="font-mono text-cyan truncate min-w-0 max-w-[260px]" title={x.file}>{x.file}</span>
+              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title="delay nudge — seconds, signed (− earlier / + later from the anchor cue)">
                 Δs
-                <input className="input w-16 text-[11px] py-0" type="number" step="0.1" value={x.delay ?? 0}
+                <input className="input w-14 text-[11px] py-0" type="number" step="0.1" value={x.delay ?? 0}
                   onChange={(e) => { const v = parseFloat(e.target.value); onDelay(i, Number.isFinite(v) ? round2(v) : 0); }} />
               </label>
-              <label className="flex items-center gap-1 text-txt-faint text-[10px]" title="gain — 0–1 linear">
+              <label className="flex items-center gap-1 text-txt-faint text-[10px] shrink-0" title="gain — 0–1 linear">
                 g
-                <input className="input w-20 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
+                <input className="input w-16 text-[11px] py-0" type="number" step="0.05" value={x.gain ?? 0.4}
                   onChange={(e) => onGain(i, parseFloat(e.target.value))} />
               </label>
-              <button className="btn p-0.5" title="remove" onClick={() => onDelete(i)}><IX /></button>
+              <button className="btn p-0.5 shrink-0" title="remove" onClick={() => onDelete(i)}><IX /></button>
             </div>
           );
         })

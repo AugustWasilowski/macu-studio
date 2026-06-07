@@ -12,6 +12,8 @@ import { IRegen, IPlay, IPause, IDL } from "../components/Icons";
 import { precacheMedia, isCached } from "../mediaCache";
 import { useSfx, usePreview, GapZone, Library, PlayItem } from "./AudioSfx";
 import { SfxGenModal } from "./SfxGenModal";
+import { CreateVoiceModal } from "./CreateVoiceModal";
+import { VoicePicker } from "./VoicePicker";
 import { useCuePlayback } from "./useCuePlayback";
 import type { Cue, PipelineEvent } from "../types";
 
@@ -45,6 +47,8 @@ export function Audio({ slug }: { slug: string }) {
   const sfx = useSfx(slug);
   const preview = usePreview();
   const [sfxGenOpen, setSfxGenOpen] = useState(false);
+  const [createVoiceOpen, setCreateVoiceOpen] = useState(false);
+  const [voicesOpen, setVoicesOpen] = useState(false);
 
   // Per-cue version-preview override URL (null = canonical cue audio).
   const [cueOverrides, setCueOverrides] = useState<Record<string, string | null>>({});
@@ -199,6 +203,14 @@ export function Audio({ slug }: { slug: string }) {
                 title="Use the local LLM to read the script as a radio play and propose sound effects — favoring the kit you already have. Inserts them into the timeline on apply.">
                 <IRegen /> Generate SFX list
               </button>
+              <button className={"btn " + (voicesOpen ? "btn-amber" : "")} onClick={() => setVoicesOpen((v) => !v)}
+                title="Assign a cloned voice to each speaker (writes manifest.voice.speaker_map).">
+                Voices
+              </button>
+              <button className="btn" onClick={() => setCreateVoiceOpen(true)}
+                title="Clone a voice: upload a short clean clip (mp3/wav/m4a/mp4) and OmniVoice creates a profile you can assign to a character.">
+                Create voice
+              </button>
               <button
                 className="btn"
                 onClick={precache}
@@ -209,6 +221,7 @@ export function Audio({ slug }: { slug: string }) {
               </button>
             </div>
           </header>
+          {voicesOpen && <VoicePicker slug={slug} />}
           <div className="overflow-y-auto flex-1">
             <table className="w-full text-[12px]">
               <thead className="sticky top-0 bg-bg-1">
@@ -298,6 +311,7 @@ export function Audio({ slug }: { slug: string }) {
         <Library slug={slug} previewUrl={preview.previewUrl} onPreview={preview.toggle} />
       </aside>
       <SfxGenModal slug={slug} open={sfxGenOpen} onClose={() => setSfxGenOpen(false)} />
+      <CreateVoiceModal open={createVoiceOpen} onClose={() => setCreateVoiceOpen(false)} />
     </div>
   );
 }
