@@ -1,0 +1,27 @@
+# systemd --user unit for the MACU terminal — ttyd serving a tmux session running
+# Claude Code. It backs Studio's right-hand TERMINAL drawer (the iframe at :7682).
+# The setup-macu-channel skill resolves absolute ttyd/claude paths + a PATH,
+# substitutes the __PLACEHOLDERS__, installs this to ~/.config/systemd/user/, then
+# `systemctl --user enable --now macu-ttyd`. (On WSL / no user-systemd the skill
+# falls back to launching ttyd under nohup.)
+#
+# SECURITY: ttyd serves an INTERACTIVE Claude session with NO AUTH — that's shell
+# access (via Claude's tools) to anyone who can reach the port. It binds all
+# interfaces by default so the drawer works however you reach Studio (the iframe
+# uses the same hostname). For a solo machine, constrain it to loopback by adding
+#   -i 127.0.0.1
+# to ExecStart; to require a password, add  -c user:pass . NEVER expose :7682 on the
+# WAN. (Studio itself is LAN-only by design.)
+[Unit]
+Description=MACU terminal (ttyd + tmux running Claude Code, for Studio's TERMINAL drawer)
+After=default.target
+
+[Service]
+Type=simple
+Environment=PATH=__PATH__
+ExecStart=__TTYD_BIN__ -W -p 7682 tmux new-session -A -s claude __CLAUDE_BIN__
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -33,6 +33,8 @@ OS-specific, especially on WSL):
 - **Docker** (engine + your user in the `docker` group)
 - **Node 20+** (nvm recommended), **Python 3.11+**, **git**, **ffmpeg**
 - *(optional, for the chat tile / writers' room)* **Claude Code**
+- *(optional, for the in-app TERMINAL drawer)* **ttyd** + **tmux** — the installer
+  auto-installs these via apt/dnf/pacman when missing; `setup-macu-channel` wires them up
 
 Run `./deploy/doctor.sh` any time to see what's missing.
 

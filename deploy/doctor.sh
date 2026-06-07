@@ -59,9 +59,19 @@ if have nvidia-smi; then
 else FAIL nvidia-driver "no nvidia-smi — install the NVIDIA driver (an NVIDIA GPU is required)"; fi
 
 echo
-echo "Coupling (optional — for the Studio↔Claude chat tile / writers' room):"
+echo "Coupling (optional — for the Studio↔Claude chat tile / writers' room + TERMINAL drawer):"
+# Per-distro install hint for the optional terminal deps.
+if   have apt-get; then pkg_hint="sudo apt-get install ttyd tmux"
+elif have dnf;     then pkg_hint="sudo dnf install ttyd tmux"
+elif have pacman;  then pkg_hint="sudo pacman -S ttyd tmux"
+elif have brew;    then pkg_hint="brew install ttyd tmux"
+else                    pkg_hint="install ttyd + tmux with your package manager"; fi
 have claude && PASS claude-code "$(claude --version 2>/dev/null | head -1)" \
   || WARN claude-code "not found — the chat tile / writers' room need Claude Code + the channel skill"
+have ttyd && PASS ttyd "$(ttyd --version 2>&1 | head -1)" \
+  || WARN ttyd "not found — the Studio TERMINAL drawer needs it ($pkg_hint)"
+have tmux && PASS tmux "$(tmux -V 2>/dev/null)" \
+  || WARN tmux "not found — the TERMINAL drawer's persistent session needs it ($pkg_hint)"
 
 echo
 if [ "$miss" -eq 0 ]; then

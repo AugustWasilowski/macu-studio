@@ -3,6 +3,9 @@ import { useStore } from "../store";
 import { ITerminal, IX } from "./Icons";
 
 // Optional ttyd web terminal attached to a tmux session running Claude Code.
+// Server-side setup lives in deploy/macu-ttyd/ and is stood up by the
+// `setup-macu-channel` skill (alongside the chat bridge). Without it, Connect fails
+// with "refuses to connect" — that's the missing ttyd service, not a frontend bug.
 // Configurable at build time (Vite): VITE_TERMINAL_URL (full URL), or
 // VITE_TERMINAL_PORT (default 7682) + VITE_TERMINAL_SESSION (the tmux session name,
 // shown in the UI). Defaults serve ttyd on the same host the page was loaded from,

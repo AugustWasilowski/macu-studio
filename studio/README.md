@@ -34,6 +34,11 @@ boot, use `sudo ../deploy/install-systemd.sh` (templates the unit to this machin
   re-burn subs, an inline SRT editor, and the final-output player.
 - **Manifest drawer:** structured editors for every block + a raw-JSON toggle; atomic
   save via `PUT /api/episodes/{slug}/manifest`.
+- **TERMINAL drawer:** an embedded web terminal (`ttyd` + `tmux`) attached to an
+  interactive Claude Code session. Like the chat tile, it's part of the Claude Code
+  coupling — it needs the ttyd service (`deploy/macu-ttyd/`) which `/setup-macu-channel`
+  stands up; until then it will refuse to connect. (Port/session are build-time
+  configurable via `VITE_TERMINAL_URL` / `VITE_TERMINAL_PORT` / `VITE_TERMINAL_SESSION`.)
 
 ## Dev loop
 

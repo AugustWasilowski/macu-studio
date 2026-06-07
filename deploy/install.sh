@@ -95,6 +95,24 @@ if [ ! -x "$REPO/.whisper-venv/bin/python" ]; then
   "$REPO/.whisper-venv/bin/pip" install --quiet -r "$REPO/pipeline/requirements-whisper.txt"
 fi
 
+echo; echo ">>> optional: terminal coupling deps (ttyd + tmux for Studio's TERMINAL drawer)"
+need=""
+command -v ttyd >/dev/null 2>&1 || need="$need ttyd"
+command -v tmux >/dev/null 2>&1 || need="$need tmux"
+if [ -z "$need" ]; then
+  echo "ttyd + tmux already present"
+elif command -v apt-get >/dev/null 2>&1; then
+  sudo apt-get update -qq && sudo apt-get install -y $need \
+    || echo "couldn't install$need — install by hand for the TERMINAL drawer (it's optional)"
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y $need || echo "couldn't install$need — install by hand (optional)"
+elif command -v pacman >/dev/null 2>&1; then
+  sudo pacman -S --noconfirm $need || echo "couldn't install$need — install by hand (optional)"
+else
+  echo "missing$need and no apt-get/dnf/pacman detected — install them by hand to use the"
+  echo "Studio TERMINAL drawer (optional; the rest of Studio works without it)."
+fi
+
 cat <<'EOF'
 
 ######## install complete ########
@@ -106,5 +124,7 @@ Optional next steps:
 
   • Run on boot (systemd):  sudo ./deploy/install-systemd.sh
       Templates the macu-render + macu-studio units to THIS machine and installs them.
-  • Chat tile / writers' room (needs Claude Code): run  /setup-macu-channel  in Claude Code.
+  • Claude Code coupling — the chat tile, writers' room, AND the in-app TERMINAL
+    drawer (needs Claude Code): run  /setup-macu-channel  in Claude Code.
+      The TERMINAL drawer (right-hand panel) will refuse to connect until this runs.
 EOF

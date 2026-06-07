@@ -31,8 +31,9 @@ per-character assignment, an SFX timeline, render with live progress, and review
 MACU is portable: every path and endpoint is env-driven (copy `.env.example` → `.env`; usually you only set
 `MACU_SHARES`), and the GPU services + models come down from `deploy/`. **Requirements: an NVIDIA CUDA GPU**
 (the defaults are tuned for an ~11 GB RTX 2080 Ti), Docker + the nvidia-container-toolkit, Node 20+, Python
-3.11+, git, ffmpeg, and — for the chat tile — Claude Code. **Platform: Linux, or Windows via WSL2** — *not*
-macOS (no CUDA). `deploy/doctor.sh` checks all of it.
+3.11+, git, ffmpeg, and — for the Claude Code coupling (chat tile / writers' room / in-app TERMINAL drawer)
+— Claude Code plus `ttyd` + `tmux` (the installer adds those two). **Platform: Linux, or Windows via WSL2**
+— *not* macOS (no CUDA). `deploy/doctor.sh` checks all of it.
 
 ```bash
 git clone <repo-url> macu-pipeline
