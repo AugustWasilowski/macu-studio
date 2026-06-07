@@ -88,29 +88,47 @@ export function Audio({ slug }: { slug: string }) {
     );
   };
 
-  // active regen jobs we're watching → cue ids
-  const jobsRef = useRef<Record<string, string>>({});
+  // Watch regen jobs for live status, but CAP concurrent EventSources. "Regen missing"
+  // fires one render job per cue; one long-lived SSE stream each (28+) would exhaust the
+  // browser's ~6-per-host HTTP/1.1 limit and starve the 4s cues poll — so finished cues
+  // stayed red until a manual refresh. Jobs run serially in the render service, so a few
+  // open streams is plenty; the rest queue and open as slots free (each replays from the
+  // start, so a job that finished while queued is still caught).
+  const MAX_WATCH = 3;
+  const watchQ = useRef<Array<{ jobId: string; cueId: string }>>([]);
+  const watchOpen = useRef(0);
+
+  const pumpWatch = () => {
+    while (watchOpen.current < MAX_WATCH && watchQ.current.length) {
+      const { jobId, cueId } = watchQ.current.shift()!;
+      watchOpen.current++;
+      const key = `cue:${cueId}`;
+      let done = false;
+      const es = new EventSource(jobStreamUrl(jobId));
+      const release = () => { if (done) return; done = true; es.close(); watchOpen.current--; pumpWatch(); };
+      es.onmessage = (m) => {
+        let ev: PipelineEvent;
+        try { ev = JSON.parse(m.data); } catch { return; }
+        if (ev.kind === "stage.done" || ev.kind === "job.done") {
+          setBusy(key, false);
+          qc.invalidateQueries({ queryKey: ["cues", slug] });
+          qc.invalidateQueries({ queryKey: ["versions", "cue", slug, cueId] });
+          push(`VO ${cueId} regenerated`, "ok");
+          release();
+        } else if (ev.kind === "stage.error" || ev.kind === "job.error") {
+          setBusy(key, false);
+          push(`VO ${cueId} regen failed: ${ev.error}`, "err");
+          release();
+        }
+      };
+      es.addEventListener("end", release);
+    }
+  };
+
   const watchJob = (jobId: string, cueId: string) => {
-    const key = `cue:${cueId}`;
-    jobsRef.current[jobId] = cueId;
-    setBusy(key, true);
-    const es = new EventSource(jobStreamUrl(jobId));
-    es.onmessage = (m) => {
-      let ev: PipelineEvent;
-      try { ev = JSON.parse(m.data); } catch { return; }
-      if (ev.kind === "stage.done" || ev.kind === "job.done") {
-        setBusy(key, false);
-        qc.invalidateQueries({ queryKey: ["cues", slug] });
-        qc.invalidateQueries({ queryKey: ["versions", "cue", slug, cueId] });
-        push(`VO ${cueId} regenerated`, "ok");
-        es.close();
-      } else if (ev.kind === "stage.error" || ev.kind === "job.error") {
-        setBusy(key, false);
-        push(`VO ${cueId} regen failed: ${ev.error}`, "err");
-        es.close();
-      }
-    };
-    es.addEventListener("end", () => es.close());
+    setBusy(`cue:${cueId}`, true);
+    watchQ.current.push({ jobId, cueId });
+    pumpWatch();
   };
 
   const regen = useMutation({

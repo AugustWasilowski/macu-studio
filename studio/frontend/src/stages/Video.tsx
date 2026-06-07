@@ -51,25 +51,44 @@ function ShotsView({ slug }: { slug: string }) {
   const [addOpen, setAddOpen] = useState(false);
   const [genOpen, setGenOpen] = useState(false);
 
+  // Cap concurrent watch streams (see Audio.tsx): "render all missing" fires a render
+  // and would otherwise open one SSE stream per shot, exhausting the ~6-per-host HTTP/1.1
+  // limit and starving the shots poll. Queue them; ≤3 open at once (each replays from the
+  // start, so a job already done while queued is still caught).
+  const MAX_WATCH = 3;
+  const watchQ = useRef<Array<{ jobId: string; key: string }>>([]);
+  const watchOpen = useRef(0);
+
+  const pumpWatch = () => {
+    while (watchOpen.current < MAX_WATCH && watchQ.current.length) {
+      const { jobId, key } = watchQ.current.shift()!;
+      watchOpen.current++;
+      let done = false;
+      const es = new EventSource(jobStreamUrl(jobId));
+      const release = () => { if (done) return; done = true; es.close(); watchOpen.current--; pumpWatch(); };
+      es.onmessage = (m) => {
+        let ev: PipelineEvent;
+        try { ev = JSON.parse(m.data); } catch { return; }
+        if (ev.kind === "job.done") {
+          setBusy(`shot:${key}`, false);
+          push(`shot ${key} rendered`, "ok");
+          qc.invalidateQueries({ queryKey: ["shots", slug] });
+          qc.invalidateQueries({ queryKey: ["versions", "shot", slug, key] });
+          release();
+        } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
+          setBusy(`shot:${key}`, false);
+          push(`shot ${key} failed: ${ev.error}`, "err");
+          release();
+        }
+      };
+      es.addEventListener("end", release);
+    }
+  };
+
   const watchJob = (jobId: string, key: string) => {
     setBusy(`shot:${key}`, true);
-    const es = new EventSource(jobStreamUrl(jobId));
-    es.onmessage = (m) => {
-      let ev: PipelineEvent;
-      try { ev = JSON.parse(m.data); } catch { return; }
-      if (ev.kind === "job.done") {
-        setBusy(`shot:${key}`, false);
-        push(`shot ${key} rendered`, "ok");
-        qc.invalidateQueries({ queryKey: ["shots", slug] });
-        qc.invalidateQueries({ queryKey: ["versions", "shot", slug, key] });
-        es.close();
-      } else if (ev.kind === "job.error" || ev.kind === "stage.error") {
-        setBusy(`shot:${key}`, false);
-        push(`shot ${key} failed: ${ev.error}`, "err");
-        es.close();
-      }
-    };
-    es.addEventListener("end", () => es.close());
+    watchQ.current.push({ jobId, key });
+    pumpWatch();
   };
 
   const regen = useMutation({
