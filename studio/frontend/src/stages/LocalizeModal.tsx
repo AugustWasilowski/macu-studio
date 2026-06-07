@@ -145,7 +145,8 @@ export function LocalizeModal({ slug, open, onClose }: { slug: string; open: boo
                 </span>
                 {st?.status === "done" && (
                   <span className="flex gap-1.5">
-                    {!subsOnly && <a className="btn p-1 label-tiny" href={dubUrl.video(slug, code)} download>{t("localize.video")}</a>}
+                    {/* subs-only still burns a subtitled video (English audio + translated subs) */}
+                    <a className="btn p-1 label-tiny" href={dubUrl.video(slug, code)} download>{t("localize.video")}</a>
                     <a className="btn p-1 label-tiny" href={dubUrl.srt(slug, code)} download>{t("localize.srt")}</a>
                   </span>
                 )}
