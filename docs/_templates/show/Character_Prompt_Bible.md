@@ -17,8 +17,9 @@ render sizes the model ignores fine detail; nouns and silhouette beat long adjec
 ## Global style suffix (append to every positive prompt)
 
 ```
-[FILL: the show's visual signature, appended verbatim to every shot. Inherit the MACU look and specialize.
- Universe default (The MACU Report):
+[FILL: the show's visual signature, appended verbatim to every shot. The studio's built-in look is a
+ black-and-white 1970s analog-TV aesthetic — start from it and specialize, or replace it wholesale.
+ Built-in default:
    , black and white, grainy vintage analog television footage, 1970s broadcast, retro futurism, low
    resolution, washed out, soft focus
  Specialize for THIS show's format — e.g. a soap reads as "1970s daytime soap opera, videotape, soft

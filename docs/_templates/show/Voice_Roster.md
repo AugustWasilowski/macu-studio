@@ -13,16 +13,16 @@ seed) see the shared `docs/_common/OmniVoice_Voice_Tips.md`.
 
 - **OmniVoice** (REST on :3900) — cloned character voices. Easiest path: the **Create Voice** button on
   the Audio page (upload a short clean clip → it cold-starts OmniVoice, normalizes to 24kHz mono, clones,
-  and plays a test). CLI alternative: `/mnt/storage/shares/MACU/voices/clone_one.sh`, or the raw REST
-  (`POST /profiles` then `POST /generate`). Use for human characters with a distinct voice.
-- **Piper HAL** (:5050) — synthetic/robot/AI/announcer voices. Use for non-human or deliberately flat VO.
+  and plays a test). CLI alternative: the raw REST (`POST /profiles` then `POST /generate`). Use for human
+  characters with a distinct voice.
+- **Piper** (:5050) — synthetic/robot/AI/announcer voices. Use for non-human or deliberately flat VO.
 
 ## Roster
 
 | Character | Voice engine | Profile / model | id | Register / delivery notes |
 |---|---|---|---|---|
 | [NAME] | OmniVoice | [profile name] | [`id`] | [tempo, pitch, emotion driven from text + speed] |
-| [NAME] | Piper | hal | — | [flat / synthetic / grave] |
+| [NAME] | Piper | default | — | [flat / synthetic / grave] |
 
 ## To clone (TODO)
 
@@ -33,6 +33,6 @@ clean reference clip the user provides.]
 
 ## Notes
 
-- Reuse a voice across non-co-appearing characters where it fits (the MACU Report does this).
+- Reuse a voice across non-co-appearing characters where it fits (many shows do this).
 - A character also goes in the manifest's `voice.speaker_map` / `characters{}` per episode, so a render
   never depends solely on this doc — this is the human-canon index.

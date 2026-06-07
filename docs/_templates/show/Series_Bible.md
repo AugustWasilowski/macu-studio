@@ -1,6 +1,6 @@
 # {{SHOW_NAME}} — Series Bible
 
-_A MACU Universe show. Show id: `{{SHOW_ID}}`. Created {{DATE}}._
+_Show id: `{{SHOW_ID}}`. Created {{DATE}}._
 _(Seeded from the new-show template — replace every [BRACKETED] prompt with real content.)_
 
 > ⚠️ **Doc isolation:** MACU Studio's Canon Docs panel lists `docs/_common/` (shared pipeline docs, tagged
@@ -10,13 +10,13 @@ _(Seeded from the new-show template — replace every [BRACKETED] prompt with re
 
 ---
 
-## What is the MACU? (inherited context — keep)
+## House style / shared universe (set the context)
 
-The **Mayor Awesome Cinematic Universe** is a deadpan, post-apocalyptic, retro-futurist world rendered as
-**black-and-white grainy 1970s analog television**. Its defining comedic register: **the facts of the world
-are insane and are stated, always, as plain fact** — never explained, never winked at. The cast never
-laughs; the audience does all the laughing. The flagship is **The MACU Report** (Ron & Walter's faux
-evening-news magazine show). Every MACU show shares this dead world and this bone-dry tone, then specializes.
+[FILL: the shared world, tone, and visual register this show lives in — the context every episode inherits.
+ If this show belongs to a larger universe of shows, describe what they all share here, then specialize
+ below. The studio's built-in look is a black-and-white 1970s analog-TV aesthetic; keep it, specialize it,
+ or replace it. e.g. "A deadpan, post-apocalyptic, retro-futurist world rendered as grainy 1970s analog TV;
+ the facts of the world are insane and stated as plain fact — never explained, never winked at."]
 
 ## Logline
 
@@ -28,9 +28,10 @@ privileged people in a sealed bunker conducting overwrought melodrama over a pro
 
 ## The One Rule (tone law)
 
-**Bone dry. It takes itself to death.** [Specialize the universe default for THIS show: what's the specific
-flavor of deadpan here? What does the cast take deathly seriously that the audience finds absurd? What is
-never acknowledged?]
+[FILL: the single rule that governs every line of this show — the tonal law future writers must never
+break. What's the specific flavor here? What does the cast take deathly seriously that the audience finds
+absurd? What is never acknowledged? e.g. "Bone dry. It takes itself to death — the cast never laughs; the
+audience does all the laughing."]
 
 ## Setting
 

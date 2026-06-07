@@ -4,7 +4,7 @@ _Show id: `{{SHOW_ID}}`. Created {{DATE}}._
 _(Seeded from the new-show template — replace every [BRACKETED] prompt with real content.)_
 
 How to take {{SHOW_NAME}} from idea → finished episode. The per-show playbook on top of the shared pipeline
-(`docs/_common/MACU_Pipeline_Design.md`).
+(`pipeline/README.md`).
 
 ---
 
@@ -24,7 +24,7 @@ default act structure so episodes feel consistent.]
 
 ## Script grammar (how the manifest is generated from script.md)
 
-Write `script.md` in the MACU grammar so **Generate manifest** parses it into cues:
+Write `script.md` in the script grammar so **Generate manifest** parses it into cues:
 
 - `## ACT / SEGMENT HEADER` → a segment boundary.
 - `**SPEAKER:** dialogue …` → one cue (VO). Stage directions in `_(parentheses)_` are stripped from the
