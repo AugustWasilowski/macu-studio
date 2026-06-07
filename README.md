@@ -26,6 +26,31 @@ From a per-episode `manifest.json`, the pipeline:
 MACU Studio puts a browser UI on all of it: a script editor, LLM shot-list generation, voice cloning and
 per-character assignment, an SFX timeline, render with live progress, and review.
 
+## System requirements
+
+MACU is a local, single-user, **GPU-bound** app — the GPU is the gating component.
+
+| | Minimum | Recommended |
+|---|---|---|
+| **GPU** | NVIDIA, Turing (RTX 20-series) or newer, **8 GB VRAM** — *untested; the video stage may OOM (expect to use ComfyUI lowvram)* | **11–12 GB VRAM** — the tested class (RTX 2080 Ti 11 GB / 3060 12 GB / 4070-series) |
+| **System RAM** | 16 GB | 32 GB |
+| **CPU** | modern x86-64, 4 cores | 8+ cores |
+| **Disk** | ~60 GB free **SSD** | 100 GB+ SSD |
+| **OS** | Linux x86-64, or Windows 11 + **WSL2** | — |
+
+- **NVIDIA only.** The whole stack is CUDA (ComfyUI text-to-video, OmniVoice, RIFE, NVENC) — no AMD/Intel/Apple
+  GPU. The ComfyUI image bundles the CUDA 12.6 runtime; the host just needs a recent driver (**R535+**).
+- **VRAM is the real limit.** Services run one at a time (video → voice → shot-list LLM) to fit ~11 GB; the
+  zeroscope T2V "masters" stage is the hog and OOMs even on 11 GB above 384×384. Below 8 GB, don't expect the
+  video stage to render.
+- **CPU:** the faster-whisper caption pass runs on the CPU (~10 min/episode) — more cores help there.
+- **Disk:** the Docker images alone are ~40 GB (ComfyUI ~16, OmniVoice ~15, Ollama ~8, Piper ~0.6), plus
+  ~12 GB of models and per-episode media.
+- **WSL:** use **WSL2**, not WSL1 (WSL1 crashes Node and has no GPU passthrough). Clone into the Linux
+  filesystem (`~`), not `/mnt/c`/`/mnt/d`. **macOS is not supported** (no CUDA).
+
+`deploy/doctor.sh` checks the prerequisites and warns if your VRAM is below the recommended ~11 GB.
+
 ## Install
 
 MACU is portable: every path and endpoint is env-driven (copy `.env.example` → `.env`; usually you only set

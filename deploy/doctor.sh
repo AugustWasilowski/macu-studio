@@ -64,6 +64,11 @@ else FAIL docker "install Docker Engine"; fi
 if have nvidia-smi; then
   gpu=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null | head -1)
   PASS nvidia-driver "$gpu"
+  # The text-to-video stage is the VRAM hog; the tested floor is ~11 GB (RTX 2080 Ti).
+  vram_mib=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1)
+  if [ -n "$vram_mib" ] && [ "$vram_mib" -lt 11000 ] 2>/dev/null; then
+    WARN gpu-vram "$((vram_mib/1024)) GB — 11-12 GB recommended; the video (T2V) stage may OOM below ~11 GB (see README → System requirements)"
+  fi
 else FAIL nvidia-driver "no nvidia-smi — install the NVIDIA driver (an NVIDIA GPU is required)"; fi
 
 echo
