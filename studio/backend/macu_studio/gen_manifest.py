@@ -38,6 +38,37 @@ def _clean_vo(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+# A single VO line longer than this is broken into multiple cues at sentence
+# boundaries (see _split_vo). ~180 chars ≈ ~18s at OmniVoice's ~10 ch/s — well
+# under the ~25-30s where the TTS audibly degrades. Tunable; lower it for more
+# aggressive breaking (cue 22's ~30s closer splits into 3 at ~120).
+MAX_VO_CHARS = 180
+
+
+def _split_vo(vo: str, max_chars: int = MAX_VO_CHARS) -> list[str]:
+    """Greedily pack sentences into chunks of <= max_chars, splitting ONLY at
+    sentence boundaries (. ! ?). Short blocks stay whole — stringing sentences
+    gives the TTS more context and better voice consistency, so we only break the
+    long ones. The dramatic ellipsis '…' is NOT a boundary (it's a pause, not a
+    sentence end). A lone sentence longer than max_chars is left intact (nowhere
+    safe to cut)."""
+    vo = vo.strip()
+    if len(vo) <= max_chars:
+        return [vo] if vo else []
+    sentences = [s for s in re.split(r"(?<=[.!?])\s+", vo) if s]
+    out: list[str] = []
+    cur = ""
+    for s in sentences:
+        if cur and len(cur) + 1 + len(s) > max_chars:
+            out.append(cur)
+            cur = s
+        else:
+            cur = f"{cur} {s}".strip() if cur else s
+    if cur:
+        out.append(cur)
+    return out or [vo]
+
+
 def _norm(text: str) -> str:
     """Normalized VO key for matching cues across script edits. Punctuation and
     case are dropped (the manifest VO is hand-cleaned for TTS), and whitespace is
@@ -156,10 +187,13 @@ def _parse_script(text: str) -> list[dict]:
     def flush():
         nonlocal cur, pending_shot
         if cur is not None:
-            cur["vo"] = _clean_vo(" ".join(cur["vo_lines"]))
-            cur["shot_line"] = pending_shot
-            cur.pop("vo_lines")
-            cues.append(cur)
+            vo = _clean_vo(" ".join(cur["vo_lines"]))
+            # Break an over-long block into multiple cues at sentence boundaries so
+            # no single VO line is too long for the TTS. Each sub-cue inherits the
+            # same speaker, header, and shot line (the visual persists across them).
+            for part in _split_vo(vo):
+                cues.append({"header": cur["header"], "speaker": cur["speaker"],
+                             "vo": part, "shot_line": pending_shot})
         cur, pending_shot = None, None
 
     for line in text.splitlines():
