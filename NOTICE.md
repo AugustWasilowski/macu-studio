@@ -41,6 +41,9 @@ consult the linked source.
 
 ## This project's own license
 
-Not yet chosen. Until a `LICENSE` file is added, default copyright applies (all
-rights reserved). For a self-hosted web app that bundles GPL (ComfyUI), AGPL-3.0 or
-GPL-3.0 are the conventional defensible choices — but this is the maintainer's call.
+MACU Studio (the code in this repository) is licensed under the **Apache License,
+Version 2.0** — see [`LICENSE`](LICENSE). Copyright 2026 August Wasilowski.
+
+This applies to the orchestration code in this repo. The third-party models, voices,
+fonts, and services listed above are under their own licenses (notably the DAMO
+VAE/CLIP are **non-commercial**) — Apache-2.0 on this repo does not relicense them.
