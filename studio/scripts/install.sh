@@ -34,10 +34,22 @@ if [ -z "$NODE_DIR" ] || [ "$node_major" -lt 20 ] || [ ! -x "$NODE_DIR/npm" ]; t
   echo "       (or run ./deploy/install-prereqs.sh) and re-run." >&2
   exit 1
 fi
+node_crash_hint() {
+  echo >&2
+  echo "ERROR: the frontend 'npm' step crashed. If you saw 'Illegal instruction (core" >&2
+  echo "dumped)' or a V8 'TurboFan/unreachable code' fatal, that's Node's JIT hitting an" >&2
+  echo "instruction this environment rejects — almost always WSL 1 or a very old CPU:" >&2
+  echo "  • Switch to WSL 2 (also REQUIRED for the GPU): in Windows PowerShell run" >&2
+  echo "      wsl -l -v        # if your distro shows VERSION 1, that's the cause" >&2
+  echo "      wsl --set-version <distro> 2" >&2
+  echo "  • Or, to retry without the JIT (slower but works):" >&2
+  echo "      NODE_OPTIONS=--jitless ./deploy/install.sh" >&2
+}
 pushd frontend >/dev/null
-# bypass the global ~/.npmrc that has a `prefix=` that confuses nvm
-PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm install --no-audit --no-fund --userconfig /dev/null
-PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm run build --userconfig /dev/null
+# bypass the global ~/.npmrc that has a `prefix=` that confuses nvm. NODE_OPTIONS is
+# passed through so a --jitless retry works around a V8 JIT crash on constrained hosts.
+PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm install --no-audit --no-fund --userconfig /dev/null || { node_crash_hint; exit 1; }
+PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm run build --userconfig /dev/null || { node_crash_hint; exit 1; }
 popd >/dev/null
 
 # When run as part of the top-level installer (MACU_INSTALLER=1), stay quiet — the
