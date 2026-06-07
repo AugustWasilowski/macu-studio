@@ -103,7 +103,6 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           onStartTutorial={onStartTutorial}
           onGoAssembly={onHome}
         />
-        <span className="label-tiny pl-1">CH·245</span>
       </div>
       <button
         className="btn p-0.5"
