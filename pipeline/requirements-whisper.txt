@@ -1,0 +1,7 @@
+# Stage 6 ASR runs in its own venv (.whisper-venv) so the heavy CTranslate2 stack
+# stays out of the main pipeline/Studio interpreter. The installer creates it:
+#   python3 -m venv .whisper-venv
+#   .whisper-venv/bin/pip install -r pipeline/requirements-whisper.txt
+# Override the location with MACU_WHISPER_VENV (see stage_6_whisper.py).
+
+faster-whisper>=1.0

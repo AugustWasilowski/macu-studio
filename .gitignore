@@ -3,6 +3,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+.whisper-venv/
 .env
 .env.*
 **/.env

@@ -11,11 +11,33 @@ from pathlib import Path
 # defaults below ARE the current Max values. On a new machine set .env, or inject
 # the vars via the systemd unit's EnvironmentFile=. dotenv won't override vars the
 # environment already set, so systemd Environment= lines still win.
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
-except ModuleNotFoundError:
-    pass
+def _load_dotenv(path: Path) -> None:
+    """Load .env into os.environ. Prefer python-dotenv; fall back to a minimal
+    inline parser when it isn't installed — otherwise a configured .env on a fresh
+    machine would be SILENTLY ignored and every path below would revert to the Max
+    defaults. Never overrides a var already in the environment (systemd wins)."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(path)
+        return
+    except ModuleNotFoundError:
+        pass
+    if not path.exists():
+        return
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):]
+        key, val = line.split("=", 1)
+        key = key.strip()
+        val = val.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = val
+
+
+_load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 # Data lives on the storage drive's MACU share (Windows-visible S:\MACU); the
 # pipeline CODE lives in this repo. Env-driven; the default = the current Max path,

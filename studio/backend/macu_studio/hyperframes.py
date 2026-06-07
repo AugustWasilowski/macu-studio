@@ -141,8 +141,11 @@ def _scaffold(slug: str, key: str, composition: str, fields: dict) -> Path:
 
 # ---- render --------------------------------------------------------------
 
-NPX = "/home/mayorawesome/.nvm/versions/node/v22.22.3/bin/npx"
-NODE_BIN = "/home/mayorawesome/.nvm/versions/node/v22.22.3/bin"
+# npx + the node bin dir. Default to whatever's on PATH; override with MACU_NPX /
+# MACU_NODE_BIN (e.g. an nvm install dir). NODE_BIN is only prepended to PATH when
+# non-empty, so a system/WSL Node install works with no configuration.
+NPX = os.environ.get("MACU_NPX") or shutil.which("npx") or "npx"
+NODE_BIN = os.environ.get("MACU_NODE_BIN", "")
 
 
 async def _run(job: Job) -> None:
@@ -174,7 +177,8 @@ async def _run(job: Job) -> None:
 
         # Shell out to npx hyperframes render. PATH must include node 22.
         env = os.environ.copy()
-        env["PATH"] = f"{NODE_BIN}:{env.get('PATH', '')}"
+        if NODE_BIN:
+            env["PATH"] = f"{NODE_BIN}:{env.get('PATH', '')}"
         env["NPM_CONFIG_PREFIX"] = ""
 
         proc = await asyncio.create_subprocess_exec(
@@ -284,7 +288,8 @@ async def _run_thumb(job: Job) -> None:
                         project=str(project_dir), composition=composition)
 
         env = os.environ.copy()
-        env["PATH"] = f"{NODE_BIN}:{env.get('PATH', '')}"
+        if NODE_BIN:
+            env["PATH"] = f"{NODE_BIN}:{env.get('PATH', '')}"
         env["NPM_CONFIG_PREFIX"] = ""
 
         proc = await asyncio.create_subprocess_exec(

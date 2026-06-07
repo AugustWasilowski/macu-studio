@@ -1,0 +1,10 @@
+# Core render pipeline — the interpreter that runs run.py and stages 1-5,7,8.
+#
+# Stage 6 (ASR) runs in a SEPARATE venv (.whisper-venv) the installer provisions
+# from requirements-whisper.txt — faster-whisper is intentionally NOT here.
+#
+# Also required on PATH (not pip — deploy/doctor.sh checks these): ffmpeg, ffprobe,
+# anim_dump, rife-ncnn-vulkan, fc-list, and for GPU work nvidia-smi + docker.
+
+Pillow>=10          # run.py / stage 8 thumbnail strips (optional, but recommended)
+python-dotenv>=1.0  # load the repo-root .env (lib.py has an inline fallback if absent)

@@ -182,9 +182,13 @@ def main():
     # Verify final
     final = paths["out_mp4"]
     if os.path.exists(final):
-        thumbs = make_thumbs(slug)
         report["final"] = final
-        report["thumbs"] = thumbs
+        # Thumb strip needs Pillow; never fail a finished render over it (mirrors
+        # the make_youtube_thumb guard right below).
+        try:
+            report["thumbs"] = make_thumbs(slug)
+        except Exception as e:
+            print(f"[thumbs] skipped: {e}")
         try:
             yt = make_youtube_thumb(slug)
             if yt:

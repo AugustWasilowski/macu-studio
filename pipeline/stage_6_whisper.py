@@ -8,7 +8,23 @@ import sys, os, json, time, subprocess, threading
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import episode_paths, progress_tick
 
-WHISPER_VENV = "/tmp/whisper-venv/bin/python"
+_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _whisper_python() -> str:
+    """Interpreter that has faster-whisper. MACU_WHISPER_VENV wins; else the repo's
+    .whisper-venv (the installer creates it); else the legacy /tmp venv; else the
+    current interpreter as a last resort (clear ImportError if it lacks the dep)."""
+    env = os.environ.get("MACU_WHISPER_VENV")
+    for c in (env,
+              os.path.join(_REPO, ".whisper-venv", "bin", "python"),
+              "/tmp/whisper-venv/bin/python"):
+        if c and os.path.exists(c):
+            return c
+    return sys.executable
+
+
+WHISPER_VENV = _whisper_python()
 
 # Estimated wall-time multiplier for faster-whisper large-v3 CPU int8 on max.
 # Empirically ~10 min for a 4-min episode = 2.5×, padded a bit.
@@ -56,27 +72,31 @@ def main(slug):
     th = threading.Thread(target=_ticker, daemon=True)
     th.start()
 
-    script = f"""
-import json, time
+    # Paths come in via argv (not string interpolation) so odd characters in a path
+    # can't break — or inject into — the generated script.
+    script = """
+import json, time, sys
 from faster_whisper import WhisperModel
+wav, out = sys.argv[1], sys.argv[2]
 model = WhisperModel("large-v3", device="cpu", compute_type="int8")
 t0 = time.time()
-segments, info = model.transcribe("{wav}", language="en", word_timestamps=True,
+segments, info = model.transcribe(wav, language="en", word_timestamps=True,
     vad_filter=True, vad_parameters=dict(min_silence_duration_ms=300))
 out_segs = []
 for seg in segments:
-    out_segs.append({{"id":seg.id,"start":round(seg.start,3),"end":round(seg.end,3),
-                      "text":seg.text.strip(),
-                      "words":[{{"w":w.word,"s":round(w.start,3),"e":round(w.end,3)}}
-                               for w in (seg.words or [])]}})
-with open("{out}","w") as f:
-    json.dump({{"segments":out_segs,"duration":info.duration,"language":info.language}},f)
-print(f"whisper: {{len(out_segs)}} segs, {{sum(len(s['words']) for s in out_segs)}} words, {{time.time()-t0:.1f}}s")
+    out_segs.append({"id":seg.id,"start":round(seg.start,3),"end":round(seg.end,3),
+                     "text":seg.text.strip(),
+                     "words":[{"w":w.word,"s":round(w.start,3),"e":round(w.end,3)}
+                              for w in (seg.words or [])]})
+with open(out,"w") as f:
+    json.dump({"segments":out_segs,"duration":info.duration,"language":info.language},f)
+print("whisper: %d segs, %d words, %.1fs" % (len(out_segs),
+      sum(len(s['words']) for s in out_segs), time.time()-t0))
 """
     try:
         # Cap the transcription so a wedged whisper process fails the stage (releasing
         # the render lock) instead of hanging. 30 min is far above a real episode's ASR.
-        subprocess.run([WHISPER_VENV, "-c", script], check=True, timeout=1800)
+        subprocess.run([WHISPER_VENV, "-c", script, wav, out], check=True, timeout=1800)
     finally:
         stop_ticker.set()
     progress_tick(6, "whisper", 1.0)
