@@ -5,6 +5,9 @@ __pycache__/
 venv/
 .whisper-venv/
 .fetch-venv/
+# Default repo-local storage root (episodes, assets, voices, model + service data).
+# The installer points MACU_SHARES / MACU_DATA_ROOT here unless you override them.
+/data/
 .env
 .env.*
 **/.env

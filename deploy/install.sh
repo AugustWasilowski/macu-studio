@@ -68,37 +68,29 @@ done
 echo "using python: ${MACU_PYTHON:-python3}"
 
 echo; echo ">>> [2/6] config (.env)"
-created=0
-[ -f .env ] || { cp .env.example .env; created=1; }
-[ -f deploy/services/.env ] || { cp deploy/services/.env.example deploy/services/.env; created=1; }
-if [ "$created" = 1 ]; then
-  cat <<EOF
-Created .env (and deploy/services/.env) from the examples.
-
-  >> Set your storage paths before continuing. The defaults are /mnt/storage,
-     which only exists on the original host. Pick a WRITABLE location on THIS
-     machine — on WSL prefer the Linux filesystem (e.g. \$HOME) over /mnt/c|/mnt/f
-     (Windows mounts are slow for the models + render IO):
-
-       .env                  ->  MACU_SHARES=\$HOME/macu-data/shares/MACU
-       deploy/services/.env  ->  MACU_DATA_ROOT=\$HOME/macu-data
-
-  Then re-run:  ./deploy/install.sh
-EOF
-  exit 0
-fi
+# Default the storage to a repo-local ./data dir so a fresh install JUST WORKS — no
+# manual path editing. We do this by pointing the examples' /mnt/storage paths (the
+# original host's) at $REPO/data. Override later by editing .env / deploy/services/.env.
+[ -f .env ]                  || sed "s|/mnt/storage|$REPO/data|g" .env.example > .env
+[ -f deploy/services/.env ]  || sed "s|/mnt/storage|$REPO/data|g" deploy/services/.env.example > deploy/services/.env
 set -a; . ./.env 2>/dev/null || true; . ./deploy/services/.env 2>/dev/null || true; set +a
-export MACU_DATA_ROOT="${MACU_DATA_ROOT:-/mnt/storage}"
-export MACU_SHARES="${MACU_SHARES:-/mnt/storage/shares/MACU}"
+export MACU_DATA_ROOT="${MACU_DATA_ROOT:-$REPO/data}"
+export MACU_SHARES="${MACU_SHARES:-$REPO/data/shares/MACU}"
 # Fail clearly now rather than with cryptic mkdir errors mid-download.
 for d in "$MACU_DATA_ROOT" "$MACU_SHARES"; do
   if ! mkdir -p "$d" 2>/dev/null; then
-    echo "ERROR: can't create '$d' (from your .env). Edit .env (MACU_SHARES) and"
-    echo "       deploy/services/.env (MACU_DATA_ROOT) to a writable path, then re-run."
+    echo "ERROR: can't create '$d'. Edit MACU_SHARES (.env) / MACU_DATA_ROOT"
+    echo "       (deploy/services/.env) to a writable path, then re-run."
     exit 1
   fi
 done
-echo "config OK  —  data: $MACU_DATA_ROOT   shares: $MACU_SHARES"
+echo "config OK  —  data under: $MACU_DATA_ROOT"
+case "$REPO" in
+  /mnt/[a-z]/*)
+    echo "  NOTE: this repo is on a Windows mount — the ~8 GB model download + renders will be"
+    echo "        slow here. For speed, set MACU_DATA_ROOT/MACU_SHARES to a \$HOME path + re-run." ;;
+esac
+echo "  (override the data location in .env / deploy/services/.env if you want it elsewhere)"
 
 echo; echo ">>> [3/6] pull on-demand service images (ollama + omnivoice)"
 docker compose -f deploy/services/ollama/docker-compose.yml pull

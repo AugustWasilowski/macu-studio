@@ -13,16 +13,18 @@ stack (OmniVoice, Ollama, ComfyUI, Piper) and fetches its models.
 git clone <repo-url> macu-pipeline
 cd macu-pipeline
 
-./deploy/install.sh          # 1st run: creates .env and STOPS so you can set your paths
-
-# Edit the two created files to a WRITABLE location on this machine. On WSL, use
-# the Linux filesystem ($HOME), NOT /mnt/c or /mnt/f (Windows mounts are slow):
-#   .env                  ->  MACU_SHARES=$HOME/macu-data/shares/MACU
-#   deploy/services/.env  ->  MACU_DATA_ROOT=$HOME/macu-data
-
-./deploy/install.sh          # re-run: does the full install
+./deploy/install.sh          # one shot: preflight (offers to install missing prereqs) →
+                             # models (~8 GB) → build → app. No editing needed.
 ./deploy/start-studio.sh     # start Studio, then open http://localhost:8774/
 ```
+
+Storage defaults to a repo-local **`./data/`** dir, so it works out of the box.
+To put the data elsewhere (e.g. a faster disk), set `MACU_SHARES` in `.env` and
+`MACU_DATA_ROOT` in `deploy/services/.env` before running, then re-run.
+
+> **WSL tip:** clone into the Linux filesystem (`~`), not `/mnt/c` or `/mnt/d` —
+> Windows mounts are slow for the model download + renders. (The installer warns
+> if it detects the repo on a Windows mount.)
 
 ## Prerequisites (checked by `deploy/doctor.sh`)
 

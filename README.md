@@ -39,9 +39,9 @@ MACU is portable: every path and endpoint is env-driven (copy `.env.example` →
 git clone <repo-url> macu-pipeline
 cd macu-pipeline
 
-./deploy/install.sh        # 1st run creates .env and STOPS — set MACU_SHARES (.env) and
-                           # MACU_DATA_ROOT (deploy/services/.env) to a writable path, then:
-./deploy/install.sh        # doctor → pull images → fetch models (~8 GB) → build ComfyUI → app
+./deploy/install.sh        # doctor (offers to auto-install missing prereqs) → pull images →
+                           # fetch models (~8 GB) → build ComfyUI/Piper → app. Storage defaults
+                           # to ./data; set MACU_SHARES/MACU_DATA_ROOT in .env to relocate.
 ./deploy/start-studio.sh   # start Studio
 ```
 
