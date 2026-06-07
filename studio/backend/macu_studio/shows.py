@@ -161,7 +161,7 @@ def _starter_defaults() -> dict[str, Any]:
     return {
         "voice": {
             "engine": "piper",
-            "model": "hal",
+            "model": "default",
             "endpoint": "http://127.0.0.1:5050/",
             "method": "POST",
             "body": "{\"text\": \"<line>\"}",

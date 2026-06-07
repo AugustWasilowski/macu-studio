@@ -80,8 +80,8 @@ echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
 echo; echo ">>> [5/6] build + start long-lived services (ComfyUI + Piper HAL)"
 docker compose -f deploy/services/comfyui/docker-compose.yml build
 docker compose -f deploy/services/comfyui/docker-compose.yml up -d
-# Piper HAL — the default synthetic voice (engine "piper") on :5050. CPU-only, the
-# HAL-9000 voice is baked into the image. Build + start it the same way.
+# Piper — the default synthetic voice (engine "piper") on :5050. CPU-only; a
+# permissive voice is baked into the image (HAL is opt-in via PIPER_VOICE=hal).
 docker compose -f deploy/services/piper/docker-compose.yml up -d --build
 
 echo; echo ">>> [6/6] MACU Studio app (venv + frontend build) + whisper ASR venv"

@@ -16,7 +16,7 @@ with **MACU Studio**, a web app that drives the whole process from a browser.
 
 From a per-episode `manifest.json`, the pipeline:
 
-- **Voice** — per-cue voiceover from cloned character voices (OmniVoice) plus a synthetic register (Piper HAL).
+- **Voice** — per-cue voiceover from cloned character voices (OmniVoice) plus a synthetic register (Piper).
 - **Video** — one text-to-video master per character/scene (ComfyUI, zeroscope T2V), interpolated to a higher
   frame rate (RIFE).
 - **Assembly** — a per-shot analog-jank filtergraph (B&W, grain, vignette, chroma-shift, interlace), VO mux,
@@ -65,7 +65,7 @@ it again from a terminal to come back.
 
 | # | Script | What it does | Wall (~4-min ep) |
 |---|---|---|---|
-| 1 | `stage_1_vo.py` | per-cue VO: OmniVoice clones (`:3900`) for human-cast speakers, Piper HAL (`:5050`) for AI/appliance characters. Per-speaker routing from `manifest.voice.speaker_map`; cached by per-cue text+voice hash. Stage 1 owns the ephemeral OmniVoice container's lifecycle (start → render → stop). | ~80s |
+| 1 | `stage_1_vo.py` | per-cue VO: OmniVoice clones (`:3900`) for human-cast speakers, Piper (`:5050`) for AI/appliance characters. Per-speaker routing from `manifest.voice.speaker_map`; cached by per-cue text+voice hash. Stage 1 owns the ephemeral OmniVoice container's lifecycle (start → render → stop). | ~80s |
 | 2 | `stage_2_masters.py` | one ComfyUI master gen per unique `characters[*]`/`broll[*]` key. zeroscope_v2_576w @ 384×384×24f, cfg 15. Fire-and-poll (first gen cold-loads and times out the request but keeps running). | ~7-8 min |
 | 3 | `stage_3_rife.py` | RIFE 3× (24f → 72f) per master via `rife-ncnn-vulkan`. | ~35s |
 | 4 | `stage_4_assemble.py` | per-shot analog-jank filtergraph (B&W, grain, vignette, chroma-shift, interlace) → concat shots → mux VO → concat cues. Handles the animated intro card, closing bumper, and `no_subs`/`hold` cues. | ~2 min |
@@ -92,7 +92,7 @@ All bind loopback; the pipeline and Studio reach them on `127.0.0.1`. Endpoints 
 
 - ComfyUI — `:8188` — zeroscope T2V masters.
 - OmniVoice — `:3900` — cloned character voices (ephemeral container; stage 1 manages its lifecycle).
-- Piper HAL — `:5050` — the synthetic/machine register.
+- Piper — `:5050` — the synthetic/machine register.
 - Ollama — `:11434` — local LLM for Studio's shot-list generation (on-demand).
 
 ## Episode layout

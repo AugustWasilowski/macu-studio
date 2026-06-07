@@ -1,15 +1,19 @@
-# Piper HAL — synthetic/machine voice (engine "piper", model "hal") on :5050.
-# Locally BUILT (Dockerfile here) with the HAL-9000 voice baked in. CPU-only and
-# lightweight, so it's a long-lived service (restart unless-stopped) — the default
-# voice engine, always available, no lifecycle juggling. The pipeline reaches it at
-# http://127.0.0.1:5050/ (override with MACU_PIPER_URL). LAN-only: bound to loopback.
+# Piper TTS — synthetic/machine voice (engine "piper") on :5050. Locally BUILT
+# (Dockerfile here) with the chosen voice baked in. CPU-only and lightweight, so it's
+# a long-lived service (restart unless-stopped) — the default voice engine, always
+# available. The pipeline reaches it at http://127.0.0.1:5050/ (override with
+# MACU_PIPER_URL). LAN-only: bound to loopback.
 #
-# Build + start:  docker compose -f docker-compose.yml up -d --build
+# Voice: defaults to a permissive rhasspy voice. To bake in the HAL-9000 voice
+# instead (opt-in — see NOTICE.md), build with PIPER_VOICE=hal:
+#   PIPER_VOICE=hal docker compose -f docker-compose.yml up -d --build
 services:
   piper:
     build:
       context: .
-    image: piper-hal:local
+      args:
+        PIPER_VOICE: ${PIPER_VOICE:-en_US-lessac-medium}
+    image: piper-tts:local
     container_name: piper_tts
     restart: unless-stopped
     ports:
