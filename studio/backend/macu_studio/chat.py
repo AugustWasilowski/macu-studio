@@ -84,16 +84,21 @@ async def send(slug: str, message: str, session_id: str | None = None) -> dict:
             )
         if r.status_code != 200:
             raise RuntimeError(f"channel returned {r.status_code}: {r.text[:200]}")
-    except Exception:
+    except RuntimeError:
         _PENDING.pop(request_id, None)
         raise
+    except Exception as e:
+        # A transport failure (channel down) becomes a RuntimeError so the route maps
+        # it to 502 instead of leaking a raw httpx error as a 500.
+        _PENDING.pop(request_id, None)
+        raise RuntimeError(f"chat channel unreachable: {e}") from e
 
     try:
         await asyncio.wait_for(pending.event.wait(), timeout=REPLY_TIMEOUT_S)
     except asyncio.TimeoutError:
         _PENDING.pop(request_id, None)
         raise TimeoutError(
-            "Max didn't reply in time — the message was delivered to the session, "
+            "The agent didn't reply in time — the message was delivered to the session, "
             "but it may be busy. Try again in a moment."
         )
     _PENDING.pop(request_id, None)

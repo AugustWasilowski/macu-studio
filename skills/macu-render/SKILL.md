@@ -10,7 +10,7 @@ End-to-end render driver for MACU Report episodes. Reads `episodes/<slug>/manife
 
 ## Trigger
 
-- **Slash command:** `/macu-render <slug>` — e.g. `/macu-render ep-011`. The slug is the directory name under `/mnt/storage/shares/MACU/episodes/` (or, for a non-default show, under that show's `episodes_dir` — see Multi-show).
+- **Slash command:** `/macu-render <slug>` — e.g. `/macu-render ep-011`. The slug is the directory name under `$MACU_SHARES/episodes/` (or, for a non-default show, under that show's `episodes_dir` — see Multi-show).
 - **Vikunja:** when a task is assigned to Max in project 3 with `[MACU]` + `render` in the title, the ss-channels session should read the task description for the episode slug and invoke this skill.
 - **Phrase:** "render MACU episode <slug>" / "render macu <slug>" — same behavior.
 
@@ -25,7 +25,7 @@ End-to-end render driver for MACU Report episodes. Reads `episodes/<slug>/manife
 
 ## What it does
 
-Invokes `/mnt/storage/shares/MACU/pipeline/run.py <slug>` which runs in order:
+Invokes `pipeline/run.py <slug>` which runs in order:
 
 | # | stage | reads | writes | typical wall |
 |---|---|---|---|---|
@@ -55,13 +55,13 @@ After all stages, `run.py` builds a 7-up `final/<slug>_thumbs.jpg` strip, derive
 
 ## Multi-show (MACU_EPISODES)
 
-MACU Studio gained a multi-show layer (2026-06-06): episodes for shows *other than* **The MACU Report** live outside the default `episodes/` dir. `run.py` (via `lib.episode_paths`) resolves the episodes dir from the **`MACU_EPISODES`** env var (`lib.EPISODES_ROOT`), defaulting to `/mnt/storage/shares/MACU/episodes` — so **the-macu-report renders exactly as before with no env set; this skill's default behavior is unchanged.**
+MACU Studio gained a multi-show layer (2026-06-06): episodes for shows *other than* **The MACU Report** live outside the default `episodes/` dir. `run.py` (via `lib.episode_paths`) resolves the episodes dir from the **`MACU_EPISODES`** env var (`lib.EPISODES_ROOT`), defaulting to `$MACU_SHARES/episodes` — so **the-macu-report renders exactly as before with no env set; this skill's default behavior is unchanged.**
 
 To render an episode of a *different* show from this skill, point `MACU_EPISODES` at that show's episodes dir before invoking `run.py`:
 
 ```
-MACU_EPISODES=/mnt/storage/shares/MACU/shows/<show-id>/episodes \
-    python3 /mnt/storage/shares/MACU/pipeline/run.py <slug>
+MACU_EPISODES=$MACU_SHARES/shows/<show-id>/episodes \
+    python3 pipeline/run.py <slug>
 ```
 
 The per-show episodes dir is recorded in the registry at `studio/shows.json` (each entry's `episodes_dir`). Slugs are globally unique across shows, so the slug alone is unambiguous — `MACU_EPISODES` only tells `run.py` *where* the dir lives. **Studio-driven renders set this automatically** (the macu-render HTTP service injects the per-job `episodes_dir` into the stage subprocess env); the manual `export` above is only needed for the **CLI/skill** path on a non-default show.
@@ -71,21 +71,21 @@ The per-show episodes dir is recorded in the registry at `studio/shows.json` (ea
 - **Per-speaker voice routing** lives in `manifest.voice.speaker_map`. Keys are exact cue speaker strings (e.g. `RON`, `MOTHER MARIGOLD`, `TALLY MAN`, `SAFE`). Engine is `omnivoice` (with `profile_id`) or `piper` (HAL). Unmapped speakers fall back to `manifest.voice.default` (Piper HAL). All VO is normalized to 24 kHz mono PCM s16 in stage 1 so stage 4's concat-copy doesn't trip on sample-rate mismatches.
 - **VO is serial, not parallel.** OmniVoice's torch.compile path asserts under concurrent /generate calls (cudagraph TLS issue). `max_workers=1` in stage 1. Piper would tolerate parallelism but we share the worker pool for simplicity.
 - **OmniVoice is hosted at 127.0.0.1:3900** — bound to loopback only inside the omnivoice container's compose. Stage 1 calls `OMNIVOICE_URL = http://127.0.0.1:3900` (defined in `lib.py`). If you ever move the pipeline off Max, expose the port or proxy it.
-- **OmniVoice torch.compile mode is patched to `default`** (was `reduce-overhead` upstream, which uses cudagraphs and breaks across-thread inference). Patch is bind-mounted at `/home/mayorawesome/docker/omnivoice/patches/model_manager.py` — survives Watchtower bumps as long as the upstream file path is stable. See `omnivoice_gpu_pool_bug` memory.
+- **OmniVoice torch.compile mode is patched to `default`** (was `reduce-overhead` upstream, which uses cudagraphs and breaks across-thread inference). Patch is bind-mounted at `<your-omnivoice-dir>/patches/model_manager.py` — survives Watchtower bumps as long as the upstream file path is stable. See `omnivoice_gpu_pool_bug` memory.
 - **OmniVoice is ephemeral — stage 1 owns its lifecycle.** The container is **stopped by default** so its ~4.6 GB doesn't compete with ComfyUI. Stage 1's `main()` calls `omnivoice_start()` (in `lib.py`) before the render loop and `omnivoice_stop()` in a `finally` so VRAM is released even on failure. The start probe polls TCP `:3900` then HTTP `/docs` until the FastAPI is responding (180 s timeout). If you want to keep OmniVoice up after stage 1 — e.g. iterating just on VO with `--only 1` — export `MACU_KEEP_OMNIVOICE=1`.
 - **OmniVoice VRAM gotcha (incident ep6, 2026-05-30):** before stage 1 started managing the container, leaving OmniVoice up post-VO drove ComfyUI into lowvram offload during stage 2 — the ModelScopeT2VLoader's temporal modules crashed with `Input type (torch.cuda.HalfTensor) and weight type (torch.HalfTensor) should be the same` because some weights got swung to CPU. Symptom: every master prompt instantly enters `error` status with that exception; stage 2 then poll-sleeps for its 60-min timeout waiting for prompts that already died. If you ever see that traceback, check `nvidia-smi --query-compute-apps`; if OmniVoice is still resident, the lifecycle wiring is broken.
-- **Other consumers of OmniVoice** (e.g. the voice-clone wrapper at `/mnt/storage/shares/MACU/voices/clone_one.sh`) must `docker start omnivoice` themselves now — the container won't be running between renders. Stop it again afterward to keep the GPU clean.
+- **Other consumers of OmniVoice** (e.g. the voice-clone wrapper at `$MACU_SHARES/voices/clone_one.sh`) must `docker start omnivoice` themselves now — the container won't be running between renders. Stop it again afterward to keep the GPU clean.
 - **anim_dump, not ffmpeg's libwebp demuxer** for webp → PNG. ffmpeg chokes on ComfyUI animated webps with `invalid TIFF header in Exif`.
 - **Don't bump res past 384×384×24f.** 576×320×24f triggers ComfyUI's lowvram offload and the custom ModelScopeT2VLoader's temporal modules crash with fp16 CPU/CUDA dtype mismatch on the 11 GB 2080 Ti.
 - **Title slots fill their full per-shot share** (`tpad=stop_mode=clone` to pad short title MP4s). The old "cap to 1.5s" bug truncated VO at end of title-containing cues — don't reintroduce.
 - **Per-shot duration = cue VO duration / N shots in that cue.** The manifest doesn't specify per-shot durations; the assembler computes at run time from rendered VO. Stage 1 must complete before stage 4.
 - **Silent `hold` cues** (since ep10 prep, 2026-05-30): a cue with `"hold_seconds": N` and `"vo": ""` is a no-dialogue beat for comedic reaction cuts. Stage 1 generates a real silent wav of N seconds via `ffmpeg -f lavfi -i anullsrc -t N` instead of calling TTS, so stage 4's per-shot math (`vo_dur / N shots`) works unchanged. Hold cues do NOT count toward the OmniVoice lifecycle decision — pure-hold episodes won't spin up the container. Stage 7 SRT defensively uses `cue.get("vo") or ""` so a hold cue contributes zero subtitle words. **Stage 4 routes hold-cue character/broll shots through `freeze_shot()` instead of `rife_shot()`** — it locks onto the master's first PNG and runs the jank filter on top of that still frame, so characters don't animate (mouth moving, gestures) while there's no dialogue. The broadcast aesthetic (noise, scanline shimmer, tinterlace) is still alive per-frame because it's all in the jank filter, not the input PNGs. Title shots inside a hold cue are unaffected (they keep their own playback).
-- **SFX one-shots** (since ep10 prep, 2026-05-30): top-level `manifest.sfx[]` array (sibling of `manifest.music`, NOT nested inside it) of `{file, cue, at, gain?, delay?, fade_in?, fade_out?}`. Files live in shared `/mnt/storage/shares/MACU/assets/sfx/` (10 synthesized starters there: EBS tone + bent variant, cricket, static, hum, buzz, ding, plus three placeholder percussives). `at: "start"` parks at `cum[cue]`, `at: "end"` parks at `cum[cue] + cue_dur[cue] - sfx_dur`. Optional `delay` (signed seconds) nudges before/after. SFX defaults to **hard cuts** (no fades) because cuts are funnier — set `fade_out` explicitly if you want one. Missing files log a WARN and skip gracefully; stage 5 keeps running. SFX work even with `music.enabled=false`. Source files are peak-normalized to −3 dBFS so `gain` 0.0-1.0 behaves linearly.
+- **SFX one-shots** (since ep10 prep, 2026-05-30): top-level `manifest.sfx[]` array (sibling of `manifest.music`, NOT nested inside it) of `{file, cue, at, gain?, delay?, fade_in?, fade_out?}`. Files live in shared `$MACU_SHARES/assets/sfx/` (10 synthesized starters there: EBS tone + bent variant, cricket, static, hum, buzz, ding, plus three placeholder percussives). `at: "start"` parks at `cum[cue]`, `at: "end"` parks at `cum[cue] + cue_dur[cue] - sfx_dur`. Optional `delay` (signed seconds) nudges before/after. SFX defaults to **hard cuts** (no fades) because cuts are funnier — set `fade_out` explicitly if you want one. Missing files log a WARN and skip gracefully; stage 5 keeps running. SFX work even with `music.enabled=false`. Source files are peak-normalized to −3 dBFS so `gain` 0.0-1.0 behaves linearly.
 - **Acquiring new SFX**: three paths, all landing a 24 kHz mono PCM s16 / −3 dBFS file in `assets/sfx/`:
-  1. **freesound.org CC0** via `python3 /mnt/storage/shares/MACU/pipeline/freesound_fetch.py "<query>" <basename> [--duration-max N]`. Searches the freesound API, filters by CC0, downloads the top preview MP3, normalizes to the kit standard. Creds at `~/.config/freesound/credentials.env` (mode 600). Append a catalog row to `assets/sfx/README.md` with the freesound URL + sound id + CC0 license.
-  2. **`agen` text-to-foley** (local, de-novo) via `python3 /mnt/storage/shares/MACU/pipeline/agen_sfx.py "<prompt>" <basename> [--duration N] [--seed N]`. Wraps the AudioGen model behind `/mnt/storage/audio-gen/agen sfx`, then runs the **same `normalize()`** as freesound (re-samples agen's 16 kHz up to the 24 kHz kit). Auto-logs a catalog row tagged `agen sfx` (MACU-local, AudioGen) / Public Domain (de novo) with the **prompt + seed** (reproducible — seed defaults to a hash of the prompt). Use when no good CC0 match exists, or for a bespoke sound the script calls for (a specific bonk, a particular car engine, etc.). **GPU lifecycle:** agen is another ~6 GB GPU consumer — `agen_lib.ensure_gpu_free()` refuses to run if <6.5 GB is free, so it can't collide with ComfyUI stage 2 or OmniVoice stage 1 (the ep6 lowvram failure class). Run it as a **curated pre-pass when the GPU is idle**, like freesound; do NOT call it inline during stages 1–4.
+  1. **freesound.org CC0** via `python3 pipeline/freesound_fetch.py "<query>" <basename> [--duration-max N]`. Searches the freesound API, filters by CC0, downloads the top preview MP3, normalizes to the kit standard. Creds at `~/.config/freesound/credentials.env` (mode 600). Append a catalog row to `assets/sfx/README.md` with the freesound URL + sound id + CC0 license.
+  2. **`agen` text-to-foley** (local, de-novo) via `python3 pipeline/agen_sfx.py "<prompt>" <basename> [--duration N] [--seed N]`. Wraps the AudioGen model behind `$MACU_AGEN sfx`, then runs the **same `normalize()`** as freesound (re-samples agen's 16 kHz up to the 24 kHz kit). Auto-logs a catalog row tagged `agen sfx` (MACU-local, AudioGen) / Public Domain (de novo) with the **prompt + seed** (reproducible — seed defaults to a hash of the prompt). Use when no good CC0 match exists, or for a bespoke sound the script calls for (a specific bonk, a particular car engine, etc.). **GPU lifecycle:** agen is another ~6 GB GPU consumer — `agen_lib.ensure_gpu_free()` refuses to run if <6.5 GB is free, so it can't collide with ComfyUI stage 2 or OmniVoice stage 1 (the ep6 lowvram failure class). Run it as a **curated pre-pass when the GPU is idle**, like freesound; do NOT call it inline during stages 1–4.
   3. **ffmpeg lavfi synth** in the kit's own PD-synth style — see `assets/sfx/README.md`. Unambiguously public-domain and reproducible; use it for predictable in-mix character (the EBS tones, cricket chirp, etc.).
-- **Generating music beds** (`agen`): `python3 /mnt/storage/shares/MACU/pipeline/agen_music.py "<prompt>" <basename> [--engine music|riff] [--duration N] [--seed N]` writes a bed into `assets/music/` (catalog row logged), then reference it from `manifest.music.clips[]` like the existing big-band clips. `music` = MusicGen (drifts/loops past ~15–20s — on-brand jank); `riff` = Riffusion (grittiest, tape-degraded lo-fi). Same GPU gate as SFX. The Studio Audio panel also exposes both: a "Generate (agen)" toggle in the Add-SFX dialog (`POST /api/episodes/<slug>/sfx/gen`) and `POST /api/episodes/<slug>/music/gen`.
+- **Generating music beds** (`agen`): `python3 pipeline/agen_music.py "<prompt>" <basename> [--engine music|riff] [--duration N] [--seed N]` writes a bed into `assets/music/` (catalog row logged), then reference it from `manifest.music.clips[]` like the existing big-band clips. `music` = MusicGen (drifts/loops past ~15–20s — on-brand jank); `riff` = Riffusion (grittiest, tape-degraded lo-fi). Same GPU gate as SFX. The Studio Audio panel also exposes both: a "Generate (agen)" toggle in the Add-SFX dialog (`POST /api/episodes/<slug>/sfx/gen`) and `POST /api/episodes/<slug>/music/gen`.
 - **Same-character shots reuse one master.** All 5 SAFE shots came from one `safe_master.zs.webp`. Don't re-render per shot.
 - **Empty-room broll quirk:** stage 4 maps `empty_room` to `c09_s1.zs.webp` (the legacy SAFE-ad slice's broll render). New brolls under `broll[key]` get their own `broll_<key>` master.
 - **Checkpoint:** zeroscope_v2_576w is active (`text2video_pytorch_model.pth`). DAMO is preserved as `.damo.pth` for rollback — that's the watermarked ModelScope T2V we replaced.
@@ -121,7 +121,7 @@ A 30-LED WS2812 strip on the StackChan's Port C acts as a per-stage progress bar
 
 **Brightness** is software-scaled in `stackchan.py` via `LED_BRIGHTNESS` (default **0.20**) — every RGB value is multiplied by that factor before posting to the firmware. Override at runtime with the env var `STACKCHAN_BRIGHTNESS=<0.0-1.0>` (e.g. `STACKCHAN_BRIGHTNESS=0.10 python3 run.py ep10` for night-mode, `0.50` for fully-lit-room visibility). The constant lives at the top of `pipeline/stackchan.py` if you want to change the default; STAGE_COLORS are stored at full scale (255) and only dimmed at paint time, so all eight hues stay distinguishable as the scaler drops.
 
-**Implementation:** `pipeline/stackchan.py` (zone math + paint helpers, posts to `http://<stackchan-host>/leds/buffer`). `lib.progress_tick(n, name, frac)` is the shared sub-stage hook; stages call it freely and `run.py` registers the StackChan paint callback at startup. Firmware endpoint is in `~/work/StackChanBridge/StackChanBridge.ino` (handler `handleLedsBuffer`).
+**Implementation:** `pipeline/stackchan.py` (zone math + paint helpers, posts to `http://<stackchan-host>/leds/buffer`). `lib.progress_tick(n, name, frac)` is the shared sub-stage hook; stages call it freely and `run.py` registers the StackChan paint callback at startup. The optional device is configured via `STACKCHAN_URL` (unset = disabled).
 
 ## Vikunja report-back format
 
@@ -140,19 +140,19 @@ Send the thumb strip with `SendUserFile` immediately, so August has it without o
 
 | path | role |
 |---|---|
-| `/mnt/storage/shares/MACU/pipeline/` | driver + 8 stage scripts (slug-parameterized) |
-| `/mnt/storage/shares/MACU/episodes/<slug>/manifest.json` | source of truth |
-| `/mnt/storage/shares/MACU/episodes/<slug>/{clips,vo,frames,.rife_frames,titles,.work,final}/` | per-episode artifacts |
-| `/mnt/storage/shares/MACU/assets/fonts/` | shared font dir (Better VCR + others) |
-| `/mnt/storage/shares/MACU/assets/music/` | shared music-bed source dir (referenced by `manifest.music.source_dir`) |
-| `/mnt/storage/shares/MACU/assets/sfx/` | shared SFX one-shot source dir (referenced by `manifest.sfx[].file`) |
-| `/mnt/storage/shares/MACU/pipeline/freesound_fetch.py` | CC0 SFX acquisition helper (search → preview-mp3 download → kit-format normalize) |
-| `/mnt/storage/shares/MACU/pipeline/agen_sfx.py` · `agen_music.py` · `agen_lib.py` | local generation helpers — wrap `/mnt/storage/audio-gen/agen` (AudioGen/MusicGen/Riffusion), reuse `freesound_fetch.normalize()`, GPU-gated (≥6.5 GB free) |
+| `pipeline/` | driver + 8 stage scripts (slug-parameterized) |
+| `$MACU_SHARES/episodes/<slug>/manifest.json` | source of truth |
+| `$MACU_SHARES/episodes/<slug>/{clips,vo,frames,.rife_frames,titles,.work,final}/` | per-episode artifacts |
+| `$MACU_SHARES/assets/fonts/` | shared font dir (Better VCR + others) |
+| `$MACU_SHARES/assets/music/` | shared music-bed source dir (referenced by `manifest.music.source_dir`) |
+| `$MACU_SHARES/assets/sfx/` | shared SFX one-shot source dir (referenced by `manifest.sfx[].file`) |
+| `pipeline/freesound_fetch.py` | CC0 SFX acquisition helper (search → preview-mp3 download → kit-format normalize) |
+| `pipeline/agen_sfx.py` · `agen_music.py` · `agen_lib.py` | local generation helpers — wrap `$MACU_AGEN` (AudioGen/MusicGen/Riffusion), reuse `freesound_fetch.normalize()`, GPU-gated (≥6.5 GB free) |
 | `~/.config/freesound/credentials.env` | freesound.org API creds (mode 600) — `FREESOUND_API_KEY` is what the helper needs |
 | `/tmp/whisper-venv/` | shared Whisper venv |
 | `/tmp/macu_whisper_<slug>.json` | cached ASR output |
 | `/tmp/macu_render_<slug>_report.json` | per-stage timings + paths |
-| `/mnt/storage/shares/MACU/pipeline/stackchan.py` | StackChan LED progress driver (zones + paint) |
+| `pipeline/stackchan.py` | StackChan LED progress driver (zones + paint) |
 | `http://<stackchan-host>/leds/buffer` | firmware endpoint the pipeline POSTs to (single-call paint) |
 
 ## Related: the macu-render HTTP service
@@ -163,4 +163,4 @@ The **HTTP service is built and running** — `pipeline/serve.py` as systemd `ma
 
 - **Movietone 1.19:1** crop (SSA-87 deferred) — add `crop=1024:861:0:81` to stage 8 between the subtitles filter and the encode when `manifest.assembly.output_crop` is set.
 
-See also: `/mnt/storage/shares/MACU/pipeline/README.md` for the deeper rationale, and Max's memory files [zeroscope_drop_in_for_modelscope], [rife_ncnn_vulkan_recipe], [macu_movietone_aspect_ratio].
+See also: `pipeline/README.md` for the deeper rationale.
