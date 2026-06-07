@@ -5,7 +5,8 @@
 #
 # The top-level installer offers to run this when preflight fails; you can also run it
 # directly:  ./deploy/install-prereqs.sh
-set -uo pipefail
+# NOTE: no `set -u` — sourcing nvm.sh references unbound vars and would abort under it.
+set -o pipefail
 
 have() { command -v "$1" >/dev/null 2>&1; }
 say()  { printf '\n>>> %s\n' "$1"; }
@@ -48,7 +49,12 @@ if ! have_node20; then
   export NVM_DIR="$HOME/.nvm"
   # shellcheck disable=SC1091
   . "$NVM_DIR/nvm.sh"
-  nvm install 20
+  nvm install 20 && nvm alias default 20
+  if ls -d "$HOME"/.nvm/versions/node/v2*/bin/node >/dev/null 2>&1; then
+    echo "  node 20 installed under ~/.nvm (the build picks the newest node automatically)."
+  else
+    echo "  >> nvm install 20 didn't land — check network, then run: nvm install 20"
+  fi
 fi
 
 # --- nvidia-container-toolkit (GPU services) — best effort ------------------

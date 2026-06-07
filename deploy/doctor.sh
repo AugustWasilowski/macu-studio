@@ -30,17 +30,19 @@ else
   pv=$(python3 -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null)
   FAIL python3 "need >=3.11 (have ${pv:-?}) — the installer can add it (deadsnakes)"
 fi
-# node may be nvm-managed (not on the bare PATH) — check PATH then ~/.nvm.
-node_bin=""
-if have node; then node_bin="$(command -v node)"
-elif [ -d "$HOME/.nvm/versions/node" ]; then
-  node_bin="$(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null | sort -V | tail -1)"
+# Pick the NEWEST node across PATH + every nvm install — a too-old system node on
+# PATH (e.g. an apt node 16) must not hide a newer nvm node 20.
+node_bin=""; node_major=0
+for cand in "$(command -v node 2>/dev/null)" $(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null); do
+  [ -x "$cand" ] || continue
+  maj=$("$cand" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+  if [ "${maj:-0}" -gt "$node_major" ] 2>/dev/null; then node_major=$maj; node_bin="$cand"; fi
+done
+if [ -n "$node_bin" ] && [ "$node_major" -ge 20 ]; then
+  PASS node "v$("$node_bin" -v 2>/dev/null|tr -d v)$([ "$node_bin" != "$(command -v node 2>/dev/null)" ] && echo ' (nvm)')"
+else
+  FAIL node "need >=20 (Studio frontend build; have ${node_major:-?}) — the installer can add it (nvm)"
 fi
-if [ -n "$node_bin" ]; then
-  nv=$("$node_bin" -p 'process.versions.node.split(".")[0]' 2>/dev/null)
-  [ "${nv:-0}" -ge 20 ] 2>/dev/null && PASS node "v$("$node_bin" -v 2>/dev/null|tr -d v)$([ "$node_bin" != "$(command -v node 2>/dev/null)" ] && echo ' (nvm)')" \
-    || FAIL node "need >=20 (Studio frontend build; have ${nv:-?})"
-else FAIL node "install Node 20+ (nvm recommended)"; fi
 
 echo
 echo "Docker + GPU:"

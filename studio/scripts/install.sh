@@ -21,16 +21,17 @@ fi
 .venv/bin/pip install --quiet -e .
 .venv/bin/pip install --quiet -r "$HERE/../pipeline/requirements.txt"
 
-# 2. Frontend build. Resolve Node: prefer one already on PATH, else the newest nvm
-# install (sort -V, not lexical). nvm is recommended but NOT required.
-NODE_DIR=""
-if command -v npm >/dev/null 2>&1; then
-  NODE_DIR="$(dirname "$(command -v npm)")"
-elif [ -d "$HOME/.nvm/versions/node" ]; then
-  NODE_DIR="$(ls -d "$HOME"/.nvm/versions/node/*/bin 2>/dev/null | sort -V | tail -1)"
-fi
-if [ -z "$NODE_DIR" ] || [ ! -x "$NODE_DIR/npm" ]; then
-  echo "ERROR: Node 20+ / npm not found on PATH or under ~/.nvm. Install Node and re-run." >&2
+# 2. Frontend build. Pick the NEWEST node across PATH + every nvm install (a too-old
+# system node, e.g. apt node 16, must not hide an nvm node 20). nvm not required.
+NODE_DIR=""; node_major=0
+for cand in "$(command -v node 2>/dev/null)" $(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null); do
+  [ -x "$cand" ] || continue
+  maj=$("$cand" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+  if [ "${maj:-0}" -gt "$node_major" ] 2>/dev/null; then node_major=$maj; NODE_DIR="$(dirname "$cand")"; fi
+done
+if [ -z "$NODE_DIR" ] || [ "$node_major" -lt 20 ] || [ ! -x "$NODE_DIR/npm" ]; then
+  echo "ERROR: Node 20+ not found on PATH or under ~/.nvm (newest found: v${node_major}). Install Node 20" >&2
+  echo "       (or run ./deploy/install-prereqs.sh) and re-run." >&2
   exit 1
 fi
 pushd frontend >/dev/null
