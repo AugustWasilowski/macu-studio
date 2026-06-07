@@ -7,7 +7,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 
 AUTO=0
-case "${1:-}" in -y|--yes) AUTO=1 ;; esac
+for a in "$@"; do case "$a" in -y|--yes) AUTO=1 ;; esac; done
 
 cat <<'BANNER'
 
@@ -84,8 +84,16 @@ docker compose -f deploy/services/comfyui/docker-compose.yml up -d
 # HAL-9000 voice is baked into the image. Build + start it the same way.
 docker compose -f deploy/services/piper/docker-compose.yml up -d --build
 
-echo; echo ">>> [6/6] MACU Studio app (venv + frontend build)"
+echo; echo ">>> [6/6] MACU Studio app (venv + frontend build) + whisper ASR venv"
 ./studio/scripts/install.sh
+# Stage 6 ASR runs in its own venv so CTranslate2/faster-whisper stay out of the
+# main interpreter. Provision it once (override the location with MACU_WHISPER_VENV).
+if [ ! -x "$REPO/.whisper-venv/bin/python" ]; then
+  echo "provisioning whisper ASR venv (.whisper-venv) ..."
+  python3 -m venv "$REPO/.whisper-venv"
+  "$REPO/.whisper-venv/bin/pip" install --quiet --upgrade pip
+  "$REPO/.whisper-venv/bin/pip" install --quiet -r "$REPO/pipeline/requirements-whisper.txt"
+fi
 
 cat <<'EOF'
 
@@ -96,5 +104,7 @@ Start MACU Studio:
 
 Optional next steps:
 
+  • Run on boot (systemd):  sudo ./deploy/install-systemd.sh
+      Templates the macu-render + macu-studio units to THIS machine and installs them.
   • Chat tile / writers' room (needs Claude Code): run  /setup-macu-channel  in Claude Code.
 EOF

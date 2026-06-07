@@ -18,10 +18,23 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"; set +a
+set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"
+# MACU_DATA_ROOT lives in deploy/services/.env (not the repo-root .env) — source it
+# too so a standalone run of this script lands models on the right disk.
+[ -f "$REPO/deploy/services/.env" ] && . "$REPO/deploy/services/.env"; set +a
 : "${MACU_DATA_ROOT:=/mnt/storage}"
 : "${MACU_SHARES:=/mnt/storage/shares/MACU}"
 : "${MACU_ASSETS:=$MACU_SHARES/assets}"
+
+# Resolve a python that has huggingface_hub. PEP-668 (Ubuntu 24.04 / WSL) rejects
+# `pip install --user` against the system interpreter, so use a dedicated venv.
+PYHF="python3"
+if ! python3 -c 'import huggingface_hub' 2>/dev/null; then
+  echo "provisioning a fetch venv (huggingface_hub) at $REPO/.fetch-venv ..."
+  python3 -m venv "$REPO/.fetch-venv"
+  "$REPO/.fetch-venv/bin/pip" install --quiet --upgrade pip huggingface_hub
+  PYHF="$REPO/.fetch-venv/bin/python"
+fi
 
 COMFY="$MACU_DATA_ROOT/comfyui"
 T2V="$COMFY/models/text2video"
@@ -42,16 +55,12 @@ else echo "ModelScopeT2V node already present — skip"; fi
 say "text2video + clip weights (~5.4 GB; skips files already present)"
 MODELS="$COMFY/models"
 mkdir -p "$MODELS/text2video" "$MODELS/clip"
-python3 - "$MODELS" <<'PY'
-import os, sys, subprocess
+"$PYHF" - "$MODELS" <<'PY'
+import os, sys, shutil
+from huggingface_hub import hf_hub_download
 models = sys.argv[1]
 T2V = os.path.join(models, "text2video")
 CLIP = os.path.join(models, "clip")
-try:
-    from huggingface_hub import hf_hub_download
-except ModuleNotFoundError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", "--user", "huggingface_hub"])
-    from huggingface_hub import hf_hub_download
 
 # zeroscope's unet lives in a zs2_576w/ subfolder; the DAMO VAE + config + the CLIP
 # text encoder come from the ali-vilab ModelScope mirror. (repo, file, dest, name)
@@ -70,7 +79,7 @@ for repo, fname, dst, final in WANT:
     print(f"  downloading {final}  <-  {repo}/{fname}")
     p = hf_hub_download(repo_id=repo, filename=fname, local_dir=dst)
     if os.path.abspath(p) != os.path.abspath(out):
-        os.replace(p, out)
+        shutil.move(p, out)  # may cross filesystems; os.replace would EXDEV
 print("text2video + clip weights ready")
 PY
 

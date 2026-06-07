@@ -1,20 +1,20 @@
 [Unit]
+# TEMPLATE — __PLACEHOLDERS__ are substituted for this machine by
+# deploy/install-systemd.sh (repo path, run user). Don't cp it verbatim.
 Description=MACU Render HTTP Service (drives pipeline/run.py)
-Documentation=https://10.0.0.245:8002/projects/3 (SSA-90)
 After=network-online.target docker.service
 Wants=network-online.target
-RequiresMountsFor=/mnt/storage
 
 [Service]
 Type=simple
-User=mayorawesome
-Group=mayorawesome
-WorkingDirectory=/mnt/storage/macu-pipeline/pipeline
-# Optional repo-root .env (leading '-' = no-op if absent). This injects the env
-# vars into the render service's SYSTEM python3, so the pipeline is configured on
-# a new machine without needing python-dotenv installed system-wide.
-EnvironmentFile=-/mnt/storage/macu-pipeline/.env
-ExecStart=/usr/bin/python3 /mnt/storage/macu-pipeline/pipeline/serve.py
+User=__USER__
+Group=__GROUP__
+WorkingDirectory=__REPO__/pipeline
+# Optional repo-root .env (leading '-' = no-op if absent).
+EnvironmentFile=-__REPO__/.env
+# Run under the Studio venv so serve.py → run.py have the pipeline deps
+# (Pillow, python-dotenv) and a consistent interpreter.
+ExecStart=__REPO__/studio/.venv/bin/python __REPO__/pipeline/serve.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:/var/log/macu-render.log

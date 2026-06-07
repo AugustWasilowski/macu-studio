@@ -1,23 +1,22 @@
 [Unit]
+# TEMPLATE — __PLACEHOLDERS__ are substituted for this machine by
+# deploy/install-systemd.sh (repo path, shares dir, run user). Don't cp it verbatim.
 Description=MACU Studio (FastAPI + SPA on :8774, drives macu-render)
-Documentation=https://github.com/AugustWasilowski/macu-pipeline/tree/main/studio
 After=network-online.target macu-render.service
 Wants=network-online.target
-RequiresMountsFor=/mnt/storage
 
 [Service]
 Type=simple
-User=mayorawesome
-Group=mayorawesome
-WorkingDirectory=/mnt/storage/macu-pipeline/studio
+User=__USER__
+Group=__GROUP__
+WorkingDirectory=__REPO__/studio
 Environment=MACU_RENDER_URL=http://127.0.0.1:8773
-Environment=MACU_EPISODES=/mnt/storage/shares/MACU/episodes
+Environment=MACU_EPISODES=__SHARES__/episodes
 Environment=PYTHONUNBUFFERED=1
-# Optional repo-root .env (the leading '-' makes it a no-op if absent). On a new
-# machine, point this at the cloned repo's .env. The inline Environment= lines
-# above are the Max defaults and take precedence over the file.
-EnvironmentFile=-/mnt/storage/macu-pipeline/.env
-ExecStart=/mnt/storage/macu-pipeline/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
+# Optional repo-root .env (the leading '-' makes it a no-op if absent). The inline
+# Environment= lines above take precedence over the file.
+EnvironmentFile=-__REPO__/.env
+ExecStart=__REPO__/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:/var/log/macu-studio.log
