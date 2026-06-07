@@ -28,7 +28,6 @@ function fmtTime(ts: number) {
 export function LogDrawer() {
   const open = useStore((s) => s.logOpen);
   const close = useStore((s) => s.closeLog);
-  const clear = useStore((s) => s.clearLog);
   const log = useStore((s) => s.log);
 
   const entries = [...log].reverse(); // newest first
@@ -49,7 +48,6 @@ export function LogDrawer() {
             <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {log.length} event{log.length === 1 ? "" : "s"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="btn" onClick={clear} disabled={log.length === 0}>Clear</button>
             <button className="btn p-1" onClick={close}><IX /></button>
           </div>
         </header>
