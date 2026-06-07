@@ -55,6 +55,13 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       r.errors.forEach((err) => pushToast(`import: ${err}`, "err"));
       qc.invalidateQueries({ queryKey: ["episodes"] });
       qc.invalidateQueries({ queryKey: ["shows"] });
+      // Jump to the script page of the first imported episode (sorted → ep-001 of
+      // a season, or the lone episode of a single-episode import).
+      const imported = [...r.created, ...r.updated].sort();
+      if (imported.length) {
+        setActiveShow(r.show);
+        go({ page: "stage", slug: imported[0], stage: "script" });
+      }
     } catch (err) {
       pushToast(`import failed: ${err instanceof Error ? err.message : String(err)}`, "err");
     }
