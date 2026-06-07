@@ -1,0 +1,22 @@
+# Ollama — local LLM inference for MACU Studio shot-list generation.
+# ON-DEMAND / consumer-lifecycle: restart "no" so it stays stopped between jobs
+# (the GPU's VRAM is needed by ComfyUI during renders). The Studio backend
+# docker-start's it for a shot-gen call, then docker-stop's it. Do NOT auto-start.
+#
+# Volume root from ${MACU_DATA_ROOT} (default /mnt/storage). Pull the model after
+# first start: `docker exec ollama ollama pull qwen2.5:7b-instruct-q4_K_M`
+# (or use the model-fetch step of the installer).
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: "no"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_KEEP_ALIVE=10m   # unload the model from VRAM 10m after the last call
+    ports:
+      - "127.0.0.1:11434:11434"  # local only; Studio backend reaches it on localhost
+    volumes:
+      - ${MACU_DATA_ROOT:-/mnt/storage}/ollama:/root/.ollama   # models persist here

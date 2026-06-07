@@ -1,0 +1,32 @@
+# OmniVoice — voice cloning + TTS (the MACU character voices). Consumer-lifecycle:
+# restart "no" so it stays stopped between jobs (its ~4.6 GB starves ComfyUI's
+# lowvram during renders); the Studio backend / pipeline docker-start it on demand.
+#
+# Volume roots come from ${MACU_DATA_ROOT} (default /mnt/storage) so this is a
+# drop-in for Max AND retargetable on a new machine — set MACU_DATA_ROOT in the
+# .env beside this file (see deploy/services/.env.example). The two patch files
+# ship in-repo and are bind-mounted read-only over the image's buggy originals
+# (gallery + the _gpu_pool model_manager fix).
+services:
+  omnivoice:
+    image: ghcr.io/debpalash/omnivoice-studio:latest
+    container_name: omnivoice
+    restart: "no"
+    ports:
+      - 127.0.0.1:3900:3900
+    volumes:
+      - ${MACU_DATA_ROOT:-/mnt/storage}/omnivoice/state:/root/.omnivoice
+      - ${MACU_DATA_ROOT:-/mnt/storage}/omnivoice/data:/app/omnivoice_data
+      - ${MACU_DATA_ROOT:-/mnt/storage}/omnivoice/hf-cache:/root/.cache/huggingface
+      - ./patches/gallery.py:/app/backend/api/routers/gallery.py:ro
+      - ./patches/model_manager.py:/app/backend/services/model_manager.py:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    environment:
+      - TZ=${TZ:-America/Chicago}
