@@ -26,8 +26,11 @@ cd macu-pipeline
 
 ## Prerequisites (checked by `deploy/doctor.sh`)
 
-Install these first — the installer **checks but does not install** them (too
-OS-specific, especially on WSL):
+`deploy/doctor.sh` checks the host for these. On a **Debian/Ubuntu/WSL** box the
+installer can install most of the missing ones for you: when preflight fails it
+offers to run `deploy/install-prereqs.sh` (ffmpeg, Python ≥3.11 via deadsnakes,
+Node 20 via nvm, and a best-effort nvidia-container-toolkit). On other distros, or
+to do it by hand, install:
 
 - **NVIDIA driver** + **nvidia-container-toolkit**
 - **Docker** (engine + your user in the `docker` group)
@@ -36,7 +39,8 @@ OS-specific, especially on WSL):
 - *(optional, for the in-app TERMINAL drawer)* **ttyd** + **tmux** — the installer
   auto-installs these via apt/dnf/pacman when missing; `setup-macu-channel` wires them up
 
-Run `./deploy/doctor.sh` any time to see what's missing.
+Run `./deploy/doctor.sh` any time to see what's missing, or
+`./deploy/install-prereqs.sh` to try installing them.
 
 ## What the installer does (`deploy/install.sh`)
 

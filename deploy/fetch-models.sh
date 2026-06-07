@@ -31,7 +31,7 @@ set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"
 PYHF="python3"
 if ! python3 -c 'import huggingface_hub' 2>/dev/null; then
   echo "provisioning a fetch venv (huggingface_hub) at $REPO/.fetch-venv ..."
-  python3 -m venv "$REPO/.fetch-venv"
+  "${MACU_PYTHON:-python3}" -m venv "$REPO/.fetch-venv"
   "$REPO/.fetch-venv/bin/pip" install --quiet --upgrade pip huggingface_hub
   PYHF="$REPO/.fetch-venv/bin/python"
 fi

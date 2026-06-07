@@ -19,11 +19,17 @@ echo
 echo "Core:"
 have git     && PASS git     "$(git --version 2>/dev/null)"                  || FAIL git     "install git"
 have ffmpeg  && PASS ffmpeg  "$(ffmpeg -version 2>/dev/null | head -1 | cut -d' ' -f1-3)" || FAIL ffmpeg  "install ffmpeg"
-if have python3; then
+# python may be the system python3, or a versioned python3.11+ (e.g. deadsnakes).
+py_bin=""
+for c in python3 python3.13 python3.12 python3.11; do
+  if have "$c" && "$c" -c 'import sys;exit(0 if sys.version_info[:2]>=(3,11) else 1)' 2>/dev/null; then py_bin="$c"; break; fi
+done
+if [ -n "$py_bin" ]; then
+  PASS python3 "$("$py_bin" -V 2>&1 | cut -d' ' -f2)$([ "$py_bin" != python3 ] && echo " ($py_bin)")"
+else
   pv=$(python3 -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null)
-  python3 -c 'import sys;exit(0 if sys.version_info[:2]>=(3,11) else 1)' 2>/dev/null \
-    && PASS python3 "$pv" || FAIL python3 "need >=3.11 (have ${pv:-?})"
-else FAIL python3 "install python >=3.11"; fi
+  FAIL python3 "need >=3.11 (have ${pv:-?}) — the installer can add it (deadsnakes)"
+fi
 # node may be nvm-managed (not on the bare PATH) — check PATH then ~/.nvm.
 node_bin=""
 if have node; then node_bin="$(command -v node)"

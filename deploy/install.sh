@@ -35,7 +35,37 @@ fi
 echo
 
 echo; echo ">>> [1/6] preflight"
-./deploy/doctor.sh || { echo "Install the missing prerequisites above, then re-run."; exit 1; }
+if ! ./deploy/doctor.sh; then
+  echo
+  do_prereqs=0
+  if [ "$AUTO" = 1 ]; then
+    do_prereqs=1
+  elif [ -t 0 ]; then
+    read -r -p "   Try to auto-install the missing prerequisites? [Y/n] " a
+    case "$a" in [nN]|[nN][oO]) ;; *) do_prereqs=1 ;; esac
+  fi
+  if [ "$do_prereqs" = 1 ]; then
+    ./deploy/install-prereqs.sh || true
+    echo; echo ">>> [1/6] preflight (re-check)"
+    ./deploy/doctor.sh || {
+      echo "Some prerequisites are still missing (see ✗ above). Install them — or for the GPU"
+      echo "runtime, restart Docker after the toolkit install — then re-run ./deploy/install.sh"
+      exit 1
+    }
+  else
+    echo "Install the missing prerequisites above, then re-run."
+    echo "(Tip: ./deploy/install-prereqs.sh tries to install them for you on apt systems.)"
+    exit 1
+  fi
+fi
+
+# Use a >=3.11 python for the venvs (auto-install may have just added python3.12).
+for c in python3.13 python3.12 python3.11 python3; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys;exit(0 if sys.version_info[:2]>=(3,11) else 1)' 2>/dev/null; then
+    export MACU_PYTHON="$c"; break
+  fi
+done
+echo "using python: ${MACU_PYTHON:-python3}"
 
 echo; echo ">>> [2/6] config (.env)"
 created=0
@@ -90,7 +120,7 @@ MACU_INSTALLER=1 ./studio/scripts/install.sh   # suppress its standalone "next s
 # main interpreter. Provision it once (override the location with MACU_WHISPER_VENV).
 if [ ! -x "$REPO/.whisper-venv/bin/python" ]; then
   echo "provisioning whisper ASR venv (.whisper-venv) ..."
-  python3 -m venv "$REPO/.whisper-venv"
+  "${MACU_PYTHON:-python3}" -m venv "$REPO/.whisper-venv"
   "$REPO/.whisper-venv/bin/pip" install --quiet --upgrade pip
   "$REPO/.whisper-venv/bin/pip" install --quiet -r "$REPO/pipeline/requirements-whisper.txt"
 fi

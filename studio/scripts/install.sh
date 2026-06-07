@@ -15,7 +15,7 @@ cd "$HERE"
 # 1. Backend venv. This same venv runs serve.py → run.py (the render pipeline), so
 # it also needs the pipeline's deps (Pillow, python-dotenv).
 if [ ! -d .venv ]; then
-  python3 -m venv .venv
+  "${MACU_PYTHON:-python3}" -m venv .venv
 fi
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -e .
