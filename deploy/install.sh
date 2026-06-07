@@ -10,15 +10,37 @@ echo; echo ">>> [1/6] preflight"
 ./deploy/doctor.sh || { echo "Install the missing prerequisites above, then re-run."; exit 1; }
 
 echo; echo ">>> [2/6] config (.env)"
-if [ ! -f .env ]; then
-  cp .env.example .env
-  echo "Created .env from .env.example."
-  echo "If your storage isn't /mnt/storage, edit MACU_SHARES (and deploy/services/.env"
-  echo "MACU_DATA_ROOT) now, then re-run this script."
+created=0
+[ -f .env ] || { cp .env.example .env; created=1; }
+[ -f deploy/services/.env ] || { cp deploy/services/.env.example deploy/services/.env; created=1; }
+if [ "$created" = 1 ]; then
+  cat <<EOF
+Created .env (and deploy/services/.env) from the examples.
+
+  >> Set your storage paths before continuing. The defaults are /mnt/storage,
+     which only exists on the original host. Pick a WRITABLE location on THIS
+     machine — on WSL prefer the Linux filesystem (e.g. \$HOME) over /mnt/c|/mnt/f
+     (Windows mounts are slow for the models + render IO):
+
+       .env                  ->  MACU_SHARES=\$HOME/macu-data/shares/MACU
+       deploy/services/.env  ->  MACU_DATA_ROOT=\$HOME/macu-data
+
+  Then re-run:  ./deploy/install.sh
+EOF
+  exit 0
 fi
-[ -f deploy/services/.env ] || cp deploy/services/.env.example deploy/services/.env
 set -a; . ./.env 2>/dev/null || true; . ./deploy/services/.env 2>/dev/null || true; set +a
 export MACU_DATA_ROOT="${MACU_DATA_ROOT:-/mnt/storage}"
+export MACU_SHARES="${MACU_SHARES:-/mnt/storage/shares/MACU}"
+# Fail clearly now rather than with cryptic mkdir errors mid-download.
+for d in "$MACU_DATA_ROOT" "$MACU_SHARES"; do
+  if ! mkdir -p "$d" 2>/dev/null; then
+    echo "ERROR: can't create '$d' (from your .env). Edit .env (MACU_SHARES) and"
+    echo "       deploy/services/.env (MACU_DATA_ROOT) to a writable path, then re-run."
+    exit 1
+  fi
+done
+echo "config OK  —  data: $MACU_DATA_ROOT   shares: $MACU_SHARES"
 
 echo; echo ">>> [3/6] pull on-demand service images (ollama + omnivoice)"
 docker compose -f deploy/services/ollama/docker-compose.yml pull
@@ -36,17 +58,14 @@ echo; echo ">>> [6/6] MACU Studio app (venv + frontend build)"
 
 cat <<'EOF'
 
-######## install staged ########
-Mechanical install done. To finish:
+######## install complete ########
+Start MACU Studio:
 
-  • Start MACU Studio:
-      cd studio && PYTHONPATH=backend .venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
-    (or install the systemd unit per studio/scripts/install.sh's printed steps)
-    Then open http://localhost:8774/
+      ./deploy/start-studio.sh        # then open http://localhost:8774/
 
-  • (Your own 2nd machine only) copy your voices + asset kits from an existing box:
-      deploy/sync-personal-data.sh <user@your-existing-box>
+Optional next steps:
 
-  • Studio↔Claude chat tile / writers' room (the coupled half — needs Claude Code):
-      a `setup-macu-channel` skill is the planned next phase.
+  • Chat tile / writers' room (needs Claude Code): run  /setup-macu-channel  in Claude Code.
+  • (Your own 2nd machine) copy your voices + asset kits from an existing box:
+        deploy/sync-personal-data.sh <user@your-existing-box>
 EOF

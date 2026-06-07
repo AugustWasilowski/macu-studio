@@ -38,10 +38,13 @@ macOS (no CUDA). `deploy/doctor.sh` checks all of it.
 git clone <repo-url> macu-pipeline
 cd macu-pipeline
 
-./deploy/install.sh    # doctor → .env → pull service images → fetch models (~8 GB) → build ComfyUI → Studio app
+./deploy/install.sh        # 1st run creates .env and STOPS — set MACU_SHARES (.env) and
+                           # MACU_DATA_ROOT (deploy/services/.env) to a writable path, then:
+./deploy/install.sh        # doctor → pull images → fetch models (~8 GB) → build ComfyUI → app
+./deploy/start-studio.sh   # start Studio
 ```
 
-Then start Studio (the script prints the command) and open `http://localhost:8774/`. For the in-app chat tile
+Open `http://localhost:8774/`. For the in-app chat tile
 and writers' room, run **`/setup-macu-channel`** in Claude Code.
 
 Full prerequisites, the staged flow, and the per-service compose stacks: **[INSTALL.md](INSTALL.md)** and

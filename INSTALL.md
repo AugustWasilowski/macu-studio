@@ -7,12 +7,21 @@ stack (OmniVoice, Ollama, ComfyUI) and fetches its models.
 > **Hardware:** an NVIDIA GPU is required (the defaults target an ~11 GB 2080 Ti).
 > Linux or WSL2.
 
-## TL;DR
+## Quick start
 
 ```bash
 git clone <repo-url> macu-pipeline
 cd macu-pipeline
-./deploy/install.sh          # runs the stages below in order
+
+./deploy/install.sh          # 1st run: creates .env and STOPS so you can set your paths
+
+# Edit the two created files to a WRITABLE location on this machine. On WSL, use
+# the Linux filesystem ($HOME), NOT /mnt/c or /mnt/f (Windows mounts are slow):
+#   .env                  ->  MACU_SHARES=$HOME/macu-data/shares/MACU
+#   deploy/services/.env  ->  MACU_DATA_ROOT=$HOME/macu-data
+
+./deploy/install.sh          # re-run: does the full install
+./deploy/start-studio.sh     # start Studio, then open http://localhost:8774/
 ```
 
 ## Prerequisites (checked by `deploy/doctor.sh`)
@@ -30,8 +39,10 @@ Run `./deploy/doctor.sh` any time to see what's missing.
 ## What the installer does (`deploy/install.sh`)
 
 1. **Preflight** — `doctor.sh`.
-2. **Config** — creates `.env` (set `MACU_SHARES` if your storage isn't
-   `/mnt/storage`) and `deploy/services/.env` (`MACU_DATA_ROOT`).
+2. **Config** — on the first run it creates `.env` + `deploy/services/.env` and
+   **stops** so you can set `MACU_SHARES` / `MACU_DATA_ROOT` to a writable path on
+   this machine; re-run to continue. It also verifies those paths are writable
+   before downloading anything.
 3. **Service images** — pulls the on-demand OmniVoice + Ollama images.
 4. **Models + assets** — `fetch-models.sh`: clones ComfyUI + the ModelScopeT2V
    node, downloads the ~8 GB text2video weights (zeroscope + DAMO/VQGAN from
@@ -40,7 +51,7 @@ Run `./deploy/doctor.sh` any time to see what's missing.
 5. **ComfyUI** — builds the local image and starts it.
 6. **Studio app** — Python venv + frontend build (`studio/scripts/install.sh`).
 
-Then start Studio (printed at the end) and open `http://localhost:8774/`.
+Then start Studio with **`./deploy/start-studio.sh`** and open `http://localhost:8774/`.
 
 ## The two halves a script can't do
 
