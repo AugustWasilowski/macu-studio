@@ -65,7 +65,44 @@
     "clips": [
       "soap_opera_theme_music.wav"
     ],
-    "beds": []
+    "beds": [
+      {
+        "name": "soap_opera_theme_music",
+        "file": "soap_opera_theme_music.wav",
+        "cues": [
+          "c19"
+        ],
+        "anchor": "start",
+        "max_seconds": 9,
+        "gain": 0.5,
+        "fade_in": 0.5,
+        "fade_out": 0.5
+      },
+      {
+        "name": "soap_opera_theme_music",
+        "file": "soap_opera_theme_music.wav",
+        "cues": [
+          "c43"
+        ],
+        "anchor": "start",
+        "max_seconds": 11,
+        "gain": 0.5,
+        "fade_in": 0.5,
+        "fade_out": 0.5
+      },
+      {
+        "name": "soap_opera_theme_music",
+        "file": "soap_opera_theme_music.wav",
+        "cues": [
+          "c44"
+        ],
+        "anchor": "start",
+        "max_seconds": 9,
+        "gain": 0.5,
+        "fade_in": 0.5,
+        "fade_out": 0.5
+      }
+    ]
   },
   "characters": {
     "vivian": {
@@ -73,7 +110,7 @@
       "core": "an elegant elderly matriarch in a black mourning dress and pearls, severe silver chignon, glacial composed expression, candlelit bunker ballroom"
     },
     "mona": {
-      "seed": 81002,
+      "seed": 8771,
       "core": "a gaunt weary young woman in a tattered grey traveling coat, ash-smudged face, haunted certain eyes, standing in a heavy bunker doorway"
     },
     "brick": {
@@ -95,7 +132,19 @@
       "seed": 6985
     }
   },
-  "title_assets": {},
+  "title_assets": {
+    "awb_title": {
+      "source": "hyperframes",
+      "composition": "intro",
+      "fields": {
+        "kicker": "AS THE WORLD BURNS",
+        "title_line_1": "THE WIDOW AT THE GATE",
+        "title_line_2": "FUNERAL SECRETS",
+        "sub": "HE WAS DEAD. BUT HE GOT BETTER.",
+        "idtag": "EP 1 • MACU"
+      }
+    }
+  },
   "cues": [
     {
       "id": "c19",
@@ -499,6 +548,32 @@
       "fade": 0,
       "source": "library",
       "delay": 0
+    }
+  ],
+  "overlays": [
+    {
+      "asset": "awb_title",
+      "mode": "insert",
+      "anchor_cue": "c19",
+      "start_offset": 0,
+      "duration": 5.98,
+      "position": "lower_third",
+      "scale": 1,
+      "opacity": 1,
+      "fade_in": 0.3,
+      "fade_out": 0.3
+    },
+    {
+      "asset": "awb_title",
+      "mode": "insert",
+      "anchor_cue": "c44",
+      "start_offset": 0,
+      "duration": 9.16,
+      "position": "lower_third",
+      "scale": 1,
+      "opacity": 1,
+      "fade_in": 0.3,
+      "fade_out": 0.3
     }
   ]
 }
