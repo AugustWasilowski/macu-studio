@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, TOP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
+import { versionApi } from "../api/version";
+import { VERSION_KEY } from "./UpdateModal";
 import { api } from "../api";
 import { SysStat } from "./SysStat";
 import { JobStatus } from "./JobStatus";
@@ -41,7 +43,13 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   const toggleDrawer = useStore((s) => s.toggleDrawer);
   const toggleLog = useStore((s) => s.toggleLog);
   const toggleTerminal = useStore((s) => s.toggleTerminal);
+  const openUpdate = useStore((s) => s.openUpdate);
   const pushToast = useStore((s) => s.pushToast);
+
+  // Background poll for a newer build → shows the "Update" badge. The backend also
+  // checks once at startup, so this is usually populated by first paint.
+  const version = useQuery({ queryKey: VERSION_KEY, queryFn: versionApi.get, refetchInterval: 5 * 60_000 });
+  const updateAvailable = !!version.data?.check?.update_available;
 
   async function onSync() {
     if (!slug || syncing) return;
@@ -210,6 +218,17 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
             {syncing ? "Syncing…" : "Git sync"}
           </span>
         </button>
+        {updateAvailable && (
+          <button
+            className="btn btn-cyan"
+            onClick={openUpdate}
+            title={`Update available — ${version.data?.check.behind} new commit(s). Click to review and install.`}
+            style={{ borderColor: "var(--cyan)", color: "var(--cyan)", boxShadow: "var(--glow-cyan)" }}
+          >
+            <span className="led-dot pulse" style={{ "--led-c": "#33ddff", marginRight: 6 } as React.CSSProperties} />
+            <span className="font-semibold tracking-wider uppercase text-[11px]">Update</span>
+          </button>
+        )}
         <span className="seg-readout cyan">{clock}</span>
         <button className="btn" data-tour="drawers" onClick={toggleTerminal} title="Open terminal (tmux into Max)">
           <ITerminal />

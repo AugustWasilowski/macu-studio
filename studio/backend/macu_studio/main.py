@@ -34,7 +34,7 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
-from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version
 from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -51,6 +51,16 @@ async def lifespan(app: FastAPI):
         compgen_mod.ensure_prompt_seeded()
     except Exception as e:
         print(f"[macu-studio] prompt seed skipped: {e}")
+    # Best-effort startup check for a newer build, in the background so a slow or
+    # offline `git fetch` never delays boot. Populates the UI's "update available"
+    # badge without the user having to click Check.
+    try:
+        import threading
+        from . import version as version_mod
+        threading.Thread(target=lambda: version_mod.check(do_fetch=True),
+                         daemon=True, name="macu-version-check").start()
+    except Exception as e:
+        print(f"[macu-studio] startup version check skipped: {e}")
     yield
 
 
@@ -909,6 +919,7 @@ app.include_router(routes_docs.router)
 app.include_router(routes_gitsync.router)
 app.include_router(routes_shows.router)
 app.include_router(routes_voices.router)
+app.include_router(routes_version.router)
 
 
 # ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------

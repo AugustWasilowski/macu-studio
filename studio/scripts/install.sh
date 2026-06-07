@@ -21,17 +21,28 @@ fi
 .venv/bin/pip install --quiet -e .
 .venv/bin/pip install --quiet -r "$HERE/../pipeline/requirements.txt"
 
-# 2. Frontend build. Pick the NEWEST node across PATH + every nvm install (a too-old
-# system node, e.g. apt node 16, must not hide an nvm node 20). nvm not required.
-NODE_DIR=""; node_major=0
+# 2. Frontend build. Pick the BEST node across PATH + every nvm install: highest FULL
+# version (major.minor.patch) whose npm actually works. Two refinements over a naive
+# "newest major" scan: (a) a too-old system node (e.g. apt node 16) must not hide an
+# nvm node 20; (b) a half-removed npm in one nvm dir (a dangling npm symlink with no
+# npm-cli.js — seen when two same-major installs coexist) must not shadow a healthy
+# sibling. nvm not required.
+NODE_DIR=""; node_major=0; best_key=0
 for cand in "$(command -v node 2>/dev/null)" $(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null); do
   [ -x "$cand" ] || continue
-  maj=$("$cand" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
-  if [ "${maj:-0}" -gt "$node_major" ] 2>/dev/null; then node_major=$maj; NODE_DIR="$(dirname "$cand")"; fi
+  ver=$("$cand" -p 'process.versions.node' 2>/dev/null) || continue
+  maj=${ver%%.*}; rest=${ver#*.}; min=${rest%%.*}; pat=${rest#*.}; pat=${pat%%[-+]*}
+  [ "${maj:-0}" -ge 20 ] 2>/dev/null || continue
+  dir="$(dirname "$cand")"
+  # npm must be RUNNABLE, not just present: its CLI module has to exist on disk
+  # (a bare symlink whose target was pruned still passes `-x`, then crashes at build).
+  [ -f "$dir/../lib/node_modules/npm/bin/npm-cli.js" ] || continue
+  key=$(( maj * 1000000 + ${min:-0} * 1000 + ${pat:-0} ))
+  if [ "$key" -gt "$best_key" ]; then best_key=$key; NODE_DIR="$dir"; node_major=$maj; fi
 done
-if [ -z "$NODE_DIR" ] || [ "$node_major" -lt 20 ] || [ ! -x "$NODE_DIR/npm" ]; then
-  echo "ERROR: Node 20+ not found on PATH or under ~/.nvm (newest found: v${node_major}). Install Node 20" >&2
-  echo "       (or run ./deploy/install-prereqs.sh) and re-run." >&2
+if [ -z "$NODE_DIR" ]; then
+  echo "ERROR: no Node 20+ with a working npm found on PATH or under ~/.nvm. Install Node 20+" >&2
+  echo "       (run ./deploy/install-prereqs.sh, or 'nvm install --lts' to repair a broken npm)." >&2
   exit 1
 fi
 node_crash_hint() {

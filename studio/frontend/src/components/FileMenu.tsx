@@ -26,6 +26,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
   const fileRef = useRef<HTMLInputElement>(null);
   const setActiveShow = useStore((s) => s.setActiveShow);
   const pushToast = useStore((s) => s.pushToast);
+  const openUpdate = useStore((s) => s.openUpdate);
   const qc = useQueryClient();
 
   const shows = useQuery({ queryKey: ["shows"], queryFn: showsApi.list, enabled: open });
@@ -131,6 +132,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
 
             <Section label="More" />
             <Item label="Settings…" onClick={onOpenSettings} />
+            <Item label="Check for updates…" onClick={openUpdate} />
             <Item label="Tutorial" onClick={onStartTutorial} />
             <Item label="Go to Assembly" onClick={onGoAssembly} />
             <Item label="Shut down Studio…" onClick={() => setDialog("shutdown")} />
