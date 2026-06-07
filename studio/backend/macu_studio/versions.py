@@ -24,6 +24,7 @@ from typing import Any, Optional
 
 from .episodes import episode_dir
 from . import manifest as manifest_mod
+from . import shows as shows_mod
 
 KINDS = ("cue", "shot", "ythumb")
 
@@ -69,6 +70,8 @@ def _ek(kind: str, key: str) -> str:
 def canonical_for(slug: str, kind: str, key: str) -> str:
     """Canonical path RELATIVE to the episode dir. Mirrors lib.staged_master_webp
     and regen.py exactly (single source of truth for these conventions)."""
+    # key is interpolated into clips/vo paths — must stay a single in-tree segment.
+    shows_mod.safe_segment(key, "key")
     if kind == "cue":
         return f"vo/{key}.wav"
     if kind == "ythumb":

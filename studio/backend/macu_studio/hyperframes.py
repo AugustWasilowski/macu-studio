@@ -22,6 +22,7 @@ from .config import SHARES
 from .episodes import episode_dir
 from . import manifest as manifest_mod
 from . import versions as versions_mod
+from . import shows as shows_mod
 
 
 TEMPLATES = SHARES / "assets" / "hyperframes" / "templates"
@@ -108,6 +109,9 @@ def _apply_fields(html: str, fields: dict) -> str:
 def _scaffold(slug: str, key: str, composition: str, fields: dict) -> Path:
     """Create episodes/<slug>/hyperframes/<key>/ with templatized index.html
     + minimal hyperframes.json if not present. Returns the project dir."""
+    # key + composition become filesystem path components — keep them in-tree.
+    shows_mod.safe_segment(key, "title key")
+    shows_mod.safe_segment(composition, "composition")
     project_dir = episode_dir(slug) / "hyperframes" / key
     project_dir.mkdir(parents=True, exist_ok=True)
     (project_dir / "out").mkdir(exist_ok=True)
@@ -387,6 +391,7 @@ def template_fields(composition: str) -> dict:
     """Scan a template's index.html for ‹PLACEHOLDER› tokens and return the editable
     field set the modal should offer: {composition, placeholders, fields:{lower:""}}.
     Mirrors compgen's scan so an existing layout's JSON can be scaffolded without the LLM."""
+    shows_mod.safe_segment(composition, "composition")
     index = TEMPLATES / composition / "index.html"
     if not index.exists():
         return {"composition": composition, "placeholders": [], "fields": {}}
@@ -424,6 +429,7 @@ async def submit_thumb(slug: str, fields: dict, composition: str = "youtube_thum
     """Queue a YouTube thumbnail render. Archives the current thumb first, then
     scaffolds + renders the composition into final/<slug>_thumb.png. Returns the
     job_id. Raises FileNotFoundError if the template is missing."""
+    shows_mod.safe_segment(composition, "composition")
     template_dir = TEMPLATES / composition
     if not (template_dir / "index.html").exists():
         raise FileNotFoundError(

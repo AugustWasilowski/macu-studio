@@ -23,7 +23,7 @@ Job state directory: /var/lib/macu-render/jobs/<job_id>/
 
 Bind: 0.0.0.0:8773  (LAN-only by design; no auth)
 """
-import os, sys, json, uuid, time, threading, queue, subprocess, signal
+import os, re, sys, json, uuid, time, threading, queue, subprocess, signal
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -58,6 +58,7 @@ import lib  # noqa: E402
 SHARES_EP = lib.EPISODES_ROOT
 RUN_PY = f"{PIPELINE}/run.py"
 PORT = 8773
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,48}$")
 
 os.makedirs(JOBS_ROOT, exist_ok=True)
 
@@ -248,9 +249,20 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             return _json(self, 400, {"error": "invalid json"})
         slug = body.get("slug")
-        if not slug:
-            return _json(self, 400, {"error": "slug required"})
-        episodes_dir = body.get("episodes_dir") or SHARES_EP
+        # This endpoint is unauthenticated (LAN-only by design) and both slug and
+        # episodes_dir flow into filesystem paths + the child process env. Validate
+        # them: slug to a strict pattern, episodes_dir confined under the shares root.
+        if not slug or not _SLUG_RE.match(str(slug)):
+            return _json(self, 400, {"error": "invalid slug"})
+        req_ed = body.get("episodes_dir")
+        if req_ed:
+            root = os.path.realpath(str(lib.SHARES))
+            cand = os.path.realpath(str(req_ed))
+            if cand != root and not cand.startswith(root + os.sep):
+                return _json(self, 400, {"error": "episodes_dir must be under the shares root"})
+            episodes_dir = req_ed
+        else:
+            episodes_dir = SHARES_EP
         manifest = f"{episodes_dir}/{slug}/manifest.json"
         if not os.path.exists(manifest):
             return _json(self, 400, {"error": f"manifest not found: {manifest}"})

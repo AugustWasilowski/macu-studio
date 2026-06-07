@@ -32,7 +32,9 @@ async def fetch_and_pin(
     if not FETCH_SCRIPT.exists():
         raise FileNotFoundError(f"freesound_fetch.py not found at {FETCH_SCRIPT}")
 
-    basename = basename or _slugify(query)
+    # Always slugify — a caller-supplied basename must not escape SFX_DIR (it lands
+    # in the filesystem and in manifest.sfx[]). _slugify strips to [a-z0-9_].
+    basename = _slugify(basename or query)
     cmd = [
         "python3", str(FETCH_SCRIPT),
         query, basename,

@@ -59,6 +59,20 @@ _DEFAULTS_KEYS = (
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,48}$")
 
+# A single safe path segment (cue id, shot/title key, composition name): letters,
+# digits, dot, dash, underscore — no slash, backslash, or `..`. Use to sanitize any
+# user-supplied value that becomes a filesystem path component.
+_SAFE_SEG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def safe_segment(name: str, what: str = "name") -> str:
+    """Validate a single path segment, or raise ValueError. Rejects `..`, slashes,
+    and leading dots so the value can't escape its intended directory."""
+    if (not isinstance(name, str) or ".." in name or "/" in name or "\\" in name
+            or not _SAFE_SEG_RE.match(name)):
+        raise ValueError(f"invalid {what}: {name!r}")
+    return name
+
 
 # --------------------------------------------------------------------------- #
 # Portability — resolve machine-specific paths/endpoints at read time so one
@@ -309,10 +323,20 @@ def resolve_episode(slug: str) -> tuple[str, Path]:
     Fast path: the default show's flat dir (covers all existing MACU episodes).
     Otherwise scan the registry. Raises FileNotFoundError if no show has it.
     """
-    fast = config.EPISODES / slug
-    if (fast / "manifest.json").exists() or fast.is_dir():
-        return DEFAULT_SHOW, fast
-    for s in load_registry():
+    # Validate the slug before it touches the filesystem — blocks path traversal
+    # (`..`, `/`) on every per-slug route, which all resolve through here. An
+    # invalid slug is a clean 404 (callers map FileNotFoundError → 404).
+    if not _SLUG_RE.match(slug or ""):
+        raise FileNotFoundError(f"invalid episode slug: {slug!r}")
+    reg = load_registry()
+    # Fast path: the legacy flat dir — but only when the default show is actually
+    # registered AND the dir is a real episode (has a manifest). Never short-circuit
+    # a bare directory or a slug another show owns to DEFAULT_SHOW.
+    if any(s.get("id") == DEFAULT_SHOW for s in reg):
+        fast = config.EPISODES / slug
+        if (fast / "manifest.json").exists():
+            return DEFAULT_SHOW, fast
+    for s in reg:
         d = Path(s.get("episodes_dir", "")) / slug
         if d.is_dir():
             return s["id"], d
