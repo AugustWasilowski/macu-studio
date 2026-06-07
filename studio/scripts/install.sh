@@ -31,13 +31,18 @@ PATH="$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node | tail -1)/bin:$PAT
 popd >/dev/null
 
 echo
-echo "Build complete."
+echo "Build complete. Run MACU Studio one of two ways:"
 echo
-echo "Next steps (manual, root):"
-echo "  # COPY the unit."
-echo "  sudo cp $HERE/systemd/macu-studio.service /etc/systemd/system/macu-studio.service"
-echo "  sudo systemctl daemon-reload"
-echo "  sudo systemctl enable --now macu-studio"
-echo "  sudo touch /var/log/macu-studio.log && sudo chown $(id -un):$(id -gn) /var/log/macu-studio.log"
+echo "  1) Just for now — foreground, Ctrl-C to stop:"
+echo "       ./deploy/start-studio.sh"
+echo
+echo "  2) As a background service that starts on boot and auto-restarts (root):"
+echo "       sudo cp $HERE/systemd/macu-studio.service /etc/systemd/system/macu-studio.service"
+echo "       sudo systemctl daemon-reload"
+echo "       sudo systemctl enable --now macu-studio"
+echo "       sudo touch /var/log/macu-studio.log && sudo chown $(id -un):$(id -gn) /var/log/macu-studio.log"
+echo "     Manage it later:"
+echo "       sudo systemctl stop macu-studio            # stop now (still starts on boot)"
+echo "       sudo systemctl disable --now macu-studio   # stop AND don't start on boot"
 echo
 echo "Then open: http://localhost:8774/  (or http://<this-host>:8774/)"
