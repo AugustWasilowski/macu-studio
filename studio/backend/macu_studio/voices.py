@@ -196,3 +196,58 @@ def test_clip_path(filename: str) -> Path:
     if not safe.endswith(".wav"):
         raise ValueError("bad clip name")
     return TESTS_DIR / safe
+
+
+# --------------------------------------------------------------------------- #
+# Portable voices — a voice travels as its reference clip. Export bundles the
+# refs (refs/<name>.wav); import drops them, and a deferred GPU step re-clones
+# each into the LOCAL OmniVoice (new profile_id) and rebinds manifests by name.
+# --------------------------------------------------------------------------- #
+
+def ref_path(name: str) -> Path:
+    return REFS_DIR / f"{_slug(name)}.wav"
+
+
+def refs_for_names(names) -> dict[str, Path]:
+    """{voice_name: ref_path} for the names whose reference clip exists on disk."""
+    out: dict[str, Path] = {}
+    for n in names:
+        p = ref_path(n)
+        if p.exists():
+            out[n] = p
+    return out
+
+
+def all_refs() -> dict[str, Path]:
+    """{voice_name: ref_path} for every saved reference clip."""
+    if not REFS_DIR.exists():
+        return {}
+    return {p.stem: p for p in sorted(REFS_DIR.glob("*.wav"))}
+
+
+def import_ref(name: str, data: bytes) -> Path:
+    """Write an imported reference clip into refs/ — OVERWRITES an existing one."""
+    REFS_DIR.mkdir(parents=True, exist_ok=True)
+    p = ref_path(name)
+    p.write_bytes(data)
+    return p
+
+
+def clone_ref(name: str, language: str = "English") -> dict:
+    """(Re-)clone an on-disk reference clip into the local OmniVoice. Replaces any
+    same-name profile. Returns {id, name}. Needs the GPU (starts OmniVoice)."""
+    ref = ref_path(name)
+    if not ref.exists():
+        raise FileNotFoundError(f"no reference clip for voice {name!r}")
+    ensure_up()
+    _delete_same_name(name)
+    with open(ref, "rb") as fh:
+        resp = httpx.post(
+            OMNIVOICE_URL + "/profiles",
+            data={"name": name, "language": language or "English"},
+            files={"ref_audio": (ref.name, fh, "audio/wav")},
+            timeout=120,
+        )
+    if resp.status_code >= 400:
+        raise RuntimeError(f"OmniVoice rejected the profile ({resp.status_code}): {resp.text[:400]}")
+    return {"id": resp.json().get("id"), "name": name}

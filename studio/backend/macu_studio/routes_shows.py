@@ -27,6 +27,7 @@ from fastapi.responses import StreamingResponse
 
 from . import shows as shows_mod
 from . import episodes as ep_mod
+from . import voices as voices_mod
 from . import config
 
 router = APIRouter()
@@ -36,9 +37,47 @@ EXPORT_VERSION = 1
 
 # Shared hyperframes title-card templates (index.html + any local assets) live
 # outside the episode dir. Exports bundle the ones an episode references so the
-# title cards render on import; imports unpack them create-if-absent.
+# title cards render on import; imports unpack them (overwriting).
 HYPERFRAMES_TEMPLATES = config.SHARES / "assets" / "hyperframes" / "templates"
 TEMPLATE_ARC_PREFIX = "assets/hyperframes/templates/"
+
+# OmniVoice reference clips travel with an export so the receiving machine can
+# re-clone the voices a show uses. The id is machine-specific, so manifests bind
+# by voice_name (see _manifest_voice_names) and import rebinds in a deferred step.
+VOICE_ARC_PREFIX = "voices/"
+
+
+def _manifest_voice_names(ep_dir: Path) -> set[str]:
+    """OmniVoice voice_names an episode's speaker_map references."""
+    names: set[str] = set()
+    mf = ep_dir / "manifest.json"
+    if not mf.exists():
+        return names
+    try:
+        data = json.loads(mf.read_text())
+    except Exception:
+        return names
+    sm = (data.get("voice") or {}).get("speaker_map") or {}
+    if isinstance(sm, dict):
+        for v in sm.values():
+            if isinstance(v, dict) and v.get("engine") == "omnivoice":
+                n = v.get("voice_name")
+                if isinstance(n, str) and n:
+                    names.add(n)
+    return names
+
+
+def _add_voices(zf: zipfile.ZipFile, names: set[str], seen: set[str]) -> list[str]:
+    """Bundle the reference clips for `names` under voices/<name>.wav. `seen`
+    dedupes across episodes. Returns the names actually added."""
+    added: list[str] = []
+    for name, path in voices_mod.refs_for_names(sorted(names)).items():
+        if name in seen:
+            continue
+        seen.add(name)
+        zf.write(path, f"{VOICE_ARC_PREFIX}{path.name}")
+        added.append(name)
+    return added
 
 
 def _manifest_template_names(ep_dir: Path) -> set[str]:
@@ -145,7 +184,7 @@ def _add_episode_text(zf: zipfile.ZipFile, ep_dir: Path, arc_prefix: str) -> int
 
 
 @router.get("/api/episodes/{slug}/export")
-def export_episode(slug: str):
+def export_episode(slug: str, voices: bool = True):
     try:
         ep_dir = ep_mod.episode_dir(slug)
     except FileNotFoundError as e:
@@ -159,11 +198,15 @@ def export_episode(slug: str):
         }, indent=2))
         _add_episode_text(zf, ep_dir, f"episodes/{slug}/")
         _add_templates(zf, _manifest_template_names(ep_dir), set())
+        vnames = _add_voices(zf, _manifest_voice_names(ep_dir), set()) if voices else []
+        if vnames:
+            zf.writestr("voices.json", json.dumps(
+                {"voices": [{"name": n, "language": "English"} for n in vnames]}, indent=2))
     return _zip_response(buf, f"{show_id}__{slug}.zip")
 
 
 @router.get("/api/shows/{show}/export")
-def export_show(show: str):
+def export_show(show: str, voices: bool = True):
     try:
         cfg = shows_mod.get_show(show)
     except KeyError as e:
@@ -174,12 +217,19 @@ def export_show(show: str):
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("show.json", json.dumps(cfg, indent=2, ensure_ascii=False))
         seen_templates: set[str] = set()
+        seen_voices: set[str] = set()
+        added_voices: list[str] = []
         if ep_root.exists():
             for entry in sorted(ep_root.iterdir(), key=lambda p: p.name):
                 if entry.is_dir() and (entry / "manifest.json").exists():
                     _add_episode_text(zf, entry, f"episodes/{entry.name}/")
                     _add_templates(zf, _manifest_template_names(entry), seen_templates)
+                    if voices:
+                        added_voices += _add_voices(zf, _manifest_voice_names(entry), seen_voices)
                     slugs.append(entry.name)
+        if added_voices:
+            zf.writestr("voices.json", json.dumps(
+                {"voices": [{"name": n, "language": "English"} for n in added_voices]}, indent=2))
         zf.writestr("export.json", json.dumps({
             "kind": "show", "show": show, "name": cfg.get("name"),
             "episodes": slugs, "version": EXPORT_VERSION, "exported_at": time.time(),
@@ -216,6 +266,21 @@ def _write_episode_text(ep_dir: Path, files: dict[str, bytes]) -> str:
     return "updated" if existed else "created"
 
 
+def _extract_voices(zf: zipfile.ZipFile, names) -> list[str]:
+    """Drop bundled reference clips into the local refs/ — OVERWRITES existing.
+    Re-cloning into OmniVoice is a separate (GPU) step. Returns the voice names."""
+    out: list[str] = []
+    for n in names:
+        if not n.startswith(VOICE_ARC_PREFIX) or n.endswith("/"):
+            continue
+        fn = n[len(VOICE_ARC_PREFIX):]
+        if "/" in fn or "\\" in fn or ".." in fn or not fn.endswith(".wav"):
+            continue
+        voices_mod.import_ref(fn[:-4], zf.read(n))
+        out.append(fn[:-4])
+    return sorted(set(out))
+
+
 @router.post("/api/import")
 async def import_zip(file: UploadFile = File(...)):
     raw = await file.read()
@@ -233,6 +298,10 @@ async def import_zip(file: UploadFile = File(...)):
         raise HTTPException(400, "corrupt export.json")
 
     kind = meta.get("kind")
+    # A voices-only export carries no show — just drop the reference clips. The
+    # caller offers the optional GPU re-clone step afterward.
+    if kind == "voices":
+        return {"ok": True, "kind": "voices", "voices": _extract_voices(zf, names)}
     show_id = _safe_slug(meta.get("show") or "")
     if not show_id:
         raise HTTPException(400, "export.json has no valid show id")
@@ -285,8 +354,7 @@ async def import_zip(file: UploadFile = File(...)):
         except ValueError as e:
             errors.append(f"{slug}: {e}")
 
-    # Unpack bundled hyperframes templates into the shared templates dir. Create-
-    # if-absent so a local edit to an existing template isn't clobbered by an import.
+    # Unpack bundled hyperframes templates into the shared templates dir (OVERWRITE).
     templates: set[str] = set()
     base = HYPERFRAMES_TEMPLATES.resolve()
     for n in names:
@@ -296,11 +364,12 @@ async def import_zip(file: UploadFile = File(...)):
         dest = (HYPERFRAMES_TEMPLATES / rel).resolve()
         if not str(dest).startswith(str(base) + "/"):   # zip path-traversal guard
             continue
-        if dest.exists():
-            continue
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(zf.read(n))
         templates.add(rel.split("/")[0])
+
+    # Drop bundled voice reference clips (re-cloning is the optional GPU step).
+    voices_imported = _extract_voices(zf, names)
 
     return {
         "ok": not errors or bool(created or updated),
@@ -310,5 +379,6 @@ async def import_zip(file: UploadFile = File(...)):
         "created": sorted(created),
         "updated": sorted(updated),
         "templates": sorted(templates),
+        "voices": voices_imported,
         "errors": errors,
     }
