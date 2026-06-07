@@ -1,6 +1,6 @@
 """Trivial SRT read/write."""
 from __future__ import annotations
-import re
+import os, re, tempfile
 from pathlib import Path
 
 from .episodes import episode_dir
@@ -36,7 +36,25 @@ def write(slug: str, entries: list[dict]) -> dict:
     p = srt_path(slug)
     p.parent.mkdir(parents=True, exist_ok=True)
     blocks = []
-    for e in entries:
-        blocks.append(f"{e['i']}\n{e['start']} --> {e['end']}\n{e['text']}\n")
-    p.write_text("\n".join(blocks) + "\n")
+    for idx, e in enumerate(entries, 1):
+        if not isinstance(e, dict):
+            raise ValueError(f"SRT entry {idx} is not an object")
+        i = e.get("i", idx)
+        start, end = e.get("start"), e.get("end")
+        if not start or not end:
+            raise ValueError(f"SRT entry {idx} missing start/end")
+        blocks.append(f"{i}\n{start} --> {end}\n{e.get('text', '')}\n")
+    body = ("\n".join(blocks) + "\n").encode()
+    # Atomic write so a bad/concurrent write can't truncate the SRT.
+    fd, tmp = tempfile.mkstemp(prefix=".srt.", suffix=".srt.tmp", dir=str(p.parent))
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(body)
+        os.replace(tmp, p)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
     return {"mtime": p.stat().st_mtime, "count": len(entries)}

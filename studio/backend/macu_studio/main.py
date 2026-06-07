@@ -249,7 +249,12 @@ def get_srt(slug: str):
 
 @app.put("/api/episodes/{slug}/srt")
 async def put_srt(slug: str, body: dict = Body(...)):
-    return srt_mod.write(slug, body.get("entries") or [])
+    try:
+        return srt_mod.write(slug, body.get("entries") or [])
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
 
 
 # ---------- Media streaming ----------
