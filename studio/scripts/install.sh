@@ -39,17 +39,22 @@ PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm install --no-audit --no-fund --use
 PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm run build --userconfig /dev/null
 popd >/dev/null
 
-echo
-echo "Build complete. Run MACU Studio one of two ways:"
-echo
-echo "  1) Just for now — foreground, Ctrl-C to stop:"
-echo "       ./deploy/start-studio.sh"
-echo
-echo "  2) As background services that start on boot and auto-restart (root):"
-echo "       sudo ./deploy/install-systemd.sh           # templates the units to this machine"
-echo "       sudo systemctl enable --now macu-render macu-studio"
-echo "     Manage them later:"
-echo "       sudo systemctl stop macu-render macu-studio       # stop now (still start on boot)"
-echo "       sudo systemctl disable macu-render macu-studio    # don't start on boot"
-echo
-echo "Then open: http://localhost:8774/  (or http://<this-host>:8774/)"
+# When run as part of the top-level installer (MACU_INSTALLER=1), stay quiet — the
+# parent prints the canonical "next steps" at the very end, after the remaining steps.
+# Only print run instructions when invoked standalone (just rebuilding the app).
+if [ -z "${MACU_INSTALLER:-}" ]; then
+  echo
+  echo "Build complete. Run MACU Studio one of two ways:"
+  echo
+  echo "  1) Just for now — foreground, Ctrl-C to stop:"
+  echo "       ./deploy/start-studio.sh"
+  echo
+  echo "  2) As background services that start on boot and auto-restart (root):"
+  echo "       sudo ./deploy/install-systemd.sh           # templates the units to this machine"
+  echo "       sudo systemctl enable --now macu-render macu-studio"
+  echo "     Manage them later:"
+  echo "       sudo systemctl stop macu-render macu-studio       # stop now (still start on boot)"
+  echo "       sudo systemctl disable macu-render macu-studio    # don't start on boot"
+  echo
+  echo "Then open: http://localhost:8774/  (or http://<this-host>:8774/)"
+fi

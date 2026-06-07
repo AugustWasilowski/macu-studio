@@ -85,7 +85,7 @@ docker compose -f deploy/services/comfyui/docker-compose.yml up -d
 docker compose -f deploy/services/piper/docker-compose.yml up -d --build
 
 echo; echo ">>> [6/6] MACU Studio app (venv + frontend build) + whisper ASR venv"
-./studio/scripts/install.sh
+MACU_INSTALLER=1 ./studio/scripts/install.sh   # suppress its standalone "next steps" footer
 # Stage 6 ASR runs in its own venv so CTranslate2/faster-whisper stay out of the
 # main interpreter. Provision it once (override the location with MACU_WHISPER_VENV).
 if [ ! -x "$REPO/.whisper-venv/bin/python" ]; then
