@@ -42,18 +42,19 @@ _SECTION_RE = re.compile(r"^##[ \t]+(\S+)[ \t]*$", re.MULTILINE)
 
 
 def _read(name: str) -> str | None:
+    # PROMPT_* / pipeline prompts are shared across all shows → docs/_common.
     try:
-        return docs.read(name)
+        return docs.read(name, scope="common")
     except FileNotFoundError:
         return None
 
 
 def load_or_seed(name: str, default_text: str) -> str:
     """Return the live text of prompt file `name`, seeding it from `default_text`
-    (atomic write into DOCS_DIR) the first time if it doesn't exist yet."""
+    (atomic write into docs/_common) the first time if it doesn't exist yet."""
     text = _read(name)
     if text is None:
-        docs.write(name, default_text if default_text.endswith("\n") else default_text + "\n")
+        docs.write(name, default_text if default_text.endswith("\n") else default_text + "\n", scope="common")
         return default_text.strip()
     return text.strip()
 
@@ -86,7 +87,7 @@ def load_or_seed_briefs(defaults: dict[str, str]) -> dict[str, str]:
     the generator never ends up without a brief."""
     text = _read(CARD_BRIEFS_FILE)
     if text is None:
-        docs.write(CARD_BRIEFS_FILE, _serialize_briefs(defaults))
+        docs.write(CARD_BRIEFS_FILE, _serialize_briefs(defaults), scope="common")
         return dict(defaults)
     parsed = _parse_briefs(text)
     return {key: parsed.get(key) or defaults[key] for key in defaults}

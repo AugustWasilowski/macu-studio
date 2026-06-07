@@ -21,14 +21,22 @@ import re
 from pathlib import Path
 from typing import Any
 
+from . import config
 from . import llm
 from . import manifest as manifest_mod
 from . import prompts
-from .config import SHARES
 from .episodes import episode_dir
 
-BIBLE = SHARES / "MACU_Character_Prompt_Bible.md"
 EXAMPLE_SLUGS = ["ep-009", "ep-011"]
+
+
+def _bible_path(show: str | None) -> Path | None:
+    """Per-show character bible: docs/shows/<show>/*Character_Prompt_Bible.md.
+    Returns None when the show has none yet (e.g. a brand-new show) — `_read`
+    then yields an empty bible, which is fine for look-dev-less shows."""
+    d = config.REPO_ROOT / "docs" / "shows" / (show or "the-macu-report")
+    hits = sorted(d.glob("*Character_Prompt_Bible.md"))
+    return hits[0] if hits else None
 
 # Ollama structured-output schema. Lists (not maps) for robust schema support.
 SCHEMA = {
@@ -199,7 +207,7 @@ def generate(slug: str, only_missing: bool = False) -> dict:
         "cues_to_plan": target_ids,
         "existing_characters": {k: (v.get("core") if isinstance(v, dict) else str(v)) for k, v in existing_chars.items()},
         "existing_broll": list(existing_broll.keys()),
-        "bible": _read(BIBLE)[:5000],
+        "bible": _read(_bible_path(m.get("show")))[:5000],
         "examples": _examples(exclude=slug),
     }
     instr = (

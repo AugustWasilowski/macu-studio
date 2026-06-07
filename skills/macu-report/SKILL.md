@@ -144,7 +144,10 @@ voice fits a new character, clone one locally before the render — a quick step
 
 **Persist new characters to the living bible** so they're canon next time: the bundled `references/character-bible.md`
 is a starting snapshot, but the project's working copy at
-`/mnt/storage/shares/MACU/MACU_Character_Prompt_Bible.md` is the source of truth — add new cast there. The
+`docs/shows/the-macu-report/MACU_Character_Prompt_Bible.md` (in the macu-pipeline repo; editable in MACU Studio's
+Canon Docs panel with The MACU Report selected) is the source of truth — add new cast there. shotgen/cardgen read
+this per-show copy by the manifest's `show` id. *(Moved 2026-06-06 from the old flat `/mnt/storage/shares/MACU/…`
+path during the per-show docs namespacing; that share copy was retired to `…md.retired-2026-06-06`.)* The
 character also goes in the manifest's `characters{}` regardless, so a render never depends on the bible file.
 
 ### 3.5 Episode bookends — the animated open & the next-episode bumper (EVERY episode)

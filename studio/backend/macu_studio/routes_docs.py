@@ -1,8 +1,12 @@
-"""Docs/canon editor routes (Feature G).
+"""Docs/canon editor routes (Feature G) — show-aware.
 
-GET    /api/docs          → list *.md under <repo>/docs
-GET    /api/docs/{name}   → {name, text}
-PUT    /api/docs/{name}   → write {text}; returns {ok: True}
+GET    /api/docs?show=<id>                 → list _common + show docs (each tagged scope)
+GET    /api/docs/{name}?show=<id>&scope=…  → {name, scope, text}
+PUT    /api/docs/{name}?show=<id>          → write {text, scope}; returns {ok, scope}
+
+`scope` is "common" (shared pipeline docs) or "show" (per-show canon). On GET it
+may be omitted to auto-resolve (show dir first, then _common). On PUT the client
+passes the scope it got from the listing so the write lands in the right dir.
 """
 from __future__ import annotations
 
@@ -14,14 +18,18 @@ router = APIRouter()
 
 
 @router.get("/api/docs")
-def get_docs():
-    return {"docs": docs.list_docs()}
+def get_docs(show: str | None = None):
+    try:
+        return {"docs": docs.list_docs(show)}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @router.get("/api/docs/{name}")
-def get_doc(name: str):
+def get_doc(name: str, show: str | None = None, scope: str | None = None):
     try:
-        return {"name": name, "text": docs.read(name)}
+        text = docs.read(name, show=show, scope=scope)
+        return {"name": name, "scope": scope, "text": text}
     except ValueError as e:
         raise HTTPException(400, str(e))
     except FileNotFoundError as e:
@@ -29,12 +37,13 @@ def get_doc(name: str):
 
 
 @router.put("/api/docs/{name}")
-def put_doc(name: str, body: dict = Body(...)):
+def put_doc(name: str, show: str | None = None, body: dict = Body(...)):
     text = body.get("text")
     if not isinstance(text, str):
         raise HTTPException(400, "text required")
+    scope = body.get("scope") or "show"
     try:
-        docs.write(name, text)
+        summ = docs.write(name, text, show=show, scope=scope)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return {"ok": True}
+    return {"ok": True, "scope": summ["scope"]}

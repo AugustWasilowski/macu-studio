@@ -184,7 +184,7 @@ Framing: medium, crater stadium behind. Motion: jabbing finger, wild grin. First
 ### Coach Bodhi — the Slags' spiritual advisor  _(seed 4200)_
 Serene, sunglasses-wearing zen guru-coach who is utterly at peace with his players being killed ("you can't lose a
 player, man — you relocate his energy… he's in the snacks"). The calm-vs-carnage dissonance is the joke; his calm is
-a *philosophy* (vs. Walter's calm, which is obliviousness). Voice: **Snoop** (`31649b70`).
+a *philosophy* (vs. Walter's calm, which is obliviousness). Voice: **PHB_BucNasty** (`03250a65`) — swapped off Snoop 2026-06-05.
 ```
 CORE: a serene bald coach in a tracksuit and dark sunglasses, seated cross-legged at the rim of a smoky crater,
 beatific calm, 1970s broadcast
@@ -231,6 +231,29 @@ chained doorway, gold chain, theatrical posing, 1970s television
 ```
 _(The original `f1a1f807` "Chuck" clone is now a free bench voice — deeper/slower than KattW; not assigned to a
 character.)_
+
+### Sweet — the crystal kingpin / Goldtooth's cousin  _(voice: PHB_Silky `bd39e0e6`)_  _(seed 7676)_
+**Week 4 — LEAD.** Dr. Goldtooth's younger cousin: where Goldtooth is all swagger and flash, SWEET is the
+opposite register — soft-spoken, unhurried, impeccably polite, terrifyingly calm. A Gus-Fring-shaped kingpin in
+a pristine pale apron. He found a forgotten pallet of **"crystal"** in a collapsed pre-war distribution center
+and built a wasteland empire on it. The whole joke: "crystal" is **Crystal Light — sugar-free powdered drink
+mix** — and the entire settlement treats it like a hard narcotic. Sweet never breaks the bit; he discusses
+lemonade powder with the grave, velvet menace of a cartel boss. Goldtooth vouches for family and fronts the
+muscle (ROSCOE) + distribution; Sweet runs product. He talks Ron into his first packet and never has to push
+again. Signature register: never raises his voice, never says "drug," calls a serving a **"pour"**, calls
+customers **"the thirsty."** Beats: **"First pour's on the house. The second one's a conversation."**;
+**"It's sugar-free. That's the part that should scare you."**; **"You don't drink crystal, friend. You keep it.
+It keeps you."** Reuses PHB_Silky (the ep18 one-off Gourmand's voice) — they never co-appear.
+```
+CORE: a smooth calm wasteland dealer in a pristine pale apron over a collared shirt, holding a paper packet of
+powder like a sommelier, a faint knowing smile, behind a folding card table stacked with paper packets, 1970s
+television
+```
+New b-roll (Week 4): `crystal_packets` (a pyramid of plain paper drink-mix packets on a folding table),
+`crystal_pitcher` (a sweating glass pitcher of pale lemonade, a ladle, condensation), `lemonade_stand` (a
+child's wooden lemonade stand re-purposed as a wasteland dealing corner, a hand-lettered CRYSTAL sign),
+`cut_lab` (a grimy back-room table where powder is being cut with ash and sand, scales, a single bulb),
+`ron_mug` (Ron's MACU coffee mug full of pale cloudy lemonade at the news desk, a torn packet beside it).
 
 ### Voice bench from the PHB clone batch (SSA-109) — source is INCIDENTAL
 NOTE: these six were merely sliced from a Player Haters' Ball sketch as a clone source. That sketch is NOT a

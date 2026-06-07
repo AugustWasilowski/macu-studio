@@ -25,13 +25,21 @@ from __future__ import annotations
 import json
 import re
 
+from pathlib import Path
+
+from . import config
 from . import llm
 from . import manifest as manifest_mod
 from . import prompts
 from . import script as script_mod
-from .config import SHARES
 
-BIBLE = SHARES / "MACU_Character_Prompt_Bible.md"
+
+def _bible_path(show: str | None) -> Path | None:
+    """Per-show character bible: docs/shows/<show>/*Character_Prompt_Bible.md.
+    None when the show has none yet — `_read_text` then yields an empty excerpt."""
+    d = config.REPO_ROOT / "docs" / "shows" / (show or "the-macu-report")
+    hits = sorted(d.glob("*Character_Prompt_Bible.md"))
+    return hits[0] if hits else None
 
 # Five-field schema — every MACU card composition consumes exactly these. Strings so
 # Ollama's structured-output (`format`) stays on the well-supported flat-object path.
@@ -190,7 +198,7 @@ def generate(slug: str, card_type: str, composition: str | None = None,
         "segments": segments[:20],
         "production_notes": notes[:1500],
         "script": (sc.get("text") or "")[:9000],
-        "bible_excerpt": _read_text(BIBLE)[:2500],
+        "bible_excerpt": _read_text(_bible_path(m.get("show")))[:2500],
     }
     messages = [
         {"role": "system", "content": prompts.load_or_seed(prompts.CARDGEN_FILE, SYSTEM)},

@@ -23,12 +23,20 @@ import re
 import shutil
 import tempfile
 import os
+import time
 from pathlib import Path
 from typing import Any
 
 from . import config
 
 REGISTRY = config.STUDIO_ROOT / "shows.json"
+
+# Per-show canon docs seeded into docs/shows/<id>/ on show creation, copied from
+# docs/_templates/show/ with {{SHOW_NAME}}/{{SHOW_ID}}/{{DATE}} substituted. See
+# scaffold_show_docs(). The template dir is invisible to the Docs panel (which
+# only globs _common + shows/<id>).
+DOC_TEMPLATE_DIR = config.REPO_ROOT / "docs" / "_templates" / "show"
+SHOW_DOCS_ROOT = config.REPO_ROOT / "docs" / "shows"
 DEFAULT_SHOW = "the-macu-report"
 DEFAULT_SHOW_NAME = "The MACU Report"
 
@@ -186,6 +194,30 @@ def show_of(slug: str) -> str:
 # Mutations
 # --------------------------------------------------------------------------- #
 
+def scaffold_show_docs(show_id: str, name: str) -> list[str]:
+    """Seed docs/shows/<show_id>/ from docs/_templates/show/*.md, substituting
+    {{SHOW_NAME}} / {{SHOW_ID}} / {{DATE}}. Idempotent: never overwrites an
+    existing file. Returns the filenames created. Best-effort — the caller wraps
+    this so a docs hiccup can never fail show creation."""
+    created: list[str] = []
+    if not DOC_TEMPLATE_DIR.is_dir():
+        return created
+    dest_dir = SHOW_DOCS_ROOT / show_id
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    date = time.strftime("%Y-%m-%d")
+    for tpl in sorted(DOC_TEMPLATE_DIR.glob("*.md")):
+        dest = dest_dir / tpl.name
+        if dest.exists():
+            continue
+        text = (tpl.read_text()
+                .replace("{{SHOW_NAME}}", name)
+                .replace("{{SHOW_ID}}", show_id)
+                .replace("{{DATE}}", date))
+        dest.write_text(text)
+        created.append(tpl.name)
+    return created
+
+
 def create_show(show_id: str, name: str) -> dict[str, Any]:
     show_id = (show_id or "").strip().lower()
     if not _SLUG_RE.match(show_id):
@@ -229,6 +261,12 @@ def create_show(show_id: str, name: str) -> dict[str, Any]:
     }
     reg.append(entry)
     _write_registry(reg)
+    # Seed the per-show canon docs from templates (best-effort — never block
+    # show creation on a docs error).
+    try:
+        scaffold_show_docs(show_id, entry["name"])
+    except Exception:
+        pass
     return entry
 
 

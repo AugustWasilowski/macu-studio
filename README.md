@@ -7,7 +7,7 @@ faux-newscast in the Mayor Awesome Cinematic Universe. This one repo is the hub 
 |---|---|
 | `pipeline/` | the 8-stage render pipeline (`run.py`, `serve.py`, `stage_1..8`, `lib.py`, `stackchan.py`, `freesound_fetch.py`) that turns an `episodes/<slug>/manifest.json` into a finished `final/<slug>.mp4` |
 | `skills/` | the Claude Code agent skills — `macu-report` (authoring), `macu-render` (render driver), `comedy-writers-room` (critic panel) |
-| `docs/` | the canon — character bible, world lore, pipeline design, story arcs, weekly routine, OmniVoice voice roster/tips |
+| `docs/` | the canon, namespaced per show. `docs/_common/` = shared pipeline/tooling docs (manifest schema, pipeline design, PROMPT_* generator prompts, voice tips); `docs/shows/<show-id>/` = per-show canon (character bible, story arcs, weekly routine, series bible). MACU Studio's Canon Docs panel shows `_common` + the active show's dir, tagged by scope |
 | `studio/` | **MACU Studio** — the FastAPI + React web front end on `:8774` that drives the same pipeline from a browser |
 
 **Everything runs on Max** (the Linux home server, RTX 2080 Ti). The repo lives on the **storage drive**, next
@@ -18,7 +18,7 @@ drive as the episode data. One source of truth — no more code-on-OS-disk + dri
 /mnt/storage/macu-pipeline/        ← git repo (source of truth, on the storage drive)
 ├── pipeline/        the 8-stage renderer (run.py, serve.py, stage_1..8, lib.py, …)
 ├── skills/          macu-report, macu-render, comedy-writers-room  ←─symlinked─ ~/.claude/skills/
-├── docs/            the canon (bible, lore, voice roster/tips, …)
+├── docs/            the canon — _common/ (shared) + shows/<show-id>/ (per-show)
 ├── studio/          MACU Studio (FastAPI :8774 + React)
 └── deploy/          systemd units
 

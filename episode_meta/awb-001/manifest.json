@@ -10,7 +10,28 @@
     "endpoints": {},
     "format": "wav 22050Hz mono s16",
     "out_pattern": "vo/<cue_id>.wav",
-    "speaker_map": {}
+    "speaker_map": {
+      "NARRATOR": {
+        "engine": "omnivoice",
+        "profile_id": "a39a24a3",
+        "voice_name": "Announcer"
+      },
+      "BRICK": {
+        "engine": "omnivoice",
+        "profile_id": "dde08fad",
+        "voice_name": "Herzog"
+      },
+      "MONA": {
+        "engine": "omnivoice",
+        "profile_id": "eb1af4c3",
+        "voice_name": "GG_Rose"
+      },
+      "VIVIAN": {
+        "engine": "omnivoice",
+        "profile_id": "188691e5",
+        "voice_name": "Joan"
+      }
+    }
   },
   "comfyui": {
     "workflow": "will-smith-modelscope-t2v",
@@ -27,8 +48,8 @@
     "note": "zeroscope_v2_576w replaced the DAMO ModelScope checkpoint to remove the baked-in shutterstock watermark. 384x384 keeps the required 1:1 square, fits the 2080 Ti at 24f, B&W holds. Rollback: DAMO at /mnt/storage/comfyui/models/text2video/text2video_pytorch_model.damo.pth."
   },
   "style": {
-    "suffix": "",
-    "negative": ""
+    "suffix": ", black and white, grainy vintage analog videotape, 1970s daytime soap opera, soft focus, soft interior lighting, melodramatic, low resolution, washed out",
+    "negative": "shutterstock, watermark, text, caption, logo, color, colour, modern, smartphone, digital screen, hd, 4k, sharp, blurry, low quality, distorted, deformed, mutated, extra limbs, extra fingers"
   },
   "subtitles": {
     "font": "Better VCR",
@@ -44,8 +65,294 @@
     "clips": [],
     "beds": []
   },
-  "characters": {},
-  "broll": {},
+  "characters": {
+    "vivian": {
+      "seed": 81001,
+      "core": "an elegant elderly matriarch in a black mourning dress and pearls, severe silver chignon, glacial composed expression, candlelit bunker ballroom"
+    },
+    "mona": {
+      "seed": 81002,
+      "core": "a gaunt weary young woman in a tattered grey traveling coat, ash-smudged face, haunted certain eyes, standing in a heavy bunker doorway"
+    },
+    "brick": {
+      "seed": 81003,
+      "core": "a devastatingly handsome young man in a dusty black funeral suit, square jaw, completely unbothered expression, an open pale-wood casket behind him"
+    }
+  },
+  "broll": {
+    "lake_mirabel": "a vast cracked dry clay lakebed under a flat grey sky, the dead basin stretching to the horizon",
+    "the_bunker": "a heavy steel blast door dressed with funeral wreaths and crystal, a chandelier, a butler in tails, opulent interior",
+    "the_product": "a single sealed foil sachet of pale drink powder displayed under glass like a sacred relic, soft votive light"
+  },
   "title_assets": {},
-  "cues": []
+  "cues": [
+    {
+      "id": "c01",
+      "segment": "cold_open",
+      "speaker": "NARRATOR",
+      "vo": "Like ash through the hourglass… these are the days of what's left of our lives.",
+      "shots": [
+        {
+          "id": "c01_s1",
+          "kind": "broll",
+          "who": "lake_mirabel"
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "segment": "cold_open",
+      "speaker": "VIVIAN",
+      "vo": "Brick Vandermeer was my son. He was thirty-one. He died, as the Vandermeer men always die, doing something he had been specifically told not to do. We will miss him. We have a great deal of him to miss. He has died before.",
+      "shots": [
+        {
+          "id": "c02_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "segment": "cold_open",
+      "speaker": "VIVIAN",
+      "vo": "I asked that we hold the visitation here, by the lake. The clay is just gorgeous this time of year. You can see the strata. Brick loved the strata.",
+      "shots": [
+        {
+          "id": "c03_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "segment": "cold_open",
+      "speaker": "NARRATOR",
+      "vo": "The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake. They are not lying. There is simply no lake.",
+      "shots": [
+        {
+          "id": "c04_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "segment": "act_1",
+      "speaker": "VIVIAN",
+      "vo": "The estate passes, as it must, to the eldest surviving Vandermeer. Which, as of Tuesday, is me. Again.",
+      "shots": [
+        {
+          "id": "c05_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "segment": "act_1",
+      "speaker": "VIVIAN",
+      "vo": "And with the estate passes… the Pitcher.",
+      "shots": [
+        {
+          "id": "c06_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "segment": "act_1",
+      "speaker": "NARRATOR",
+      "vo": "The Pitcher. From the great barge that circled the dead world for forty years and ran aground in the founder's garden. They control the last drink powder on Earth. They call it, simply, the Product. Wars have been fought over the Raspberry Lemonade reserves. The accord of '09 is not spoken of.",
+      "shots": [
+        {
+          "id": "c07_s1",
+          "kind": "broll",
+          "who": "the_product"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "segment": "act_1",
+      "speaker": "VIVIAN",
+      "vo": "One scoop. For Brick. We mix it, and we do not drink it. That is the custom. The waste is the point. That is what makes it a funeral.",
+      "shots": [
+        {
+          "id": "c08_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "segment": "act_2",
+      "speaker": "NARRATOR",
+      "vo": "And then — as the last of the Product settled — there came a knock upon the blast door.",
+      "shots": [
+        {
+          "id": "c09_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "segment": "act_2",
+      "speaker": "MONA",
+      "vo": "My name is Mona. I've walked eleven days. I'm Brick's wife. I'm his widow now, I suppose. I've come for what's mine.",
+      "shots": [
+        {
+          "id": "c10_s1",
+          "kind": "character",
+          "who": "mona",
+          "seed": 81002
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "segment": "act_2",
+      "speaker": "VIVIAN",
+      "vo": "My son had a wife. How wonderful. He never mentioned it. Then again, he never mentioned a great deal. He was very handsome and almost entirely hollow. You'd have gotten on.",
+      "shots": [
+        {
+          "id": "c11_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "segment": "act_2",
+      "speaker": "MONA",
+      "vo": "What is this place. What is the lake. Why is everyone looking at a pitcher of lemonade like it's the crown of England.",
+      "shots": [
+        {
+          "id": "c12_s1",
+          "kind": "character",
+          "who": "mona",
+          "seed": 81002
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "segment": "act_2",
+      "speaker": "VIVIAN",
+      "vo": "Because it is, dear. You really aren't from the Shores, are you.",
+      "shots": [
+        {
+          "id": "c13_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "segment": "button",
+      "speaker": "NARRATOR",
+      "vo": "And it was then — at the reading of his own will, before his own casket — that the doors parted a second time.",
+      "shots": [
+        {
+          "id": "c14_s1",
+          "kind": "broll",
+          "who": "the_bunker"
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "segment": "button",
+      "speaker": "BRICK",
+      "vo": "Sorry I'm late. Roads. …Oh. Is that for me? That's thoughtful.",
+      "shots": [
+        {
+          "id": "c15_s1",
+          "kind": "character",
+          "who": "brick",
+          "seed": 81003
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "segment": "button",
+      "speaker": "MONA",
+      "vo": "…Brick. You were dead. They read the will. There was a viewing.",
+      "shots": [
+        {
+          "id": "c16_s1",
+          "kind": "character",
+          "who": "mona",
+          "seed": 81002
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "segment": "button",
+      "speaker": "BRICK",
+      "vo": "I was dead, yes. But I got better.",
+      "shots": [
+        {
+          "id": "c17_s1",
+          "kind": "character",
+          "who": "brick",
+          "seed": 81003
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "segment": "button",
+      "speaker": "NARRATOR",
+      "vo": "Next week, on As The World Burns: Brick drinks the funeral Product. A line is crossed. And somewhere, far out on the clay… something is walking in.",
+      "shots": [
+        {
+          "id": "c18_s1",
+          "kind": "broll",
+          "who": "lake_mirabel"
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "file": "hammer_banging_on_a_bank_vault_d.wav",
+      "cue": "c09",
+      "at": "end",
+      "gain": -6,
+      "fade": 0.5,
+      "prompt": "Hammer banging on a bank vault door.",
+      "seed": 79535,
+      "source": "agen",
+      "delay": 0
+    },
+    {
+      "file": "desk_bell_at_a_hotel.wav",
+      "cue": "c13",
+      "at": "end",
+      "gain": 0.4,
+      "fade": 0,
+      "source": "library",
+      "delay": 0
+    }
+  ]
 }
