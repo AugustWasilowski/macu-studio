@@ -13,18 +13,27 @@ the same seed. See import_shot / import_title.
 from __future__ import annotations
 
 import shutil
+from pathlib import Path
 
 from . import manifest as manifest_mod
 from . import versions as versions_mod
-from .config import EPISODES
+from . import shows as shows_mod
 from .episodes import episode_dir
 
 
 def _slugs() -> list[str]:
-    if not EPISODES.exists():
-        return []
-    return [e.name for e in sorted(EPISODES.iterdir())
-            if e.is_dir() and (e / "manifest.json").exists()]
+    """Every episode slug across ALL registered shows (slugs are globally unique).
+    Walks each show's episodes_dir — not the legacy flat dir, which a show may no
+    longer use once its episodes are relocated under shows/<id>/episodes."""
+    out: list[str] = []
+    for s in shows_mod.load_registry():
+        ep_root = Path(s.get("episodes_dir", ""))
+        if not ep_root.exists():
+            continue
+        for e in sorted(ep_root.iterdir()):
+            if e.is_dir() and (e / "manifest.json").exists():
+                out.append(e.name)
+    return sorted(set(out))
 
 
 def _tag(rows: list[dict], slug: str) -> list[dict]:
