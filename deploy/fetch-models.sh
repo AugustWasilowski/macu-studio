@@ -6,10 +6,10 @@
 # Pulls:
 #   - ComfyUI source            -> $MACU_DATA_ROOT/comfyui/ComfyUI            (Comfy-Org/ComfyUI)
 #   - ModelScopeT2V custom node -> $MACU_DATA_ROOT/comfyui/custom_nodes/...   (ExponentialML)
-#   - text2video weights (~8 GB)-> $MACU_DATA_ROOT/comfyui/models/text2video/
-#       text2video_pytorch_model.pth      = zeroscope_v2_576w (active, un-watermarked)
-#       text2video_pytorch_model.damo.pth = DAMO (watermarked rollback)
-#       VQGAN_autoencoder.pth, configuration.json
+#   - text2video weights (~5.4 GB) -> $MACU_DATA_ROOT/comfyui/models/
+#       text2video/text2video_pytorch_model.pth = zeroscope_v2_576w (un-watermarked unet)
+#       text2video/VQGAN_autoencoder.pth, text2video/configuration.json (DAMO VAE + config)
+#       clip/open_clip_pytorch_model.bin (text encoder; config's ckpt_clip)
 #   - Ollama shot-gen model     -> qwen2.5:7b-instruct-q4_K_M (into the ollama volume)
 #   - Subtitle font             -> $MACU_ASSETS/fonts/BetterVCR.ttf (bundled in repo)
 #
@@ -38,34 +38,40 @@ if [ ! -d "$NODE/.git" ]; then
   git clone --depth 1 https://github.com/ExponentialML/ComfyUI_ModelScopeT2V.git "$NODE"
 else echo "ModelScopeT2V node already present — skip"; fi
 
-# --- text2video weights (HuggingFace) ----------------------------------------
-say "text2video weights (~8 GB; skips files already present)"
-mkdir -p "$T2V"
-python3 - "$T2V" <<'PY'
+# --- text2video + clip weights (HuggingFace) ---------------------------------
+say "text2video + clip weights (~5.4 GB; skips files already present)"
+MODELS="$COMFY/models"
+mkdir -p "$MODELS/text2video" "$MODELS/clip"
+python3 - "$MODELS" <<'PY'
 import os, sys, subprocess
-dst = sys.argv[1]
+models = sys.argv[1]
+T2V = os.path.join(models, "text2video")
+CLIP = os.path.join(models, "clip")
 try:
     from huggingface_hub import hf_hub_download
 except ModuleNotFoundError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", "--user", "huggingface_hub"])
     from huggingface_hub import hf_hub_download
 
-# (repo_id, filename_in_repo, final_name_on_disk)
+# zeroscope's unet lives in a zs2_576w/ subfolder; the DAMO VAE + config + the CLIP
+# text encoder come from the ali-vilab ModelScope mirror. (repo, file, dest, name)
+ZS = "cerspense/zeroscope_v2_576w"
+DAMO = "ali-vilab/modelscope-damo-text-to-video-synthesis"
 WANT = [
-    ("cerspense/zeroscope_v2_576w", "text2video_pytorch_model.pth", "text2video_pytorch_model.pth"),
-    ("damo-vilab/modelscope-damo-text-to-video-synthesis", "VQGAN_autoencoder.pth", "VQGAN_autoencoder.pth"),
-    ("damo-vilab/modelscope-damo-text-to-video-synthesis", "configuration.json", "configuration.json"),
-    ("damo-vilab/modelscope-damo-text-to-video-synthesis", "text2video_pytorch_model.pth", "text2video_pytorch_model.damo.pth"),
+    (ZS,   "zs2_576w/text2video_pytorch_model.pth", T2V,  "text2video_pytorch_model.pth"),
+    (DAMO, "VQGAN_autoencoder.pth",                 T2V,  "VQGAN_autoencoder.pth"),
+    (DAMO, "configuration.json",                    T2V,  "configuration.json"),
+    (DAMO, "open_clip_pytorch_model.bin",           CLIP, "open_clip_pytorch_model.bin"),
 ]
-for repo, fname, final in WANT:
+for repo, fname, dst, final in WANT:
     out = os.path.join(dst, final)
-    if os.path.exists(out) and os.path.getsize(out) > 1_000_000:
+    if os.path.exists(out) and os.path.getsize(out) > 1000:
         print(f"  have {final} — skip"); continue
     print(f"  downloading {final}  <-  {repo}/{fname}")
     p = hf_hub_download(repo_id=repo, filename=fname, local_dir=dst)
-    if os.path.basename(p) != final:
+    if os.path.abspath(p) != os.path.abspath(out):
         os.replace(p, out)
-print("text2video weights ready")
+print("text2video + clip weights ready")
 PY
 
 # --- Ollama shot-gen model ----------------------------------------------------
