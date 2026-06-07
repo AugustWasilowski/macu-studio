@@ -12,6 +12,7 @@ its `ss_chat_reply` tool; the channel then POSTs {request_id, text} to our
 """
 from __future__ import annotations
 import asyncio
+import os
 import time
 import uuid
 
@@ -19,9 +20,11 @@ import httpx
 
 from .config import CHAT_CHANNEL_URL, CHAT_REPLY_URL, CHAT_WEBHOOK_TOKEN
 
-# Max can take a while to compose a reply (channel push + reasoning + tool call).
+# The agent can take a while to compose a reply (channel push + reasoning + tool call).
 REPLY_TIMEOUT_S = 150.0
 _PENDING_TTL_S = 600.0
+# Identifies this Studio instance to the channel (cosmetic routing tag).
+CHAT_HOST = os.environ.get("MACU_CHAT_HOST", "studio")
 
 
 class _Pending:
@@ -69,7 +72,7 @@ async def send(slug: str, message: str, session_id: str | None = None) -> dict:
         "request_id": request_id,
         "session_id": sess,
         "text": message,
-        "host": "plex",
+        "host": CHAT_HOST,
         "reply_url": CHAT_REPLY_URL,
     }
     try:

@@ -2,14 +2,21 @@ import { useState } from "react";
 import { useStore } from "../store";
 import { ITerminal, IX } from "./Icons";
 
-// ttyd is LAN-only on :7682, attached to the `ss-channels` tmux session. Use the
-// same host the Studio page was loaded from, forced to http (ttyd is http-only).
-// Off-LAN/https loads won't reach it — terminal access is intentionally LAN-only.
-const TERMINAL_URL = `http://${typeof window !== "undefined" ? window.location.hostname : "10.0.0.245"}:7682/`;
+// Optional ttyd web terminal attached to a tmux session running Claude Code.
+// Configurable at build time (Vite): VITE_TERMINAL_URL (full URL), or
+// VITE_TERMINAL_PORT (default 7682) + VITE_TERMINAL_SESSION (the tmux session name,
+// shown in the UI). Defaults serve ttyd on the same host the page was loaded from,
+// forced to http (ttyd is http-only) — LAN-only by design.
+const _ENV = ((import.meta as any).env ?? {}) as Record<string, string | undefined>;
+const TERMINAL_PORT = _ENV.VITE_TERMINAL_PORT || "7682";
+const TERMINAL_SESSION = _ENV.VITE_TERMINAL_SESSION || "claude";
+const TERMINAL_URL =
+  _ENV.VITE_TERMINAL_URL ||
+  `http://${typeof window !== "undefined" ? window.location.hostname : "localhost"}:${TERMINAL_PORT}/`;
 
 /* Right-hand slide-in panel (mirrors ManifestDrawer/LogDrawer) that embeds the
    ttyd web terminal. Connecting mounts the iframe → ttyd opens a WebSocket and
-   tmux-attaches to ss-channels (talking to Claude directly); disconnecting unmounts
+   tmux-attaches to the configured session (talking to Claude directly); disconnecting unmounts
    it → the WebSocket closes and the tmux client detaches. The drawer stays
    mounted while closed, so a connected session keeps running in the background. */
 export function TerminalDrawer() {
@@ -30,7 +37,7 @@ export function TerminalDrawer() {
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title flex items-center gap-2">
             <ITerminal /> TERMINAL
-            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ tmux: ss-channels — talks to Claude</span>
+            <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ tmux: {TERMINAL_SESSION} — talks to Claude</span>
           </div>
           <div className="flex items-center gap-2">
             <span
@@ -51,7 +58,7 @@ export function TerminalDrawer() {
           {connected ? (
             <iframe
               src={TERMINAL_URL}
-              title="ss-channels terminal"
+              title={`${TERMINAL_SESSION} terminal`}
               className="w-full h-full"
               style={{ border: 0, display: "block" }}
             />
@@ -59,7 +66,7 @@ export function TerminalDrawer() {
             <div className="grid place-items-center h-full text-txt-faint text-[12px] p-6 text-center">
               <div>
                 Detached. Click <span className="text-cyan">Connect</span> to attach to the
-                {" "}<span className="font-mono">ss-channels</span> tmux session and talk to Claude directly.
+                {" "}<span className="font-mono">{TERMINAL_SESSION}</span> tmux session and talk to Claude directly.
                 <div className="mt-2 text-[11px] text-txt-faint">
                   Detach without closing: <span className="font-mono">Ctrl-b d</span> · LAN-only ({TERMINAL_URL})
                 </div>
