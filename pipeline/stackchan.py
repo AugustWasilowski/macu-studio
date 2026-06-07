@@ -153,10 +153,14 @@ def clear() -> None:
 
 
 def reachable() -> bool:
-    """Cheap probe — GET /status with a tight timeout."""
+    """Cheap probe — GET /status with a tight timeout. Empty STACKCHAN_URL (the
+    default — the device is opt-in) means no device: return False, never build a
+    schemeless URL (which raised ValueError and crashed run.py at startup)."""
+    if not STACKCHAN_URL:
+        return False
     try:
         with urllib.request.urlopen(f"{STACKCHAN_URL}/status", timeout=HTTP_TIMEOUT_S) as resp:
             data = json.loads(resp.read())
             return bool(data.get("device") == "stackchan")
-    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError):
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError, json.JSONDecodeError):
         return False
