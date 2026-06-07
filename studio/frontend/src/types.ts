@@ -73,6 +73,8 @@ export interface ImportResult {
   updated: string[];
   templates?: string[];
   voices?: string[];
+  sfx?: string[];
+  music?: string[];
   errors: string[];
 }
 

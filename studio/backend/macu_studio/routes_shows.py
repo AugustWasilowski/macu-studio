@@ -80,6 +80,71 @@ def _add_voices(zf: zipfile.ZipFile, names: set[str], seen: set[str]) -> list[st
     return added
 
 
+# SFX + music files a show uses (referenced by name in the manifest) travel with the
+# export so a recipient can render without re-sourcing them. The provenance catalogs
+# (how each was made — freesound URL / agen prompt+seed) ride along as READMEs.
+SFX_DIR = config.SHARES / "assets" / "sfx"
+MUSIC_DIR = config.SHARES / "assets" / "music"
+SFX_ARC_PREFIX = "assets/sfx/"
+MUSIC_ARC_PREFIX = "assets/music/"
+
+
+def _manifest_audio_files(ep_dir: Path) -> tuple[set[str], set[str]]:
+    """(sfx filenames, music filenames) an episode's manifest references."""
+    sfx: set[str] = set()
+    music: set[str] = set()
+    mf = ep_dir / "manifest.json"
+    if not mf.exists():
+        return sfx, music
+    try:
+        d = json.loads(mf.read_text())
+    except Exception:
+        return sfx, music
+    for s in (d.get("sfx") or []):
+        if isinstance(s, dict) and isinstance(s.get("file"), str):
+            sfx.add(s["file"])
+    mu = d.get("music") or {}
+    if isinstance(mu, dict):
+        for c in (mu.get("clips") or []):
+            if isinstance(c, str):
+                music.add(c)
+        for b in (mu.get("beds") or []):
+            if isinstance(b, dict) and isinstance(b.get("file"), str):
+                music.add(b["file"])
+    return sfx, music
+
+
+def _add_audio(zf: zipfile.ZipFile, files: set[str], src_dir: Path, arc_prefix: str, seen: set[str]) -> None:
+    for fn in sorted(files):
+        if fn in seen or "/" in fn or "\\" in fn or ".." in fn:
+            continue
+        p = src_dir / fn
+        if not p.is_file():
+            continue
+        seen.add(fn)
+        zf.write(p, f"{arc_prefix}{fn}")
+
+
+def _bundle_assets(zf: zipfile.ZipFile, ep_dirs: list[Path]) -> list[str]:
+    """Bundle the binary source assets the manifests reference — OmniVoice reference
+    clips, SFX, and music — plus the asset catalog READMEs (the 'how it was made'
+    metadata). Deduped across episodes. Returns the voice names bundled."""
+    seen_v: set[str] = set()
+    seen_s: set[str] = set()
+    seen_m: set[str] = set()
+    voices_added: list[str] = []
+    for ep in ep_dirs:
+        voices_added += _add_voices(zf, _manifest_voice_names(ep), seen_v)
+        sfx_files, music_files = _manifest_audio_files(ep)
+        _add_audio(zf, sfx_files, SFX_DIR, SFX_ARC_PREFIX, seen_s)
+        _add_audio(zf, music_files, MUSIC_DIR, MUSIC_ARC_PREFIX, seen_m)
+    for src, arc in ((SFX_DIR / "README.md", SFX_ARC_PREFIX + "README.md"),
+                     (MUSIC_DIR / "README.md", MUSIC_ARC_PREFIX + "README.md")):
+        if src.is_file():
+            zf.write(src, arc)
+    return voices_added
+
+
 def _manifest_template_names(ep_dir: Path) -> set[str]:
     """Hyperframes composition names an episode's title_assets reference."""
     names: set[str] = set()
@@ -184,7 +249,7 @@ def _add_episode_text(zf: zipfile.ZipFile, ep_dir: Path, arc_prefix: str) -> int
 
 
 @router.get("/api/episodes/{slug}/export")
-def export_episode(slug: str, voices: bool = True):
+def export_episode(slug: str, assets: bool = True):
     try:
         ep_dir = ep_mod.episode_dir(slug)
     except FileNotFoundError as e:
@@ -198,7 +263,7 @@ def export_episode(slug: str, voices: bool = True):
         }, indent=2))
         _add_episode_text(zf, ep_dir, f"episodes/{slug}/")
         _add_templates(zf, _manifest_template_names(ep_dir), set())
-        vnames = _add_voices(zf, _manifest_voice_names(ep_dir), set()) if voices else []
+        vnames = _bundle_assets(zf, [ep_dir]) if assets else []
         if vnames:
             zf.writestr("voices.json", json.dumps(
                 {"voices": [{"name": n, "language": "English"} for n in vnames]}, indent=2))
@@ -206,7 +271,7 @@ def export_episode(slug: str, voices: bool = True):
 
 
 @router.get("/api/shows/{show}/export")
-def export_show(show: str, voices: bool = True):
+def export_show(show: str, assets: bool = True):
     try:
         cfg = shows_mod.get_show(show)
     except KeyError as e:
@@ -217,16 +282,15 @@ def export_show(show: str, voices: bool = True):
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("show.json", json.dumps(cfg, indent=2, ensure_ascii=False))
         seen_templates: set[str] = set()
-        seen_voices: set[str] = set()
-        added_voices: list[str] = []
+        ep_dirs: list[Path] = []
         if ep_root.exists():
             for entry in sorted(ep_root.iterdir(), key=lambda p: p.name):
                 if entry.is_dir() and (entry / "manifest.json").exists():
                     _add_episode_text(zf, entry, f"episodes/{entry.name}/")
                     _add_templates(zf, _manifest_template_names(entry), seen_templates)
-                    if voices:
-                        added_voices += _add_voices(zf, _manifest_voice_names(entry), seen_voices)
+                    ep_dirs.append(entry)
                     slugs.append(entry.name)
+        added_voices = _bundle_assets(zf, ep_dirs) if assets else []
         if added_voices:
             zf.writestr("voices.json", json.dumps(
                 {"voices": [{"name": n, "language": "English"} for n in added_voices]}, indent=2))
@@ -278,6 +342,22 @@ def _extract_voices(zf: zipfile.ZipFile, names) -> list[str]:
             continue
         voices_mod.import_ref(fn[:-4], zf.read(n))
         out.append(fn[:-4])
+    return sorted(set(out))
+
+
+def _extract_audio(zf: zipfile.ZipFile, names, prefix: str, dst_dir: Path) -> list[str]:
+    """Drop bundled SFX/music files into the local assets dir — OVERWRITES existing.
+    Skips the provenance README so a local catalog isn't clobbered. Returns filenames."""
+    out: list[str] = []
+    for n in names:
+        if not n.startswith(prefix) or n.endswith("/"):
+            continue
+        fn = n[len(prefix):]
+        if "/" in fn or "\\" in fn or ".." in fn or fn.lower() == "readme.md":
+            continue
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        (dst_dir / fn).write_bytes(zf.read(n))
+        out.append(fn)
     return sorted(set(out))
 
 
@@ -368,8 +448,11 @@ async def import_zip(file: UploadFile = File(...)):
         dest.write_bytes(zf.read(n))
         templates.add(rel.split("/")[0])
 
-    # Drop bundled voice reference clips (re-cloning is the optional GPU step).
+    # Drop bundled voice reference clips (re-cloning is the optional GPU step) and the
+    # SFX / music files the manifests reference (overwriting).
     voices_imported = _extract_voices(zf, names)
+    sfx_imported = _extract_audio(zf, names, SFX_ARC_PREFIX, SFX_DIR)
+    music_imported = _extract_audio(zf, names, MUSIC_ARC_PREFIX, MUSIC_DIR)
 
     return {
         "ok": not errors or bool(created or updated),
@@ -380,5 +463,7 @@ async def import_zip(file: UploadFile = File(...)):
         "updated": sorted(updated),
         "templates": sorted(templates),
         "voices": voices_imported,
+        "sfx": sfx_imported,
+        "music": music_imported,
         "errors": errors,
     }

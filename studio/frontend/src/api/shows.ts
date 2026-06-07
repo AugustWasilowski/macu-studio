@@ -34,8 +34,10 @@ export const showsApi = {
 
 // Browser-download URLs (Content-Disposition: attachment served by the backend).
 export const exportUrl = {
-  episode: (slug: string) => `/api/episodes/${slug}/export`,
-  show: (show: string) => `/api/shows/${show}/export`,
+  // assets = bundle the binary source assets (OmniVoice refs, SFX, music) the show
+  // uses, so a recipient can render without re-sourcing them. Off = text + templates.
+  episode: (slug: string, assets = true) => `/api/episodes/${slug}/export${assets ? "" : "?assets=0"}`,
+  show: (show: string, assets = true) => `/api/shows/${show}/export${assets ? "" : "?assets=0"}`,
   voicesAll: () => `/api/voices/export`,
   voice: (name: string) => `/api/voices/export?name=${encodeURIComponent(name)}`,
 };

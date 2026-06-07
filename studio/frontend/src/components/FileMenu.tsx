@@ -52,6 +52,8 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         r.updated.length ? `${r.updated.length} updated` : "",
         r.templates?.length ? `${r.templates.length} template${r.templates.length > 1 ? "s" : ""}` : "",
         r.voices?.length ? `${r.voices.length} voice${r.voices.length > 1 ? "s" : ""}` : "",
+        r.sfx?.length ? `${r.sfx.length} sfx` : "",
+        r.music?.length ? `${r.music.length} music` : "",
         r.created_show ? `show '${r.show}' created` : "",
       ].filter(Boolean).join(", ");
       pushToast(`import → ${r.show}: ${bits || "no episodes"}`, r.errors.length ? "info" : "ok");
@@ -366,6 +368,7 @@ function NewEpisodeDialog({ show, onClose, onCreated }: { show: string; onClose:
 }
 
 function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onClose: () => void }) {
+  const [withAssets, setWithAssets] = useState(true);
   function dl(url: string) {
     const a = document.createElement("a");
     a.href = url;
@@ -376,17 +379,23 @@ function ExportDialog({ show, slug, onClose }: { show: string; slug: string; onC
     onClose();
   }
   return (
-    <Modal open onClose={onClose} title="Export project" width={420}>
+    <Modal open onClose={onClose} title="Export project" width={440}>
       <div className="flex flex-col gap-2">
         <p className="label-tiny leading-relaxed">
-          Bundles text files (script, manifest, youtube) + the title-card templates and
-          OmniVoice reference clips the show uses into a .zip. Re-import it elsewhere; the
-          import offers to re-clone the voices. Generated media is not included.
+          Bundles the show's text (script, manifest, youtube) + the title-card templates.
+          With <b>assets</b> on, it also bundles the binary source the manifest references —
+          OmniVoice voice reference clips, SFX, and music — plus the provenance catalogs, so
+          a recipient can import it and hit the regenerate buttons. Generated media (rendered
+          video / final mp4) is never included.
         </p>
-        <button className="btn btn-amber justify-center" disabled={!slug} onClick={() => dl(exportUrl.episode(slug))}>
+        <label className="flex items-center gap-2 text-[12px] cursor-pointer select-none py-1">
+          <input type="checkbox" checked={withAssets} onChange={(e) => setWithAssets(e.target.checked)} />
+          Include assets (voices, SFX, music) — bigger zip
+        </label>
+        <button className="btn btn-amber justify-center" disabled={!slug} onClick={() => dl(exportUrl.episode(slug, withAssets))}>
           Export this episode ({slug || "—"})
         </button>
-        <button className="btn justify-center" onClick={() => dl(exportUrl.show(show))}>
+        <button className="btn justify-center" onClick={() => dl(exportUrl.show(show, withAssets))}>
           Export whole show ({show})
         </button>
         <button className="btn justify-center" onClick={() => dl(exportUrl.voicesAll())}>
