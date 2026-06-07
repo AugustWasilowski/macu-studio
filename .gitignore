@@ -57,3 +57,6 @@ studio/**/*.egg-info/
 *.bak.*
 *.json.bak.*
 studio/frontend/pnpm-lock.yaml
+
+# Author-private design notes (agent topology / infra) — kept locally, not shipped
+docs/_common/MACU_Pipeline_Design.md
