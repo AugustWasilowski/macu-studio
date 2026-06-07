@@ -1,9 +1,8 @@
 # MACU GPU services (OmniVoice · Ollama · ComfyUI)
 
 The three local GPU services MACU Studio + the render pipeline depend on, as
-compose stacks **in the repo** (they used to live only in `~/docker/` on Max).
-Bringing one up on a new machine is now `docker compose up -d` from the service's
-dir — no hand-reconstruction.
+compose stacks **in the repo**. Bringing one up on a new machine is
+`docker compose up -d` from the service's dir — no hand-reconstruction.
 
 | Service | Image | Lifecycle | Port (loopback) | Data |
 |---|---|---|---|---|
@@ -13,9 +12,9 @@ dir — no hand-reconstruction.
 
 ## Config
 
-Volume roots come from `${MACU_DATA_ROOT}` (default `/mnt/storage`), so these are
-drop-in on Max and retargetable elsewhere. Copy `.env.example` → `.env` and set
-`MACU_DATA_ROOT` on a new machine, then pass it to compose:
+Volume roots come from `${MACU_DATA_ROOT}` (default `/mnt/storage`), so these work
+with the default paths and are retargetable elsewhere. Copy `.env.example` →
+`.env` and set `MACU_DATA_ROOT` on a new machine, then pass it to compose:
 
 ```bash
 docker compose --env-file ../.env -f omnivoice/docker-compose.yml up -d
@@ -53,5 +52,5 @@ mkdir -p models output input user
 
 ## Prereqs (the installer's `doctor` step checks these)
 
-NVIDIA driver + **nvidia-container-toolkit**, Docker, and enough VRAM (these target
-an 11 GB 2080 Ti). On Max they're already present; on a new box install them first.
+NVIDIA driver + **nvidia-container-toolkit**, Docker, and enough VRAM (the defaults
+target an ~11 GB GPU, e.g. an RTX 2080 Ti). Install these first on a new machine.

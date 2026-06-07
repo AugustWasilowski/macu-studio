@@ -4,12 +4,12 @@ description: >-
   Wire MACU Studio's chat tile + writers' room to Claude Code on THIS machine —
   the coupling a script can't do (it generates a shared token, starts the chat
   bridge, and tests the loop, surfacing the permission prompts to the user). Use
-  when setting up MACU on a new machine (e.g. Leo) and the Studio chat tile says
-  "chat bridge not configured", or when the user asks to "set up the macu channel",
-  "connect Studio to Claude Code", "wire the chat tile / writers' room", or runs
+  when setting up MACU on a new machine and the Studio chat tile says "chat bridge
+  not configured", or when the user asks to "set up the macu channel", "connect
+  Studio to Claude Code", "wire the chat tile / writers' room", or runs
   /setup-macu-channel. Run AFTER the rest of the install (deploy/install.sh). This
-  stands up the portable `claude -p` bridge (deploy/macu-chat-bridge/), NOT the
-  full Second Shift always-on-channels rig.
+  stands up the portable `claude -p` bridge (deploy/macu-chat-bridge/), NOT a full
+  always-on-channels rig.
 ---
 
 # Set up the MACU ↔ Claude Code channel
@@ -21,8 +21,8 @@ bridge (`deploy/macu-chat-bridge/bridge.py` — just `claude -p` headless) and w
 the shared secret. It needs your involvement because it starts a long-running
 process and writes config — approve the steps as they come.
 
-> **Scope:** this is for a machine WITHOUT the Second Shift always-on-channels rig.
-> If `:8802` is already served by that rig (as on Max), do nothing — see step 1.
+> **Scope:** this is for a machine WITHOUT a full always-on-channels rig. If
+> `:8802` is already served by such a rig, do nothing — see step 1.
 
 ## Steps
 
@@ -30,8 +30,8 @@ process and writes config — approve the steps as they come.
 Check whether something already answers on `:8802`:
 `curl -s http://127.0.0.1:8802/health` and `ss -ltn | grep 8802`.
 - If a server is already there **and** `~/.claude/channels/ss-chat-channel/.env`
-  exists with a token, this machine is already wired (Max's full rig, or a prior
-  run). **Stop** — tell the user it's already configured; nothing to do.
+  exists with a token, this machine is already wired (a full channels rig, or a
+  prior run). **Stop** — tell the user it's already configured; nothing to do.
 - Otherwise continue.
 
 ### 2. Prereq: the `claude` CLI

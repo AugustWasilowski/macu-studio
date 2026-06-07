@@ -10,7 +10,7 @@ stack (OmniVoice, Ollama, ComfyUI) and fetches its models.
 ## TL;DR
 
 ```bash
-git clone https://github.com/AugustWasilowski/macu-pipeline.git
+git clone <repo-url> macu-pipeline
 cd macu-pipeline
 ./deploy/install.sh          # runs the stages below in order
 ```
@@ -49,9 +49,10 @@ Then start Studio (printed at the end) and open `http://localhost:8774/`.
   you own**, copy your existing voice store + asset kits instead (exact voices/ids):
   `deploy/sync-personal-data.sh <user@your-existing-box>`.
 - **The Claude Code coupling.** The chat tile + writers' room route to a Claude
-  Code session over a channel — installing that touches Claude Code's config and
-  needs permission approvals, so it's done **inside Claude Code** (a
-  `setup-macu-channel` skill is the planned next phase), not by this script.
+  Code session over a channel — wiring that touches Claude Code's config and needs
+  permission approvals, so it's done **inside Claude Code**: run the
+  **`setup-macu-channel`** skill, which generates the token, starts the chat
+  bridge, and tests the loop.
 
 ## Services reference
 

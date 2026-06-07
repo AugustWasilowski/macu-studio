@@ -5,8 +5,8 @@ The portable coupling between **MACU Studio's chat tile / writers' room** and
 `claude -p` headless and POSTs the reply back. That's the whole loop.
 
 `bridge.py` is a stdlib-only server whose only dependency is the **`claude` CLI**
-(logged in). It is the shareable alternative to the Second Shift always-on
-channels rig that drives this on Max — same wire protocol, far less to stand up.
+(logged in). It's a lightweight alternative to a full always-on channels setup —
+same wire protocol, far less to stand up.
 
 ## Setup
 
@@ -34,5 +34,5 @@ and read the same token, so no Studio config change is needed.
   session, so each episode's chat is one continuous conversation. Session map:
   `~/.macu-chat-bridge-sessions.json`.
 - Bound to loopback only; the token gates POSTs. Don't expose `:8802` publicly.
-- **Max already runs the full rig** on `:8802` — there the bridge is unnecessary
-  (the setup skill detects this and leaves it alone).
+- **If a full channels rig already serves `:8802`**, this bridge is unnecessary
+  (the setup skill detects that and leaves it alone).

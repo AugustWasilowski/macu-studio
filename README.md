@@ -1,123 +1,105 @@
 # MACU Pipeline
 
-The production system for **The MACU Report** — August's black-and-white, post-apocalyptic, retro-futurist
-faux-newscast in the Mayor Awesome Cinematic Universe. This one repo is the hub for **four** things:
+MACU Pipeline is a self-hosted, GPU-backed system for producing stylized short-form video from a script. Its
+built-in look is a black-and-white, retro-futurist analog-TV aesthetic. It pairs an 8-stage render pipeline
+with **MACU Studio**, a web app that drives the whole process from a browser.
 
 | Dir | What it is |
 |---|---|
-| `pipeline/` | the 8-stage render pipeline (`run.py`, `serve.py`, `stage_1..8`, `lib.py`, `stackchan.py`, `freesound_fetch.py`) that turns an `episodes/<slug>/manifest.json` into a finished `final/<slug>.mp4` |
-| `skills/` | the Claude Code agent skills — `macu-report` (authoring), `macu-render` (render driver), `comedy-writers-room` (critic panel) |
-| `docs/` | the canon, namespaced per show. `docs/_common/` = shared pipeline/tooling docs (manifest schema, pipeline design, PROMPT_* generator prompts, voice tips); `docs/shows/<show-id>/` = per-show canon (character bible, story arcs, weekly routine, series bible). MACU Studio's Canon Docs panel shows `_common` + the active show's dir, tagged by scope |
-| `studio/` | **MACU Studio** — the FastAPI + React web front end on `:8774` that drives the same pipeline from a browser |
+| `pipeline/` | the 8-stage render pipeline (`run.py`, `serve.py`, `stage_1..8`, `lib.py`) that turns an `episodes/<slug>/manifest.json` into a finished `final/<slug>.mp4` |
+| `studio/` | **MACU Studio** — a FastAPI + React web app on `:8774` that drives the pipeline: write scripts, generate shot lists, clone + assign voices, place SFX, render, and review |
+| `skills/` | Claude Code agent skills — authoring (`macu-report`, `police-squad-pass`, `comedy-writers-room`), render driver (`macu-render`), and channel setup (`setup-macu-channel`) |
+| `docs/` | the canon, namespaced per show: `docs/_common/` (shared pipeline/tooling docs) + `docs/shows/<show-id>/` (per-show character bible, story arcs, etc.), editable in Studio's Canon Docs panel |
+| `deploy/` | the installer (`doctor`, `install`, `fetch-models`), the GPU-service compose stacks, the chat bridge, and systemd units |
 
-**Everything runs on Max** (the Linux home server, RTX 2080 Ti). The repo lives on the **storage drive**, next
-to the other app dirs (`/mnt/storage/{comfyui,hyperframes,...}`), so code + git history ride the same portable
-drive as the episode data. One source of truth — no more code-on-OS-disk + drifting-copy-on-storage split:
+## What it does
 
-```
-/mnt/storage/macu-pipeline/        ← git repo (source of truth, on the storage drive)
-├── pipeline/        the 8-stage renderer (run.py, serve.py, stage_1..8, lib.py, …)
-├── skills/          macu-report, macu-render, comedy-writers-room  ←─symlinked─ ~/.claude/skills/
-├── docs/            the canon — _common/ (shared) + shows/<show-id>/ (per-show)
-├── studio/          MACU Studio (FastAPI :8774 + React)
-└── deploy/          installer (doctor · install · fetch-models · chat bridge) + service compose + systemd units
+From a per-episode `manifest.json`, the pipeline:
 
-/mnt/storage/shares/MACU/          ← episode DATA (Windows-visible as S:\MACU; gitignored)
-├── episodes/<slug>/   manifests + per-episode artifacts
-├── assets/{fonts,music,sfx,titles}/
-└── pipeline ──symlink──▶ /mnt/storage/macu-pipeline/pipeline   (back-compat for old absolute paths)
+- **Voice** — per-cue voiceover from cloned character voices (OmniVoice) plus a synthetic register (Piper HAL).
+- **Video** — one text-to-video master per character/scene (ComfyUI, zeroscope T2V), interpolated to a higher
+  frame rate (RIFE).
+- **Assembly** — a per-shot analog-jank filtergraph (B&W, grain, vignette, chroma-shift, interlace), VO mux,
+  music beds, and SFX.
+- **Captions** — ASR (faster-whisper) aligned to the script text → burned-in subtitles.
 
-~/work/macu-pipeline ──symlink──▶ /mnt/storage/macu-pipeline    (back-compat)
-```
+MACU Studio puts a browser UI on all of it: a script editor, LLM shot-list generation, voice cloning and
+per-character assignment, an SFX timeline, render with live progress, and review.
 
-The render service (`macu-render.service`) and MACU Studio (`macu-studio.service`) both run the code from
-`/mnt/storage/macu-pipeline/`; the units carry `RequiresMountsFor=/mnt/storage` so they wait for the drive.
+## Install
 
-> **History:** this started as a Leo→Max split — August authored on Leo (Windows) and shipped renders to Max
-> over a Syncthing `macu` folder + Vikunja + n8n bridges. Authoring moved onto Max (all local now: no Syncthing
-> wait, no cross-machine handoff, services on loopback), and the code was consolidated onto the storage drive
-> 2026-06-03 so the whole project is one portable unit.
-
-## Install (on a new machine)
-
-MACU is portable: every path/endpoint is env-driven (copy `.env.example` → `.env`; usually you only set
+MACU is portable: every path and endpoint is env-driven (copy `.env.example` → `.env`; usually you only set
 `MACU_SHARES`), and the GPU services + models come down from `deploy/`. **Requirements: an NVIDIA CUDA GPU**
-(defaults target an ~11 GB 2080 Ti), Docker + the nvidia-container-toolkit, Node 20+, Python 3.11+, git,
-ffmpeg, and — for the chat tile — Claude Code. **Platform: Linux, or Windows via WSL2** — *not* macOS (no
-CUDA). `deploy/doctor.sh` checks all of it.
+(the defaults are tuned for an ~11 GB RTX 2080 Ti), Docker + the nvidia-container-toolkit, Node 20+, Python
+3.11+, git, ffmpeg, and — for the chat tile — Claude Code. **Platform: Linux, or Windows via WSL2** — *not*
+macOS (no CUDA). `deploy/doctor.sh` checks all of it.
 
 ```bash
-# clone over SSH (matches how Max pushes; avoids the Windows-in-WSL credential-manager mess)
-git clone git@github.com:AugustWasilowski/macu-pipeline.git
+git clone <repo-url> macu-pipeline
 cd macu-pipeline
 
 ./deploy/install.sh    # doctor → .env → pull service images → fetch models (~8 GB) → build ComfyUI → Studio app
 ```
 
-Then start Studio (the script prints the command) and open `http://localhost:8774/`. For the chat tile /
-writers' room, run **`/setup-macu-channel`** in Claude Code. To copy your own cloned voices + asset kits to a
-second machine you own: `deploy/sync-personal-data.sh <user@your-existing-box>`.
+Then start Studio (the script prints the command) and open `http://localhost:8774/`. For the in-app chat tile
+and writers' room, run **`/setup-macu-channel`** in Claude Code.
 
 Full prerequisites, the staged flow, and the per-service compose stacks: **[INSTALL.md](INSTALL.md)** and
 [`deploy/services/README.md`](deploy/services/README.md).
-
-> SSH clone needs your key on GitHub: `ssh-keygen -t ed25519` → add `~/.ssh/id_ed25519.pub` at
-> github.com → Settings → SSH keys. (HTTPS works too with a `repo`-scoped PAT in the *password* field.)
 
 ## Pipeline stages
 
 | # | Script | What it does | Wall (~4-min ep) |
 |---|---|---|---|
-| 1 | `stage_1_vo.py` | per-cue VO: OmniVoice clones (`:3900`) for human-cast speakers, Piper HAL (`:5050`) for AI/appliance characters. Per-speaker routing from `manifest.voice.speaker_map`; cached by per-cue text+voice hash in `vo/.cache.json`. Stage 1 owns the ephemeral OmniVoice container's lifecycle (start → render → stop). | ~80s |
-| 2 | `stage_2_masters.py` | one ComfyUI master gen per unique `characters[*]`/`broll[*]` key. zeroscope_v2_576w @ 384×384×24f, cfg 15. Fire-and-poll (first gen cold-loads + times out the request but keeps running). | ~7-8 min |
-| 3 | `stage_3_rife.py` | RIFE 3× (24f → 72f) per master via `rife-ncnn-vulkan` (Vulkan / 2080 Ti). | ~35s |
-| 4 | `stage_4_assemble.py` | per-shot analog-jank filtergraph (B&W, grain, vignette, chromashift, interlace) → concat shots → mux VO → concat cues → `.work/<slug>_nosubs.mp4`. Handles the animated intro card + closing bumper + `no_subs`/`hold` cues. | ~2 min |
+| 1 | `stage_1_vo.py` | per-cue VO: OmniVoice clones (`:3900`) for human-cast speakers, Piper HAL (`:5050`) for AI/appliance characters. Per-speaker routing from `manifest.voice.speaker_map`; cached by per-cue text+voice hash. Stage 1 owns the ephemeral OmniVoice container's lifecycle (start → render → stop). | ~80s |
+| 2 | `stage_2_masters.py` | one ComfyUI master gen per unique `characters[*]`/`broll[*]` key. zeroscope_v2_576w @ 384×384×24f, cfg 15. Fire-and-poll (first gen cold-loads and times out the request but keeps running). | ~7-8 min |
+| 3 | `stage_3_rife.py` | RIFE 3× (24f → 72f) per master via `rife-ncnn-vulkan`. | ~35s |
+| 4 | `stage_4_assemble.py` | per-shot analog-jank filtergraph (B&W, grain, vignette, chroma-shift, interlace) → concat shots → mux VO → concat cues. Handles the animated intro card, closing bumper, and `no_subs`/`hold` cues. | ~2 min |
 | 5 | `stage_5_music.py` | music beds (random clip+offset per bed) + `manifest.sfx[]` one-shots, mixed via adelay→amix. | ~2-5s |
 | 6 | `stage_6_whisper.py` | faster-whisper large-v3 (CPU int8) ASR on the rendered audio → word timestamps. | ~10 min |
 | 7 | `stage_7_srt.py` | difflib aligns manifest VO text to whisper timings → SRT (≤7 words / 3s per line). | <1s |
-| 8 | `stage_8_burn.py` | burn SRT in the Better VCR font + h264_nvenc (cq 22) → `final/<slug>.mp4` + `_thumbs.jpg`; extract 1920×1080 `final/<slug>_thumb.png`. | ~12s |
+| 8 | `stage_8_burn.py` | burn SRT in the Better VCR font + h264_nvenc (cq 22) → `final/<slug>.mp4` + thumbnails. | ~12s |
 
 `run.py <slug>` runs all 8 in order, idempotent/cache-aware. `--from N` restarts from a stage; `--only N` runs
-one. `serve.py` exposes the same over HTTP on `:8773` (systemd `macu-render.service`) with SSE stage events —
-that's what MACU Studio drives.
+one. `serve.py` exposes the same over HTTP on `:8773` with SSE stage events — that's what MACU Studio drives.
 
 ## Locked render settings (do not regress)
 
-- Checkpoint: `zeroscope_v2_576w` — NOT DAMO ModelScope (that's the shutterstock-watermarked one, preserved as
-  `.damo.pth`). The watermark is solved by the checkpoint, not by negatives.
+- Checkpoint: `zeroscope_v2_576w` — NOT DAMO ModelScope (that's the watermarked one, preserved as `.damo.pth`).
+  The watermark is solved by the checkpoint, not by negatives.
 - Render: 384×384, 24 frames, 30 steps, cfg 15, euler/normal. Output after RIFE 3×: 1024×1024 @ 24fps. Encode:
   h264_nvenc, preset p5, tune hq, cq 22.
-- **VRAM:** 576×320×24f OOMs / crashes the temporal modules on the 11 GB 2080 Ti. Don't bump res without testing.
+- **VRAM:** 576×320×24f OOMs / crashes the temporal modules on an 11 GB GPU. Don't bump resolution without testing.
 
 ## Local services
 
-- ComfyUI: `http://127.0.0.1:8188/` — zeroscope T2V masters.
-- OmniVoice: `http://127.0.0.1:3900/` — cloned character voices (ephemeral container; stage 1 manages it).
-- Piper HAL: `http://127.0.0.1:5050/` — the calm machine register.
-- StackChan: `http://10.0.0.134/leds/buffer` — per-stage LED progress bar.
+All bind loopback; the pipeline and Studio reach them on `127.0.0.1`. Endpoints are env-overridable
+(`MACU_COMFY_URL`, `MACU_PIPER_URL`, `MACU_OMNIVOICE_URL`).
 
-(Older `episodes/<slug>/manifest.json` files carry `10.0.0.245:…` endpoints; those still work from Max since
-Piper/ComfyUI bind `0.0.0.0`, and stage 1 hardcodes loopback for OmniVoice regardless. New manifests use `127.0.0.1`.)
+- ComfyUI — `:8188` — zeroscope T2V masters.
+- OmniVoice — `:3900` — cloned character voices (ephemeral container; stage 1 manages its lifecycle).
+- Piper HAL — `:5050` — the synthetic/machine register.
+- Ollama — `:11434` — local LLM for Studio's shot-list generation (on-demand).
 
-## Layout
+## Episode layout
+
+Episode data lives outside the repo under `$MACU_SHARES` (default `/mnt/storage/shares/MACU`):
 
 ```
-shares/MACU/
-├── pipeline -> /mnt/storage/macu-pipeline/pipeline   # symlink (back-compat)
+$MACU_SHARES/
 ├── episodes/<slug>/
-│   ├── manifest.json         # source of truth for the episode
+│   ├── manifest.json        # source of truth for the episode
 │   ├── script.md
 │   ├── clips/ frames/ .rife_frames/ vo/ titles/ .work/
-│   └── final/<slug>.mp4 + .srt + _thumbs.jpg + _thumb.png
-├── assets/{fonts,music,sfx,titles}/   # shared, reused across episodes
-└── agent-io/{leo,max}/       # per-agent scratch (source transcripts, etc.)
+│   └── final/<slug>.mp4 + .srt + thumbnails
+└── assets/{fonts,music,sfx,titles}/   # shared, reused across episodes
 ```
 
 ## Running a render
 
-- **Agent / CLI:** `/macu-render <slug>` (the skill) or `python3 pipeline/run.py <slug> [--from N|--only N]`.
+- **CLI:** `python3 pipeline/run.py <slug> [--from N | --only N]` (or the `macu-render` skill).
 - **HTTP:** POST `{slug, from_stage?, only?}` to `serve.py` on `:8773`; subscribe to its SSE for stage events.
-- **GUI:** open [MACU Studio](studio/README.md) at `http://10.0.0.245:8774/` and drive it from the browser.
+- **GUI:** open MACU Studio at `http://localhost:8774/` and drive it from the browser.
 
 ## Known gotchas
 
@@ -125,4 +107,5 @@ shares/MACU/
 - **anim_dump, not ffmpeg's libwebp demuxer** — ffmpeg chokes on ComfyUI animated webps (`invalid TIFF header in Exif`).
 - **Per-shot duration = cue.vo_dur / N_shots** — computed at run time from rendered VO; not in the manifest.
 - **Title slots use their full per-shot share** (clone last frame via `tpad`); never hard-cap them or you truncate VO.
-- **Better VCR font family is `Better VCR-JP`** — never put `FontName=`/`Fontsize=` inside subtitle `force_style` (libass last-key-wins silently drops to default).
+- **Better VCR font family is `Better VCR-JP`** — never put `FontName=`/`Fontsize=` inside subtitle `force_style`
+  (libass last-key-wins silently drops to the default font).
