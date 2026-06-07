@@ -34,11 +34,10 @@ echo
 echo "Build complete."
 echo
 echo "Next steps (manual, root):"
-echo "  # COPY the unit (don't symlink) — the repo is on /mnt/storage, which isn't"
-echo "  # mounted when systemd loads units at early boot. The unit file must live on /."
+echo "  # COPY the unit."
 echo "  sudo cp $HERE/systemd/macu-studio.service /etc/systemd/system/macu-studio.service"
 echo "  sudo systemctl daemon-reload"
 echo "  sudo systemctl enable --now macu-studio"
-echo "  sudo touch /var/log/macu-studio.log && sudo chown mayorawesome:mayorawesome /var/log/macu-studio.log"
+echo "  sudo touch /var/log/macu-studio.log && sudo chown $(id -un):$(id -gn) /var/log/macu-studio.log"
 echo
 echo "Then open: http://localhost:8774/  (or http://<this-host>:8774/)"

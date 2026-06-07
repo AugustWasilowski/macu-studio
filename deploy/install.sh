@@ -94,6 +94,4 @@ Start MACU Studio:
 Optional next steps:
 
   • Chat tile / writers' room (needs Claude Code): run  /setup-macu-channel  in Claude Code.
-  • (Your own 2nd machine) copy your voices + asset kits from an existing box:
-        deploy/sync-personal-data.sh <user@your-existing-box>
 EOF
