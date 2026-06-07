@@ -1,0 +1,17 @@
+# systemd --user unit for the MACU chat bridge. The setup skill substitutes
+# __REPO__ with the repo path and installs this to ~/.config/systemd/user/, then
+# `systemctl --user enable --now macu-chat-bridge`. (On WSL / no user-systemd,
+# the skill falls back to launching bridge.py under nohup instead.)
+[Unit]
+Description=MACU chat bridge (Studio chat tile <-> Claude Code via claude -p)
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env python3 __REPO__/deploy/macu-chat-bridge/bridge.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
