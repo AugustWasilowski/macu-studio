@@ -20,7 +20,7 @@ drive as the episode data. One source of truth — no more code-on-OS-disk + dri
 ├── skills/          macu-report, macu-render, comedy-writers-room  ←─symlinked─ ~/.claude/skills/
 ├── docs/            the canon — _common/ (shared) + shows/<show-id>/ (per-show)
 ├── studio/          MACU Studio (FastAPI :8774 + React)
-└── deploy/          systemd units
+└── deploy/          installer (doctor · install · fetch-models · chat bridge) + service compose + systemd units
 
 /mnt/storage/shares/MACU/          ← episode DATA (Windows-visible as S:\MACU; gitignored)
 ├── episodes/<slug>/   manifests + per-episode artifacts
@@ -37,6 +37,32 @@ The render service (`macu-render.service`) and MACU Studio (`macu-studio.service
 > over a Syncthing `macu` folder + Vikunja + n8n bridges. Authoring moved onto Max (all local now: no Syncthing
 > wait, no cross-machine handoff, services on loopback), and the code was consolidated onto the storage drive
 > 2026-06-03 so the whole project is one portable unit.
+
+## Install (on a new machine)
+
+MACU is portable: every path/endpoint is env-driven (copy `.env.example` → `.env`; usually you only set
+`MACU_SHARES`), and the GPU services + models come down from `deploy/`. **Requirements: an NVIDIA CUDA GPU**
+(defaults target an ~11 GB 2080 Ti), Docker + the nvidia-container-toolkit, Node 20+, Python 3.11+, git,
+ffmpeg, and — for the chat tile — Claude Code. **Platform: Linux, or Windows via WSL2** — *not* macOS (no
+CUDA). `deploy/doctor.sh` checks all of it.
+
+```bash
+# clone over SSH (matches how Max pushes; avoids the Windows-in-WSL credential-manager mess)
+git clone git@github.com:AugustWasilowski/macu-pipeline.git
+cd macu-pipeline
+
+./deploy/install.sh    # doctor → .env → pull service images → fetch models (~8 GB) → build ComfyUI → Studio app
+```
+
+Then start Studio (the script prints the command) and open `http://localhost:8774/`. For the chat tile /
+writers' room, run **`/setup-macu-channel`** in Claude Code. To copy your own cloned voices + asset kits to a
+second machine you own: `deploy/sync-personal-data.sh <user@your-existing-box>`.
+
+Full prerequisites, the staged flow, and the per-service compose stacks: **[INSTALL.md](INSTALL.md)** and
+[`deploy/services/README.md`](deploy/services/README.md).
+
+> SSH clone needs your key on GitHub: `ssh-keygen -t ed25519` → add `~/.ssh/id_ed25519.pub` at
+> github.com → Settings → SSH keys. (HTTPS works too with a `repo`-scoped PAT in the *password* field.)
 
 ## Pipeline stages
 
