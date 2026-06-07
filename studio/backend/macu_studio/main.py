@@ -554,6 +554,31 @@ async def put_speaker_voice(slug: str, body: dict = Body(...)):
     return {"ok": True, "speaker": speaker, "mapped": mapped, "propagated": propagated}
 
 
+@app.post("/api/shutdown")
+async def post_shutdown():
+    """Free the GPU, then stop the Studio server. Stops the VRAM-holding containers
+    (ComfyUI / OmniVoice / Ollama) and then SIGTERMs this process for a graceful
+    uvicorn exit. The 200 is returned BEFORE shutdown (a 0.4s timer) so the UI can
+    show its 'shutting down' modal. A clean exit (code 0) won't trip the systemd
+    unit's Restart=on-failure, so the service stays down until restarted."""
+    import os
+    import signal
+    import subprocess
+    import threading
+
+    def _go():
+        for c in ("comfyui", "omnivoice", "ollama"):
+            try:
+                subprocess.run(["docker", "stop", "-t", "10", c],
+                               capture_output=True, text=True, timeout=30)
+            except Exception:
+                pass
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    threading.Timer(0.4, _go).start()
+    return {"ok": True, "message": "freeing GPU and shutting down"}
+
+
 # ---------- LLM shot-list generation (Ollama on-demand) ----------
 
 @app.post("/api/episodes/{slug}/shots/generate")

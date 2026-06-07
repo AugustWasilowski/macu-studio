@@ -5,6 +5,7 @@ import { Modal } from "./Modal";
 import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi, exportUrl } from "../api/shows";
+import { api } from "../api";
 import type { Route } from "../route";
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
   onGoAssembly: () => void;
 }
 
-type Dialog = null | "new-show" | "new-episode" | "export";
+type Dialog = null | "new-show" | "new-episode" | "export" | "shutdown";
 
 export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial, onGoAssembly }: Props) {
   const [open, setOpen] = useState(false);
@@ -118,6 +119,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
             <Item label="Settings…" onClick={onOpenSettings} />
             <Item label="Tutorial" onClick={onStartTutorial} />
             <Item label="Go to Assembly" onClick={onGoAssembly} />
+            <Item label="Shut down Studio…" onClick={() => setDialog("shutdown")} />
           </div>
         </>
       )}
@@ -140,7 +142,49 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       {dialog === "export" && (
         <ExportDialog show={activeShow} slug={slug} onClose={() => setDialog(null)} />
       )}
+      {dialog === "shutdown" && <ShutdownDialog onClose={() => setDialog(null)} />}
     </div>
+  );
+}
+
+function ShutdownDialog({ onClose }: { onClose: () => void }) {
+  const [shutting, setShutting] = useState(false);
+
+  async function go() {
+    setShutting(true);
+    try { await api.shutdown(); } catch { /* the server is going down — the request may not finish */ }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={shutting ? () => {} : onClose}
+      title="Shut down MACU Studio"
+      width={440}
+      footer={shutting ? undefined : (
+        <>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-amber" onClick={go}>Shut down</button>
+        </>
+      )}
+    >
+      {!shutting ? (
+        <p className="label-tiny leading-relaxed">
+          This frees the GPU — it stops the ComfyUI, OmniVoice, and Ollama containers —
+          and then stops the Studio server. To use Studio again you'll need to start it
+          from a terminal (<span className="font-mono">./deploy/start-studio.sh</span>, or
+          the systemd service).
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2 py-1">
+          <div className="text-amber text-[13px]">MACU Studio is freeing the GPU and shutting down…</div>
+          <p className="label-tiny leading-relaxed">
+            You can close this browser tab now. Start Studio again from a terminal when you
+            want to come back.
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }
 

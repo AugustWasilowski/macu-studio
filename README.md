@@ -50,6 +50,17 @@ and writers' room, run **`/setup-macu-channel`** in Claude Code.
 Full prerequisites, the staged flow, and the per-service compose stacks: **[INSTALL.md](INSTALL.md)** and
 [`deploy/services/README.md`](deploy/services/README.md).
 
+### Running & stopping Studio
+
+- **Foreground (temporary):** `./deploy/start-studio.sh` — Ctrl-C to stop.
+- **Service (persistent):** install the systemd unit (the app installer prints the exact commands) to start
+  Studio on boot and auto-restart it. Stop/disable later with `sudo systemctl stop macu-studio` /
+  `sudo systemctl disable --now macu-studio`.
+
+From inside the app, the project menu (top-left **MACU STUDIO** → **More → Shut down Studio…**) stops the
+server and **frees the GPU first** — it stops the ComfyUI / OmniVoice / Ollama containers, then exits. Start
+it again from a terminal to come back.
+
 ## Pipeline stages
 
 | # | Script | What it does | Wall (~4-min ep) |

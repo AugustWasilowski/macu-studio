@@ -77,6 +77,8 @@ export const api = {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ speaker, engine, profile_id, voice_name }),
     }).then((r) => J<{ ok: boolean; speaker: string; mapped: boolean; propagated: boolean }>(r)),
+  shutdown: () =>
+    fetch("/api/shutdown", { method: "POST" }).then((r) => J<{ ok: boolean }>(r)),
   shots: (slug: string) =>
     fetch(`/api/episodes/${slug}/shots`).then((r) => J<{ shots: Shot[] }>(r)),
   titles: (slug: string) =>
