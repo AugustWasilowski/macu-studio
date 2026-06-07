@@ -7,6 +7,7 @@ import { Collapsible } from "../components/Collapsible";
 import { IDL, IFolder, IRegen } from "../components/Icons";
 import { DopeSheet } from "./DopeSheet";
 import { Timeline } from "./Timeline";
+import { LocalizeModal } from "./LocalizeModal";
 import { useT } from "../i18n";
 import type { FinalInfo, PipelineEvent, PipelineStage, SrtEntry, StageKey } from "../types";
 
@@ -16,6 +17,7 @@ export function Assembly({ slug }: { slug: string }) {
   const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
+  const [localizeOpen, setLocalizeOpen] = useState(false);
 
   const pipeline = useQuery({
     queryKey: ["pipeline", slug],
@@ -142,9 +144,11 @@ export function Assembly({ slug }: { slug: string }) {
         </Collapsible>
         <Collapsible title={t("assembly.finalOutputTitle")} storageKey="macu.asm.final" bare>
           <FinalPanel slug={slug} final={final.data}
-            onCopy={(p) => navigator.clipboard.writeText(p).then(() => push(t("toast.pathCopied"), "ok"))} />
+            onCopy={(p) => navigator.clipboard.writeText(p).then(() => push(t("toast.pathCopied"), "ok"))}
+            onLocalize={() => setLocalizeOpen(true)} />
         </Collapsible>
       </aside>
+      <LocalizeModal slug={slug} open={localizeOpen} onClose={() => setLocalizeOpen(false)} />
     </div>
   );
 }
@@ -220,10 +224,11 @@ function SrtPanel({ slug, entries, running, onRun, onSaved }: {
   );
 }
 
-function FinalPanel({ slug, final, onCopy }: {
+function FinalPanel({ slug, final, onCopy, onLocalize }: {
   slug: string;
   final: FinalInfo | undefined;
   onCopy: (path: string) => void;
+  onLocalize: () => void;
 }) {
   const t = useT();
   return (
@@ -249,6 +254,7 @@ function FinalPanel({ slug, final, onCopy }: {
             <a className="btn" href={mediaUrl.finalVideo(slug)} download={`${slug}.mp4`}><IDL /> {t("assembly.download")}</a>
             <button className="btn" onClick={() => onCopy(final.path)}><IFolder /> {t("assembly.copyPath")}</button>
           </div>
+          <button className="btn btn-cyan justify-center mt-1" onClick={onLocalize}>{t("assembly.localize")}</button>
           {final.thumb_exists && (
             <img key={mediaUrl.finalThumb(slug) + (final.mtime ?? "")} src={mediaUrl.finalThumb(slug)} alt={t("assembly.thumbsAlt")} className="w-full rounded mt-2 hairline-soft" />
           )}

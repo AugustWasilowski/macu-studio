@@ -171,3 +171,26 @@ export const mediaUrl = {
 };
 
 export const jobStreamUrl = (jobId: string, since = 0) => `/api/jobs/${jobId}/stream?since=${since}`;
+
+// ---- Localize (translated subtitles + dubbed video per language) ----
+export interface LocalizeLangStatus { code: string; has_srt: boolean; has_mp4: boolean; mtime: number | null; }
+export interface LocalizeInfo {
+  rendered: boolean;
+  engines: { id: string; caveat: string }[];
+  languages: LocalizeLangStatus[];
+}
+export interface LocalizeJob { lang: string; job_id: string; events_url: string; }
+
+export const localizeApi = {
+  get: (slug: string) => fetch(`/api/episodes/${slug}/localize`).then((r) => J<LocalizeInfo>(r)),
+  run: (slug: string, body: { languages: string[]; engine: string; subs_only: boolean }) =>
+    fetch(`/api/episodes/${slug}/localize`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then((r) => J<{ ok: boolean; jobs: LocalizeJob[] }>(r)),
+};
+
+export const dubUrl = {
+  video: (slug: string, lang: string) => `/api/episodes/${slug}/localize/${lang}/video`,
+  srt: (slug: string, lang: string) => `/api/episodes/${slug}/localize/${lang}/srt`,
+};
