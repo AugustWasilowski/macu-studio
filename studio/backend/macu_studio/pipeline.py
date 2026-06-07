@@ -16,12 +16,16 @@ from .runtime_state import remember_job
 TIMEOUT = httpx.Timeout(connect=5.0, read=None, write=10.0, pool=10.0)
 
 
-async def submit(slug: str, *, from_stage: int | None = None, only: int | None = None) -> dict:
+async def submit(slug: str, *, from_stage: int | None = None, only: int | None = None,
+                 dub: dict | None = None) -> dict:
     body: dict[str, Any] = {"slug": slug}
     if from_stage and from_stage > 1:
         body["from_stage"] = int(from_stage)
     if only:
         body["only"] = int(only)
+    # dub block → a Localize job on the render queue (run.py --dub) instead of a render.
+    if dub:
+        body["dub"] = dub
     # Tell the render server where this episode lives ONLY when it's not the
     # default show's flat dir — so the proven MACU render path is byte-identical
     # (no episodes_dir → serve.py uses its built-in default).

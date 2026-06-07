@@ -65,12 +65,16 @@ os.makedirs(JOBS_ROOT, exist_ok=True)
 # ----- job model -----------------------------------------------------------
 
 class Job:
-    def __init__(self, job_id, slug, from_stage=1, only=None, episodes_dir=None):
+    def __init__(self, job_id, slug, from_stage=1, only=None, episodes_dir=None,
+                 dub_lang=None, dub_engine=None, subs_only=False):
         self.id = job_id
         self.slug = slug
         self.from_stage = from_stage
         self.only = only
         self.episodes_dir = episodes_dir   # None → use the server default (MACU)
+        self.dub_lang = dub_lang           # set → run.py --dub (localize, not a render)
+        self.dub_engine = dub_engine
+        self.subs_only = subs_only
         self.state = "queued"       # queued | running | done | error
         self.created_at = time.time()
         self.started_at = None
@@ -89,6 +93,8 @@ class Job:
             "id": self.id, "slug": self.slug,
             "from_stage": self.from_stage, "only": self.only,
             "episodes_dir": self.episodes_dir,
+            "dub_lang": self.dub_lang, "dub_engine": self.dub_engine,
+            "subs_only": self.subs_only,
             "state": self.state,
             "created_at": self.created_at,
             "started_at": self.started_at,
@@ -117,6 +123,8 @@ def load_existing_jobs():
             j.id = d["id"]; j.slug = d["slug"]
             j.from_stage = d.get("from_stage", 1); j.only = d.get("only")
             j.episodes_dir = d.get("episodes_dir")
+            j.dub_lang = d.get("dub_lang"); j.dub_engine = d.get("dub_engine")
+            j.subs_only = d.get("subs_only", False)
             j.state = d.get("state", "unknown")
             j.created_at = d.get("created_at"); j.started_at = d.get("started_at")
             j.finished_at = d.get("finished_at")
@@ -142,10 +150,16 @@ def worker():
         job.state = "running"; job.started_at = time.time(); job._persist()
         cmd = [sys.executable, RUN_PY, job.slug,
                "--events-out", job.events_path]
-        if job.from_stage and job.from_stage != 1:
-            cmd += ["--from", str(job.from_stage)]
-        if job.only:
-            cmd += ["--only", str(job.only)]
+        if getattr(job, "dub_lang", None):
+            # Localize job: bypass the 8-stage render, run the dub path instead.
+            cmd += ["--dub", job.dub_lang, "--engine", job.dub_engine or "qwen"]
+            if getattr(job, "subs_only", False):
+                cmd += ["--subs-only"]
+        else:
+            if job.from_stage and job.from_stage != 1:
+                cmd += ["--from", str(job.from_stage)]
+            if job.only:
+                cmd += ["--only", str(job.only)]
         # Per-job episodes dir (multi-show). The whole stage tree reads
         # MACU_EPISODES via lib.episode_paths, so setting it here points run.py
         # and every child stage at the right show's dir. Unset → server default.
@@ -266,11 +280,24 @@ class Handler(BaseHTTPRequestHandler):
         manifest = f"{episodes_dir}/{slug}/manifest.json"
         if not os.path.exists(manifest):
             return _json(self, 400, {"error": f"manifest not found: {manifest}"})
+        # Optional dub block → a Localize job (run.py --dub) instead of a render.
+        dub = body.get("dub")
+        dub_lang = dub_engine = None
+        subs_only = False
+        if isinstance(dub, dict):
+            dub_lang = str(dub.get("lang") or "")
+            if not re.match(r"^[a-zA-Z][a-zA-Z-]{1,8}$", dub_lang):
+                return _json(self, 400, {"error": "invalid dub.lang"})
+            dub_engine = dub.get("engine") or "qwen"
+            if dub_engine not in ("qwen", "argos"):
+                return _json(self, 400, {"error": "dub.engine must be qwen or argos"})
+            subs_only = bool(dub.get("subs_only"))
         job_id = uuid.uuid4().hex[:12]
         job = Job(job_id, slug,
                   from_stage=int(body.get("from_stage", 1)),
                   only=body.get("only"),
-                  episodes_dir=(body.get("episodes_dir") or None))
+                  episodes_dir=(body.get("episodes_dir") or None),
+                  dub_lang=dub_lang, dub_engine=dub_engine, subs_only=subs_only)
         with JOBS_LOCK:
             JOBS[job_id] = job
         WORK_Q.put(job_id)
