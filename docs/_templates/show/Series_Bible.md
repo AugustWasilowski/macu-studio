@@ -37,11 +37,11 @@ audience does all the laughing."]
 
 [WHERE does this show live — the single anchor location the cast orbits (a desk, a bunker, a kitchen, a
 shop). Soaps/sitcoms need ONE recurring place. Describe it, and the askew-but-unacknowledged detail that
-makes it MACU. e.g. a lakeside community with no lake; a newsroom broadcasting to no one.]
+makes it feel off. e.g. a lakeside community with no lake; a newsroom broadcasting to no one.]
 
 ## The economy / the absurd fact
 
-[MACU shows usually rest on one STUPID THING treated as sacred — the resource, the stakes, the MacGuffin.
+[Deadpan shows often rest on one STUPID THING treated as sacred — the resource, the stakes, the MacGuffin.
 What is it here, and what's its straight-faced origin? e.g. "the last drink powder on Earth, from a beached
 container barge." Keep it understated and load-bearing.]
 
@@ -71,4 +71,4 @@ returning in a downgraded form each week.]
 
 ## Sister shows / universe (optional)
 
-[Other MACU shows this connects to, shared characters, in-development spinoffs.]
+[Other shows in the same universe this connects to, shared characters, in-development spinoffs.]

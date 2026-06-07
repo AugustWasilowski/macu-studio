@@ -58,6 +58,34 @@ Then start Studio with **`./deploy/start-studio.sh`** (it also starts the render
 service on `:8773`) and open `http://localhost:8774/`. To run on boot, see
 `sudo ./deploy/install-systemd.sh`.
 
+## Running on boot / in the background
+
+- **systemd (Linux, or WSL with systemd enabled):**
+  `sudo ./deploy/install-systemd.sh` templates the `macu-render` + `macu-studio`
+  units to this machine, then `sudo systemctl enable --now macu-render macu-studio`.
+  Stop with `sudo systemctl stop macu-render macu-studio`; disable boot-start with
+  `sudo systemctl disable macu-render macu-studio`.
+  (WSL only runs systemd if `[boot]\nsystemd=true` is set in `/etc/wsl.conf` and WSL
+  has been restarted with `wsl --shutdown`.)
+
+- **WSL without systemd (or anywhere you just want it backgrounded):** run it under
+  `tmux` (survives the terminal closing, and you can re-attach):
+
+  ```bash
+  tmux new -s macu -d './deploy/start-studio.sh'   # start detached
+  tmux attach -t macu                              # watch it / Ctrl-b d to detach
+  tmux kill-session -t macu                        # stop
+  ```
+
+  or `nohup`:
+
+  ```bash
+  nohup ./deploy/start-studio.sh > ~/macu-studio.log 2>&1 &
+  ```
+
+  (WSL doesn't auto-start Linux services on Windows boot; launch it from your WSL
+  shell, or add the tmux line to your shell profile.)
+
 ## The two halves a script can't do
 
 - **Voices.** The installer ships **no** cloned voices — clone your own with the

@@ -24,7 +24,7 @@ consult the linked source.
 
 | Component | Author | License |
 |---|---|---|
-| Better VCR (`BetterVCR.ttf`) | artdzyk / PAWFONT | SIL Open Font License (OFL) — redistribution permitted; keep this attribution and ship the OFL text alongside the font. |
+| Better VCR (`BetterVCR.ttf`) | artdzyk / PAWFONT | SIL Open Font License 1.1 — see `deploy/assets/fonts/OFL.txt` (shipped alongside the font). Reserved Font Name "Better VCR". |
 
 ## Services & tools (run in Docker or invoked as CLIs)
 
