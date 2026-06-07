@@ -45,7 +45,7 @@ sudo systemctl enable --now macu-studio
 sudo touch /var/log/macu-studio.log && sudo chown mayorawesome:mayorawesome /var/log/macu-studio.log
 ```
 
-Then open <http://10.0.0.245:8774/>.
+Then open <http://127.0.0.1:8774/>.
 
 ## Dev loop
 
@@ -105,4 +105,4 @@ Static media (used by `<audio>`/`<video>` directly):
 Public at <https://studio.mayorawesome.com> — tunneled through `n8n-mcp` to `localhost:8774`, gated by the
 Cloudflare Access app `2ace1626` (references the reusable "August" policy `4f76c12b-71ad-42e0-8216-a86de3c66828`),
 same pattern as `memos.mayorawesome.com` / `jellyfin.mayorawesome.com`. Added 2026-06-03. LAN access stays at
-`http://10.0.0.245:8774/`.
+`http://127.0.0.1:8774/`.

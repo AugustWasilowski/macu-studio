@@ -45,11 +45,14 @@ Under `${MACU_DATA_ROOT}/comfyui/`:
 git clone https://github.com/Comfy-Org/ComfyUI.git ComfyUI
 git clone <ModelScopeT2V node> custom_nodes/ComfyUI_ModelScopeT2V
 mkdir -p models output input user
-# download into models/text2video/:
-#   text2video_pytorch_model.pth   (zeroscope_v2_576w — the un-watermarked default)
-#   VQGAN_autoencoder.pth
-#   text2video_pytorch_model.damo.pth + configuration.json  (DAMO rollback, watermarked)
+# download into models/text2video/ (zeroscope unet + DAMO VAE/config) and models/clip/:
+#   text2video/text2video_pytorch_model.pth   (zeroscope_v2_576w — the un-watermarked default)
+#   text2video/VQGAN_autoencoder.pth, text2video/configuration.json  (DAMO VAE + config)
+#   clip/open_clip_pytorch_model.bin          (text encoder)
 ```
+
+> Licensing note: the zeroscope unet is OpenRAIL-M (commercial use OK); the DAMO
+> VAE/CLIP/config are CC-BY-NC-4.0 (non-commercial). See NOTICE.
 
 > These ~8 GB of weights are NOT in git — the installer's **model-fetch** step pulls
 > them (zeroscope from HF, DAMO from ModelScope). The compose here only defines the

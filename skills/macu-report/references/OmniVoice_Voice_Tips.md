@@ -4,7 +4,7 @@ Practical knobs for the cloned MACU voices. Every param below is a form field on
 
 **Runs on Max** (Linux home server) — this box owns both the cloning and the pipeline. Keep this file in sync with `OmniVoice_Voice_Roster.md`.
 
-OmniVoice Studio upstream: <https://github.com/debpalash/OmniVoice-Studio>. Container runs the source from `/app` inside `omnivoice` on max (port 3900, loopback-only — use `127.0.0.1` from max, `10.0.0.245` from elsewhere on the LAN).
+OmniVoice Studio upstream: <https://github.com/debpalash/OmniVoice-Studio>. Container runs the source from `/app` inside `omnivoice` on max (port 3900, loopback-only — use `127.0.0.1` from max, `127.0.0.1` from elsewhere on the LAN).
 
 ---
 

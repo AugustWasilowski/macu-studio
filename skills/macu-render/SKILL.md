@@ -121,7 +121,7 @@ A 30-LED WS2812 strip on the StackChan's Port C acts as a per-stage progress bar
 
 **Brightness** is software-scaled in `stackchan.py` via `LED_BRIGHTNESS` (default **0.20**) — every RGB value is multiplied by that factor before posting to the firmware. Override at runtime with the env var `STACKCHAN_BRIGHTNESS=<0.0-1.0>` (e.g. `STACKCHAN_BRIGHTNESS=0.10 python3 run.py ep10` for night-mode, `0.50` for fully-lit-room visibility). The constant lives at the top of `pipeline/stackchan.py` if you want to change the default; STAGE_COLORS are stored at full scale (255) and only dimmed at paint time, so all eight hues stay distinguishable as the scaler drops.
 
-**Implementation:** `pipeline/stackchan.py` (zone math + paint helpers, posts to `http://10.0.0.134/leds/buffer`). `lib.progress_tick(n, name, frac)` is the shared sub-stage hook; stages call it freely and `run.py` registers the StackChan paint callback at startup. Firmware endpoint is in `~/work/StackChanBridge/StackChanBridge.ino` (handler `handleLedsBuffer`).
+**Implementation:** `pipeline/stackchan.py` (zone math + paint helpers, posts to `http://<stackchan-host>/leds/buffer`). `lib.progress_tick(n, name, frac)` is the shared sub-stage hook; stages call it freely and `run.py` registers the StackChan paint callback at startup. Firmware endpoint is in `~/work/StackChanBridge/StackChanBridge.ino` (handler `handleLedsBuffer`).
 
 ## Vikunja report-back format
 
@@ -153,7 +153,7 @@ Send the thumb strip with `SendUserFile` immediately, so August has it without o
 | `/tmp/macu_whisper_<slug>.json` | cached ASR output |
 | `/tmp/macu_render_<slug>_report.json` | per-stage timings + paths |
 | `/mnt/storage/shares/MACU/pipeline/stackchan.py` | StackChan LED progress driver (zones + paint) |
-| `http://10.0.0.134/leds/buffer` | firmware endpoint the pipeline POSTs to (single-call paint) |
+| `http://<stackchan-host>/leds/buffer` | firmware endpoint the pipeline POSTs to (single-call paint) |
 
 ## Related: the macu-render HTTP service
 

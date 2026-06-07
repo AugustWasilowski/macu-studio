@@ -2,7 +2,7 @@
 
 MACU is a local, GPU-backed video pipeline + web studio. It assumes **nothing
 pre-installed except the host prerequisites** below — it brings up its own service
-stack (OmniVoice, Ollama, ComfyUI) and fetches its models.
+stack (OmniVoice, Ollama, ComfyUI, Piper HAL) and fetches its models.
 
 > **Hardware:** an NVIDIA GPU is required (the defaults target an ~11 GB 2080 Ti).
 > Linux or WSL2.
@@ -48,10 +48,14 @@ Run `./deploy/doctor.sh` any time to see what's missing.
    node, downloads the ~8 GB text2video weights (zeroscope + DAMO/VQGAN from
    public sources), pulls `qwen2.5:7b-instruct-q4_K_M`, installs the bundled
    subtitle font. **Public sources only — no personal data.**
-5. **ComfyUI** — builds the local image and starts it.
-6. **Studio app** — Python venv + frontend build (`studio/scripts/install.sh`).
+5. **Long-lived services** — builds + starts ComfyUI and **Piper HAL** (the default
+   synthetic voice on `:5050`; the HAL-9000 voice is baked into its image).
+6. **Studio app + render venv** — Python venv + frontend build
+   (`studio/scripts/install.sh`), plus a `.whisper-venv` for the stage-6 captions.
 
-Then start Studio with **`./deploy/start-studio.sh`** and open `http://localhost:8774/`.
+Then start Studio with **`./deploy/start-studio.sh`** (it also starts the render
+service on `:8773`) and open `http://localhost:8774/`. To run on boot, see
+`sudo ./deploy/install-systemd.sh`.
 
 ## The two halves a script can't do
 

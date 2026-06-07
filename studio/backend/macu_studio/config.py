@@ -29,7 +29,6 @@ PORT = int(os.environ.get("MACU_STUDIO_PORT", "8774"))
 CORS_DEV_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://10.0.0.245:5173",
 ]
 
 # ---- Chat bridge (ss-chat-channel → always-on Max session) ----

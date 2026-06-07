@@ -1,9 +1,9 @@
 """StackChan WS2812 progress-bar driver for the MACU pipeline.
 
 Paints the 30-LED Port C strip as an 8-zone progress bar — one color per pipeline
-stage. Calls POST /leds/buffer on http://10.0.0.134 (firmware in
-~/work/StackChanBridge/). Designed to be silent + fast-failing so a missing or
-flaky StackChan never blocks a render.
+stage. POSTs /leds/buffer to the device at STACKCHAN_URL (optional hardware; unset
+= disabled). Designed to be silent + fast-failing so a missing or flaky StackChan
+never blocks a render.
 
 Use:
     from stackchan import paint, clear, set_enabled
@@ -22,7 +22,9 @@ import os
 import urllib.error
 import urllib.request
 
-STACKCHAN_URL = os.environ.get("STACKCHAN_URL", "http://10.0.0.134").rstrip("/")
+# Optional LED progress device. Empty = disabled (no calls) — a fresh install must
+# not POST to some IP on the user's LAN. Set STACKCHAN_URL to enable it.
+STACKCHAN_URL = os.environ.get("STACKCHAN_URL", "").rstrip("/")
 HTTP_TIMEOUT_S = 1.0  # paint must never block a render
 
 # Cumulative LED end-indices per stage (inclusive end, exclusive start of next).
@@ -108,7 +110,7 @@ def compute_buffer(stage_n: int, frac: float) -> list[list[int]]:
 
 def _post(path: str, body: dict) -> None:
     """POST to stackchan; swallow all errors silently. Never blocks > HTTP_TIMEOUT_S."""
-    if not _enabled:
+    if not _enabled or not STACKCHAN_URL:
         return
     try:
         req = urllib.request.Request(

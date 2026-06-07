@@ -57,7 +57,7 @@ open the ep5 manifest to build a new one (ep5 is just a fuller worked example if
 ```
 > **Endpoints are local on Max.** The services run on this box, so the canonical host is `127.0.0.1`
 > (OmniVoice in particular binds loopback-only, and stage 1 hardcodes `http://127.0.0.1:3900` in `lib.py`
-> regardless of what the manifest says). Older episodes carry `http://10.0.0.245:...` here — that still works
+> regardless of what the manifest says). Older episodes carry `http://127.0.0.1:...` here — that still works
 > from Max (Piper/ComfyUI bind `0.0.0.0`), so you don't need to rewrite existing manifests; just use
 > `127.0.0.1` in new ones.
 **Why locked:** zeroscope_v2_576w (not DAMO ModelScope) removes the baked-in shutterstock watermark; 384×384

@@ -51,7 +51,7 @@ Drafted 2026-05-29 on Leo (cowork). Status: design locked, Max-side validation p
    times out the MCP call (`-32001`), but the job *keeps running* (confirmed via `get_queue`); the warm
    re-run returned in ~30s. → **Always fire-and-poll** (`get_queue` until idle) or do a throwaway warm-up
    gen first. Never assume a timeout = failure.
-2. **Rendered artifacts are trapped on Max.** The cowork sandbox network allowlist blocks `10.0.0.245`
+2. **Rendered artifacts are trapped on Max.** The cowork sandbox network allowlist blocks `127.0.0.1`
    *and* public webhooks (so `announce-home` is unreachable from cowork; only bridged MCPs get through:
    ComfyUI, Hyperframes, StackChan, Vikunja, n8n-mcp). → **All file retrieval + assembly must run Max-side.**
 3. **ModelScope output is color + tiny** (256×256, 24 frames). B&W + analog look must be applied in post.
@@ -63,15 +63,15 @@ Drafted 2026-05-29 on Leo (cowork). Status: design locked, Max-side validation p
 6. **Hyperframes capture path** falls back to screenshot mode (no chrome-headless-shell); fine, just slower.
 
 ### Max-side VALIDATED (SSA-85, 2026-05-29) — all confirmed by Max
-- **Piper TTS:** HAL voice only, on `http://10.0.0.245:5050/`. Silent/batch invocation:
-  `curl -X POST -H 'Content-Type: application/json' -d '{"text":"..."}' http://10.0.0.245:5050/ -o out.wav`
+- **Piper TTS:** HAL voice only, on `http://127.0.0.1:5050/`. Silent/batch invocation:
+  `curl -X POST -H 'Content-Type: application/json' -d '{"text":"..."}' http://127.0.0.1:5050/ -o out.wav`
   → 22050 Hz mono 16-bit PCM WAV. (lessac/medium non-HAL on `:5051` if ever needed.)
   Do NOT use `announce-bridge` `:5060/announce` for VO — it pushes to the StackChan robot.
 - **ComfyUI retrieval:** `curl -O` the `/view?filename=…&type=output` URL. GOTCHA: ffmpeg 8.0.1's libwebp
   demuxer chokes on ComfyUI animated webps (`invalid TIFF header in Exif`). Working path: Google's
   `anim_dump` (apt `webp`, installed) → PNG frames → `ffmpeg -framerate 8 -i frame_%04d.png … out.mp4`.
   Python PIL `Image.seek()` is the fallback. ComfyUI clips are 24f @256×256 @125ms.
-- **Shared dirs (on Max, host `/mnt/storage/shares/MACU/`, Windows `\\10.0.0.245\storage-root\shares\MACU\`):**
+- **Shared dirs (on Max, host `/mnt/storage/shares/MACU/`, Windows `\\127.0.0.1\storage-root\shares\MACU\`):**
   per-agent inbox `agent-io/{leo,max}/`; per-episode `episodes/<slug>/` with `clips/ vo/ frames/ final/`
   + `manifest.json`. Group-writable, mayorawesome group.
 - **Analog-jank filtergraph (tested → `ssa85_jank_ref.mp4`):**
@@ -88,11 +88,11 @@ Drafted 2026-05-29 on Leo (cowork). Status: design locked, Max-side validation p
 
 ### OPEN: Leo↔share file bridge
 `E:\August\MACU\MACU` (Leo/cowork, where I write) is a SEPARATE store from the Max share — Max can't see my
-docs. Cowork sandbox can't write to `\\10.0.0.245`. Need a bridge decision (August copies, or map the share
+docs. Cowork sandbox can't write to `\\127.0.0.1`. Need a bridge decision (August copies, or map the share
 as the cowork folder, or a sync job) before file-based collaboration works. Vikunja comments work meanwhile.
 
 ### Webhook routing note (from Max)
-Project-3 Vikunja webhooks still POST to dead `10.0.0.72:4000` (host migration 2026-05-26) and there's no
+Project-3 Vikunja webhooks still POST to dead `127.0.0.1:4000` (host migration 2026-05-26) and there's no
 `max-claude` ping route, so assignment notifications don't actually reach Max. August + Max to fix separately.
 
 ## 5. Proposed MACU skill (after validation)
