@@ -112,6 +112,13 @@ def main():
     ap.add_argument("slug")
     ap.add_argument("--from", dest="from_stage", type=int, default=1)
     ap.add_argument("--only", type=int, default=None)
+    ap.add_argument("--dub", default=None, metavar="LANG",
+                    help="Dub mode: localize an already-rendered episode into LANG "
+                         "(re-VO + remux + translated subs; skips stages 2-3).")
+    ap.add_argument("--engine", default="qwen", choices=["qwen", "argos"],
+                    help="Translation engine for --dub (default qwen).")
+    ap.add_argument("--subs-only", action="store_true",
+                    help="With --dub: produce translated subtitles only, no dubbed audio.")
     ap.add_argument("--events-out", default=None,
                     help="Append JSONL events to this path (one per stage + job-level)")
     ap.add_argument("--no-stackchan", action="store_true",
@@ -137,6 +144,13 @@ def main():
         print(f"ERROR: manifest not found: {paths['manifest']}")
         emit("job.error", error=f"manifest not found: {paths['manifest']}")
         sys.exit(2)
+
+    # Dub mode bypasses the 8-stage loop: localize an already-rendered episode.
+    if args.dub:
+        import dub
+        emit("job.started", slug=slug, dub=args.dub, engine=args.engine, subs_only=args.subs_only)
+        rc = dub.run_dub(slug, args.dub, args.engine, subs_only=args.subs_only, emit=emit)
+        sys.exit(rc)
 
     report = {"slug": slug, "stages": [], "started": time.time()}
     emit("job.started", slug=slug, from_stage=args.from_stage, only=args.only)

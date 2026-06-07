@@ -150,6 +150,21 @@ def episode_paths(slug):
     }
 
 
+def dub_paths(slug, lang):
+    """Per-language Localize artifacts under the episode dir. English keys in
+    episode_paths() are untouched; these are additive."""
+    base = f"{EPISODES_ROOT}/{slug}"
+    return {
+        "vo_dir": f"{base}/vo/{lang}",
+        "loc_dir": f"{base}/loc/{lang}",
+        "translations": f"{base}/loc/{lang}/translations.json",
+        "glossary": f"{base}/loc/glossary.json",
+        "dub_music_nosubs": f"{base}/.work/{slug}.{lang}_music_nosubs.mp4",
+        "out_srt": f"{base}/final/{slug}.{lang}.srt",
+        "out_mp4": f"{base}/final/{slug}.{lang}.mp4",
+    }
+
+
 def load_manifest(slug):
     with open(episode_paths(slug)["manifest"]) as f:
         return json.load(f)

@@ -21,16 +21,21 @@ def run(cmd, timeout=1800):
     except subprocess.TimeoutExpired:
         print(f"TIMEOUT after {timeout}s:", " ".join(cmd[:6])); raise
 
-def main(slug):
+def main(slug, src=None, srt=None, final=None, font=None):
     ensure_dirs(slug)
     p = episode_paths(slug)
     m = load_manifest(slug)
-    src = p["music_nosubs"] if os.path.exists(p["music_nosubs"]) else p["nosubs"]
-    srt = p["out_srt"]
-    final = p["out_mp4"]
+    if src is None:
+        src = p["music_nosubs"] if os.path.exists(p["music_nosubs"]) else p["nosubs"]
+    if srt is None:
+        srt = p["out_srt"]
+    if final is None:
+        final = p["out_mp4"]
 
     subs = m.get("subtitles") or {}
-    font_name = subs.get("font", "DejaVu Sans")
+    # `font` override lets the dub path swap in a script-appropriate face (e.g. Noto for
+    # CJK/Arabic/Indic) without touching the manifest; English burns are unchanged.
+    font_name = font or subs.get("font", "DejaVu Sans")
     fontsize = subs.get("fontsize", 18)
     fontsdir = subs.get("fontsdir", f"{ASSETS}/fonts")
     extra = subs.get("force_style", DEFAULT_STYLE)

@@ -27,7 +27,7 @@ Usage: python3 stage_1_vo.py <slug>
 import sys, json, os, urllib.request, urllib.parse, concurrent.futures
 import time, subprocess, tempfile, uuid, hashlib
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import (episode_paths, load_manifest, ensure_dirs,
+from lib import (episode_paths, load_manifest, ensure_dirs, probe_dur,
                  PIPER_URL, OMNIVOICE_URL,
                  omnivoice_start, omnivoice_stop)
 
@@ -123,12 +123,13 @@ def _silent(seconds, out_path):
     ], check=True)
 
 
-def _omnivoice(text, profile_id, out_path, speed=None, guidance_scale=None, seed=None, instruct=None):
+def _omnivoice(text, profile_id, out_path, speed=None, guidance_scale=None, seed=None,
+               instruct=None, language="English", duration=None):
     boundary = "----macu" + uuid.uuid4().hex
     parts = []
-    fields = [("text", text), ("profile_id", profile_id), ("language", "English")]
+    fields = [("text", text), ("profile_id", profile_id), ("language", language)]
     for k, v in (("speed", speed), ("guidance_scale", guidance_scale),
-                 ("seed", seed), ("instruct", instruct)):
+                 ("seed", seed), ("instruct", instruct), ("duration", duration)):
         if v is not None and v != "":
             fields.append((k, str(v)))
     for name, val in fields:
@@ -269,6 +270,129 @@ def main(slug):
     print(f"[stage 1 vo] {len(todo)} rendered in {round(time.time()-start,2)}s")
     return {"rendered": len(todo), "skipped": skipped,
             "wall_s": round(time.time()-start, 2)}
+
+
+# ---------------------------------------------------------------------------
+# Dub VO — re-render per-cue voiceover in a target language, FIT to the original
+# cue's duration so the already-rendered picture and music/SFX offsets stay valid.
+# Separate entry point from main(): the English render path above is untouched.
+# ---------------------------------------------------------------------------
+
+DUB_CACHE_VERSION = 1
+
+
+def _fit_duration(path, target_dur, tol=0.04):
+    """Hard-fit a wav to target_dur (seconds): atempo to correct drift > tol, then an
+    exact -t trim / silence-pad so the result is target_dur to the sample. Guarantees
+    the dubbed cue exactly fills its slot regardless of OmniVoice's best-effort sizing."""
+    try:
+        cur = probe_dur(path)
+    except Exception:
+        return
+    if cur <= 0 or target_dur <= 0:
+        return
+    ratio = cur / target_dur
+    work = path
+    if abs(cur - target_dur) / target_dur > tol:
+        # atempo only spans [0.5, 2.0]; chain two stages for extremes.
+        tempo = max(0.25, min(4.0, ratio))
+        chain = []
+        t = tempo
+        while t > 2.0:
+            chain.append("atempo=2.0"); t /= 2.0
+        while t < 0.5:
+            chain.append("atempo=0.5"); t /= 0.5
+        chain.append(f"atempo={t:.5f}")
+        stretched = path + ".fit.wav"
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                        "-i", path, "-af", ",".join(chain),
+                        "-ac", "1", "-ar", str(TARGET_SR), "-c:a", "pcm_s16le", stretched],
+                       check=True)
+        work = stretched
+    # Exact-length pad-or-trim: pad with silence then hard-cut to target_dur.
+    out = path + ".exact.wav"
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                    "-i", work, "-af", "apad", "-t", f"{target_dur:.4f}",
+                    "-ac", "1", "-ar", str(TARGET_SR), "-c:a", "pcm_s16le", out],
+                   check=True)
+    os.replace(out, path)
+    if work != path and os.path.exists(work):
+        os.unlink(work)
+
+
+def _dub_cache_key(lang, text, voice_cfg, target_dur):
+    payload = {"lang": lang, "text": text or "", "profile_id": voice_cfg.get("profile_id"),
+               "speed": voice_cfg.get("speed"), "guidance_scale": voice_cfg.get("guidance_scale"),
+               "seed": voice_cfg.get("seed"), "instruct": voice_cfg.get("instruct"),
+               "target_dur": round(float(target_dur), 3)}
+    raw = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
+def dub_vo(slug, lang, translations, ov_language, progress=None):
+    """Re-render each DIALOGUE cue's VO in `lang` (OmniVoice name `ov_language`), fit to
+    the English cue's duration, into vo/<lang>/<cue_id>.wav. Hold cues are skipped (the
+    remux leaves their slot silent). Non-OmniVoice (piper/robot) cues keep their English
+    wav (copied) — robot voices don't translate. Cached in vo/<lang>/.cache.json.
+    Returns {rendered, skipped, copied, drifted, total}."""
+    p = episode_paths(slug)
+    m = load_manifest(slug)
+    eng_vo = p["vo"]
+    out_dir = f"{eng_vo}/{lang}"
+    os.makedirs(out_dir, exist_ok=True)
+    cache_path = f"{out_dir}/{CACHE_FILE_NAME}"
+    cache = _load_cache(cache_path)
+
+    dialogue = [c for c in m["cues"]
+                if c.get("hold_seconds") is None and (c.get("vo") or "").strip()]
+    needs_omni = any(_resolve_voice(m, c.get("speaker") or "").get("engine") == "omnivoice"
+                     for c in dialogue)
+    started = False
+    if needs_omni:
+        omnivoice_start(); started = True
+
+    rendered = skipped = copied = drifted = 0
+    cur_keys = {}
+    try:
+        for i, cue in enumerate(dialogue):
+            cid = cue["id"]
+            eng_wav = f"{eng_vo}/{cid}.wav"
+            if not os.path.exists(eng_wav):
+                continue  # no English wav to size against → skip
+            target = probe_dur(eng_wav)
+            voice = _resolve_voice(m, cue.get("speaker") or "")
+            text = translations.get(cid) or cue.get("vo") or ""
+            out = f"{out_dir}/{cid}.wav"
+            key = _dub_cache_key(lang, text, voice, target)
+            cur_keys[cid] = key
+            if os.path.exists(out) and os.path.getsize(out) > 0 and cache.get(cid) == key:
+                skipped += 1
+                if progress:
+                    progress(i + 1, len(dialogue))
+                continue
+            if voice.get("engine") == "omnivoice":
+                _omnivoice(text, voice["profile_id"], out,
+                           speed=voice.get("speed"), guidance_scale=voice.get("guidance_scale"),
+                           seed=voice.get("seed"), instruct=voice.get("instruct"),
+                           language=ov_language, duration=round(target, 3))
+                before = probe_dur(out)
+                _fit_duration(out, target)
+                if abs(before - target) / target > 0.10:
+                    drifted += 1
+                rendered += 1
+            else:
+                # robot/piper voice — keep English audio for this line.
+                _normalize(eng_wav, out)
+                copied += 1
+            cache[cid] = key
+            _save_cache(cache_path, cache)
+            if progress:
+                progress(i + 1, len(dialogue))
+    finally:
+        if started:
+            omnivoice_stop()
+    return {"rendered": rendered, "skipped": skipped, "copied": copied,
+            "drifted": drifted, "total": len(dialogue)}
 
 
 if __name__ == "__main__":
