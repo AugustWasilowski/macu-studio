@@ -56,26 +56,46 @@ export function Assembly({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (!runState.jobId || !runState.running) return;
-    const sinceAtOpen = useStore.getState().runs[slug]?.seen ?? 0;
-    const es = new EventSource(jobStreamUrl(runState.jobId, sinceAtOpen));
+    const jobId = runState.jobId;
     const ts = () => new Date().toLocaleTimeString("en-GB", { hour12: false });
-    es.onmessage = (m) => {
-      let ev: PipelineEvent;
-      try { ev = JSON.parse(m.data); } catch { return; }
-      const seen = (useStore.getState().runs[slug]?.seen ?? 0) + 1;
-      const n = (ev.n ?? 0) as number;
-      const k = STAGE_KEYS[n - 1];
-      let line = "";
-      if (ev.kind === "stage.started" && k) { setRunLive(slug, k, "running"); line = `[${ts()}] stage ${n} ${ev.name} STARTED`; }
-      else if (ev.kind === "stage.done" && k) { setRunLive(slug, k, "done"); line = `[${ts()}] stage ${n} ${ev.name} done (${ev.wall_s}s)`; qc.invalidateQueries({ queryKey: ["pipeline", slug] }); }
-      else if (ev.kind === "stage.error" && k) { setRunLive(slug, k, "failed"); line = `[${ts()}] ERROR stage ${n} ${ev.name}: ${ev.error}`; }
-      else if (ev.kind === "job.done") { line = `[${ts()}] JOB DONE — ${(ev as any).final ?? ""}`; patchRun(slug, { running: false }); qc.invalidateQueries({ queryKey: ["pipeline", slug] }); qc.invalidateQueries({ queryKey: ["final", slug] }); qc.invalidateQueries({ queryKey: ["srt", slug] }); }
-      else if (ev.kind === "job.error") { line = `[${ts()}] JOB ERROR: ${ev.error}`; patchRun(slug, { running: false }); }
-      else if (ev.kind === "job.started") { line = `[${ts()}] job started slug=${(ev as any).slug} from=${(ev as any).from_stage ?? 1}`; }
-      if (line) appendRunLog(slug, line, seen); else patchRun(slug, { seen });
+    let es: EventSource | null = null;
+    let closed = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+
+    const open = () => {
+      if (closed) return;
+      // Always (re)open from the CURRENT seen count, not a value frozen at first
+      // open — otherwise a transient disconnect's auto-reconnect replays old events
+      // and duplicates the log / inflates `seen`.
+      const since = useStore.getState().runs[slug]?.seen ?? 0;
+      es = new EventSource(jobStreamUrl(jobId, since));
+      es.onmessage = (m) => {
+        let ev: PipelineEvent;
+        try { ev = JSON.parse(m.data); } catch { return; }
+        const seen = (useStore.getState().runs[slug]?.seen ?? 0) + 1;
+        const n = (ev.n ?? 0) as number;
+        const k = STAGE_KEYS[n - 1];
+        let line = "";
+        if (ev.kind === "stage.started" && k) { setRunLive(slug, k, "running"); line = `[${ts()}] stage ${n} ${ev.name} STARTED`; }
+        else if (ev.kind === "stage.done" && k) { setRunLive(slug, k, "done"); line = `[${ts()}] stage ${n} ${ev.name} done (${ev.wall_s}s)`; qc.invalidateQueries({ queryKey: ["pipeline", slug] }); }
+        else if (ev.kind === "stage.error" && k) { setRunLive(slug, k, "failed"); line = `[${ts()}] ERROR stage ${n} ${ev.name}: ${ev.error}`; }
+        else if (ev.kind === "job.done") { line = `[${ts()}] JOB DONE — ${(ev as any).final ?? ""}`; patchRun(slug, { running: false }); qc.invalidateQueries({ queryKey: ["pipeline", slug] }); qc.invalidateQueries({ queryKey: ["final", slug] }); qc.invalidateQueries({ queryKey: ["srt", slug] }); }
+        else if (ev.kind === "job.error") { line = `[${ts()}] JOB ERROR: ${ev.error}`; patchRun(slug, { running: false }); }
+        else if (ev.kind === "job.started") { line = `[${ts()}] job started slug=${(ev as any).slug} from=${(ev as any).from_stage ?? 1}`; }
+        if (line) appendRunLog(slug, line, seen); else patchRun(slug, { seen });
+      };
+      es.addEventListener("end", () => { closed = true; es?.close(); });
+      es.onerror = () => {
+        // Close the browser's pending auto-reconnect (it would replay from the old
+        // `since`) and reopen from the live seen after a short backoff.
+        if (closed) return;
+        es?.close();
+        retry = setTimeout(open, 1000);
+      };
     };
-    es.addEventListener("end", () => es.close());
-    return () => { es.close(); };
+
+    open();
+    return () => { closed = true; clearTimeout(retry); es?.close(); };
   }, [slug, runState.jobId, runState.running, qc, patchRun, appendRunLog, setRunLive]);
 
   const run = useMutation({
@@ -216,7 +236,7 @@ function FinalPanel({ slug, final, onCopy }: {
             style={{ aspectRatio: "1 / 1", maxHeight: 320 }}
           />
           <div className="text-[12px] grid grid-cols-2 gap-1.5">
-            <span className="label-tiny">size</span><span className="text-cyan">{final.size_mb} MB</span>
+            <span className="label-tiny">size</span><span className="text-cyan">{final.size_mb ?? "—"} MB</span>
             <span className="label-tiny">duration</span><span className="text-cyan">{final.duration_s ?? "—"} s</span>
             <span className="label-tiny">srt</span><span>{final.srt_exists ? "yes" : "no"}</span>
           </div>

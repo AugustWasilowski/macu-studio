@@ -69,7 +69,7 @@ function Shell() {
     if (route.page !== "stage" || !eps?.length) return;
     const inShow = route.slug && eps.some((e) => e.slug === route.slug);
     if (!inShow) {
-      const pick = eps.find((e) => e.slug === "ep-018") ?? eps[eps.length - 1];
+      const pick = eps[eps.length - 1];
       go({ slug: pick.slug, stage: route.stage });
     }
   }, [episodes.data, route.page, route.slug, route.stage, go]);

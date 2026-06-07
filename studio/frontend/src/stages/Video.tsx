@@ -86,6 +86,7 @@ function ShotsView({ slug }: { slug: string }) {
 
   const saveSeed = useMutation({
     mutationFn: async ({ key, kind, seed }: { key: string; kind: "character" | "broll"; seed: number }) => {
+      if (!manifest.data) throw new Error("manifest not loaded yet");
       const m = JSON.parse(JSON.stringify(manifest.data));
       if (kind === "character" && m.characters?.[key]) {
         m.characters[key].seed = seed;
@@ -107,6 +108,7 @@ function ShotsView({ slug }: { slug: string }) {
 
   const savePrompt = useMutation({
     mutationFn: async ({ key, kind, prompt }: { key: string; kind: "character" | "broll"; prompt: string }) => {
+      if (!manifest.data) throw new Error("manifest not loaded yet");
       const m = JSON.parse(JSON.stringify(manifest.data));
       if (kind === "character") {
         if (m.characters?.[key]) m.characters[key].core = prompt;
