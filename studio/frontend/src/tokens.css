@@ -137,6 +137,18 @@ body {
   50% { opacity: 0.35; }
 }
 
+/* Heartbeat — a lub-dub double-throb (scale + glow), then a rest. Used on the
+   job-status dot while something is processing, to give a busy system some life. */
+.led-dot.heartbeat { animation: led-heartbeat 1.3s ease-in-out infinite; }
+@keyframes led-heartbeat {
+  0%   { transform: scale(1);    box-shadow: 0 0 5px  var(--led-c, var(--txt-dim)); }
+  12%  { transform: scale(1.5);  box-shadow: 0 0 12px var(--led-c, var(--txt-dim)); } /* lub */
+  24%  { transform: scale(1);    box-shadow: 0 0 5px  var(--led-c, var(--txt-dim)); }
+  36%  { transform: scale(1.35); box-shadow: 0 0 9px  var(--led-c, var(--txt-dim)); } /* dub */
+  50%  { transform: scale(1);    box-shadow: 0 0 5px  var(--led-c, var(--txt-dim)); }
+  100% { transform: scale(1);    box-shadow: 0 0 5px  var(--led-c, var(--txt-dim)); } /* rest */
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

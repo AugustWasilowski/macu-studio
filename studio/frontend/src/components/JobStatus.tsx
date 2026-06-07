@@ -17,7 +17,7 @@ export function JobStatus() {
   return (
     <span className="seg-readout inline-flex items-center gap-1.5" style={{ color }} title={a.state === "idle" ? "nothing processing" : a.label}>
       <span
-        className={a.state === "running" ? "led-dot" : ""}
+        className={a.state === "running" ? "led-dot heartbeat" : ""}
         style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: a.state !== "idle" ? `0 0 5px ${color}` : "none", "--led-c": color } as React.CSSProperties}
       />
       <span className="whitespace-nowrap uppercase text-[11px] tracking-wider">{text}</span>
