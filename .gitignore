@@ -56,3 +56,4 @@ studio/**/*.egg-info/
 # Timestamped manifest backups (created by in-place edits)
 *.bak.*
 *.json.bak.*
+studio/frontend/pnpm-lock.yaml

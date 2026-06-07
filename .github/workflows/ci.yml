@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Byte-compile the pipeline + backend
+        run: python -m compileall -q pipeline studio/backend/macu_studio
+      - name: Install Studio backend (import check)
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet ./studio
+          python -c "import macu_studio.main"
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build the SPA (tsc -b && vite build)
+        working-directory: studio/frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
