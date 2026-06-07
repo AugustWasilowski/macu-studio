@@ -89,13 +89,13 @@
   "title_assets": {},
   "cues": [
     {
-      "id": "c01",
+      "id": "c19",
       "segment": "cold_open",
       "speaker": "NARRATOR",
-      "vo": "Like ash through the hourglass… these are the days of what's left of our lives.",
+      "vo": "Like ash through the hourglass… these are the days of what's left of our lives. Tonight's episode: \"A Gathering of Friends.\"",
       "shots": [
         {
-          "id": "c01_s1",
+          "id": "c19_s1",
           "kind": "broll",
           "who": "lake_mirabel"
         }
@@ -130,13 +130,13 @@
       ]
     },
     {
-      "id": "c04",
+      "id": "c20",
       "segment": "cold_open",
       "speaker": "NARRATOR",
-      "vo": "The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake. They are not lying. There is simply no lake.",
+      "vo": "The Vandermeers own the most luxurious bunker on the shores of Lake Mirabel. They have owned it for three generations. They will tell you they summer at the lake. They are not lying. There is simply no lake. There was, once — fourteen feet across, six inches deep. A plover lived on it. They called it the lake. The plover did not survive.",
       "shots": [
         {
-          "id": "c04_s1",
+          "id": "c20_s1",
           "kind": "broll",
           "who": "the_bunker"
         }
@@ -171,6 +171,20 @@
       ]
     },
     {
+      "id": "c21",
+      "segment": "act_1",
+      "speaker": "VIVIAN",
+      "vo": "Brick died over this. As did his father. As did his father's father. In each case, quite literally. We stopped saying \"over my dead body\" at family meetings after '87.",
+      "shots": [
+        {
+          "id": "c21_s1",
+          "kind": "character",
+          "who": "vivian",
+          "seed": 81001
+        }
+      ]
+    },
+    {
       "id": "c07",
       "segment": "act_1",
       "speaker": "NARRATOR",
@@ -198,26 +212,26 @@
       ]
     },
     {
-      "id": "c09",
+      "id": "c22",
       "segment": "act_2",
       "speaker": "NARRATOR",
-      "vo": "And then — as the last of the Product settled — there came a knock upon the blast door.",
+      "vo": "The mixing seals the door; by custom it does not open until the Product has settled, not one grain sooner. The Vandermeer blast door weighs four metric tons. Mona had knocked with her left hand, and switched to her right after the first hour. She ran out of things to think about after the second. By the third she had begun to feel she was owed a glass of water. She did not ask for one. She knew the customs by then.",
       "shots": [
         {
-          "id": "c09_s1",
+          "id": "c22_s1",
           "kind": "broll",
           "who": "the_bunker"
         }
       ]
     },
     {
-      "id": "c10",
+      "id": "c23",
       "segment": "act_2",
       "speaker": "MONA",
-      "vo": "My name is Mona. I've walked eleven days. I'm Brick's wife. I'm his widow now, I suppose. I've come for what's mine.",
+      "vo": "My name is Mona. I walked eleven days. My feet went dead somewhere on the second; you develop a system. I'm Brick's wife — his widow now, I suppose. I ran a grain depot before it burned. I know how a thing is counted, and how it's owed. I've come for what's mine.",
       "shots": [
         {
-          "id": "c10_s1",
+          "id": "c23_s1",
           "kind": "character",
           "who": "mona",
           "seed": 81002
@@ -225,13 +239,13 @@
       ]
     },
     {
-      "id": "c11",
+      "id": "c24",
       "segment": "act_2",
       "speaker": "VIVIAN",
-      "vo": "My son had a wife. How wonderful. He never mentioned it. Then again, he never mentioned a great deal. He was very handsome and almost entirely hollow. You'd have gotten on.",
+      "vo": "My son had a wife. How wonderful. He never mentioned it — then again, he never mentioned a great deal. He was very handsome and almost entirely hollow. You'd have gotten on. The estate is settled, dear. There is nothing here that is yours.",
       "shots": [
         {
-          "id": "c11_s1",
+          "id": "c24_s1",
           "kind": "character",
           "who": "vivian",
           "seed": 81001
@@ -239,13 +253,13 @@
       ]
     },
     {
-      "id": "c12",
+      "id": "c25",
       "segment": "act_2",
       "speaker": "MONA",
-      "vo": "What is this place. What is the lake. Why is everyone looking at a pitcher of lemonade like it's the crown of England.",
+      "vo": "How much of it is left.",
       "shots": [
         {
-          "id": "c12_s1",
+          "id": "c25_s1",
           "kind": "character",
           "who": "mona",
           "seed": 81002
@@ -253,13 +267,13 @@
       ]
     },
     {
-      "id": "c13",
+      "id": "c26",
       "segment": "act_2",
       "speaker": "VIVIAN",
-      "vo": "Because it is, dear. You really aren't from the Shores, are you.",
+      "vo": "We don't ask how much is left. You really aren't from the Shores, are you.",
       "shots": [
         {
-          "id": "c13_s1",
+          "id": "c26_s1",
           "kind": "character",
           "who": "vivian",
           "seed": 81001
@@ -280,13 +294,27 @@
       ]
     },
     {
-      "id": "c15",
+      "id": "c27",
       "segment": "button",
       "speaker": "BRICK",
-      "vo": "Sorry I'm late. Roads. …Oh. Is that for me? That's thoughtful.",
+      "vo": "Sorry I'm late. Roads. …The strata's good this year. Oh. Is that for me? That's thoughtful.",
       "shots": [
         {
-          "id": "c15_s1",
+          "id": "c27_s1",
+          "kind": "character",
+          "who": "brick",
+          "seed": 81003
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "segment": "button",
+      "speaker": "BRICK",
+      "vo": "Is this walnut? I asked for walnut the last time. I got cedar. Nice gesture, but you can smell it thinking about rain. This has no cedar quality to it whatsoever. Good.",
+      "shots": [
+        {
+          "id": "c28_s1",
           "kind": "character",
           "who": "brick",
           "seed": 81003
@@ -322,13 +350,13 @@
       ]
     },
     {
-      "id": "c18",
+      "id": "c29",
       "segment": "button",
       "speaker": "NARRATOR",
-      "vo": "Next week, on As The World Burns: Brick drinks the funeral Product. A line is crossed. And somewhere, far out on the clay… something is walking in.",
+      "vo": "Next week, on As The World Burns: Brick drinks the funeral Product. A line is crossed. And somewhere, far out on the clay… something is walking in. It is walking at roughly two miles per hour. It has been walking for some time. It has very good posture. That part is unusual.",
       "shots": [
         {
-          "id": "c18_s1",
+          "id": "c29_s1",
           "kind": "broll",
           "who": "lake_mirabel"
         }
