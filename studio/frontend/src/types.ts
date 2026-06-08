@@ -41,6 +41,7 @@ export interface EpisodeSummary {
   se_label?: string | null; // "S01-E1" or null (pre-series / non-ep)
   synced?: boolean; // working text files match the tracked episode_meta copy
   show?: string; // owning show id
+  published?: boolean; // manifest `published` → public on macu-web (else hidden draft)
 }
 
 // ---- Multi-show ----

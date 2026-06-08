@@ -5,6 +5,7 @@ import { Modal } from "./Modal";
 import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi, exportUrl, cloneVoiceRef } from "../api/shows";
+import { macuWeb } from "../api/macuweb";
 import { api } from "../api";
 import type { Route } from "../route";
 import { useT } from "../i18n";
@@ -19,7 +20,7 @@ interface Props {
   onGoAssembly: () => void;
 }
 
-type Dialog = null | "new-show" | "new-episode" | "export" | "shutdown";
+type Dialog = null | "new-show" | "new-episode" | "export" | "macu-web" | "shutdown";
 
 export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial, onGoAssembly }: Props) {
   const t = useT();
@@ -133,6 +134,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
             <Section label={t("filemenu.sectionProject")} />
             <Item label={t("filemenu.import")} onClick={() => fileRef.current?.click()} hint=".zip" />
             <Item label={t("filemenu.export")} onClick={() => setDialog("export")} />
+            <Item label="Publish to MACU Web" onClick={() => setDialog("macu-web")} hint="↗" />
 
             <Section label={t("filemenu.sectionMore")} />
             <Item label={t("filemenu.settings")} onClick={onOpenSettings} />
@@ -162,6 +164,9 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       )}
       {dialog === "export" && (
         <ExportDialog show={activeShow} slug={slug} onClose={() => setDialog(null)} />
+      )}
+      {dialog === "macu-web" && (
+        <MacuWebDialog show={activeShow} onClose={() => setDialog(null)} />
       )}
       {dialog === "shutdown" && <ShutdownDialog onClose={() => setDialog(null)} />}
       {cloneVoices && (
@@ -246,6 +251,107 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
               {t("filemenu.cloneVoicesFailed", { names: failed.join(", ") })}
             </p>
           )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void }) {
+  const pushToast = useStore((s) => s.pushToast);
+  const qc = useQueryClient();
+  const [token, setToken] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  const status = useQuery({ queryKey: ["macu-web-status"], queryFn: macuWeb.status });
+  const connected = !!status.data?.connected;
+  const eps = useQuery({
+    queryKey: ["episodes", show],
+    queryFn: () => api.episodes(show),
+    enabled: connected,
+  });
+
+  async function connect() {
+    setConnecting(true);
+    try {
+      const r = await macuWeb.connect(token.trim());
+      pushToast(`Connected to ${r.base}`, "ok");
+      setToken("");
+      qc.invalidateQueries({ queryKey: ["macu-web-status"] });
+    } catch (e) {
+      pushToast(`connect failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+    } finally { setConnecting(false); }
+  }
+
+  async function toggle(slug: string, published: boolean) {
+    try {
+      await macuWeb.setPublished(slug, published);
+      qc.invalidateQueries({ queryKey: ["episodes", show] });
+      qc.invalidateQueries({ queryKey: ["episodes"] });
+    } catch (e) {
+      pushToast(`${slug}: ${e instanceof Error ? e.message : String(e)}`, "err");
+    }
+  }
+
+  async function publish() {
+    setPublishing(true);
+    try {
+      const r = await macuWeb.publish(show);
+      pushToast(
+        r.pushed ? `Published ${show} (${r.files} files) → MACU Web`
+                 : `committed locally (${r.files} files) — set creds to push`,
+        r.pushed ? "ok" : "info",
+      );
+    } catch (e) {
+      pushToast(`publish failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+    } finally { setPublishing(false); }
+  }
+
+  return (
+    <Modal
+      open onClose={onClose} title="Publish to MACU Web" width={520}
+      footer={connected ? (
+        <>
+          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn btn-amber" disabled={publishing} onClick={publish}>
+            {publishing ? "Publishing…" : `Publish ${show}`}
+          </button>
+        </>
+      ) : undefined}
+    >
+      {!connected ? (
+        <div className="flex flex-col gap-3">
+          <p className="label-tiny leading-relaxed">
+            On mayorawesome.com, open your show → <b>Manage → Connect MACU Studio → Generate connect
+            token</b>, copy it, and paste it here. It wires the remote and push credentials in one step.
+          </p>
+          <textarea
+            className="w-full bg-bg-2 rounded px-2 py-1.5 text-[12px] font-mono hairline"
+            value={token} onChange={(e) => setToken(e.target.value)}
+            placeholder="macu-connect.…" rows={3}
+          />
+          <button className="btn btn-amber justify-center" disabled={connecting || !token.trim()} onClick={connect}>
+            {connecting ? "Connecting…" : "Connect"}
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <p className="label-tiny leading-relaxed">
+            Connected to <span className="font-mono">{status.data?.base}</span>. Checked episodes go
+            public; unchecked are pushed but hidden as drafts. Then Publish.
+          </p>
+          <div className="flex flex-col gap-0.5 max-h-[320px] overflow-y-auto">
+            {eps.data?.episodes.length === 0 && <div className="label-tiny">No episodes.</div>}
+            {eps.data?.episodes.map((ep) => (
+              <label key={ep.slug} className="flex items-center gap-2 text-[12px] py-1 px-1 hover:bg-bg-3 rounded cursor-pointer">
+                <input type="checkbox" checked={!!ep.published} onChange={(e) => toggle(ep.slug, e.target.checked)} />
+                <span className="font-mono">{ep.slug}</span>
+                <span className="truncate flex-1 opacity-80">{ep.title}</span>
+                {ep.se_label && <span className="label-tiny">{ep.se_label}</span>}
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </Modal>

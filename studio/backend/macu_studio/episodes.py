@@ -27,6 +27,7 @@ class EpisodeSummary:
     se_label: str | None = None  # "S01-E1" or None (pre-series / non-ep slugs)
     synced: bool = True  # working text files match the tracked episode_meta copy
     show: str = shows_mod.DEFAULT_SHOW  # owning show id
+    published: bool = False  # manifest `published` flag → public on macu-web (else hidden draft)
 
 
 def _utc_iso(ts: float) -> str:
@@ -96,6 +97,7 @@ def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
                 se_label=label,
                 synced=gitsync.sync_status(entry.name, pushed),
                 show=show,
+                published=data.get("published") is True,
             )
         )
     return out
