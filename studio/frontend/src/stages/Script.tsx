@@ -96,8 +96,11 @@ export function Script({ slug }: { slug: string }) {
     <div className="flex h-full">
       <section className="panel flex flex-col flex-1 min-w-0">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
-          <div className="panel-title">
+          <div className="panel-title flex items-center gap-2">
             SCRIPT <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ episodes/{slug}/script.md</span>
+            <a href="#docs" title={t("script.styleGuideTitle")} className="text-txt-faint normal-case tracking-normal text-[11px] hover:text-amber">
+              {t("script.styleGuide")}
+            </a>
           </div>
           <div className="flex items-center gap-2">
             <span className={"text-[11px] " + (saved ? "text-green" : "text-amber")}>

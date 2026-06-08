@@ -922,5 +922,7 @@
   "publish.noEpisode": "No episode selected.",
   "toast.macuWebVideoSet": "video set ({id})",
   "toast.macuWebVideoCleared": "video cleared",
-  "toast.youtubeConnected": "YouTube connected"
+  "toast.youtubeConnected": "YouTube connected",
+  "script.styleGuide": "Style guide ↗",
+  "script.styleGuideTitle": "How the manifest parser reads your script — opens the Docs tab"
 }
