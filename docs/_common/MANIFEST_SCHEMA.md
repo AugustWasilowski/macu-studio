@@ -58,6 +58,10 @@ Every manifest is stamped by `manifest.save()`:
 - `schema_version` (int) — the manifest schema this file was written under. Current: **1**.
 - `studio_commit` (str) — the short macu-studio git commit that last wrote it (provenance: "which
   build produced this manifest").
+- `riffed_from` (str, optional) — the source show id this episode was forked from, stamped by
+  `/api/import` when a downloaded "riff" bundle creates a brand-new local show. Set once and
+  preserved through riff-of-a-riff chains (records the *original* origin), so attribution survives
+  forks. Additive/optional — no migration needed.
 
 These let us evolve the schema without stranding old episodes. `manifest.load()` runs
 `models.migrate()`, which upgrades an older manifest **in memory** to the current schema before anyone

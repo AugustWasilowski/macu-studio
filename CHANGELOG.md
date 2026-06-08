@@ -3,6 +3,13 @@
 All notable changes to MACU Studio. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions are tagged GitHub releases.
 
+## [Unreleased]
+
+### Added
+- The first-run tutorial now covers the **Publish** stage (it previously skipped stage 6).
+- **Riff lineage:** importing a downloaded riff bundle into a new local show stamps each episode's
+  manifest with `riffed_from` (the source show id), preserving the original origin through forks.
+
 ## [0.2.1] — 2026-06-08
 
 ### Added

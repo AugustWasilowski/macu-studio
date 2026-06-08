@@ -28,6 +28,7 @@ from fastapi.responses import StreamingResponse
 from . import shows as shows_mod
 from . import episodes as ep_mod
 from . import voices as voices_mod
+from . import manifest as manifest_mod
 from . import config
 
 router = APIRouter()
@@ -454,6 +455,20 @@ async def import_zip(file: UploadFile = File(...)):
             (created if res == "created" else updated).append(slug)
         except ValueError as e:
             errors.append(f"{slug}: {e}")
+
+    # Riff lineage: importing into a brand-new local show = a fork. Stamp each imported
+    # episode's manifest with the source show id (from export.json) — unless it already
+    # records one, so a riff-of-a-riff keeps the *original* origin. Merges into an existing
+    # local show (round-trip / restore) are not riffs, so we leave them alone.
+    if created_show:
+        for slug in created + updated:
+            try:
+                m = manifest_mod.load(slug)
+                if not m.get("riffed_from"):
+                    m["riffed_from"] = show_id
+                    manifest_mod.save(slug, m)
+            except Exception:
+                pass
 
     # Unpack bundled hyperframes templates into the shared templates dir (OVERWRITE).
     templates: set[str] = set()

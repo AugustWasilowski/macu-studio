@@ -54,6 +54,12 @@ export const TOUR_STEPS: TourStep[] = [
     stage: "assembly",
   },
   {
+    target: '[data-tour="tab-publish"]',
+    titleKey: "tour.publish.title",
+    bodyKey: "tour.publish.body",
+    stage: "publish",
+  },
+  {
     target: '[data-tour="tab-docs"]',
     titleKey: "tour.docs.title",
     bodyKey: "tour.docs.body",
