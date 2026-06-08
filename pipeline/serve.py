@@ -21,7 +21,8 @@ Job state directory: /var/lib/macu-render/jobs/<job_id>/
   - run.log         combined stdout+stderr of run.py
   - meta.json       job-level metadata
 
-Bind: 0.0.0.0:8773  (LAN-only by design; no auth)
+Bind: 127.0.0.1:8773 by default (no auth). Set MACU_RENDER_HOST=0.0.0.0 to reach it
+from another device on a trusted LAN.
 """
 import os, re, sys, json, uuid, time, threading, queue, subprocess, signal
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -397,8 +398,14 @@ START = time.time()
 
 def main():
     load_existing_jobs()
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"macu-render serving on 0.0.0.0:{PORT}  jobs={len(JOBS)}", flush=True)
+    # Loopback by default (no auth on this service). Studio reaches it on localhost.
+    # Set MACU_RENDER_HOST=0.0.0.0 only to drive renders from another device on a trusted LAN.
+    host = os.environ.get("MACU_RENDER_HOST", "127.0.0.1").strip() or "127.0.0.1"
+    if host == "0.0.0.0":
+        print("WARNING: MACU_RENDER_HOST=0.0.0.0 — macu-render is reachable by anyone on your "
+              "network, with NO auth. Use 127.0.0.1 unless you mean to share it.", flush=True)
+    server = ThreadingHTTPServer((host, PORT), Handler)
+    print(f"macu-render serving on {host}:{PORT}  jobs={len(JOBS)}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
