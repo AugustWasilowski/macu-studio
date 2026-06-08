@@ -8,6 +8,9 @@
 set -euo pipefail
 
 STUDIO="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(cd "$STUDIO/.." && pwd)"
+# Pull in local, gitignored config (MACU_DEMO_FLY_APP, FLY_API_TOKEN, MACU_WEB_DEMO_DIR, …).
+[ -f "$REPO/.env" ] && { set -a; . "$REPO/.env"; set +a; }
 FRONTEND="$STUDIO/frontend"
 DEMO="$STUDIO/demo"
 DEST="${MACU_WEB_DEMO_DIR:-/mnt/storage/macu-web/demo}"
@@ -47,7 +50,26 @@ PY
 PY="$STUDIO/.venv/bin/python"; [ -x "$PY" ] || PY="python3"
 PYTHONPATH="$STUDIO/backend" "$PY" "$STUDIO/scripts/gen_demo_fixtures.py" "$SLUG" --out "$STAGE"
 
-# 5. Publish atomically-ish to the served dir.
+# 5. Publish to the local dir the dev demo container serves (LAN dev).
 mkdir -p "$DEST"
 rsync -a --delete "$STAGE/" "$DEST/"
 echo ">>> demo published to $DEST  ($(du -sh "$DEST" | cut -f1))"
+
+# 6. Publish PROD to a Fly app (set MACU_DEMO_FLY_APP, e.g. "macu-demo"). flyctl must be
+#    installed and authenticated (FLY_API_TOKEN in env/.env, or `fly auth login`). Skipped
+#    cleanly on installs that don't set MACU_DEMO_FLY_APP.
+FLY_APP="${MACU_DEMO_FLY_APP:-}"
+if [ -n "$FLY_APP" ]; then
+  export PATH="$HOME/.fly/bin:$PATH"
+  if command -v flyctl >/dev/null 2>&1; then
+    echo ">>> deploying demo to Fly app: $FLY_APP"
+    FLYCTX="$(mktemp -d)"; mkdir -p "$FLYCTX/content"
+    cp -a "$STAGE/." "$FLYCTX/content/"
+    cp "$DEMO/fly/Dockerfile" "$DEMO/fly/default.conf" "$DEMO/fly/fly.toml" "$FLYCTX/"
+    ( cd "$FLYCTX" && flyctl deploy -a "$FLY_APP" --config fly.toml --ha=false )
+    rm -rf "$FLYCTX"
+    echo ">>> demo deployed to Fly app $FLY_APP"
+  else
+    echo "    flyctl not found — skipping Fly deploy (set up flyctl to publish prod)"
+  fi
+fi
