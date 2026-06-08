@@ -56,6 +56,19 @@ def _upstream() -> str | None:
     return p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else None
 
 
+_SHORT_COMMIT: "str | None" = None
+
+
+def short_commit() -> "str | None":
+    """Short macu-studio HEAD hash, cached for the process (a self-update restarts us so the
+    cache can't go stale). Stamped into manifests by manifest.save() for provenance."""
+    global _SHORT_COMMIT
+    if _SHORT_COMMIT is None:
+        p = _git("rev-parse", "--short", "HEAD")
+        _SHORT_COMMIT = p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else ""
+    return _SHORT_COMMIT or None
+
+
 def _can_autorestart() -> bool:
     """True when we were launched by systemd — a non-zero exit will be restarted.
     (systemd sets INVOCATION_ID for every service it runs.)"""

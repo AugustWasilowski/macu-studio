@@ -121,6 +121,12 @@ class Manifest(BaseModel):
     episode: Optional[str] = None  # the slug, e.g. "ep-006"
     title: Optional[str] = None
     version: Optional[int] = None
+    # Provenance + migration (stamped by manifest.save; see migrate() + MANIFEST_SCHEMA.md):
+    schema_version: Optional[int] = None   # the manifest schema this was written under
+    studio_commit: Optional[str] = None    # short macu-studio commit that last wrote it
+    notes: Optional[str] = None            # episode description (macu-web synopsis)
+    youtube: Optional[dict[str, Any]] = None  # { video_id, description?, tags? } (replaced youtube.txt)
+    published: Optional[bool] = None       # initial macu-web publish state on first reindex
     season: Optional[int] = None       # weekly arc (5 eps/week); ep-006 = S01
     episode_num: Optional[int] = None  # 1..5 within the season
     voice: Optional[Voice] = None
@@ -152,3 +158,38 @@ def parse(data: dict[str, Any]) -> Manifest:
 def validate(data: dict[str, Any]) -> None:
     """Structural gate used by manifest.save(); raises ValueError if malformed."""
     parse(data)
+
+
+# --------------------------------------------------------------------------- #
+# Manifest schema versioning + migrations
+#
+# manifest.save() stamps `schema_version` (= SCHEMA_VERSION) and `studio_commit` (the
+# macu-studio HEAD) into every manifest. manifest.load() runs migrate() so older manifests
+# are read as current. When you change the manifest schema in a way old files need fixed up:
+#   1. Bump SCHEMA_VERSION.
+#   2. Append a MIGRATIONS entry: (new_version, "what changed", fn(dict)->dict).
+#   3. Note it in docs/_common/MANIFEST_SCHEMA.md.
+# Unstamped (pre-versioning) manifests are treated as schema_version 1 — the baseline at the
+# time this was introduced (post youtube.txt→manifest merge).
+# --------------------------------------------------------------------------- #
+SCHEMA_VERSION = 1
+
+# Ordered upgrades. A manifest at version N gets every fn with to_version > N, in order.
+MIGRATIONS: list[tuple[int, str, Any]] = [
+    # (2, "describe the schema change + how a v1 manifest becomes v2", _migrate_1_to_2),
+]
+
+
+def migrate(data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    """Bring a manifest dict up to SCHEMA_VERSION in memory. Returns (data, changed)."""
+    raw = data.get("schema_version")
+    cur = int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else 1
+    changed = False
+    for to_v, _desc, fn in MIGRATIONS:
+        if cur < to_v:
+            data = fn(data)
+            cur = to_v
+            changed = True
+    if changed:
+        data["schema_version"] = cur
+    return data, changed

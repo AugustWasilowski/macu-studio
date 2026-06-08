@@ -50,3 +50,37 @@ versioned assets. The **active** version always keeps the canonical filename the
 the render path is unchanged. History lives under `<dir>/.versions/<key>/<name>.vN.<ext>`. Keys:
 `cue:<id>`, `shot:<key>`, `ythumb:<slug>`. This sidecar (and the `.versions/` dirs) are episode
 working data — not git-synced.
+
+## Schema version & provenance
+
+Every manifest is stamped by `manifest.save()`:
+
+- `schema_version` (int) — the manifest schema this file was written under. Current: **1**.
+- `studio_commit` (str) — the short macu-studio git commit that last wrote it (provenance: "which
+  build produced this manifest").
+
+These let us evolve the schema without stranding old episodes. `manifest.load()` runs
+`models.migrate()`, which upgrades an older manifest **in memory** to the current schema before anyone
+reads it; the upgrade is persisted the next time the manifest is saved. Manifests written before this
+existed have no `schema_version` and are treated as **v1** (the baseline at introduction — i.e. after the
+`youtube.txt` → `manifest.youtube` merge).
+
+### Changing the schema
+
+When you make a schema change that older manifests must be transformed for:
+
+1. **Bump** `SCHEMA_VERSION` in `studio/backend/macu_studio/models.py`.
+2. **Append** a `MIGRATIONS` entry: `(new_version, "what changed + how a v(N) manifest becomes v(N+1)", fn)`
+   where `fn(dict) -> dict` performs the transform. A manifest at version N gets every `fn` with
+   `to_version > N` applied in order.
+3. **Record it below** so there's a human-readable ledger alongside the code.
+
+A purely additive change (a new optional field) doesn't need a migration — only a bump + a note if you
+want load-time defaulting.
+
+### Changelog
+
+| Schema | Commit (intro) | Change | Migration |
+|---|---|---|---|
+| 1 | v0.2.0 era | Baseline. `youtube.txt` folded into `manifest.youtube.video_id`; description in `notes`. | — (baseline) |
+

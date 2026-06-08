@@ -7,6 +7,7 @@ from typing import Any
 from .episodes import episode_dir, manifest_path
 from .config import SHARES
 from . import models
+from . import version
 
 
 def _load_cue_durs(slug: str) -> dict[str, float]:
@@ -30,7 +31,9 @@ def _wav_dur(path: Path) -> float | None:
 
 
 def load(slug: str) -> dict[str, Any]:
-    return json.loads(manifest_path(slug).read_text())
+    data = json.loads(manifest_path(slug).read_text())
+    data, _ = models.migrate(data)  # bring older manifests up to the current schema in memory
+    return data
 
 
 def load_typed(slug: str) -> "models.Manifest":
@@ -47,6 +50,11 @@ def save(slug: str, data: dict[str, Any], validate: bool = True) -> dict[str, An
     (comfyui/subtitles) stay byte-identical.
     """
     path = manifest_path(slug)
+    # Stamp provenance + schema version so a future schema change can migrate this file.
+    data["schema_version"] = models.SCHEMA_VERSION
+    commit = version.short_commit()
+    if commit:
+        data["studio_commit"] = commit
     if validate:
         models.validate(data)
     # Validate that it's serializable round-trip.
