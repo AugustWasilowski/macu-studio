@@ -84,6 +84,9 @@ def text_bundle_entries(show: str) -> dict[str, bytes]:
                 continue
             slugs.append(ep.name)
             for name in TEXT_FILES:
+                # Scripts stay private — never ship script.md to the public macu-web repo.
+                if name == "script.md":
+                    continue
                 f = ep / name
                 if f.exists():
                     entries[f"episodes/{ep.name}/{name}"] = f.read_bytes()
