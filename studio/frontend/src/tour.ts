@@ -54,12 +54,6 @@ export const TOUR_STEPS: TourStep[] = [
     stage: "assembly",
   },
   {
-    target: '[data-tour="tab-youtube"]',
-    titleKey: "tour.youtube.title",
-    bodyKey: "tour.youtube.body",
-    topPage: "youtube",
-  },
-  {
     target: '[data-tour="tab-docs"]',
     titleKey: "tour.docs.title",
     bodyKey: "tour.docs.body",

@@ -128,7 +128,7 @@ def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
                 synced=gitsync.sync_status(entry.name, pushed),
                 show=show,
                 published=data.get("published") is True,
-                youtube_id=youtube_id_of(entry),
+                youtube_id=(data.get("youtube") or {}).get("video_id") or youtube_id_of(entry),
             )
         )
     return out

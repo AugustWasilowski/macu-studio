@@ -3,8 +3,8 @@ import { UI_STAGES, UIStage } from "./types";
 
 // Top-level pages that aren't tied to a (slug, stage) pair. They use the
 // global activeSlug from the store for "which episode" context.
-export type TopPage = "youtube" | "docs";
-export const TOP_PAGES: TopPage[] = ["youtube", "docs"];
+export type TopPage = "docs";
+export const TOP_PAGES: TopPage[] = ["docs"];
 export type Page = "stage" | TopPage;
 
 export interface Route {

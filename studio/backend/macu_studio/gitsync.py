@@ -28,7 +28,7 @@ CONTENT_REPO = Path(os.environ.get("MACU_CONTENT_REPO", str(REPO / "episode_meta
 # Back-compat alias (older code referenced META).
 META = CONTENT_REPO
 
-TEXT_FILES = ("script.md", "manifest.json", "youtube.txt")
+TEXT_FILES = ("script.md", "manifest.json")  # youtube.txt deprecated → folded into manifest.json
 
 # The ref the sync dot is measured against — a remote ref if the content repo has one,
 # else local HEAD (a local-only content repo is still "synced" once committed).

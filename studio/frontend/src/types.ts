@@ -8,13 +8,14 @@ export type StageKey =
   | "srt"
   | "burn";
 
-export type UIStage = "script" | "audio" | "graphics" | "video" | "assembly";
+export type UIStage = "script" | "audio" | "graphics" | "video" | "assembly" | "publish";
 export const UI_STAGES: { key: UIStage; label: string; n: number }[] = [
   { key: "script", label: "Script", n: 1 },
   { key: "audio", label: "Audio", n: 2 },
   { key: "graphics", label: "Graphics", n: 3 },
   { key: "video", label: "Video", n: 4 },
   { key: "assembly", label: "Assembly", n: 5 },
+  { key: "publish", label: "Publish", n: 6 },
 ];
 
 export type AssetStatus =

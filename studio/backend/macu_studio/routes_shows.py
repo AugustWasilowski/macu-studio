@@ -32,7 +32,7 @@ from . import config
 
 router = APIRouter()
 
-TEXT_FILES = ("script.md", "manifest.json", "youtube.txt")
+TEXT_FILES = ("script.md", "manifest.json")  # youtube.txt deprecated → folded into manifest.json
 EXPORT_VERSION = 1
 
 # Shared hyperframes title-card templates (index.html + any local assets) live

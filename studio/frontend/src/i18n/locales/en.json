@@ -890,5 +890,6 @@
   "filemenu.macuWebPublishingBtn": "Publishing…",
   "toast.macuWebConnected": "Connected to {base}",
   "toast.macuWebPublished": "Published {show} ({files} files) → MACU Web",
-  "toast.macuWebCommitted": "committed locally ({files} files) — set creds to push"
+  "toast.macuWebCommitted": "committed locally ({files} files) — set creds to push",
+  "stage.publish": "Publish"
 }

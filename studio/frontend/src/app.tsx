@@ -10,7 +10,7 @@ import { Audio } from "./stages/Audio";
 import { Script } from "./stages/Script";
 import { Video } from "./stages/Video";
 import { Graphics } from "./stages/Graphics";
-import { YouTube } from "./stages/YouTube";
+import { Publish } from "./stages/Publish";
 import { Docs } from "./stages/Docs";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
@@ -129,7 +129,6 @@ function PageView({
   go: (r: any) => void;
 }) {
   // Top-level pages — driven by the global activeSlug, not (slug, stage).
-  if (page === "youtube") return <YouTube />;
   if (page === "docs") return <Docs />;
 
   if (!slug) {
@@ -148,5 +147,6 @@ function StageView({ slug, stage }: { slug: string; stage: UIStage }) {
   if (stage === "script") return <Script slug={slug} />;
   if (stage === "video") return <Video slug={slug} />;
   if (stage === "graphics") return <Graphics slug={slug} />;
+  if (stage === "publish") return <Publish slug={slug} />;
   return <Placeholder slug={slug} stage={stage} />;
 }
