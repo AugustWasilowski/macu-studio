@@ -10,8 +10,10 @@
 # (127.0.0.1) ONLY by default (the `-i 127.0.0.1` below), so it's reachable from the
 # machine running Studio — including WSL from the Windows host, via localhost
 # forwarding — but NOT from the LAN. To use the drawer from ANOTHER machine over the
-# LAN, remove `-i 127.0.0.1` (and add `-c user:pass`), and point the frontend at the
-# LAN host with VITE_TERMINAL_URL. NEVER expose :7682 on the WAN.
+# LAN, remove `-i 127.0.0.1` — but you MUST also add `-c user:pass` (basic auth) in
+# the same edit, or you are publishing an unauthenticated root shell to your whole
+# network. Then point the frontend at the LAN host with VITE_TERMINAL_URL. NEVER
+# expose :7682 on the WAN.
 [Unit]
 Description=MACU terminal (ttyd + tmux running Claude Code, for Studio's TERMINAL drawer)
 After=default.target

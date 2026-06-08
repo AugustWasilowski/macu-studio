@@ -40,15 +40,30 @@ COMFY="$MACU_DATA_ROOT/comfyui"
 T2V="$COMFY/models/text2video"
 say(){ printf '\n=== %s ===\n' "$1"; }
 
+# Retry a flaky network command up to 3 times with a growing backoff. Downloads are
+# the #1 thing that breaks an install on hotel/home WiFi — don't fail the whole run
+# on a single transient hiccup.
+retry(){
+  local n=0
+  until "$@"; do
+    n=$((n+1))
+    [ "$n" -ge 3 ] && { echo "  still failing after 3 tries: $*" >&2; return 1; }
+    echo "  network hiccup — retry $n/3 in $((n*5))s ..." >&2
+    sleep $((n*5))
+  done
+}
+
 # --- ComfyUI source + custom node --------------------------------------------
 say "ComfyUI source + ModelScopeT2V node"
 mkdir -p "$COMFY"/{models,output,input,user,custom_nodes}
 if [ ! -d "$COMFY/ComfyUI/.git" ]; then
-  git clone --depth 1 https://github.com/Comfy-Org/ComfyUI.git "$COMFY/ComfyUI"
+  rm -rf "$COMFY/ComfyUI"  # clear any partial clone from an interrupted run
+  retry git clone --depth 1 https://github.com/Comfy-Org/ComfyUI.git "$COMFY/ComfyUI"
 else echo "ComfyUI already cloned — skip (git pull to update)"; fi
 NODE="$COMFY/custom_nodes/ComfyUI_ModelScopeT2V"
 if [ ! -d "$NODE/.git" ]; then
-  git clone --depth 1 https://github.com/ExponentialML/ComfyUI_ModelScopeT2V.git "$NODE"
+  rm -rf "$NODE"  # clear any partial clone from an interrupted run
+  retry git clone --depth 1 https://github.com/ExponentialML/ComfyUI_ModelScopeT2V.git "$NODE"
 else echo "ModelScopeT2V node already present — skip"; fi
 
 # --- text2video + clip weights (HuggingFace) ---------------------------------
@@ -57,7 +72,7 @@ MODELS="$COMFY/models"
 mkdir -p "$MODELS/text2video" "$MODELS/clip"
 "$PYHF" - "$MODELS" <<'PY'
 import os, sys, shutil
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, hf_hub_url, get_hf_file_metadata
 models = sys.argv[1]
 T2V = os.path.join(models, "text2video")
 CLIP = os.path.join(models, "clip")
@@ -72,23 +87,56 @@ WANT = [
     (DAMO, "configuration.json",                    T2V,  "configuration.json"),
     (DAMO, "open_clip_pytorch_model.bin",           CLIP, "open_clip_pytorch_model.bin"),
 ]
+
+def human(n):
+    return f"{n/1e9:.2f} GB" if n and n >= 1e9 else (f"{n/1e6:.0f} MB" if n else "?")
+
+def expected_size(repo, fname):
+    """Authoritative size from HF metadata, so a truncated download can't pass a
+    weak >1KB check forever. Returns None if the lookup fails (offline mirror, etc.)."""
+    try:
+        return get_hf_file_metadata(hf_hub_url(repo_id=repo, filename=fname)).size
+    except Exception:
+        return None
+
 for repo, fname, dst, final in WANT:
     out = os.path.join(dst, final)
-    if os.path.exists(out) and os.path.getsize(out) > 1000:
-        print(f"  have {final} — skip"); continue
-    print(f"  downloading {final}  <-  {repo}/{fname}")
-    p = hf_hub_download(repo_id=repo, filename=fname, local_dir=dst)
-    if os.path.abspath(p) != os.path.abspath(out):
-        shutil.move(p, out)  # may cross filesystems; os.replace would EXDEV
+    want = expected_size(repo, fname)
+    if os.path.exists(out):
+        have = os.path.getsize(out)
+        # Match the known size when we have it; else fall back to a sanity floor.
+        if (want and have == want) or (not want and have > 1000):
+            print(f"  have {final} ({human(have)}) — skip"); continue
+        print(f"  {final} is {human(have)} but expected {human(want)} — re-fetching")
+        os.remove(out)
+    print(f"  downloading {final} ({human(want)})  <-  {repo}/{fname}")
+    try:
+        p = hf_hub_download(repo_id=repo, filename=fname, local_dir=dst)
+        if os.path.abspath(p) != os.path.abspath(out):
+            # Stage next to the final name, then atomically swap in — so an interrupted
+            # cross-filesystem move never leaves a half-written file at `out`.
+            tmp = out + ".part"
+            shutil.move(p, tmp)
+            os.replace(tmp, out)
+    except BaseException:
+        for stray in (out, out + ".part"):
+            try: os.remove(stray)
+            except OSError: pass
+        raise
 print("text2video + clip weights ready")
 PY
 
 # --- Ollama shot-gen model ----------------------------------------------------
 say "Ollama model (qwen2.5:7b-instruct-q4_K_M)"
 OLLAMA_COMPOSE="$REPO/deploy/services/ollama/docker-compose.yml"
-MACU_DATA_ROOT="$MACU_DATA_ROOT" docker compose -f "$OLLAMA_COMPOSE" up -d
-for i in $(seq 1 30); do docker exec ollama ollama list >/dev/null 2>&1 && break; sleep 2; done
-docker exec ollama ollama pull qwen2.5:7b-instruct-q4_K_M
+MACU_DATA_ROOT="$MACU_DATA_ROOT" retry docker compose -f "$OLLAMA_COMPOSE" up -d
+ready=0
+for i in $(seq 1 30); do docker exec ollama ollama list >/dev/null 2>&1 && { ready=1; break; }; sleep 2; done
+if [ "$ready" -ne 1 ]; then
+  echo "ERROR: ollama container didn't become ready in 60s. Check 'docker logs ollama'." >&2
+  exit 1
+fi
+retry docker exec ollama ollama pull qwen2.5:7b-instruct-q4_K_M
 echo "(ollama left running — the Studio backend manages start/stop on demand; 'docker stop ollama' to free VRAM)"
 
 # --- Subtitle font ------------------------------------------------------------

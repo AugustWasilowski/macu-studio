@@ -87,6 +87,11 @@ From inside the app, the project menu (top-left **MACU STUDIO** → **More → S
 server and **frees the GPU first** — it stops the ComfyUI / OmniVoice / Ollama containers, then exits. Start
 it again from a terminal to come back.
 
+> **Access:** Studio has no password and binds `127.0.0.1` (this machine only) by default. To reach it from
+> another device on a network you trust, set `MACU_STUDIO_HOST=0.0.0.0` in `.env` — but that exposes every
+> endpoint to anyone on that network, so never do it on untrusted WiFi or forward it to the internet. See
+> [INSTALL.md → Network & access](INSTALL.md#network--access-read-before-sharing-it).
+
 ## Pipeline stages
 
 | # | Script | What it does | Wall (~4-min ep) |

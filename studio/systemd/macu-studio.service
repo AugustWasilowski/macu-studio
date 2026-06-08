@@ -13,10 +13,15 @@ WorkingDirectory=__REPO__/studio
 Environment=MACU_RENDER_URL=http://127.0.0.1:8773
 Environment=MACU_EPISODES=__SHARES__/episodes
 Environment=PYTHONUNBUFFERED=1
-# Optional repo-root .env (the leading '-' makes it a no-op if absent). The inline
-# Environment= lines above take precedence over the file.
+# Studio has no auth — bind loopback by default. Set MACU_STUDIO_HOST=0.0.0.0 in
+# .env to reach it from another machine on a trusted LAN.
+Environment=MACU_STUDIO_HOST=127.0.0.1
+Environment=MACU_STUDIO_PORT=8774
+# Optional repo-root .env (the leading '-' makes it a no-op if absent). It is read
+# AFTER the inline Environment= lines above, so values it sets (e.g. MACU_STUDIO_HOST)
+# override the defaults here.
 EnvironmentFile=-__REPO__/.env
-ExecStart=__REPO__/studio/.venv/bin/uvicorn macu_studio.main:app --host 0.0.0.0 --port 8774
+ExecStart=__REPO__/studio/.venv/bin/uvicorn macu_studio.main:app --host ${MACU_STUDIO_HOST} --port ${MACU_STUDIO_PORT}
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:/var/log/macu-studio.log

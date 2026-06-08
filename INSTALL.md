@@ -94,6 +94,24 @@ service on `:8773`) and open `http://localhost:8774/`. To run on boot, see
   (WSL doesn't auto-start Linux services on Windows boot; launch it from your WSL
   shell, or add the tmux line to your shell profile.)
 
+## Network & access (read before sharing it)
+
+Studio has **no login or password** — it assumes it's running just for you. By
+default it binds **`127.0.0.1`** (this machine only), so nothing on your network can
+reach it. `http://localhost:8774/` works; your phone or laptop on the same WiFi can't.
+
+To open it to another device on a network **you trust** (e.g. drive Studio from a
+laptop while it renders on a desktop), set in your `.env`:
+
+```bash
+MACU_STUDIO_HOST=0.0.0.0     # bind all interfaces — start-studio.sh will warn you
+```
+
+Be deliberate about this: a `0.0.0.0` bind hands every write/render endpoint to
+**anyone on that network**, with no password. Only do it on a home/trusted LAN, and
+**never** port-forward Studio (or the `:7682` terminal drawer, or the `:8802` chat
+bridge) to the public internet.
+
 ## The two halves a script can't do
 
 - **Voices.** The installer ships **no** cloned voices — clone your own with the

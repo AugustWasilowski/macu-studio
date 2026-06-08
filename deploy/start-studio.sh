@@ -4,9 +4,15 @@
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"; set +a
-HOST="${MACU_STUDIO_HOST:-0.0.0.0}"
+HOST="${MACU_STUDIO_HOST:-127.0.0.1}"
 PORT="${MACU_STUDIO_PORT:-8774}"
 RENDER_URL="${MACU_RENDER_URL:-http://127.0.0.1:8773}"
+# Studio has no authentication. A loopback bind keeps it private to this machine;
+# 0.0.0.0 hands every write/render endpoint to anyone on the same network.
+if [ "$HOST" = "0.0.0.0" ]; then
+  echo "WARNING: MACU_STUDIO_HOST=0.0.0.0 — Studio is reachable by anyone on your"
+  echo "         network, with NO password. Use 127.0.0.1 unless you mean to share it."
+fi
 
 cd "$REPO/studio"
 if [ ! -x .venv/bin/uvicorn ]; then

@@ -23,7 +23,10 @@ FRONTEND_DIST = STUDIO_ROOT / "frontend" / "dist"
 # The macu-studio repo root (studio/ lives inside it). `docs/` is the canon dir.
 REPO_ROOT = STUDIO_ROOT.parent
 
-HOST = os.environ.get("MACU_STUDIO_HOST", "0.0.0.0")
+# Bind loopback by default — Studio has no auth, so a 0.0.0.0 bind exposes every
+# write/render endpoint to anyone on your network. Set MACU_STUDIO_HOST=0.0.0.0 to
+# reach it from another machine on a trusted LAN.
+HOST = os.environ.get("MACU_STUDIO_HOST", "127.0.0.1")
 PORT = int(os.environ.get("MACU_STUDIO_PORT", "8774"))
 
 CORS_DEV_ORIGINS = [

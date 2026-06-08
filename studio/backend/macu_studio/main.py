@@ -271,12 +271,20 @@ async def put_srt(slug: str, body: dict = Body(...)):
 
 @app.get("/api/episodes/{slug}/cue/{cue_id}/audio")
 def get_cue_audio(slug: str, cue_id: str, request: Request):
+    try:
+        cue_id = shows_mod.safe_segment(cue_id, "cue_id")
+    except ValueError:
+        raise HTTPException(400, "bad cue_id")
     p = ep_mod.episode_dir(slug) / "vo" / f"{cue_id}.wav"
     return media_mod.stream_file(request, p, content_type="audio/wav")
 
 
 @app.get("/api/episodes/{slug}/shot/{key}/preview")
 def get_shot_preview(slug: str, key: str, request: Request):
+    try:
+        key = shows_mod.safe_segment(key, "shot key")
+    except ValueError:
+        raise HTTPException(400, "bad shot key")
     ep = ep_mod.episode_dir(slug)
     candidates = [
         ep / "clips" / f"{key}_master.zs.webp",
@@ -294,7 +302,9 @@ def get_shot_preview(slug: str, key: str, request: Request):
 
 @app.get("/api/episodes/{slug}/title/{key}/preview")
 def get_title_preview(slug: str, key: str, request: Request):
-    if "/" in key or ".." in key:
+    try:
+        key = shows_mod.safe_segment(key, "title key")
+    except ValueError:
         raise HTTPException(400, "bad key")
     p = ep_mod.episode_dir(slug) / "titles" / f"{key}.mp4"
     if not p.exists():

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -29,6 +30,18 @@ CONTENT_REPO = Path(os.environ.get("MACU_CONTENT_REPO", str(REPO / "episode_meta
 META = CONTENT_REPO
 
 TEXT_FILES = ("script.md", "manifest.json")  # youtube.txt deprecated → folded into manifest.json
+
+
+def _clean_message(message: str | None, slug: str) -> str:
+    """Sanitize a user-supplied commit message. subprocess (list form) blocks shell
+    injection, but control chars / newlines in a message can still confuse anything
+    that later parses `git log` (incl. the web UI that renders commit messages). Strip
+    control characters, collapse whitespace, and clamp length; fall back to a default."""
+    if not message:
+        return f"studio: sync {slug}"
+    cleaned = re.sub(r"[\x00-\x1f\x7f]", " ", message)  # drop control chars incl. newlines
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()[:200]
+    return cleaned or f"studio: sync {slug}"
 
 # The ref the sync dot is measured against — a remote ref if the content repo has one,
 # else local HEAD (a local-only content repo is still "synced" once committed).
@@ -146,9 +159,7 @@ def sync(slug: str, message: str | None = None) -> dict:
                 "pushed": False, "log": "\n".join(log_parts)}
 
     # Scope the commit to ONLY this episode's dir.
-    commit = _git("commit", "-m",
-                  message.strip() if (message and message.strip()) else f"studio: sync {slug}",
-                  "--", slug)
+    commit = _git("commit", "-m", _clean_message(message, slug), "--", slug)
     _log(commit)
     committed = False
     short = None

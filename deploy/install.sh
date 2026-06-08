@@ -9,6 +9,18 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 AUTO=0
 for a in "$@"; do case "$a" in -y|--yes) AUTO=1 ;; esac; done
 
+# Retry a flaky network command up to 3 times with a growing backoff, so one WiFi
+# hiccup during a multi-GB pull doesn't abort the whole install.
+retry(){
+  local n=0
+  until "$@"; do
+    n=$((n+1))
+    [ "$n" -ge 3 ] && { echo "  still failing after 3 tries: $*" >&2; return 1; }
+    echo "  network hiccup — retry $n/3 in $((n*5))s ..." >&2
+    sleep $((n*5))
+  done
+}
+
 cat <<'BANNER'
 
    ██    ██   ██████    ██████   ██    ██
@@ -93,8 +105,8 @@ esac
 echo "  (override the data location in .env / deploy/services/.env if you want it elsewhere)"
 
 echo; echo ">>> [3/6] pull + create on-demand service containers (ollama + omnivoice)"
-docker compose -f deploy/services/ollama/docker-compose.yml pull
-docker compose -f deploy/services/omnivoice/docker-compose.yml pull
+retry docker compose -f deploy/services/ollama/docker-compose.yml pull
+retry docker compose -f deploy/services/omnivoice/docker-compose.yml pull
 # Create the containers (stopped) so the on-demand `docker start omnivoice` works
 # later — pulling the image alone leaves no container to start.
 docker compose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null || true

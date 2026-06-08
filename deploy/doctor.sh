@@ -60,6 +60,13 @@ echo "Docker + GPU:"
 if have docker; then
   if docker info >/dev/null 2>&1; then
     PASS docker "$(docker --version 2>/dev/null | cut -d, -f1)"
+    # Compose v2 (the `docker compose` subcommand) — the installer uses it everywhere.
+    # The old standalone v1 `docker-compose` is NOT a substitute and will break mid-build.
+    if docker compose version >/dev/null 2>&1; then
+      PASS docker-compose "v$(docker compose version --short 2>/dev/null)"
+    else
+      FAIL docker-compose "need Compose v2 — install the docker-compose-plugin (the old standalone 'docker-compose' won't work)"
+    fi
     # nvidia runtime available?
     if docker info 2>/dev/null | grep -qiE 'Runtimes:.*nvidia' \
        || docker info 2>/dev/null | grep -qi 'nvidia'; then
@@ -68,7 +75,12 @@ if have docker; then
       FAIL nvidia-runtime "install nvidia-container-toolkit (GPU services need it)"
     fi
   else
-    FAIL docker "installed but daemon unreachable (start Docker / add user to docker group)"
+    # Separate "you lack permission" from "the daemon is down" — the fix is different.
+    if docker info 2>&1 | grep -qiE 'permission denied|dial unix.*docker.sock'; then
+      FAIL docker "no permission for the Docker socket — run:  sudo usermod -aG docker $(id -un)  then log out and back in"
+    else
+      FAIL docker "daemon unreachable — start Docker (Docker Desktop, or 'sudo systemctl start docker')"
+    fi
   fi
 else FAIL docker "install Docker Engine"; fi
 
