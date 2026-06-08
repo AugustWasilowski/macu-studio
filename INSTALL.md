@@ -112,6 +112,26 @@ Be deliberate about this: a `0.0.0.0` bind hands every write/render endpoint to
 **never** port-forward Studio (or the `:7682` terminal drawer, or the `:8802` chat
 bridge) to the public internet.
 
+## Updating
+
+Studio updates itself: the **Update** badge (top bar / File → Check for updates) runs
+`git pull` + rebuilds the UI and Python deps + restarts. That covers most commits.
+
+Some updates change things the in-app updater **can't** touch — it has no `sudo`, so it
+can't re-template systemd units, install new system packages, or fetch new models. When
+a pending update touches those (it's detected automatically from the changed files), the
+update panel **won't offer one-click update**; instead it shows the exact command(s) to
+run. The catch-all is:
+
+```bash
+cd /path/to/macu-pipeline
+./deploy/install.sh            # idempotent — pulls, installs prereqs/models, rebuilds
+sudo ./deploy/install-systemd.sh   # only if it says a unit template changed
+```
+
+`deploy/install.sh` is safe to re-run anytime; each stage skips work already done. If the
+panel mentions new config options, diff your `.env` against `.env.example`.
+
 ## The two halves a script can't do
 
 - **Voices.** The installer ships **no** cloned voices — clone your own with the

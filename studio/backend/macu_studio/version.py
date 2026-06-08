@@ -39,6 +39,7 @@ _LOCK = threading.Lock()
 _CHECK: dict = {
     "ts": None, "behind": 0, "ahead": 0, "update_available": False,
     "incoming": [], "remote_short": None, "error": None, "upstream": None,
+    "requires_setup": False, "setup": [],
 }
 
 # Live state of an in-progress update (phases: idle → pulling → building →
@@ -54,6 +55,51 @@ def _git(*args: str, timeout: int = 60) -> subprocess.CompletedProcess:
 def _upstream() -> str | None:
     p = _git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
     return p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else None
+
+
+def _classify_setup(paths: list[str]) -> list[dict]:
+    """Map changed file paths to the manual setup steps the in-app updater CAN'T do
+    (it has no sudo and only rebuilds code/deps/frontend). Each reason is shown to the
+    user with the exact command to run. De-duplicated, at most one entry per area."""
+    reasons: list[dict] = []
+
+    def add(area: str, reason: str, command: str | None) -> None:
+        if not any(r["area"] == area for r in reasons):
+            reasons.append({"area": area, "reason": reason, "command": command})
+
+    for p in paths:
+        base = p.rsplit("/", 1)[-1]
+        if p.endswith(".service") or base == "install-systemd.sh":
+            add("systemd", "A systemd unit template changed — the live units won't update on their own.",
+                "sudo ./deploy/install-systemd.sh")
+        elif base == "install-prereqs.sh":
+            add("prereqs", "System packages / prerequisites changed.", "./deploy/install.sh")
+        elif base == "fetch-models.sh":
+            add("models", "The model set changed — new weights may need fetching.", "./deploy/install.sh")
+        elif p.startswith("deploy/services/"):
+            add("services", "Local service definitions (ComfyUI/OmniVoice/Ollama/Piper) changed.",
+                "./deploy/install.sh")
+        elif p == ".env.example":
+            add("env", "New configuration options were added — review your .env against .env.example.", None)
+        elif p.startswith("deploy/"):
+            add("deploy", "The installer changed.", "./deploy/install.sh")
+    return reasons
+
+
+def _setup_for_range(rng: str) -> list[dict]:
+    """Setup steps implied by the files changed across a git range (e.g. 'HEAD..origin/main').
+    Network-free — operates on refs already present."""
+    d = _git("diff", "--name-only", rng)
+    if d.returncode != 0:
+        return []
+    return _classify_setup([p for p in d.stdout.splitlines() if p.strip()])
+
+
+def setup_required() -> list[dict]:
+    """Setup steps needed to fully apply the pending update (HEAD → upstream), if any.
+    Empty list means the one-click in-app updater can apply it completely."""
+    up = _upstream()
+    return _setup_for_range(f"HEAD..{up}") if up else []
 
 
 _SHORT_COMMIT: "str | None" = None
@@ -108,6 +154,7 @@ def check(do_fetch: bool = True) -> dict:
     info = {
         "ts": time.time(), "behind": 0, "ahead": 0, "update_available": False,
         "incoming": [], "remote_short": None, "error": None, "upstream": up,
+        "requires_setup": False, "setup": [],
     }
     if not up:
         info["error"] = "no upstream branch (this checkout has no remote-tracking ref)"
@@ -139,6 +186,8 @@ def check(do_fetch: bool = True) -> dict:
             if len(parts) == 3:
                 info["incoming"].append({"short": parts[0], "subject": parts[1], "iso": parts[2]})
         info["remote_short"] = _git("rev-parse", "--short", up).stdout.strip() or None
+        info["setup"] = _setup_for_range(f"HEAD..{up}")
+        info["requires_setup"] = bool(info["setup"])
 
     _store(info)
     return info
@@ -203,6 +252,15 @@ def _run_update() -> None:
         if cur["dirty"]:
             _fail("working tree has uncommitted changes — refusing to pull. "
                   "Commit or discard local edits first.")
+            return
+        # Refuse if the pending update needs a manual setup step the in-app updater can't
+        # do (sudo systemd re-template, new prereqs/models). The route also blocks this, but
+        # guard here too in case start_update() is driven directly.
+        blocking = setup_required()
+        if blocking:
+            cmds = " ; ".join(dict.fromkeys(r["command"] for r in blocking if r["command"]))
+            _fail("this update needs a manual setup step the in-app updater can't run"
+                  + (f" — run: {cmds}" if cmds else "") + ". See the update panel for details.")
             return
         _ulog(f"at {cur['short']} ({cur['branch']}); pulling…")
 

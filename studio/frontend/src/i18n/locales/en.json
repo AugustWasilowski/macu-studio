@@ -763,6 +763,8 @@
   "update.available.one": "Update available — {count} new commit",
   "update.available.other": "Update available — {count} new commits",
   "update.updateHint": "\"Update & restart\" pulls, rebuilds the UI, and relaunches the service (~1 min). The page reloads itself when it's back.",
+  "update.setupTitle": "Needs a one-time setup step",
+  "update.setupIntro": "The built-in updater can't finish this one on its own (it can't use sudo). From the macu-pipeline folder, run the command(s) below — ./deploy/install.sh is safe to re-run and pulls the new code too:",
   "update.upToDate": "You're on the latest version.",
   "update.idleHint": "Click \"Check for updates\" to look for a newer build.",
   "update.lastChecked": "Last checked {date}",

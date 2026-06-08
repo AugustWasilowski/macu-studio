@@ -27,6 +27,17 @@ export interface VersionCheck {
   remote_short: string | null;
   error: string | null;
   upstream: string | null;
+  // Set when the pending update touches files the in-app updater can't apply (no sudo:
+  // systemd re-template, new prereqs/models). When non-empty the one-click update is
+  // blocked and these manual steps are shown instead.
+  requires_setup: boolean;
+  setup: SetupReason[];
+}
+
+export interface SetupReason {
+  area: string;
+  reason: string;
+  command: string | null;
 }
 
 export type UpdatePhase =

@@ -142,7 +142,7 @@ export function UpdateModal() {
             <button className="btn" onClick={onCheck} disabled={checking}>
               {checking ? t("update.checking") : t("update.checkBtn")}
             </button>
-            {chk?.update_available && !dirty && (
+            {chk?.update_available && !dirty && !chk?.requires_setup && (
               <button className="btn btn-amber" onClick={onUpdate}>{t("update.updateBtn")}</button>
             )}
             <button className="btn" onClick={close}>{t("common.close")}</button>
@@ -203,9 +203,28 @@ export function UpdateModal() {
                   </div>
                 ))}
               </div>
-              <p className="label-tiny opacity-70 leading-relaxed mt-1">
-                {t("update.updateHint")}
-              </p>
+              {chk.requires_setup ? (
+                <div className="flex flex-col gap-2 mt-1 rounded border border-amber/40 bg-amber/10 p-2">
+                  <div className="text-[13px] text-amber">{t("update.setupTitle")}</div>
+                  <p className="label-tiny leading-relaxed">{t("update.setupIntro")}</p>
+                  <ul className="flex flex-col gap-1.5">
+                    {chk.setup.map((s) => (
+                      <li key={s.area} className="text-[12px] leading-relaxed">
+                        <span className="text-txt-dim">{s.reason}</span>
+                        {s.command && (
+                          <div className="font-mono text-[11px] bg-black/50 rounded px-2 py-1 mt-0.5 select-all">
+                            {s.command}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="label-tiny opacity-70 leading-relaxed mt-1">
+                  {t("update.updateHint")}
+                </p>
+              )}
             </div>
           ) : upToDate ? (
             <div className="text-[13px] text-green">{t("update.upToDate")}</div>
