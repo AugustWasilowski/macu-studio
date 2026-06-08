@@ -65,6 +65,30 @@ def post_publish(show: str, body: dict = Body(default={})):
     return publish_mod.publish(show, (body or {}).get("message"))
 
 
+@router.post("/api/episodes/{slug}/macu-web/youtube")
+def set_video_id(slug: str, body: dict = Body(...)):
+    """Set/clear the episode's YouTube video id in youtube.txt (accepts a bare id or a pasted
+    YouTube URL). Drives the macu-web embed after the next publish. Empty value clears it."""
+    import re
+    from . import episodes as ep_mod
+    raw = str((body or {}).get("video_id") or "").strip()
+    vid = ep_mod.extract_video_id(raw) if raw else None
+    if raw and vid is None:
+        raise HTTPException(400, "not a valid YouTube video id or URL")
+    try:
+        d = ep_mod.episode_dir(slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    f = d / "youtube.txt"
+    text = f.read_text() if f.exists() else ""
+    lines = [ln for ln in text.splitlines() if not re.match(r"^\s*video_id\s*:", ln, re.I)]
+    if vid:
+        lines.append(f"video_id: {vid}")
+    out = "\n".join(lines).strip()
+    f.write_text(out + "\n" if out else "")
+    return {"ok": True, "slug": slug, "video_id": vid}
+
+
 @router.post("/api/episodes/{slug}/macu-web/published")
 def set_published(slug: str, body: dict = Body(...)):
     """Set/clear the manifest `published` flag — controls public visibility on macu-web

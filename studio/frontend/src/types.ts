@@ -42,6 +42,7 @@ export interface EpisodeSummary {
   synced?: boolean; // working text files match the tracked episode_meta copy
   show?: string; // owning show id
   published?: boolean; // manifest `published` → public on macu-web (else hidden draft)
+  youtube_id?: string | null; // video id from youtube.txt → drives the macu-web embed
 }
 
 // ---- Multi-show ----

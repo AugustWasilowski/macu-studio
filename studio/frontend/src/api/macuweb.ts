@@ -24,4 +24,9 @@ export const macuWeb = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ published }),
     }).then((r) => J<{ ok: boolean; published: boolean }>(r)),
+  setVideoId: (slug: string, video_id: string) =>
+    fetch(`/api/episodes/${slug}/macu-web/youtube`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ video_id }),
+    }).then((r) => J<{ ok: boolean; video_id: string | null }>(r)),
 };

@@ -28,6 +28,7 @@ class EpisodeSummary:
     synced: bool = True  # working text files match the tracked episode_meta copy
     show: str = shows_mod.DEFAULT_SHOW  # owning show id
     published: bool = False  # manifest `published` flag → public on macu-web (else hidden draft)
+    youtube_id: str | None = None  # video id parsed from youtube.txt (drives the macu-web embed)
 
 
 def _utc_iso(ts: float) -> str:
@@ -51,6 +52,35 @@ def season_episode(slug: str) -> tuple[int, int] | None:
 
 def se_label(season: int, episode: int) -> str:
     return f"S{season:02d}-E{episode}"
+
+
+import re as _re
+
+_VID_LINE = _re.compile(r"^\s*video_id\s*:\s*([A-Za-z0-9_-]{11})\s*$", _re.M)
+_VID_URL = _re.compile(
+    r"(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
+)
+
+
+def youtube_id_of(ep_dir: Path) -> str | None:
+    """The YouTube video id from an episode's youtube.txt (a `video_id:` line or a YT URL)."""
+    f = ep_dir / "youtube.txt"
+    if not f.exists():
+        return None
+    t = f.read_text(errors="ignore")
+    m = _VID_LINE.search(t) or _VID_URL.search(t)
+    return m.group(1) if m else None
+
+
+def extract_video_id(val: str) -> str | None:
+    """Pull an 11-char id out of a pasted YouTube URL or bare id; None if not parseable."""
+    val = (val or "").strip()
+    if not val:
+        return None
+    m = _VID_URL.search(val)
+    if m:
+        return m.group(1)
+    return val if _re.fullmatch(r"[A-Za-z0-9_-]{11}", val) else None
 
 
 def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
@@ -98,6 +128,7 @@ def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
                 synced=gitsync.sync_status(entry.name, pushed),
                 show=show,
                 published=data.get("published") is True,
+                youtube_id=youtube_id_of(entry),
             )
         )
     return out

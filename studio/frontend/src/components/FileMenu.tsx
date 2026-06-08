@@ -264,6 +264,7 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
   const [token, setToken] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [vids, setVids] = useState<Record<string, string>>({}); // per-slug video-id overrides
 
   const status = useQuery({ queryKey: ["macu-web-status"], queryFn: macuWeb.status });
   const connected = !!status.data?.connected;
@@ -290,6 +291,18 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
       await macuWeb.setPublished(slug, published);
       qc.invalidateQueries({ queryKey: ["episodes", show] });
       qc.invalidateQueries({ queryKey: ["episodes"] });
+    } catch (e) {
+      pushToast(`${slug}: ${e instanceof Error ? e.message : String(e)}`, "err");
+    }
+  }
+
+  async function saveVid(slug: string, raw: string, current: string) {
+    if ((raw ?? "").trim() === (current ?? "").trim()) return; // no change
+    try {
+      const r = await macuWeb.setVideoId(slug, raw.trim());
+      setVids((v) => ({ ...v, [slug]: r.video_id ?? "" }));
+      pushToast(r.video_id ? `${slug}: video set (${r.video_id})` : `${slug}: video cleared`, "ok");
+      qc.invalidateQueries({ queryKey: ["episodes", show] });
     } catch (e) {
       pushToast(`${slug}: ${e instanceof Error ? e.message : String(e)}`, "err");
     }
@@ -347,14 +360,30 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
           </p>
           <div className="flex flex-col gap-0.5 max-h-[320px] overflow-y-auto">
             {eps.data?.episodes.length === 0 && <div className="label-tiny">{t("filemenu.macuWebNoEpisodes")}</div>}
-            {eps.data?.episodes.map((ep) => (
-              <label key={ep.slug} className="flex items-center gap-2 text-[12px] py-1 px-1 hover:bg-bg-3 rounded cursor-pointer">
-                <input type="checkbox" checked={!!ep.published} onChange={(e) => toggle(ep.slug, e.target.checked)} />
-                <span className="font-mono">{ep.slug}</span>
-                <span className="truncate flex-1 opacity-80">{ep.title}</span>
-                {ep.se_label && <span className="label-tiny">{ep.se_label}</span>}
-              </label>
-            ))}
+            {eps.data?.episodes.map((ep) => {
+              const vid = vids[ep.slug] !== undefined ? vids[ep.slug] : (ep.youtube_id ?? "");
+              return (
+                <div key={ep.slug} className="flex items-center gap-2 text-[12px] py-1 px-1 hover:bg-bg-3 rounded">
+                  <input
+                    type="checkbox" checked={!!ep.published}
+                    onChange={(e) => toggle(ep.slug, e.target.checked)}
+                    title="Public on MACU Web"
+                  />
+                  <span className="font-mono">{ep.slug}</span>
+                  <span className="truncate flex-1 opacity-80">{ep.title}</span>
+                  {ep.se_label && <span className="label-tiny">{ep.se_label}</span>}
+                  <input
+                    className="bg-bg-2 rounded px-1.5 py-0.5 text-[11px] font-mono hairline w-[140px]"
+                    placeholder="YouTube ID / URL"
+                    title="YouTube video id or URL — paste a link; Publish to push"
+                    value={vid}
+                    onChange={(e) => setVids((v) => ({ ...v, [ep.slug]: e.target.value }))}
+                    onBlur={(e) => saveVid(ep.slug, e.target.value, ep.youtube_id ?? "")}
+                    onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
