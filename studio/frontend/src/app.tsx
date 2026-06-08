@@ -20,6 +20,7 @@ import { UpdateModal } from "./components/UpdateModal";
 import { DiagnosticsModal } from "./components/DiagnosticsModal";
 import { useRoute, Page } from "./route";
 import { useStore } from "./store";
+import { versionApi } from "./api/version";
 import { UIStage } from "./types";
 
 const qc = new QueryClient({
@@ -55,6 +56,25 @@ function Shell() {
     refetchInterval: 5000,        // keep the picker's git-sync dots fresh as files change
     refetchOnWindowFocus: true,
   });
+
+  // Check for a newer build on launch and auto-open the update modal once — but never on top
+  // of the first-run tutorial. Let the tour play out; the modal opens when it closes.
+  const openUpdate = useStore((s) => s.openUpdate);
+  const updateOpen = useStore((s) => s.updateOpen);
+  const launchCheck = useQuery({
+    queryKey: ["version", "launch"],
+    queryFn: versionApi.check,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+  const updateAvailable = !!launchCheck.data?.update_available;
+  const [autoPrompted, setAutoPrompted] = useState(false);
+  useEffect(() => {
+    if (autoPrompted || tourOpen || !updateAvailable || updateOpen) return;
+    setAutoPrompted(true);
+    openUpdate();
+  }, [autoPrompted, tourOpen, updateAvailable, updateOpen, openUpdate]);
 
   // Keep the store's activeSlug in sync with the routed slug on stage pages.
   useEffect(() => {

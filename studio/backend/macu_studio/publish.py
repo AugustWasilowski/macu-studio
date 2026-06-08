@@ -24,6 +24,7 @@ from pathlib import Path
 
 from . import config
 from . import shows as shows_mod
+from . import validate as validate_mod
 from .routes_shows import (
     TEXT_FILES,
     EXPORT_VERSION,
@@ -141,6 +142,9 @@ def publish(show: str, message: str | None = None) -> dict:
     except KeyError as e:
         return {"ok": False, "log": f"unknown show: {e}"}
 
+    # Best-effort early feedback (macu-web is the authoritative gate; see validate.py).
+    warnings = validate_mod.bundle_warnings(entries)
+
     repo = PUBLISH_ROOT / show
     repo.mkdir(parents=True, exist_ok=True)
     if not (repo / ".git").exists():
@@ -176,7 +180,8 @@ def publish(show: str, message: str | None = None) -> dict:
         log.append("(no macu-web creds — committed locally only)")
 
     return {"ok": (pushed if (base and token) else True), "committed": committed,
-            "pushed": pushed, "files": len(entries), "repo": str(repo), "log": "\n".join(log)}
+            "pushed": pushed, "files": len(entries), "repo": str(repo),
+            "warnings": warnings, "log": "\n".join(log)}
 
 
 if __name__ == "__main__":

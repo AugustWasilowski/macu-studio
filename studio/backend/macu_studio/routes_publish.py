@@ -13,6 +13,7 @@ from fastapi import APIRouter, Body, HTTPException
 
 from . import publish as publish_mod
 from . import manifest as manifest_mod
+from . import validate as validate_mod
 
 router = APIRouter()
 
@@ -91,7 +92,16 @@ def macu_web_connect(body: dict = Body(...)):
 
 @router.post("/api/shows/{show}/publish")
 def post_publish(show: str, body: dict = Body(default={})):
-    return publish_mod.publish(show, (body or {}).get("message"))
+    res = publish_mod.publish(show, (body or {}).get("message"))
+    # Explicitly trigger the macu-web reindex after a push. The bare repo's own post-receive
+    # hook can be stale/misconfigured (esp. across hosts), so don't rely on it — call the
+    # reindex endpoint with our PAT (owner-scoped). Never fail the publish if this errors.
+    if res.get("pushed"):
+        try:
+            res["reindex"] = _web_call("POST", f"/api/reindex/{show}")
+        except HTTPException as e:
+            res["reindex_error"] = getattr(e, "detail", str(e))
+    return res
 
 
 @router.post("/api/episodes/{slug}/macu-web/youtube")
@@ -144,9 +154,11 @@ def set_meta(slug: str, body: dict = Body(...)):
         m = manifest_mod.load(slug)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
+    # Clamp text fields to macu-web's limits so what you save matches what the web will store.
+    text_limit = {"title": validate_mod.LIMITS["title"], "notes": validate_mod.LIMITS["synopsis"]}
     for key in ("title", "notes"):
         if key in body:
-            v = body[key]
+            v = validate_mod.clamp_text(body[key], text_limit[key])
             if v:
                 m[key] = v
             else:

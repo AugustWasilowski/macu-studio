@@ -911,6 +911,8 @@
   "publish.webTitle": "mayorawesome.com",
   "publish.connectHint": "Paste your connect token (Manage page on mayorawesome.com → Connect MACU Studio).",
   "publish.connectBtn": "Connect",
+  "publish.connectedTo": "Connected to {base}",
+  "publish.changeConnection": "Change connection",
   "publish.visibility": "Visibility",
   "publish.visPublic": "Public",
   "publish.visUnlisted": "Unlisted",

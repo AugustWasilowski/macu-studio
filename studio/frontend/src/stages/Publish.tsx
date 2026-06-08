@@ -31,6 +31,7 @@ export function Publish({ slug }: { slug: string }) {
   const [vid, setVid] = useState("");
   const [token, setToken] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [reconnect, setReconnect] = useState(false);
 
   useEffect(() => {
     if (!m) return;
@@ -90,6 +91,15 @@ export function Publish({ slug }: { slug: string }) {
                  : t("toast.macuWebCommitted", { files: r.files }),
         r.pushed ? "ok" : "info",
       );
+      // Non-blocking content warnings (macu-web will clamp/skip these — see validate.py).
+      const warns = (r as { warnings?: string[] }).warnings ?? [];
+      if (warns.length) {
+        pushToast(
+          `${warns.length} content warning${warns.length === 1 ? "" : "s"}: ` +
+            warns.slice(0, 3).join(" · ") + (warns.length > 3 ? " …" : ""),
+          "err",
+        );
+      }
       qc.invalidateQueries({ queryKey: ["macu-web-episode", slug] });
     } catch (e) {
       pushToast(`publish failed: ${e instanceof Error ? e.message : String(e)}`, "err");
@@ -205,6 +215,17 @@ export function Publish({ slug }: { slug: string }) {
             </>
           ) : (
             <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="label-tiny">{t("publish.connectedTo", { base: statusQ.data?.web || statusQ.data?.base || "" })}</span>
+                <button className="btn btn-sm" onClick={() => setReconnect((v) => !v)}>{t("publish.changeConnection")}</button>
+              </div>
+              {reconnect && (
+                <div className="flex flex-col gap-2 border-t hairline-soft pt-3">
+                  <p className="label-tiny leading-relaxed">{t("publish.connectHint")}</p>
+                  <textarea className="input font-mono text-[12px]" rows={2} placeholder="macu-connect.…" value={token} onChange={(e) => setToken(e.target.value)} />
+                  <button className="btn btn-amber self-start" disabled={!token.trim()} onClick={async () => { await connect(); setReconnect(false); }}>{t("publish.connectBtn")}</button>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <span className={lbl}>{t("publish.visibility")}</span>
                 <select className="input w-40" value={epWebQ.data?.visibility ?? "PRIVATE"} onChange={(e) => setVisibility(e.target.value as "PUBLIC")}>
