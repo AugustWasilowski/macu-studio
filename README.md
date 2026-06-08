@@ -8,7 +8,7 @@ with a browser-based web app that drives the whole process.
 |---|---|
 | `pipeline/` | the 8-stage render pipeline (`run.py`, `serve.py`, `stage_1..8`, `lib.py`) that turns an `episodes/<slug>/manifest.json` into a finished `final/<slug>.mp4` |
 | `studio/` | **MACU Studio** — a FastAPI + React web app on `:8774` that drives the pipeline: write scripts, generate shot lists, clone + assign voices, place SFX, render, and review |
-| `skills/` | Claude Code agent skills — the render driver (`macu-render`) and channel setup (`setup-macu-channel`). Show-specific authoring skills are not shipped; bring your own. |
+| `skills/` | Claude Code agent skills — the render driver (`macu-render`), the publish driver (`macu-publish`, render→YouTube→macu-web), and channel setup (`setup-macu-channel`). Show-specific authoring skills are not shipped; bring your own. |
 | `docs/` | shared pipeline/tooling docs (`docs/_common/`) + per-show templates (`docs/_templates/show/`). Per-show canon scaffolds into `docs/shows/<show-id>/` at show creation (gitignored — your content). |
 | `deploy/` | the installer (`doctor`, `install`, `fetch-models`), the GPU-service compose stacks, the chat bridge, and systemd units |
 
