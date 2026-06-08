@@ -63,6 +63,12 @@ PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm install --no-audit --no-fund --use
 PATH="$NODE_DIR:$PATH" NPM_CONFIG_PREFIX= npm run build --userconfig /dev/null || { node_crash_hint; exit 1; }
 popd >/dev/null
 
+# 2b. Rebuild the macu-web Studio demo so it tracks this build. Best-effort: a demo
+# failure (e.g. the demo dest dir absent on a dev box) must never fail the install.
+if [ -x "$HERE/scripts/build_demo.sh" ]; then
+  PATH="$NODE_DIR:$PATH" "$HERE/scripts/build_demo.sh" || echo ">>> demo build skipped (non-fatal)"
+fi
+
 # When run as part of the top-level installer (MACU_INSTALLER=1), stay quiet — the
 # parent prints the canonical "next steps" at the very end, after the remaining steps.
 # Only print run instructions when invoked standalone (just rebuilding the app).

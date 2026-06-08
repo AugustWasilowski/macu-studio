@@ -1,0 +1,32 @@
+<!-- Injected into the demo's index.html by build_demo.sh. Two markers:
+     {{HEAD}} goes before </head>, {{BODY}} before </body>. The real Studio
+     build never sees this file. -->
+<!-- {{HEAD}} -->
+<script>
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js');
+  // First visit: the SW isn't controlling this page yet, so the app's initial
+  // /api/* calls would miss it. Reload once (guarded) after it activates.
+  if (!navigator.serviceWorker.controller && !sessionStorage.getItem('demoSwReloaded')) {
+    sessionStorage.setItem('demoSwReloaded', '1');
+    navigator.serviceWorker.ready.then(function () { location.reload(); });
+  }
+})();
+</script>
+<style>
+#macu-demo-ribbon {
+  position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%);
+  z-index: 2147483647; pointer-events: none;
+  background: rgba(122, 22, 32, 0.92); color: #ffeede;
+  font: 600 11.5px/1.4 system-ui, -apple-system, sans-serif; letter-spacing: .02em;
+  padding: 5px 14px; border-radius: 999px; border: 1px solid rgba(176, 48, 60, 0.9);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .45); max-width: 92vw; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+#macu-demo-ribbon b { color: #ffd27a; }
+</style>
+<!-- {{BODY}} -->
+<div id="macu-demo-ribbon">
+  <b>LIVE DEMO</b> — read-only tour of a finished episode (S1·E5 “The Population Is Adequate”). Buttons simulate the pipeline; nothing is saved.
+</div>
