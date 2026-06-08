@@ -45,12 +45,12 @@ def post_version_update():
     # Some updates need a manual setup step the in-app updater can't do (no sudo: systemd
     # re-template, new prereqs/models). Block the one-click update and return the exact
     # command(s) — ./deploy/install.sh is idempotent and also pulls.
-    setup = version_mod.setup_required()
-    if setup:
+    blocking = version_mod.blocking_setup()
+    if blocking:
         raise HTTPException(409, {
             "reason": "This update needs a manual setup step the in-app updater can't run.",
-            "setup": setup,
-            "commands": list(dict.fromkeys(r["command"] for r in setup if r["command"])),
+            "setup": blocking,
+            "commands": list(dict.fromkeys(r["command"] for r in blocking if r["command"])),
         })
     started = version_mod.start_update()
     if not started["ok"]:

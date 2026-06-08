@@ -38,6 +38,8 @@ export interface SetupReason {
   area: string;
   reason: string;
   command: string | null;
+  // false = advisory notice (e.g. new .env option) that does NOT block the one-click update.
+  blocking: boolean;
 }
 
 export type UpdatePhase =

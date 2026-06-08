@@ -63,9 +63,9 @@ def _classify_setup(paths: list[str]) -> list[dict]:
     user with the exact command to run. De-duplicated, at most one entry per area."""
     reasons: list[dict] = []
 
-    def add(area: str, reason: str, command: str | None) -> None:
+    def add(area: str, reason: str, command: str | None, blocking: bool = True) -> None:
         if not any(r["area"] == area for r in reasons):
-            reasons.append({"area": area, "reason": reason, "command": command})
+            reasons.append({"area": area, "reason": reason, "command": command, "blocking": blocking})
 
     for p in paths:
         base = p.rsplit("/", 1)[-1]
@@ -80,7 +80,10 @@ def _classify_setup(paths: list[str]) -> list[dict]:
             add("services", "Local service definitions (ComfyUI/OmniVoice/Ollama/Piper) changed.",
                 "./deploy/install.sh")
         elif p == ".env.example":
-            add("env", "New configuration options were added — review your .env against .env.example.", None)
+            # Advisory, not blocking: the updater applies fine; the user just may want to
+            # adopt new optional config. No command can do this for them.
+            add("env", "New configuration options were added — review your .env against .env.example.",
+                None, blocking=False)
         elif p.startswith("deploy/"):
             add("deploy", "The installer changed.", "./deploy/install.sh")
     return reasons
@@ -96,10 +99,16 @@ def _setup_for_range(rng: str) -> list[dict]:
 
 
 def setup_required() -> list[dict]:
-    """Setup steps needed to fully apply the pending update (HEAD → upstream), if any.
-    Empty list means the one-click in-app updater can apply it completely."""
+    """All setup notes for the pending update (HEAD → upstream): blocking steps the
+    updater can't do AND advisory notices (e.g. new .env options). May be empty."""
     up = _upstream()
     return _setup_for_range(f"HEAD..{up}") if up else []
+
+
+def blocking_setup() -> list[dict]:
+    """Only the steps that BLOCK the one-click updater (it can't sudo/fetch). Advisory
+    notices (env) are excluded — they don't stop an update."""
+    return [r for r in setup_required() if r.get("blocking")]
 
 
 _SHORT_COMMIT: "str | None" = None
@@ -187,7 +196,7 @@ def check(do_fetch: bool = True) -> dict:
                 info["incoming"].append({"short": parts[0], "subject": parts[1], "iso": parts[2]})
         info["remote_short"] = _git("rev-parse", "--short", up).stdout.strip() or None
         info["setup"] = _setup_for_range(f"HEAD..{up}")
-        info["requires_setup"] = bool(info["setup"])
+        info["requires_setup"] = any(r.get("blocking") for r in info["setup"])
 
     _store(info)
     return info
@@ -256,7 +265,7 @@ def _run_update() -> None:
         # Refuse if the pending update needs a manual setup step the in-app updater can't
         # do (sudo systemd re-template, new prereqs/models). The route also blocks this, but
         # guard here too in case start_update() is driven directly.
-        blocking = setup_required()
+        blocking = blocking_setup()
         if blocking:
             cmds = " ; ".join(dict.fromkeys(r["command"] for r in blocking if r["command"]))
             _fail("this update needs a manual setup step the in-app updater can't run"

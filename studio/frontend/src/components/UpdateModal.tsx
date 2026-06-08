@@ -203,10 +203,14 @@ export function UpdateModal() {
                   </div>
                 ))}
               </div>
-              {chk.requires_setup ? (
+              {chk.setup.length > 0 && (
                 <div className="flex flex-col gap-2 mt-1 rounded border border-amber/40 bg-amber/10 p-2">
-                  <div className="text-[13px] text-amber">{t("update.setupTitle")}</div>
-                  <p className="label-tiny leading-relaxed">{t("update.setupIntro")}</p>
+                  <div className="text-[13px] text-amber">
+                    {chk.requires_setup ? t("update.setupTitle") : t("update.noticeTitle")}
+                  </div>
+                  <p className="label-tiny leading-relaxed">
+                    {chk.requires_setup ? t("update.setupIntro") : t("update.noticeIntro")}
+                  </p>
                   <ul className="flex flex-col gap-1.5">
                     {chk.setup.map((s) => (
                       <li key={s.area} className="text-[12px] leading-relaxed">
@@ -220,7 +224,8 @@ export function UpdateModal() {
                     ))}
                   </ul>
                 </div>
-              ) : (
+              )}
+              {!chk.requires_setup && (
                 <p className="label-tiny opacity-70 leading-relaxed mt-1">
                   {t("update.updateHint")}
                 </p>
