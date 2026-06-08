@@ -361,6 +361,27 @@ def _extract_audio(zf: zipfile.ZipFile, names, prefix: str, dst_dir: Path) -> li
     return sorted(set(out))
 
 
+DOCS_ROOT = config.REPO_ROOT / "docs" / "shows"
+
+
+def _extract_docs(zf: zipfile.ZipFile, names) -> list[str]:
+    """Unpack canon docs (docs/shows/<id>/*.md — character bible, arcs, routines) into the
+    local docs dir (OVERWRITE), path-traversal guarded. Lets a 'riff' bring the show's bible."""
+    base = DOCS_ROOT.resolve()
+    out: list[str] = []
+    for n in names:
+        if not n.startswith("docs/shows/") or n.endswith("/") or not n.lower().endswith(".md"):
+            continue
+        rel = n[len("docs/shows/"):]
+        dest = (DOCS_ROOT / rel).resolve()
+        if not str(dest).startswith(str(base) + "/"):
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(zf.read(n))
+        out.append(rel)
+    return sorted(out)
+
+
 @router.post("/api/import")
 async def import_zip(file: UploadFile = File(...)):
     raw = await file.read()
@@ -453,6 +474,7 @@ async def import_zip(file: UploadFile = File(...)):
     voices_imported = _extract_voices(zf, names)
     sfx_imported = _extract_audio(zf, names, SFX_ARC_PREFIX, SFX_DIR)
     music_imported = _extract_audio(zf, names, MUSIC_ARC_PREFIX, MUSIC_DIR)
+    docs_imported = _extract_docs(zf, names)
 
     return {
         "ok": not errors or bool(created or updated),
@@ -465,5 +487,6 @@ async def import_zip(file: UploadFile = File(...)):
         "voices": voices_imported,
         "sfx": sfx_imported,
         "music": music_imported,
+        "docs": docs_imported,
         "errors": errors,
     }

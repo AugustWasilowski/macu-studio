@@ -34,7 +34,7 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
-from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish
 from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -922,6 +922,7 @@ app.include_router(routes_voices.router)
 app.include_router(routes_version.router)
 app.include_router(routes_diag.router)
 app.include_router(routes_localize.router)
+app.include_router(routes_publish.router)
 
 
 # ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------
