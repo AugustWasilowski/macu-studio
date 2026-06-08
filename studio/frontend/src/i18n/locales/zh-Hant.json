@@ -878,5 +878,17 @@
   "youtube.panelScripts": "腳本",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "在左側選擇腳本。",
-  "youtube.views": "{views} 次觀看"
+  "youtube.views": "{views} 次觀看",
+  "filemenu.macuWebItem": "發佈至 MACU Web",
+  "filemenu.macuWebTitle": "發佈至 MACU Web",
+  "filemenu.macuWebConnectHint": "在 mayorawesome.com 上，打開你的節目 → 管理 → 連接 MACU Studio → 生成連接令牌，複製它並貼在此處。它在一個步驟中連接遠端和推送憑證。",
+  "filemenu.macuWebConnectBtn": "連接",
+  "filemenu.macuWebConnectingBtn": "連接中…",
+  "filemenu.macuWebConnectedHint": "已連接至 <0>{base}</0>。勾選的集數將公開；未勾選的集數將被推送但隱藏為草稿。然後點擊發佈。",
+  "filemenu.macuWebNoEpisodes": "沒有集數。",
+  "filemenu.macuWebPublishBtn": "發佈 {show}",
+  "filemenu.macuWebPublishingBtn": "發佈中…",
+  "toast.macuWebConnected": "已連接至 {base}",
+  "toast.macuWebPublished": "已發佈 {show}（{files} 個檔案）→ MACU Web",
+  "toast.macuWebCommitted": "本地提交（{files} 個檔案）— 設定憑證以推送"
 }

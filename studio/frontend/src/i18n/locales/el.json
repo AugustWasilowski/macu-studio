@@ -875,5 +875,17 @@
   "youtube.panelScripts": "ΣΕΝΑΡΙΑ",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Επιλέξτε ένα σενάριο στα αριστερά.",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "Δημοσίευση στο MACU Web",
+  "filemenu.macuWebTitle": "Δημοσίευση στο MACU Web",
+  "filemenu.macuWebConnectHint": "Στο mayorawesome.com, ανοίξτε την παράστασή σας → Διαχείριση → Connect MACU Studio → Δημιουργία connect token, αντιγράψτε το και επικολλήστε το εδώ. Συνδέει τα κριτήρια απομακρυσμένης πρόσβασης και push σε ένα βήμα.",
+  "filemenu.macuWebConnectBtn": "Σύνδεση",
+  "filemenu.macuWebConnectingBtn": "Σύνδεση…",
+  "filemenu.macuWebConnectedHint": "Συνδεδεμένο με <0>{base}</0>. Οι επιλεγμένες αποδόσεις γίνονται δημόσιες· οι μη επιλεγμένες προωθούνται αλλά παραμένουν κρυμμένες ως προσχέδια. Στη συνέχεια δημοσιεύστε.",
+  "filemenu.macuWebNoEpisodes": "Καμία απόδοση.",
+  "filemenu.macuWebPublishBtn": "Δημοσίευση {show}",
+  "filemenu.macuWebPublishingBtn": "Δημοσίευση…",
+  "toast.macuWebConnected": "Συνδεδεμένο με {base}",
+  "toast.macuWebPublished": "Δημοσιεύθηκε {show} ({files} αρχεία) → MACU Web",
+  "toast.macuWebCommitted": "committed τοπικά ({files} αρχεία) — ορίστε κριτήρια για push"
 }

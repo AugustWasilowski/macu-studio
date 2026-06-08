@@ -878,5 +878,17 @@
   "youtube.panelScripts": "স্ক্রিপ্ট",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "বাম দিকে একটি স্ক্রিপ্ট নির্বাচন করুন।",
-  "youtube.views": "{views} দর্শন"
+  "youtube.views": "{views} দর্শন",
+  "filemenu.macuWebItem": "MACU Web-এ প্রকাশ করুন",
+  "filemenu.macuWebTitle": "MACU Web-এ প্রকাশ করুন",
+  "filemenu.macuWebConnectHint": "mayorawesome.com-এ আপনার শো খুলুন → পরিচালনা করুন → MACU Studio সংযুক্ত করুন → সংযোগ টোকেন তৈরি করুন, অনুলিপি করুন এবং এখানে পেস্ট করুন। এটি দূরবর্তী এবং পুশ শংসাপত্র একটি ধাপে সংযুক্ত করে।",
+  "filemenu.macuWebConnectBtn": "সংযুক্ত করুন",
+  "filemenu.macuWebConnectingBtn": "সংযুক্ত হচ্ছে…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0>-এর সাথে সংযুক্ত। চেক করা পর্ব জনসাধারণের জন্য চলে যায়; অনির্বাচিত গুলি পুশ করা হয় কিন্তু খসড়া হিসাবে লুকানো থাকে। তারপর প্রকাশ করুন।",
+  "filemenu.macuWebNoEpisodes": "কোনো পর্ব নেই।",
+  "filemenu.macuWebPublishBtn": "{show} প্রকাশ করুন",
+  "filemenu.macuWebPublishingBtn": "প্রকাশ করা হচ্ছে…",
+  "toast.macuWebConnected": "{base}-এর সাথে সংযুক্ত",
+  "toast.macuWebPublished": "{show} ({files} ফাইল) → MACU Web-এ প্রকাশিত",
+  "toast.macuWebCommitted": "স্থানীয়ভাবে প্রতিশ্রুতিবদ্ধ ({files} ফাইল) — পুশ করতে শংসাপত্র সেট করুন"
 }

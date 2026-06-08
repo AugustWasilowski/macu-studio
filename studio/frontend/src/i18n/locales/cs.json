@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCÉNÁŘE",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Vyberte scénář vlevo.",
-  "youtube.views": "{views} ZHLÉDNUTÍ"
+  "youtube.views": "{views} ZHLÉDNUTÍ",
+  "filemenu.macuWebItem": "Publikovat na MACU Web",
+  "filemenu.macuWebTitle": "Publikovat na MACU Web",
+  "filemenu.macuWebConnectHint": "Na mayorawesome.com otevřete svou show → Správa → Připojit MACU Studio → Vygenerujte connect token, zkopírujte jej a vložte jej sem. Propojí vzdálené a push přihlašovací údaje v jednom kroku.",
+  "filemenu.macuWebConnectBtn": "Připojit",
+  "filemenu.macuWebConnectingBtn": "Připojování…",
+  "filemenu.macuWebConnectedHint": "Připojeno k <0>{base}</0>. Vybrané epizody budou veřejné; nevybrané budou nahrány, ale skryty jako koncepty. Pak Publikujte.",
+  "filemenu.macuWebNoEpisodes": "Žádné epizody.",
+  "filemenu.macuWebPublishBtn": "Publikovat {show}",
+  "filemenu.macuWebPublishingBtn": "Publikování…",
+  "toast.macuWebConnected": "Připojeno k {base}",
+  "toast.macuWebPublished": "Publikováno {show} ({files} souborů) → MACU Web",
+  "toast.macuWebCommitted": "potvrzeno lokálně ({files} souborů) — nastavte přihlašovací údaje pro push"
 }

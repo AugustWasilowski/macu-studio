@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Selecciona un script a la izquierda.",
-  "youtube.views": "{views} VISUALIZACIONES"
+  "youtube.views": "{views} VISUALIZACIONES",
+  "filemenu.macuWebItem": "Publicar en MACU Web",
+  "filemenu.macuWebTitle": "Publicar en MACU Web",
+  "filemenu.macuWebConnectHint": "En mayorawesome.com, abre tu serie → Administrar → Conectar MACU Studio → Generar token de conexión, cópialo y pégalo aquí. Conecta credenciales remotas y de envío en un paso.",
+  "filemenu.macuWebConnectBtn": "Conectar",
+  "filemenu.macuWebConnectingBtn": "Conectando…",
+  "filemenu.macuWebConnectedHint": "Conectado a <0>{base}</0>. Los episodios seleccionados se hacen públicos; los deseleccionados se envían pero quedan como borradores. Luego Publicar.",
+  "filemenu.macuWebNoEpisodes": "Sin episodios.",
+  "filemenu.macuWebPublishBtn": "Publicar {show}",
+  "filemenu.macuWebPublishingBtn": "Publicando…",
+  "toast.macuWebConnected": "Conectado a {base}",
+  "toast.macuWebPublished": "Publicado {show} ({files} archivos) → MACU Web",
+  "toast.macuWebCommitted": "comprometido localmente ({files} archivos) — establece credenciales para enviar"
 }

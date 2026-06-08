@@ -878,5 +878,17 @@
   "youtube.panelScripts": "AMASCIPTI",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Khetha isichasi esingcosini.",
-  "youtube.views": "{views} UKUBUKA"
+  "youtube.views": "{views} UKUBUKA",
+  "filemenu.macuWebItem": "Phakamisela ku-MACU Web",
+  "filemenu.macuWebTitle": "Phakamisela ku-MACU Web",
+  "filemenu.macuWebConnectHint": "Ku-mayorawesome.com, vula ikhava yakho → Phatha → Xhuma i-MACU Studio → Enza i-connect token, kopyisha ithi, ubeke lapha. Lokho kuxhuma izimali zokugcina nokuthumela ngenye isinyathelo.",
+  "filemenu.macuWebConnectBtn": "Xhuma",
+  "filemenu.macuWebConnectingBtn": "Ixhumeka…",
+  "filemenu.macuWebConnectedHint": "Ixhumeke ku-<0>{base}</0>. Ama-episodes axhaswe ayahlanganyela poqo; labo angazixhasanga ashaywa kodwa befihliwe njengoba mabhalule. Bese uphakamisele.",
+  "filemenu.macuWebNoEpisodes": "Awekho ama-episodes.",
+  "filemenu.macuWebPublishBtn": "Phakamisela u-{show}",
+  "filemenu.macuWebPublishingBtn": "Kuphakamisiwe…",
+  "toast.macuWebConnected": "Ixhumeke ku-{base}",
+  "toast.macuWebPublished": "Uphakamisile u-{show} ({files} amafayela) → MACU Web",
+  "toast.macuWebCommitted": "ithathe nkontobese ({files} amafayela) — setha izimali uthumbele"
 }

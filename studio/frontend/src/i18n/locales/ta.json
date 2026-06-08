@@ -877,5 +877,17 @@
   "youtube.panelScripts": "ஸ்கிப்ட்ஸ்",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "இடது புறத்தில் ஒரு ஸ்கிப்ட் தேர்வு செய்யவும்.",
-  "youtube.views": "{views} பார்வைகள்"
+  "youtube.views": "{views} பார்வைகள்",
+  "filemenu.macuWebItem": "MACU Web இல் வெளியிடுங்கள்",
+  "filemenu.macuWebTitle": "MACU Web இல் வெளியிடுங்கள்",
+  "filemenu.macuWebConnectHint": "mayorawesome.com இல், உங்கள் நிகழ்ச்சி → நிர்வகிக்கவும் → MACU Studio ஐ இணைக்கவும் → இணைய டோகனை உৎபந்ன செய்யவும், அதை நகலெடுத்து, இங்கே ஒட்டவும். இது ரிமோட் மற்றும் பुश் சான்றுபத්ර़ங்களை ஒரு படியில் இணைக்கிறது.",
+  "filemenu.macuWebConnectBtn": "இணைக்கவும்",
+  "filemenu.macuWebConnectingBtn": "இணைக்கிறது…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> இல் இணைக்கப்பட்டுவிட்டது. சோதனை செய்யப்பட்ட எபிசோடுகள் பொதுவில் செல்லும்; சோதனை செய்யப்படாதவை தள்ளப்படுகிறன ஆனால் வரைவு হিসாबे மறைக்கப்படும். பிறகு வெளியிடுங்கள்.",
+  "filemenu.macuWebNoEpisodes": "எபிசோடுகள் இல்லை.",
+  "filemenu.macuWebPublishBtn": "{show} வெளியிடுங்கள்",
+  "filemenu.macuWebPublishingBtn": "வெளியிடுகிறது…",
+  "toast.macuWebConnected": "{base} இல் இணைக்கப்பட்டுவிட்டது",
+  "toast.macuWebPublished": "{show} ({files} கோப்புகள்) → MACU Web இல் வெளியிடப்பட்டது",
+  "toast.macuWebCommitted": "உள்ளூரில் உறுதிசெய்யப்பட்டது ({files} கோப்புகள்) — தள்ள சான்றுபத்ரங்களை அமைக்கவும்"
 }

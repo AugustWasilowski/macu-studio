@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTURI",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Selectați un script pe stânga.",
-  "youtube.views": "{views} VIZUALIZĂRI"
+  "youtube.views": "{views} VIZUALIZĂRI",
+  "filemenu.macuWebItem": "Publică pe MACU Web",
+  "filemenu.macuWebTitle": "Publică pe MACU Web",
+  "filemenu.macuWebConnectHint": "Pe mayorawesome.com, deschide spectacolul tău → Gestionare → Conectează MACU Studio → Generează token de conectare, copiază-l și lipește-l aici. Conectează credențialele de acces și push în un singur pas.",
+  "filemenu.macuWebConnectBtn": "Conectează",
+  "filemenu.macuWebConnectingBtn": "Se conectează…",
+  "filemenu.macuWebConnectedHint": "Conectat la <0>{base}</0>. Episoadele selectate devin publice; cele neselectate sunt trimise dar ascunse ca ciorne. Apoi Publică.",
+  "filemenu.macuWebNoEpisodes": "Niciun episod.",
+  "filemenu.macuWebPublishBtn": "Publică {show}",
+  "filemenu.macuWebPublishingBtn": "Se publică…",
+  "toast.macuWebConnected": "Conectat la {base}",
+  "toast.macuWebPublished": "Publicat {show} ({files} fișiere) → MACU Web",
+  "toast.macuWebCommitted": "comis local ({files} fișiere) — setează credențialele pentru push"
 }

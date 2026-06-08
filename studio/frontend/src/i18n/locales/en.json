@@ -104,7 +104,6 @@
   "assembly.copyPath": "Copy path",
   "assembly.thumbsAlt": "thumbs",
   "assembly.localize": "Localize…",
-
   "localize.title": "Localize — subtitles + dub",
   "localize.renderFirst": "Render this episode in English first — localization reuses the rendered picture and subtitles, so it needs a finished render.",
   "localize.engineLabel": "Translation engine",
@@ -127,7 +126,6 @@
   "localize.step.mix": "mixing audio…",
   "localize.step.srt": "subtitles…",
   "localize.step.burn": "burning…",
-
   "toast.runQueued": "RUN queued ({jobId})",
   "toast.renderFailed": "Render failed: {message}",
   "toast.pathCopied": "Path copied",
@@ -864,7 +862,6 @@
   "youtube.noMatch": "No matched upload for {slug}.",
   "youtube.noThumbnail": "no thumbnail",
   "youtube.views": "{views} VIEWS",
-
   "youtube.captions.title": "Captions",
   "youtube.captions.clientHelp": "One-time: create an OAuth client of type \"TVs and Limited Input devices\" in your Google Cloud project (the one with the YouTube Data API enabled), then paste its ID + secret here.",
   "youtube.captions.clientId": "Client ID",
@@ -881,5 +878,17 @@
   "youtube.captions.uploading": "Uploading…",
   "youtube.captions.uploaded": "uploaded {n} caption track(s)",
   "youtube.captions.quotaNote": "Each upload uses ~400 of YouTube's daily quota (~25 uploads/day on the default limit).",
-  "youtube.captions.disconnect": "Disconnect"
+  "youtube.captions.disconnect": "Disconnect",
+  "filemenu.macuWebItem": "Publish to MACU Web",
+  "filemenu.macuWebTitle": "Publish to MACU Web",
+  "filemenu.macuWebConnectHint": "On mayorawesome.com, open your show → Manage → Connect MACU Studio → Generate connect token, copy it, and paste it here. It wires the remote and push credentials in one step.",
+  "filemenu.macuWebConnectBtn": "Connect",
+  "filemenu.macuWebConnectingBtn": "Connecting…",
+  "filemenu.macuWebConnectedHint": "Connected to <0>{base}</0>. Checked episodes go public; unchecked are pushed but hidden as drafts. Then Publish.",
+  "filemenu.macuWebNoEpisodes": "No episodes.",
+  "filemenu.macuWebPublishBtn": "Publish {show}",
+  "filemenu.macuWebPublishingBtn": "Publishing…",
+  "toast.macuWebConnected": "Connected to {base}",
+  "toast.macuWebPublished": "Published {show} ({files} files) → MACU Web",
+  "toast.macuWebCommitted": "committed locally ({files} files) — set creds to push"
 }

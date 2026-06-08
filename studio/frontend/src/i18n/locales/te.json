@@ -878,5 +878,17 @@
   "youtube.panelScripts": "స్క్రిప్ట్‌లు",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "ఎడమవైపు స్క్రిప్ట్‌ను ఎంచుకోండి.",
-  "youtube.views": "{views} వీక్షణలు"
+  "youtube.views": "{views} వీక్షణలు",
+  "filemenu.macuWebItem": "MACU Web కు ప్రచురించండి",
+  "filemenu.macuWebTitle": "MACU Web కు ప్రచురించండి",
+  "filemenu.macuWebConnectHint": "mayorawesome.com వద్ద, మీ show → Manage → Connect MACU Studio → Generate connect token ను తెరవండి, దానిని కాపీ చేసి ఇక్కడ పేస్ట్ చేయండి. ఇది రిమోట్ మరియు పుష్ క్రెడెన్షియల్‌లను ఒక్క స్టెప్‌లో కనెక్ట్ చేస్తుంది.",
+  "filemenu.macuWebConnectBtn": "కనెక్ట్ చేయండి",
+  "filemenu.macuWebConnectingBtn": "కనెక్ట్ చేస్తోంది…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> కు కనెక్ట్ చేయబడింది. చెక్ చేయబడిన ఎపిసోడ్‌లు పబ్లిక్‌గా చేయబడతాయి; చెక్ చేయనివి పుష్ చేయబడతాయి కానీ డ్రాఫ్ట్‌లుగా దాచిపుచ్చుకుంటాయి. తర్వాత ప్రచురించండి.",
+  "filemenu.macuWebNoEpisodes": "ఎపిసోడ్‌లు లేవు.",
+  "filemenu.macuWebPublishBtn": "{show} ను ప్రచురించండి",
+  "filemenu.macuWebPublishingBtn": "ప్రచురిస్తోంది…",
+  "toast.macuWebConnected": "{base} కు కనెక్ట్ చేయబడింది",
+  "toast.macuWebPublished": "{show} ({files} ఫైల్‌లు) → MACU Web కు ప్రచురించబడింది",
+  "toast.macuWebCommitted": "స్థానికంగా ప్రతిబద్ధం ({files} ఫైల్‌లు) — పుష్ చేయడానికి క్రెడెన్షియల్‌లను సెట్ చేయండి"
 }

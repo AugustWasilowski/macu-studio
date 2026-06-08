@@ -877,5 +877,17 @@
   "youtube.panelScripts": "NDI SCRIPT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Horo script n'aka aka.",
-  "youtube.views": "{views} LELITE"
+  "youtube.views": "{views} LELITE",
+  "filemenu.macuWebItem": "Bipụtaghachi na MACU Web",
+  "filemenu.macuWebTitle": "Bipụtaghachi na MACU Web",
+  "filemenu.macuWebConnectHint": "Na mayorawesome.com, meghee ihe ngosi gị → Ihe achọrọ → Connect MACU Studio → Emezu nke n'ụkpụ okwu, detụ ya, ma dan ya ebe a. Ọ na-agbakọta ihe ọzọ na njirimara ịrịakwụ ụgwọ n'otu nzọ.",
+  "filemenu.macuWebConnectBtn": "Jikọ",
+  "filemenu.macuWebConnectingBtn": "Jikọ n'ụkpụ…",
+  "filemenu.macuWebConnectedHint": "Jikọtara na <0>{base}</0>. Ihe omume achọpụtara na-apụ ọha; ndị a na-achọpụta na-apụ mma ma zoba ihe nka. Mgbe ahu Bipụtaghachi.",
+  "filemenu.macuWebNoEpisodes": "Enwegh ihe omume.",
+  "filemenu.macuWebPublishBtn": "Bipụtaghachi {show}",
+  "filemenu.macuWebPublishingBtn": "Na-apụ…",
+  "toast.macuWebConnected": "Jikọtara na {base}",
+  "toast.macuWebPublished": "Bipụtaghachịị {show} ({files} ihe nka) → MACU Web",
+  "toast.macuWebCommitted": "na-eji nkuzi mma ({files} ihe nka) — tụlee njirimara ịrịakwụ ụgwọ ka ọ tụgharịa"
 }

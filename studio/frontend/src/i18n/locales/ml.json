@@ -876,5 +876,17 @@
   "youtube.panelScripts": "സ്ക്രിപ്റ്റുകൾ",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "ഇടത്ത് ഒരു സ്ക്രിപ്റ്റ് തെരഞ്ഞെടുക്കുക.",
-  "youtube.views": "{views} കാഴ്ചകൾ"
+  "youtube.views": "{views} കാഴ്ചകൾ",
+  "filemenu.macuWebItem": "MACU വെബിലേക്ക് പ്രസിദ്ധീകരിക്കുക",
+  "filemenu.macuWebTitle": "MACU വെബിലേക്ക് പ്രസിദ്ധീകരിക്കുക",
+  "filemenu.macuWebConnectHint": "mayorawesome.com-ൽ, നിങ്ങളുടെ ഷോ തുറക്കുക → നിയന്ത്രണം → MACU Studio കണക്ട് ചെയ്യുക → കണക്ട് ടോക്കൻ ജനറേറ്റ് ചെയ്യുക, അത് പകർത്തുക, കൂടാതെ ഇവിടെ പേസ്റ്റ് ചെയ്യുക. ഇത് ദൂരസ്ഥ കെടെൻഷ്യാലുകൾ ഒരു ഘട്ടത്തിൽ വയർ ചെയ്യുന്നു.",
+  "filemenu.macuWebConnectBtn": "കണക്ട് ചെയ്യുക",
+  "filemenu.macuWebConnectingBtn": "കണക്ട് ചെയ്യുന്നു…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> ലേക്ക് കണക്ട് ചെയ്തു. പരിശോധിച്ച എപ്പിസോഡുകൾ പൊതുജനങ്ങൾക്ക് പോകുന്നു; പരിശോധിക്കാത്തവ പ്രകാശിത കരടുകൾ ആയി തള്ളിയിട്ടാണ്. പിന്നീട് പ്രസിദ്ധീകരിക്കുക.",
+  "filemenu.macuWebNoEpisodes": "ഒരു എപ്പിസോഡും ഇല്ല.",
+  "filemenu.macuWebPublishBtn": "{show} പ്രസിദ്ധീകരിക്കുക",
+  "filemenu.macuWebPublishingBtn": "പ്രസിദ്ധീകരിക്കുന്നു…",
+  "toast.macuWebConnected": "{base} ലേക്ക് കണക്ട് ചെയ്തു",
+  "toast.macuWebPublished": "{show} പ്രസിദ്ധീകരിച്ചു ({files} ഫയലുകൾ) → MACU വെബ്",
+  "toast.macuWebCommitted": "പ്രാദേശികമായി കമ്മിറ്റ് ചെയ്തു ({files} ഫയലുകൾ) — കെടെൻഷ്യാലുകൾ സെറ്റ് ചെയ്യുക പുഷ് ചെയ്യാൻ"
 }

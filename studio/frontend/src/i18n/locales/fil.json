@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Pumili ng script sa kaliwa.",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "I-publish sa MACU Web",
+  "filemenu.macuWebTitle": "I-publish sa MACU Web",
+  "filemenu.macuWebConnectHint": "Sa mayorawesome.com, buksan ang iyong show → Manage → Connect MACU Studio → Generate connect token, kopyahin ito, at i-paste dito. Ito ay nag-wire ng remote at push credentials sa isang hakbang.",
+  "filemenu.macuWebConnectBtn": "Kumonekta",
+  "filemenu.macuWebConnectingBtn": "Kumokonekta…",
+  "filemenu.macuWebConnectedHint": "Konektado sa <0>{base}</0>. Ang mga checked na episodes ay magiging public; ang mga unchecked ay itu-push ngunit nakatago bilang drafts. Pagkatapos, I-publish.",
+  "filemenu.macuWebNoEpisodes": "Walang episodes.",
+  "filemenu.macuWebPublishBtn": "I-publish ang {show}",
+  "filemenu.macuWebPublishingBtn": "Nini-publish…",
+  "toast.macuWebConnected": "Konektado sa {base}",
+  "toast.macuWebPublished": "Nai-publish ang {show} ({files} files) → MACU Web",
+  "toast.macuWebCommitted": "committed locally ({files} files) — itakda ang creds upang mag-push"
 }

@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "بائیں جانب ایک script منتخب کریں۔",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "MACU Web پر شائع کریں",
+  "filemenu.macuWebTitle": "MACU Web پر شائع کریں",
+  "filemenu.macuWebConnectHint": "mayorawesome.com پر، اپنا شو کھولیں → منیج کریں → MACU Studio سے جڑیں → کنکٹ ٹوکن بنائیں، اسے کاپی کریں، اور یہاں پیسٹ کریں۔ یہ ریموٹ اور پش کریڈنشلز کو ایک قدم میں جوڑتا ہے۔",
+  "filemenu.macuWebConnectBtn": "جڑیں",
+  "filemenu.macuWebConnectingBtn": "جڑ رہے ہیں…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> سے جڑا ہوا۔ منتخب ایپوڈس عوام میں جاتے ہیں؛ غیر منتخب شدہ پش کیے جاتے ہیں لیکن ڈرافٹ کے طور پر چھپے ہوئے۔ پھر شائع کریں۔",
+  "filemenu.macuWebNoEpisodes": "کوئی ایپوڈ نہیں۔",
+  "filemenu.macuWebPublishBtn": "{show} شائع کریں",
+  "filemenu.macuWebPublishingBtn": "شائع کر رہے ہیں…",
+  "toast.macuWebConnected": "{base} سے جڑا ہوا",
+  "toast.macuWebPublished": "{show} شائع کیا ({files} فائلیں) → MACU Web",
+  "toast.macuWebCommitted": "مقامی طور پر کمٹ کیا ({files} فائلیں) — کریڈنشلز سیٹ کریں پش کرنے کے لیے"
 }

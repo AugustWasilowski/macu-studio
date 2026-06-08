@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SKRIPTE",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Wählen Sie ein Skript auf der linken Seite.",
-  "youtube.views": "{views} AUFRUFE"
+  "youtube.views": "{views} AUFRUFE",
+  "filemenu.macuWebItem": "In MACU Web veröffentlichen",
+  "filemenu.macuWebTitle": "In MACU Web veröffentlichen",
+  "filemenu.macuWebConnectHint": "Öffnen Sie auf mayorawesome.com Ihre Show → Manage → Connect MACU Studio → Generate connect token, kopieren Sie ihn und fügen Sie ihn hier ein. Dies verbindet die Remote- und Push-Anmeldedaten in einem Schritt.",
+  "filemenu.macuWebConnectBtn": "Verbinden",
+  "filemenu.macuWebConnectingBtn": "Wird verbunden…",
+  "filemenu.macuWebConnectedHint": "Mit <0>{base}</0> verbunden. Ausgewählte Episoden werden öffentlich; nicht ausgewählte werden als Entwürfe übertragen. Dann Veröffentlichen.",
+  "filemenu.macuWebNoEpisodes": "Keine Episoden.",
+  "filemenu.macuWebPublishBtn": "{show} veröffentlichen",
+  "filemenu.macuWebPublishingBtn": "Wird veröffentlicht…",
+  "toast.macuWebConnected": "Mit {base} verbunden",
+  "toast.macuWebPublished": "{show} ({files} Dateien) → MACU Web veröffentlicht",
+  "toast.macuWebCommitted": "lokal committed ({files} Dateien) — Anmeldedaten festlegen zum Übertragen"
 }

@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "डावीकडून स्क्रिप्ट निवडा.",
-  "youtube.views": "{views} दृश्य"
+  "youtube.views": "{views} दृश्य",
+  "filemenu.macuWebItem": "MACU Web वर प्रकाशित करा",
+  "filemenu.macuWebTitle": "MACU Web वर प्रकाशित करा",
+  "filemenu.macuWebConnectHint": "mayorawesome.com वर, तुमचा शो उघडा → व्यवस्थापित करा → Connect MACU Studio → जोडणी टोकन तयार करा, त्याची प्रत बनवा, आणि ते येथे पेस्ट करा. हे दूरस्थ आणि पुश क्रेडेंशियल्स एका पायरीत जोडते.",
+  "filemenu.macuWebConnectBtn": "जोडणी करा",
+  "filemenu.macuWebConnectingBtn": "जोडणी करत आहे…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> शी जोडले गेले. चेक केलेले एपिसोड सार्वजनिक होतात; अनचेक केलेले ड्राफ्ट म्हणून पुश केले जातात. नंतर प्रकाशित करा.",
+  "filemenu.macuWebNoEpisodes": "कोणतेही एपिसोड नाहीत.",
+  "filemenu.macuWebPublishBtn": "{show} प्रकाशित करा",
+  "filemenu.macuWebPublishingBtn": "प्रकाशित करत आहे…",
+  "toast.macuWebConnected": "{base} शी जोडले गेले",
+  "toast.macuWebPublished": "{show} ({files} फाईल्स) → MACU Web प्रकाशित केले",
+  "toast.macuWebCommitted": "स्थानिकरित्या कमिट केले ({files} फाईल्स) — क्रेडेंशियल्स पुश करण्यासाठी सेट करा"
 }

@@ -134,7 +134,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
             <Section label={t("filemenu.sectionProject")} />
             <Item label={t("filemenu.import")} onClick={() => fileRef.current?.click()} hint=".zip" />
             <Item label={t("filemenu.export")} onClick={() => setDialog("export")} />
-            <Item label="Publish to MACU Web" onClick={() => setDialog("macu-web")} hint="↗" />
+            <Item label={t("filemenu.macuWebItem")} onClick={() => setDialog("macu-web")} hint="↗" />
 
             <Section label={t("filemenu.sectionMore")} />
             <Item label={t("filemenu.settings")} onClick={onOpenSettings} />
@@ -258,6 +258,7 @@ function CloneVoicesModal({ show, names, onClose }: { show: string; names: strin
 }
 
 function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void }) {
+  const t = useT();
   const pushToast = useStore((s) => s.pushToast);
   const qc = useQueryClient();
   const [token, setToken] = useState("");
@@ -276,7 +277,7 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
     setConnecting(true);
     try {
       const r = await macuWeb.connect(token.trim());
-      pushToast(`Connected to ${r.base}`, "ok");
+      pushToast(t("toast.macuWebConnected", { base: r.base }), "ok");
       setToken("");
       qc.invalidateQueries({ queryKey: ["macu-web-status"] });
     } catch (e) {
@@ -299,8 +300,9 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
     try {
       const r = await macuWeb.publish(show);
       pushToast(
-        r.pushed ? `Published ${show} (${r.files} files) → MACU Web`
-                 : `committed locally (${r.files} files) — set creds to push`,
+        r.pushed
+          ? t("toast.macuWebPublished", { show, files: r.files })
+          : t("toast.macuWebCommitted", { files: r.files }),
         r.pushed ? "ok" : "info",
       );
     } catch (e) {
@@ -310,12 +312,12 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
 
   return (
     <Modal
-      open onClose={onClose} title="Publish to MACU Web" width={520}
+      open onClose={onClose} title={t("filemenu.macuWebTitle")} width={520}
       footer={connected ? (
         <>
-          <button className="btn" onClick={onClose}>Close</button>
+          <button className="btn" onClick={onClose}>{t("common.close")}</button>
           <button className="btn btn-amber" disabled={publishing} onClick={publish}>
-            {publishing ? "Publishing…" : `Publish ${show}`}
+            {publishing ? t("filemenu.macuWebPublishingBtn") : t("filemenu.macuWebPublishBtn", { show })}
           </button>
         </>
       ) : undefined}
@@ -323,8 +325,7 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
       {!connected ? (
         <div className="flex flex-col gap-3">
           <p className="label-tiny leading-relaxed">
-            On mayorawesome.com, open your show → <b>Manage → Connect MACU Studio → Generate connect
-            token</b>, copy it, and paste it here. It wires the remote and push credentials in one step.
+            {t("filemenu.macuWebConnectHint")}
           </p>
           <textarea
             className="w-full bg-bg-2 rounded px-2 py-1.5 text-[12px] font-mono hairline"
@@ -332,17 +333,20 @@ function MacuWebDialog({ show, onClose }: { show: string; onClose: () => void })
             placeholder="macu-connect.…" rows={3}
           />
           <button className="btn btn-amber justify-center" disabled={connecting || !token.trim()} onClick={connect}>
-            {connecting ? "Connecting…" : "Connect"}
+            {connecting ? t("filemenu.macuWebConnectingBtn") : t("filemenu.macuWebConnectBtn")}
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <p className="label-tiny leading-relaxed">
-            Connected to <span className="font-mono">{status.data?.base}</span>. Checked episodes go
-            public; unchecked are pushed but hidden as drafts. Then Publish.
+            <Trans
+              k="filemenu.macuWebConnectedHint"
+              vars={{ base: status.data?.base ?? "" }}
+              tags={[(c) => <span className="font-mono">{c}</span>]}
+            />
           </p>
           <div className="flex flex-col gap-0.5 max-h-[320px] overflow-y-auto">
-            {eps.data?.episodes.length === 0 && <div className="label-tiny">No episodes.</div>}
+            {eps.data?.episodes.length === 0 && <div className="label-tiny">{t("filemenu.macuWebNoEpisodes")}</div>}
             {eps.data?.episodes.map((ep) => (
               <label key={ep.slug} className="flex items-center gap-2 text-[12px] py-1 px-1 hover:bg-bg-3 rounded cursor-pointer">
                 <input type="checkbox" checked={!!ep.published} onChange={(e) => toggle(ep.slug, e.target.checked)} />
@@ -370,7 +374,10 @@ function ShutdownDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal
       open
-      onClose={shutting ? () => {} : onClose}
+      // Always allow the X / Esc / backdrop to dismiss — even mid-shutdown. The real
+      // server may already be gone (closing just reveals the frozen app, harmless), and
+      // if the shutdown is a no-op (e.g. the demo) this is the only escape from a soft-lock.
+      onClose={onClose}
       title={t("filemenu.shutdownTitle")}
       width={440}
       footer={shutting ? undefined : (

@@ -877,5 +877,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "یک اسکریپت را در سمت چپ انتخاب کنید.",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "انتشار در MACU Web",
+  "filemenu.macuWebTitle": "انتشار در MACU Web",
+  "filemenu.macuWebConnectHint": "در mayorawesome.com، برنامه‌تان را باز کنید → Manage → Connect MACU Studio → Generate connect token را انتخاب کنید، توکن را کپی کنید و اینجا بچسبانید. این گام تمام ایمیل و مشخصات فشار را در یک مرحله تنظیم می‌کند.",
+  "filemenu.macuWebConnectBtn": "اتصال",
+  "filemenu.macuWebConnectingBtn": "در حال اتصال…",
+  "filemenu.macuWebConnectedHint": "متصل به <0>{base}</0>. قسمت‌های انتخاب‌شده عمومی می‌شوند؛ موارد انتخاب‌نشده ارسال می‌شوند اما به‌عنوان پیش‌نویس پنهان می‌مانند. سپس Publish را انتخاب کنید.",
+  "filemenu.macuWebNoEpisodes": "قسمتی وجود ندارد.",
+  "filemenu.macuWebPublishBtn": "Publish {show}",
+  "filemenu.macuWebPublishingBtn": "در حال انتشار…",
+  "toast.macuWebConnected": "متصل به {base}",
+  "toast.macuWebPublished": "منتشر شد {show} ({files} فایل) → MACU Web",
+  "toast.macuWebCommitted": "به‌صورت محلی تایید شد ({files} فایل) — برای push مشخصات را تنظیم کنید"
 }

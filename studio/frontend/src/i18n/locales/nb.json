@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SKRIPT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Velg et skript på venstre side.",
-  "youtube.views": "{views} VISNINGER"
+  "youtube.views": "{views} VISNINGER",
+  "filemenu.macuWebItem": "Publiser til MACU Web",
+  "filemenu.macuWebTitle": "Publiser til MACU Web",
+  "filemenu.macuWebConnectHint": "På mayorawesome.com, åpne showet ditt → Administrer → Connect MACU Studio → Generer connect token, kopier den, og lim den inn her. Den kobler sammen fjernbetjeningen og push-legitimasjonen i ett trinn.",
+  "filemenu.macuWebConnectBtn": "Koble til",
+  "filemenu.macuWebConnectingBtn": "Kobler til…",
+  "filemenu.macuWebConnectedHint": "Koblet til <0>{base}</0>. Merkede episoder blir offentlige; umarkerte blir pushet men skjult som utkast. Publiser deretter.",
+  "filemenu.macuWebNoEpisodes": "Ingen episoder.",
+  "filemenu.macuWebPublishBtn": "Publiser {show}",
+  "filemenu.macuWebPublishingBtn": "Publiserer…",
+  "toast.macuWebConnected": "Koblet til {base}",
+  "toast.macuWebPublished": "Publiserte {show} ({files} filer) → MACU Web",
+  "toast.macuWebCommitted": "commitet lokalt ({files} filer) — angi legitimasjon for å pushe"
 }

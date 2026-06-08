@@ -877,5 +877,17 @@
   "youtube.panelScripts": "תסריטים",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "בחר תסריט בצד שמאל.",
-  "youtube.views": "{views} צפיות"
+  "youtube.views": "{views} צפיות",
+  "filemenu.macuWebItem": "פרסום ל-MACU Web",
+  "filemenu.macuWebTitle": "פרסום ל-MACU Web",
+  "filemenu.macuWebConnectHint": "ב-mayorawesome.com, פתח את התוכנית שלך → Manage → Connect MACU Studio → Generate connect token, העתק אותו והדבק כאן. זה מחבר את הרשאות השרת והדחיפה במפתח יחיד.",
+  "filemenu.macuWebConnectBtn": "התחברות",
+  "filemenu.macuWebConnectingBtn": "מתחבר…",
+  "filemenu.macuWebConnectedHint": "מחובר ל-<0>{base}</0>. פרקים מסומנים יעברו לציבור; פרקים לא מסומנים יידחפו אך יישמרו כטיוטות. לאחר מכן פרסם.",
+  "filemenu.macuWebNoEpisodes": "אין פרקים.",
+  "filemenu.macuWebPublishBtn": "פרסום {show}",
+  "filemenu.macuWebPublishingBtn": "מפרסם…",
+  "toast.macuWebConnected": "מחובר ל-{base}",
+  "toast.macuWebPublished": "פורסם {show} ({files} קבצים) → MACU Web",
+  "toast.macuWebCommitted": "committed locally ({files} קבצים) — הגדר credentials להדחפה"
 }

@@ -877,5 +877,17 @@
   "youtube.panelScripts": "ಸ್ಕ್ರಿಪ್ಟ್ಗಳು",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "ಎಡಭಾಗದಲ್ಲಿ ಸ್ಕ್ರಿಪ್ಟ್ ಆರ್ಚಿಸಿ.",
-  "youtube.views": "{views} ವೀಕ್ಷಣೆಗಳು"
+  "youtube.views": "{views} ವೀಕ್ಷಣೆಗಳು",
+  "filemenu.macuWebItem": "MACU Web ಗೆ ಪ್ರಕಾಶಿಸಿ",
+  "filemenu.macuWebTitle": "MACU Web ಗೆ ಪ್ರಕಾಶಿಸಿ",
+  "filemenu.macuWebConnectHint": "mayorawesome.com ನಲ್ಲಿ, ನಿಮ್ಮ ಪ್ರದರ್ಶನ → ನಿರ್ವಹಣೆ → MACU Studio ಗೆ ಸংಪರ್ಕಿಸಿ → ಸಂಪರ್ಕ ಟೋಕನ್ ಉತ್ಪಾದಿಸಿ, ಅದನ್ನು ನಕಲಿಸಿ ಮತ್ತು ಇಲ್ಲಿ ಅಂಟಿಸಿ. ಇದು ರಿಮೋಟ್ ಮತ್ತು ಪುಶ್ ಕ್ರೆಡೆನ್ಷಿಯಲ್‌ಗಳನ್ನು ಒಂದೇ ಹಂತದಲ್ಲಿ ನೆಗೆಟ್‌ವೈರ್ ಮಾಡುತ್ತದೆ.",
+  "filemenu.macuWebConnectBtn": "ಸಂಪರ್ಕಿಸಿ",
+  "filemenu.macuWebConnectingBtn": "ಸಂಪರ್ಕ ಸ್ಥಾಪಿಸುತ್ತಿದೆ…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> ಗೆ ಸಂಪರ್ಕಿತ. ಪರಿಶೀಲಿತ ಸಂಚಿಕೆಗಳು ಸಾರ್ವಜನಿಕವಾಗಿ ಹೋಗುತ್ತವೆ; ಪರಿಶೀಲಿತವಲ್ಲದ ಸಂಚಿಕೆಗಳನ್ನು ಪ್ರಕಾಶಿತ ಆದರೆ ಡ್ರಾಫ್ಟ್ ಆಗಿ ಲುಕ್ಕು ಹೊಗಲಾಗುತ್ತದೆ. ತದನಂತರ ಪ್ರಕಾಶಿಸಿ.",
+  "filemenu.macuWebNoEpisodes": "ಯಾವುದೇ ಸಂಚಿಕೆಗಳು ಇಲ್ಲ.",
+  "filemenu.macuWebPublishBtn": "{show} ಪ್ರಕಾಶಿಸಿ",
+  "filemenu.macuWebPublishingBtn": "ಪ್ರಕಾಶಿಸುತ್ತಿದೆ…",
+  "toast.macuWebConnected": "{base} ಗೆ ಸಂಪರ್ಕಿತ",
+  "toast.macuWebPublished": "{show} ಪ್ರಕಾಶಿತ ({files} ಫೈಲುಗಳು) → MACU Web",
+  "toast.macuWebCommitted": "ಸ್ಥಳೀಯವಾಗಿ ಪ್ರತಿಬದ್ಧ ({files} ಫೈಲುಗಳು) — ತಳೆಯಲು ಕ್ರೆಡೆನ್ಷಿಯಲ್‌ಗಳನ್ನು ಹೊಂದಿಸಿ"
 }

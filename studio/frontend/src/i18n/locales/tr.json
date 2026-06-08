@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRİPTLER",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Sol tarafta bir script seç.",
-  "youtube.views": "{views} GÖRÜNTÜLENME"
+  "youtube.views": "{views} GÖRÜNTÜLENME",
+  "filemenu.macuWebItem": "MACU Web'e Yayımla",
+  "filemenu.macuWebTitle": "MACU Web'e Yayımla",
+  "filemenu.macuWebConnectHint": "mayorawesome.com'de gösterin açın → Yönet → Connect MACU Studio → Bağlantı token'ı oluştur, kopyala ve buraya yapıştır. Uzak sunucu ve push kimlik bilgilerini tek adımda bağlar.",
+  "filemenu.macuWebConnectBtn": "Bağlan",
+  "filemenu.macuWebConnectingBtn": "Bağlanıyor…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> ile bağlı. Seçili bölümler genel olarak yayınlanır; seçili olmayanlar taslak olarak gönderilir. Ardından Yayımla.",
+  "filemenu.macuWebNoEpisodes": "Bölüm yok.",
+  "filemenu.macuWebPublishBtn": "{show} Yayımla",
+  "filemenu.macuWebPublishingBtn": "Yayımlanıyor…",
+  "toast.macuWebConnected": "{base} ile bağlı",
+  "toast.macuWebPublished": "{show} yayımlandı ({files} dosya) → MACU Web",
+  "toast.macuWebCommitted": "yerel olarak kaydedildi ({files} dosya) — push için kimlik bilgilerini ayarla"
 }

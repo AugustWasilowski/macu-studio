@@ -878,5 +878,17 @@
   "youtube.panelScripts": "FARQADYADA",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Doorso farqad-ka midig.",
-  "youtube.views": "{views} MUUQAALKA"
+  "youtube.views": "{views} MUUQAALKA",
+  "filemenu.macuWebItem": "Daabac MACU Web",
+  "filemenu.macuWebTitle": "Daabac MACU Web",
+  "filemenu.macuWebConnectHint": "Ku biro mayorawesome.com, fur banaadigtaada → Maareyn → Isku xir MACU Studio → Abuur connect token, koobee, oo ku joos halkaan. Waxay isku xira credentials-ka duud iyo push middhawr.",
+  "filemenu.macuWebConnectBtn": "Isku xir",
+  "filemenu.macuWebConnectingBtn": "Isku xidhaw…",
+  "filemenu.macuWebConnectedHint": "Isku xirtay <0>{base}</0>. Episoodyo la aasiye waxay caalamiga ah; la aasiyeen ayaa lagu soo dhaweyn laakiin oo ah draf. Kadib Daabac.",
+  "filemenu.macuWebNoEpisodes": "Episoodyo ma jiro.",
+  "filemenu.macuWebPublishBtn": "Daabac {show}",
+  "filemenu.macuWebPublishingBtn": "Waa daabacaya…",
+  "toast.macuWebConnected": "Isku xirtay {base}",
+  "toast.macuWebPublished": "Daabcay {show} ({files} files) → MACU Web",
+  "toast.macuWebCommitted": "la aasiyay locally ({files} files) — kaydit credentials si aad u soo dheweynto"
 }

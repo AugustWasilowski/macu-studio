@@ -876,5 +876,17 @@
   "youtube.panelScripts": "SCRIPT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Chọn một script bên trái.",
-  "youtube.views": "{views} LƯỢT XEM"
+  "youtube.views": "{views} LƯỢT XEM",
+  "filemenu.macuWebItem": "Xuất bản lên MACU Web",
+  "filemenu.macuWebTitle": "Xuất bản lên MACU Web",
+  "filemenu.macuWebConnectHint": "Trên mayorawesome.com, mở chương trình của bạn → Quản lý → Kết nối MACU Studio → Tạo connect token, sao chép nó và dán vào đây. Nó sẽ nối kết thông tin xác thực từ xa và push trong một bước.",
+  "filemenu.macuWebConnectBtn": "Kết nối",
+  "filemenu.macuWebConnectingBtn": "Đang kết nối…",
+  "filemenu.macuWebConnectedHint": "Đã kết nối với <0>{base}</0>. Các tập được chọn công khai; những tập không được chọn sẽ được push nhưng ẩn dạng bản nháp. Sau đó Xuất bản.",
+  "filemenu.macuWebNoEpisodes": "Không có tập nào.",
+  "filemenu.macuWebPublishBtn": "Xuất bản {show}",
+  "filemenu.macuWebPublishingBtn": "Đang xuất bản…",
+  "toast.macuWebConnected": "Đã kết nối với {base}",
+  "toast.macuWebPublished": "Đã xuất bản {show} ({files} tệp) → MACU Web",
+  "toast.macuWebCommitted": "đã commit cục bộ ({files} tệp) — thiết lập thông tin xác thực để push"
 }

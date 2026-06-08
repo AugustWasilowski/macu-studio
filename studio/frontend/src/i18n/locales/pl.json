@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SKRYPTY",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Wybierz skrypt z lewej.",
-  "youtube.views": "{views} WYŚWIETLENIA"
+  "youtube.views": "{views} WYŚWIETLENIA",
+  "filemenu.macuWebItem": "Publikuj do MACU Web",
+  "filemenu.macuWebTitle": "Publikuj do MACU Web",
+  "filemenu.macuWebConnectHint": "Na mayorawesome.com otwórz swój show → Manage → Connect MACU Studio → Generate connect token, skopiuj go i wklej tutaj. To połączy poświadczenia zdalne i push w jeden krok.",
+  "filemenu.macuWebConnectBtn": "Połącz",
+  "filemenu.macuWebConnectingBtn": "Łączenie…",
+  "filemenu.macuWebConnectedHint": "Połączono z <0>{base}</0>. Zaznaczone odcinki będą publiczne; niezaznaczone są wysyłane, ale ukryte jako szkice. Następnie Publikuj.",
+  "filemenu.macuWebNoEpisodes": "Brak odcinków.",
+  "filemenu.macuWebPublishBtn": "Publikuj {show}",
+  "filemenu.macuWebPublishingBtn": "Publikowanie…",
+  "toast.macuWebConnected": "Połączono z {base}",
+  "toast.macuWebPublished": "Opublikowano {show} ({files} pliki) → MACU Web",
+  "toast.macuWebCommitted": "zatwierdzono lokalnie ({files} pliki) — ustaw poświadczenia, aby wysłać"
 }

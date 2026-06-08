@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "ਖੱਬੇ ਪਾਸੇ ਇੱਕ script ਚੁਣੋ।",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "MACU Web 'ਤੇ ਪ੍ਰਕਾਸ਼ਤ ਕਰੋ",
+  "filemenu.macuWebTitle": "MACU Web 'ਤੇ ਪ੍ਰਕਾਸ਼ਤ ਕਰੋ",
+  "filemenu.macuWebConnectHint": "mayorawesome.com 'ਤੇ, ਆਪਣੀ ਦਿਖਾਈ → ਪ੍ਰਬੰਧ ਕਰੋ → MACU Studio ਨੂੰ ਜੋੜੋ → connect token ਤਿਆਰ ਕਰੋ, ਇਸ ਨੂੰ ਕਾਪੀ ਕਰੋ, ਅਤੇ ਇੱਥੇ ਪੇਸਟ ਕਰੋ। ਇਹ ਰਿਮੋਟ ਅਤੇ ਪੁਸ਼ ਕਰੈਡੈਂਸ਼ਲਜ਼ ਨੂੰ ਇੱਕ ਪੜਾਅ ਵਿੱਚ ਤਾਰ ਕਰਦਾ ਹੈ।",
+  "filemenu.macuWebConnectBtn": "ਜੋੜੋ",
+  "filemenu.macuWebConnectingBtn": "ਜੋੜਿਆ ਜਾ ਰਿਹਾ ਹੈ…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> ਨਾਲ ਜੁੜਿਆ ਹੋਇਆ। ਚੁਣੇ ਹੋਏ ਐਪੀਸੋਡ ਜਨਤਕ ਹੋਣ; ਅਚੁਣੇ ਪੁਸ਼ ਕੀਤੇ ਗਏ ਹਨ ਪਰ ਡਰਾਫਟ ਵਜੋਂ ਲੁਕੇ ਹੋਏ। ਫਿਰ ਪ੍ਰਕਾਸ਼ਤ ਕਰੋ।",
+  "filemenu.macuWebNoEpisodes": "ਕੋਈ ਐਪੀਸੋਡ ਨਹੀਂ।",
+  "filemenu.macuWebPublishBtn": "{show} ਪ੍ਰਕਾਸ਼ਤ ਕਰੋ",
+  "filemenu.macuWebPublishingBtn": "ਪ੍ਰਕਾਸ਼ਤ ਕਿਆ ਜਾ ਰਿਹਾ ਹੈ…",
+  "toast.macuWebConnected": "{base} ਨਾਲ ਜੁੜਿਆ ਹੋਇਆ",
+  "toast.macuWebPublished": "{show} ਪ੍ਰਕਾਸ਼ਤ ਕੀਤਾ ਗਿਆ ({files} ਫਾਇਲਾਂ) → MACU Web",
+  "toast.macuWebCommitted": "ਸਥਾਨਕ ਤੌਰ 'ਤੇ ਪ੍ਰਤਿਬੱਧ ਕੀਤਾ ਗਿਆ ({files} ਫਾਇਲਾਂ) — ਪੁਸ਼ ਕਰਨ ਲਈ ਕਰੈਡੈਂਸ਼ਲਜ਼ ਸੈਟ ਕਰੋ"
 }

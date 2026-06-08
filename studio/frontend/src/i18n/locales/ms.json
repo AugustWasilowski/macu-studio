@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SKRIP",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Pilih skrip di sebelah kiri.",
-  "youtube.views": "{views} PANDANGAN"
+  "youtube.views": "{views} PANDANGAN",
+  "filemenu.macuWebItem": "Terbitkan ke MACU Web",
+  "filemenu.macuWebTitle": "Terbitkan ke MACU Web",
+  "filemenu.macuWebConnectHint": "Di mayorawesome.com, buka rancangan anda → Kelola → Sambung MACU Studio → Hasilkan connect token, salinnya, dan tampalkan di sini. Ia menghubungkan bukti kelayakan jarak jauh dan tolak dalam satu langkah.",
+  "filemenu.macuWebConnectBtn": "Sambung",
+  "filemenu.macuWebConnectingBtn": "Menyambung…",
+  "filemenu.macuWebConnectedHint": "Tersambung ke <0>{base}</0>. Episod yang ditandai menjadi awam; yang tidak ditandai ditolak tetapi tersembunyi sebagai draf. Kemudian Terbitkan.",
+  "filemenu.macuWebNoEpisodes": "Tiada episod.",
+  "filemenu.macuWebPublishBtn": "Terbitkan {show}",
+  "filemenu.macuWebPublishingBtn": "Menerbitkan…",
+  "toast.macuWebConnected": "Tersambung ke {base}",
+  "toast.macuWebPublished": "Diterbitkan {show} ({files} fail) → MACU Web",
+  "toast.macuWebCommitted": "dilakukan tempatan ({files} fail) — tetapkan bukti kelayakan untuk tolak"
 }

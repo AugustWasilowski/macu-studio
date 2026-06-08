@@ -865,5 +865,17 @@
   "youtube.panelScripts": "SKRIPTIT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Valitse skripti vasemmalta.",
-  "youtube.views": "{views} KATSELUJA"
+  "youtube.views": "{views} KATSELUJA",
+  "filemenu.macuWebItem": "Julkaise MACU Webiin",
+  "filemenu.macuWebTitle": "Julkaise MACU Webiin",
+  "filemenu.macuWebConnectHint": "Avaa mayorawesome.com-sivustolla näytelmäsi → Hallinta → Yhdistä MACU Studio → Luo yhteystunnus, kopioi se ja liitä tähän. Se kytkee etäyhteyden ja push-tunnistetiedot yhdessä vaiheessa.",
+  "filemenu.macuWebConnectBtn": "Yhdistä",
+  "filemenu.macuWebConnectingBtn": "Yhdistetään…",
+  "filemenu.macuWebConnectedHint": "Yhdistetty kohteeseen <0>{base}</0>. Valitut jaksot tulevat julkisiksi; valitsemat työnnetään mutta piilotetaan luonnoksiksi. Sitten Julkaise.",
+  "filemenu.macuWebNoEpisodes": "Ei jaksoja.",
+  "filemenu.macuWebPublishBtn": "Julkaise {show}",
+  "filemenu.macuWebPublishingBtn": "Julkaistaan…",
+  "toast.macuWebConnected": "Yhdistetty kohteeseen {base}",
+  "toast.macuWebPublished": "Julkaistiin {show} ({files} tiedostoa) → MACU Web",
+  "toast.macuWebCommitted": "sitoutettu paikallisesti ({files} tiedostoa) — aseta tunnistetiedot push-operaatiota varten"
 }

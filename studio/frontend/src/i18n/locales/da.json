@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Vælg et script til venstre.",
-  "youtube.views": "{views} VISNINGER"
+  "youtube.views": "{views} VISNINGER",
+  "filemenu.macuWebItem": "Publicer til MACU Web",
+  "filemenu.macuWebTitle": "Publicer til MACU Web",
+  "filemenu.macuWebConnectHint": "På mayorawesome.com åbner du dit show → Administrer → Forbind MACU Studio → Generer forbindelses-token, kopiér det og indsæt det her. Det forbinder fjernbetjening og push-legitimationsoplysninger i ét trin.",
+  "filemenu.macuWebConnectBtn": "Forbind",
+  "filemenu.macuWebConnectingBtn": "Forbinder…",
+  "filemenu.macuWebConnectedHint": "Forbundet til <0>{base}</0>. Valgte episoder bliver offentlige; uvalgte bliver skubbet men skjult som kladder. Derefter Publicer.",
+  "filemenu.macuWebNoEpisodes": "Ingen episoder.",
+  "filemenu.macuWebPublishBtn": "Publicer {show}",
+  "filemenu.macuWebPublishingBtn": "Publicerer…",
+  "toast.macuWebConnected": "Forbundet til {base}",
+  "toast.macuWebPublished": "Publiceret {show} ({files} filer) → MACU Web",
+  "toast.macuWebCommitted": "committed lokalt ({files} filer) — sæt legitimationsoplysninger for at skubbe"
 }

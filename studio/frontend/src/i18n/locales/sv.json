@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SKRIPT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Välj ett skript till vänster.",
-  "youtube.views": "{views} VISNINGAR"
+  "youtube.views": "{views} VISNINGAR",
+  "filemenu.macuWebItem": "Publicera till MACU Web",
+  "filemenu.macuWebTitle": "Publicera till MACU Web",
+  "filemenu.macuWebConnectHint": "På mayorawesome.com, öppna din show → Hantera → Koppla MACU Studio → Skapa anslutningstoken, kopiera den och klistra in den här. Det kopplar samman fjärr- och push-autentiseringsuppgifterna i ett steg.",
+  "filemenu.macuWebConnectBtn": "Koppla",
+  "filemenu.macuWebConnectingBtn": "Kopplar…",
+  "filemenu.macuWebConnectedHint": "Ansluten till <0>{base}</0>. Avprickade avsnitt blir offentliga; oprickade skjuts men är dolda som utkast. Sedan Publicera.",
+  "filemenu.macuWebNoEpisodes": "Inga avsnitt.",
+  "filemenu.macuWebPublishBtn": "Publicera {show}",
+  "filemenu.macuWebPublishingBtn": "Publicerar…",
+  "toast.macuWebConnected": "Ansluten till {base}",
+  "toast.macuWebPublished": "Publicerade {show} ({files} filer) → MACU Web",
+  "toast.macuWebCommitted": "sparades lokalt ({files} filer) — ange autentiseringsuppgifter för att skicka"
 }

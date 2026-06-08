@@ -878,5 +878,17 @@
   "youtube.panelScripts": "RUBUTAI",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Zaɓi rubutu a haɗi.",
-  "youtube.views": "{views} GANI"
+  "youtube.views": "{views} GANI",
+  "filemenu.macuWebItem": "Bugawa zuwa MACU Web",
+  "filemenu.macuWebTitle": "Bugawa zuwa MACU Web",
+  "filemenu.macuWebConnectHint": "A kan mayorawesome.com, bugi ninka → Sarrafa → Haɗa MACU Studio → Samar haɗin token, kwafai shi, kuma ɗora shi a nan. Yana haɗa ditin nesa da shaferun aiki a isastaccen mataki.",
+  "filemenu.macuWebConnectBtn": "Haɗa",
+  "filemenu.macuWebConnectingBtn": "Yana haɗawa…",
+  "filemenu.macuWebConnectedHint": "An haɗa zuwa <0>{base}</0>. Lokacin da aka zaɓi jerin abubuwa zai kamata a zama jama'a; waɗanda ba a zaɓa ba ana turawa amma akwai boye a matsayin daftarori. Sannan Bugawa.",
+  "filemenu.macuWebNoEpisodes": "Babu jerin abubuwa.",
+  "filemenu.macuWebPublishBtn": "Bugawa {show}",
+  "filemenu.macuWebPublishingBtn": "Yana bugawa…",
+  "toast.macuWebConnected": "An haɗa zuwa {base}",
+  "toast.macuWebPublished": "An bugawa {show} ({files} fayiloli) → MACU Web",
+  "toast.macuWebCommitted": "an ɗora gida ({files} fayiloli) — saita shaferun aiki don turawa"
 }

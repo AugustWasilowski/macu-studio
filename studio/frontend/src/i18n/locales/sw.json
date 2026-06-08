@@ -878,5 +878,17 @@
   "youtube.panelScripts": "HATI",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Chagua hati upande wa kushoto.",
-  "youtube.views": "{views} MAONI"
+  "youtube.views": "{views} MAONI",
+  "filemenu.macuWebItem": "Chapisha kwa MACU Web",
+  "filemenu.macuWebTitle": "Chapisha kwa MACU Web",
+  "filemenu.macuWebConnectHint": "Kwenye mayorawesome.com, fungua show yako → Manage → Connect MACU Studio → Generate connect token, kunakili, na ubandike hapa. Inaunganisha ujumbe wa mbali na cheti cha kusambaza katika hatua moja.",
+  "filemenu.macuWebConnectBtn": "Unganisha",
+  "filemenu.macuWebConnectingBtn": "Inaunganisha…",
+  "filemenu.macuWebConnectedHint": "Umeunganisha kwa <0>{base}</0>. Matukio yaliyochaguliwa huenda hadharani; yasiyo na alama husambazwa lakini kufichwa kama rasimu. Kisha Chapisha.",
+  "filemenu.macuWebNoEpisodes": "Hakuna matukio.",
+  "filemenu.macuWebPublishBtn": "Chapisha {show}",
+  "filemenu.macuWebPublishingBtn": "Inachapisha…",
+  "toast.macuWebConnected": "Umeunganisha kwa {base}",
+  "toast.macuWebPublished": "Imechapishwa {show} ({files} faili) → MACU Web",
+  "toast.macuWebCommitted": "iliidhani ndani ({files} faili) — weka cheti za kusambaza"
 }

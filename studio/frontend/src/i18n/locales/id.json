@@ -878,5 +878,17 @@
   "youtube.panelScripts": "NASKAH",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Pilih naskah di sebelah kiri.",
-  "youtube.views": "{views} TAMPILAN"
+  "youtube.views": "{views} TAMPILAN",
+  "filemenu.macuWebItem": "Publikasikan ke MACU Web",
+  "filemenu.macuWebTitle": "Publikasikan ke MACU Web",
+  "filemenu.macuWebConnectHint": "Di mayorawesome.com, buka acara Anda → Kelola → Hubungkan MACU Studio → Buat token koneksi, salin, dan tempel di sini. Ini menghubungkan kredensial jarak jauh dan push dalam satu langkah.",
+  "filemenu.macuWebConnectBtn": "Hubungkan",
+  "filemenu.macuWebConnectingBtn": "Menghubungkan…",
+  "filemenu.macuWebConnectedHint": "Terhubung ke <0>{base}</0>. Episode yang dicentang dipublikasikan; yang tidak dicentang didorong tetapi disembunyikan sebagai konsep. Kemudian Publikasikan.",
+  "filemenu.macuWebNoEpisodes": "Tidak ada episode.",
+  "filemenu.macuWebPublishBtn": "Publikasikan {show}",
+  "filemenu.macuWebPublishingBtn": "Mempublikasikan…",
+  "toast.macuWebConnected": "Terhubung ke {base}",
+  "toast.macuWebPublished": "Dipublikasikan {show} ({files} file) → MACU Web",
+  "toast.macuWebCommitted": "committed secara lokal ({files} file) — atur kredensial untuk push"
 }

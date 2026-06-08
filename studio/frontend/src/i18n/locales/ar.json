@@ -865,5 +865,17 @@
   "youtube.panelScripts": "السيناريوهات",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "اختر سيناريو على اليسار.",
-  "youtube.views": "{views} مشاهدات"
+  "youtube.views": "{views} مشاهدات",
+  "filemenu.macuWebItem": "نشر إلى MACU Web",
+  "filemenu.macuWebTitle": "نشر إلى MACU Web",
+  "filemenu.macuWebConnectHint": "على mayorawesome.com، افتح عرضك → إدارة → ربط MACU Studio → إنشاء رمز الاتصال، انسخه والصقه هنا. يوصل بيانات اعتماد الاتصال والدفع في خطوة واحدة.",
+  "filemenu.macuWebConnectBtn": "ربط",
+  "filemenu.macuWebConnectingBtn": "جاري الربط…",
+  "filemenu.macuWebConnectedHint": "متصل بـ <0>{base}</0>. الحلقات المحددة تصبح عامة؛ غير المحددة يتم دفعها لكن مخفية كمسودات. ثم انشر.",
+  "filemenu.macuWebNoEpisodes": "لا توجد حلقات.",
+  "filemenu.macuWebPublishBtn": "نشر {show}",
+  "filemenu.macuWebPublishingBtn": "جاري النشر…",
+  "toast.macuWebConnected": "متصل بـ {base}",
+  "toast.macuWebPublished": "تم نشر {show} ({files} ملفات) → MACU Web",
+  "toast.macuWebCommitted": "تم الحفظ محليًا ({files} ملفات) — قم بتعيين بيانات الاعتماد للدفع"
 }

@@ -876,5 +876,17 @@
   "youtube.panelScripts": "ÀWỌN ỌRỌ̀",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Yàn ọ̀rọ̀ kan níìsalẹ̀.",
-  "youtube.views": "{views} ÌṢAWÒKAN"
+  "youtube.views": "{views} ÌṢAWÒKAN",
+  "filemenu.macuWebItem": "Tẹ si MACU Web",
+  "filemenu.macuWebTitle": "Tẹ si MACU Web",
+  "filemenu.macuWebConnectHint": "Lori mayorawesome.com, ṣiṣẹ àwọn ìpín rẹ → Ṣàkóso → Tọ̀pẹ́ MACU Studio → Ṣe connect token, daa rẹ, ki o sì tinnu rẹ ninú ibẹ̀. O ye ibadandun mọ̀kan àti aṣọpọ̀ credentials lẹ́yìn ìgbà kan.",
+  "filemenu.macuWebConnectBtn": "Tọ̀pẹ́",
+  "filemenu.macuWebConnectingBtn": "Ntọ̀pẹ́…",
+  "filemenu.macuWebConnectedHint": "Tọ̀pẹ́ si <0>{base}</0>. Àwọn ìpín tí a yan máa lọ sí àgbájáde; àwọn tí a kò yan máa tẹ síkèkèé gẹ́gẹ́ bíi àlẹ́wó. Lẹ́yìn náà Tẹ.",
+  "filemenu.macuWebNoEpisodes": "Kò sí ìpín.",
+  "filemenu.macuWebPublishBtn": "Tẹ {show}",
+  "filemenu.macuWebPublishingBtn": "Ntẹ…",
+  "toast.macuWebConnected": "Tọ̀pẹ́ si {base}",
+  "toast.macuWebPublished": "Tẹ {show} ({files} àwọn fáìlì) → MACU Web",
+  "toast.macuWebCommitted": "ti ṣiṣẹ níbẹ̀ láìpẹ́ ({files} àwọn fáìlì) — ṣeto aṣọpọ̀ credentials láti tẹ"
 }

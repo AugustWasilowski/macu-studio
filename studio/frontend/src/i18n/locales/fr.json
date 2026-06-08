@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCÉNARIOS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Sélectionnez un scénario à gauche.",
-  "youtube.views": "{views} VUES"
+  "youtube.views": "{views} VUES",
+  "filemenu.macuWebItem": "Publier sur MACU Web",
+  "filemenu.macuWebTitle": "Publier sur MACU Web",
+  "filemenu.macuWebConnectHint": "Sur mayorawesome.com, ouvrez votre show → Gérer → Connecter MACU Studio → Générer un token de connexion, copiez-le et collez-le ici. Cela connecte les identifiants distant et de publication en une seule étape.",
+  "filemenu.macuWebConnectBtn": "Connecter",
+  "filemenu.macuWebConnectingBtn": "Connexion en cours…",
+  "filemenu.macuWebConnectedHint": "Connecté à <0>{base}</0>. Les épisodes cochés deviennent publics ; les non cochés sont poussés mais masqués en tant que brouillons. Ensuite, publiez.",
+  "filemenu.macuWebNoEpisodes": "Aucun épisode.",
+  "filemenu.macuWebPublishBtn": "Publier {show}",
+  "filemenu.macuWebPublishingBtn": "Publication en cours…",
+  "toast.macuWebConnected": "Connecté à {base}",
+  "toast.macuWebPublished": "Publié {show} ({files} fichiers) → MACU Web",
+  "toast.macuWebCommitted": "validé localement ({files} fichiers) — définissez les identifiants pour pousser"
 }

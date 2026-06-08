@@ -875,5 +875,17 @@
   "youtube.panelScripts": "SKRIPE",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Kies 'n skrip aan die linkerkant.",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "Publiseer na MACU Web",
+  "filemenu.macuWebTitle": "Publiseer na MACU Web",
+  "filemenu.macuWebConnectHint": "Op mayorawesome.com, maak jou show oop → Bestuur → Koppel MACU Studio → Genereer koppelings-sertifikaat, kopieer dit, en plak dit hier. Dit verbind die afstandsbediening en push-geloofsbriewe in een stap.",
+  "filemenu.macuWebConnectBtn": "Koppel",
+  "filemenu.macuWebConnectingBtn": "Koppel tans…",
+  "filemenu.macuWebConnectedHint": "Gekoppel aan <0>{base}</0>. Gekontroleerde afleveringe gaan openbaar; onbeheerde word gedruk maar as konsepte versteek. Daarna Publiseer.",
+  "filemenu.macuWebNoEpisodes": "Geen afleveringe.",
+  "filemenu.macuWebPublishBtn": "Publiseer {show}",
+  "filemenu.macuWebPublishingBtn": "Publiseer tans…",
+  "toast.macuWebConnected": "Gekoppel aan {base}",
+  "toast.macuWebPublished": "Publiseer {show} ({files} lêers) → MACU Web",
+  "toast.macuWebCommitted": "plaatslik gepleeg ({files} lêers) — stel geloofsbriewe in om te druk"
 }

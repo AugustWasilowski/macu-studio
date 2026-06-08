@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Selecteer een script aan de linkerkant.",
-  "youtube.views": "{views} WEERGAVEN"
+  "youtube.views": "{views} WEERGAVEN",
+  "filemenu.macuWebItem": "Publiceren naar MACU Web",
+  "filemenu.macuWebTitle": "Publiceren naar MACU Web",
+  "filemenu.macuWebConnectHint": "Op mayorawesome.com opent u uw show → Beheren → MACU Studio verbinden → Genereer verbindingstoken, kopieer deze en plak deze hier. Dit verbindt de externe gegevens en push-inloggegevens in één stap.",
+  "filemenu.macuWebConnectBtn": "Verbinden",
+  "filemenu.macuWebConnectingBtn": "Verbinden…",
+  "filemenu.macuWebConnectedHint": "Verbonden met <0>{base}</0>. Gecontroleerde afleveringen gaan live; niet-gecontroleerde worden gepusht maar verborgen als concepten. Publiceer vervolgens.",
+  "filemenu.macuWebNoEpisodes": "Geen afleveringen.",
+  "filemenu.macuWebPublishBtn": "Publiceer {show}",
+  "filemenu.macuWebPublishingBtn": "Publiceren…",
+  "toast.macuWebConnected": "Verbonden met {base}",
+  "toast.macuWebPublished": "Gepubliceerd {show} ({files} bestanden) → MACU Web",
+  "toast.macuWebCommitted": "lokaal doorgevoerd ({files} bestanden) — stel inloggegevens in om te pushen"
 }

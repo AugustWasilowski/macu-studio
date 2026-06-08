@@ -877,5 +877,17 @@
   "youtube.panelScripts": "스크립트",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "왼쪽에서 스크립트를 선택하세요.",
-  "youtube.views": "{views} 조회"
+  "youtube.views": "{views} 조회",
+  "filemenu.macuWebItem": "MACU Web에 발행",
+  "filemenu.macuWebTitle": "MACU Web에 발행",
+  "filemenu.macuWebConnectHint": "mayorawesome.com에서 쇼를 열고 → 관리 → MACU Studio 연결 → 연결 토큰 생성, 복사한 후 여기에 붙여넣기. 원격 및 푸시 자격증명이 한 번에 연결됩니다.",
+  "filemenu.macuWebConnectBtn": "연결",
+  "filemenu.macuWebConnectingBtn": "연결 중…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0>에 연결됨. 체크된 에피소드는 공개되고, 체크 해제된 것은 푸시되지만 초안으로 숨겨집니다. 그 다음 발행.",
+  "filemenu.macuWebNoEpisodes": "에피소드 없음.",
+  "filemenu.macuWebPublishBtn": "{show} 발행",
+  "filemenu.macuWebPublishingBtn": "발행 중…",
+  "toast.macuWebConnected": "{base}에 연결됨",
+  "toast.macuWebPublished": "{show} 발행됨 ({files}개 파일) → MACU Web",
+  "toast.macuWebCommitted": "로컬로 커밋됨 ({files}개 파일) — 푸시하려면 자격증명 설정"
 }

@@ -876,5 +876,17 @@
   "youtube.panelScripts": "SCRIPTEK",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Válasszon egy scriptet a bal oldalon.",
-  "youtube.views": "{views} MEGTEKINTÉS"
+  "youtube.views": "{views} MEGTEKINTÉS",
+  "filemenu.macuWebItem": "Közzététel a MACU Web-en",
+  "filemenu.macuWebTitle": "Közzététel a MACU Web-en",
+  "filemenu.macuWebConnectHint": "A mayorawesome.com oldalon nyisd meg a show-od → Manage → Connect MACU Studio → Generate connect token, másolj le egy tokent, és illeszd be itt. Ez egy lépésben összeköti a távolsági és push-hitelesítési adatokat.",
+  "filemenu.macuWebConnectBtn": "Csatlakoztatás",
+  "filemenu.macuWebConnectingBtn": "Csatlakoztatás…",
+  "filemenu.macuWebConnectedHint": "Csatlakoztatva: <0>{base}</0>. A kijelölt epizódok nyilvánosak lesznek; a kijelöletlen epizódok draft módban maradnak. Ezután Közzététel.",
+  "filemenu.macuWebNoEpisodes": "Nincsenek epizódok.",
+  "filemenu.macuWebPublishBtn": "Közzététel: {show}",
+  "filemenu.macuWebPublishingBtn": "Közzététel…",
+  "toast.macuWebConnected": "Csatlakoztatva: {base}",
+  "toast.macuWebPublished": "Közzétéve: {show} ({files} fájl) → MACU Web",
+  "toast.macuWebCommitted": "helyileg mentve ({files} fájl) — állítsd be a hitelesítési adatokat a push-hoz"
 }

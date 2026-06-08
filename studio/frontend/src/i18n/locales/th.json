@@ -878,5 +878,17 @@
   "youtube.panelScripts": "สคริปต์",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "เลือกสคริปต์ทางด้านซ้าย",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "เผยแพร่ไปยัง MACU Web",
+  "filemenu.macuWebTitle": "เผยแพร่ไปยัง MACU Web",
+  "filemenu.macuWebConnectHint": "บน mayorawesome.com เปิดการแสดงของคุณ → จัดการ → เชื่อมต่อ MACU Studio → สร้าง connect token คัดลอกและวางที่นี่ มันจะเชื่อมข้อมูลประจำตัวระยะไกลและการผลักข้อมูลเข้าในขั้นตอนเดียว",
+  "filemenu.macuWebConnectBtn": "เชื่อมต่อ",
+  "filemenu.macuWebConnectingBtn": "กำลังเชื่อมต่อ…",
+  "filemenu.macuWebConnectedHint": "เชื่อมต่อกับ <0>{base}</0> แล้ว ตอนที่เลือกจะเผยแพร่สาธารณะ ตอนที่ไม่เลือกจะผลักข้อมูลแต่ซ่อนเป็นร่าง จากนั้นเผยแพร่",
+  "filemenu.macuWebNoEpisodes": "ไม่มีตอน",
+  "filemenu.macuWebPublishBtn": "เผยแพร่ {show}",
+  "filemenu.macuWebPublishingBtn": "กำลังเผยแพร่…",
+  "toast.macuWebConnected": "เชื่อมต่อกับ {base} แล้ว",
+  "toast.macuWebPublished": "เผยแพร่ {show} ({files} ไฟล์) → MACU Web",
+  "toast.macuWebCommitted": "committed โลคัล ({files} ไฟล์) — ตั้งค่าข้อมูลประจำตัวเพื่อผลักข้อมูล"
 }

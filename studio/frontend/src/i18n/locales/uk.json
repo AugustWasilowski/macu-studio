@@ -878,5 +878,17 @@
   "youtube.panelScripts": "SCRIPTS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Виберіть скрипт ліворуч.",
-  "youtube.views": "{views} VIEWS"
+  "youtube.views": "{views} VIEWS",
+  "filemenu.macuWebItem": "Опублікувати на MACU Web",
+  "filemenu.macuWebTitle": "Опублікувати на MACU Web",
+  "filemenu.macuWebConnectHint": "На mayorawesome.com відкрийте вашу передачу → Управління → Connect MACU Studio → Створіть маркер підключення, скопіюйте його та вставте тут. Це з'єднує віддалені облікові дані та облікові дані для надсилання за один крок.",
+  "filemenu.macuWebConnectBtn": "Підключитися",
+  "filemenu.macuWebConnectingBtn": "Підключення…",
+  "filemenu.macuWebConnectedHint": "Підключено до <0>{base}</0>. Відмічені епізоди стають доступними; невідмічені надсилаються, але приховуються як чернетки. Потім натисніть Опублікувати.",
+  "filemenu.macuWebNoEpisodes": "Епізодів немає.",
+  "filemenu.macuWebPublishBtn": "Опублікувати {show}",
+  "filemenu.macuWebPublishingBtn": "Опублікування…",
+  "toast.macuWebConnected": "Підключено до {base}",
+  "toast.macuWebPublished": "Опубліковано {show} ({files} файлів) → MACU Web",
+  "toast.macuWebCommitted": "закріплено локально ({files} файлів) — встановіть облікові дані для надсилання"
 }

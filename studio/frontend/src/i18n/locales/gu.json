@@ -878,5 +878,17 @@
   "youtube.panelScripts": "સ્ક્રિપ્ટ્સ",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "ડાબી બાજુએ એક સ્ક્રિપ્ટ પસંદ કરો.",
-  "youtube.views": "{views} દૃશ્યો"
+  "youtube.views": "{views} દૃશ્યો",
+  "filemenu.macuWebItem": "MACU Web પર પ્રકાશિત કરો",
+  "filemenu.macuWebTitle": "MACU Web પર પ્રકાશિત કરો",
+  "filemenu.macuWebConnectHint": "mayorawesome.com પર, તમારો શો ખોલો → સંચાલન કરો → MACU Studio કનેક્ટ કરો → કનેક્ટ ટોકન જનરેટ કરો, તેને કૉપિ કરો, અને તેને અહીં પેસ્ટ કરો. તે દૂરવર્તી અને પુશ શ્રેતપણાને એક પગલામાં જોડે છે.",
+  "filemenu.macuWebConnectBtn": "કનેક્ટ કરો",
+  "filemenu.macuWebConnectingBtn": "કનેક્ટ કરી રહ્યા છીએ…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> સાથે કનેક્ટેડ. ચેક કરેલ એપિસોડ જાહેર થાય છે; અચેક કરેલ પુશ કરવામાં આવે છે પરંતુ ડ્રાફ્ટ તરીકે છુપાયેલા રહે છે. પછી પ્રકાશિત કરો.",
+  "filemenu.macuWebNoEpisodes": "કોઈ એપિસોડ નથી.",
+  "filemenu.macuWebPublishBtn": "{show} પ્રકાશિત કરો",
+  "filemenu.macuWebPublishingBtn": "પ્રકાશિત કરી રહ્યા છીએ…",
+  "toast.macuWebConnected": "{base} સાથે કનેક્ટેડ",
+  "toast.macuWebPublished": "{show} પ્રકાશિત કર્યું ({files} ફાઇલો) → MACU Web",
+  "toast.macuWebCommitted": "સ્થાનિક રીતે કમિટ કર્યું ({files} ફાઇલો) — પુશ કરવા માટે ખ્યાતિપત્ર સેટ કરો"
 }

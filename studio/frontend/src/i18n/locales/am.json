@@ -878,5 +878,17 @@
   "youtube.panelScripts": "ስክሪፕቶች",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "ግራ ላይ ስክሪፕት ምረጥ.",
-  "youtube.views": "{views} ጭላ"
+  "youtube.views": "{views} ጭላ",
+  "filemenu.macuWebItem": "MACU Web ላይ ያተርጉሙ",
+  "filemenu.macuWebTitle": "MACU Web ላይ ያተርጉሙ",
+  "filemenu.macuWebConnectHint": "mayorawesome.com ላይ፣ የእርስዎን ሾው ይክፈቱ → 리관리 → MACU Studio ን ያገናኙ → ማገናኘት ቶክን ይፍጠሩ፣ ይቅዱት፣ እና እዚህ ይለصቁት። ሩቅ እና ወደ ላይ ለመላክ ምስጋናዎን በአንድ እርምጃ ያገናኛል።",
+  "filemenu.macuWebConnectBtn": "ያገናኙ",
+  "filemenu.macuWebConnectingBtn": "ያገናኘዋል…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> ጋር ተገናኝተዋል። የተመረጡ ክፍሎች ይወጣሉ; ያልተመረጡት ይገናኛሉ ግን እንደ ረቂቅ ይደብቃሉ። ከዚያ ያተርጉሙ።",
+  "filemenu.macuWebNoEpisodes": "ምንም ክፍሎች የሉም።",
+  "filemenu.macuWebPublishBtn": "{show} ያተርጉሙ",
+  "filemenu.macuWebPublishingBtn": "ያተርጋሚ…",
+  "toast.macuWebConnected": "{base} ጋር ተገናኝተዋል",
+  "toast.macuWebPublished": "{show} ({files} ፋይሎች) → MACU Web ተተርገሙ",
+  "toast.macuWebCommitted": "በአካባቢ ተቅዱ ({files} ፋይሎች) — ለመላክ ምስጋናዎን ያዘጋጁ"
 }

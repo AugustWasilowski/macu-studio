@@ -873,5 +873,17 @@
   "youtube.panelScripts": "SCRIPT",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Seleziona uno script a sinistra.",
-  "youtube.views": "{views} VISUALIZZAZIONI"
+  "youtube.views": "{views} VISUALIZZAZIONI",
+  "filemenu.macuWebItem": "Pubblica su MACU Web",
+  "filemenu.macuWebTitle": "Pubblica su MACU Web",
+  "filemenu.macuWebConnectHint": "Su mayorawesome.com, apri il tuo show → Gestisci → Connetti MACU Studio → Genera token di connessione, copialo e incollalo qui. Collega le credenziali remote e di push in un passaggio.",
+  "filemenu.macuWebConnectBtn": "Connetti",
+  "filemenu.macuWebConnectingBtn": "Connessione in corso…",
+  "filemenu.macuWebConnectedHint": "Connesso a <0>{base}</0>. Gli episodi selezionati diventano pubblici; quelli non selezionati vengono inviati ma rimangono nascosti come bozze. Quindi Pubblica.",
+  "filemenu.macuWebNoEpisodes": "Nessun episodio.",
+  "filemenu.macuWebPublishBtn": "Pubblica {show}",
+  "filemenu.macuWebPublishingBtn": "Pubblicazione in corso…",
+  "toast.macuWebConnected": "Connesso a {base}",
+  "toast.macuWebPublished": "Pubblicato {show} ({files} file) → MACU Web",
+  "toast.macuWebCommitted": "eseguito il commit localmente ({files} file) — imposta le credenziali per eseguire il push"
 }

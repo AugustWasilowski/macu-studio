@@ -877,5 +877,17 @@
   "youtube.panelScripts": "スクリプト",
   "youtube.panelYoutube": "YouTube",
   "youtube.selectScript": "左側のスクリプトを選択します。",
-  "youtube.views": "{views} ビュー"
+  "youtube.views": "{views} ビュー",
+  "filemenu.macuWebItem": "MACU Webで公開",
+  "filemenu.macuWebTitle": "MACU Webで公開",
+  "filemenu.macuWebConnectHint": "mayorawesome.com でショーを開く → 管理 → MACU Studio を接続 → 接続トークンを生成、コピーして、ここに貼り付けます。ワンステップでリモート認証情報とプッシュ認証情報がセットされます。",
+  "filemenu.macuWebConnectBtn": "接続",
+  "filemenu.macuWebConnectingBtn": "接続中…",
+  "filemenu.macuWebConnectedHint": "<0>{base}</0> に接続されました。チェックしたエピソードは公開され、チェックなしはドラフトとして非公開でプッシュされます。その後、公開します。",
+  "filemenu.macuWebNoEpisodes": "エピソードがありません。",
+  "filemenu.macuWebPublishBtn": "{show} を公開",
+  "filemenu.macuWebPublishingBtn": "公開中…",
+  "toast.macuWebConnected": "{base} に接続されました",
+  "toast.macuWebPublished": "{show} ({files} ファイル) を MACU Web に公開しました",
+  "toast.macuWebCommitted": "ローカルにコミット ({files} ファイル) — プッシュするには認証情報を設定してください"
 }

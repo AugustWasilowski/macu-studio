@@ -875,5 +875,17 @@
   "youtube.panelScripts": "GUIONS",
   "youtube.panelYoutube": "YOUTUBE",
   "youtube.selectScript": "Selecciona un guió a l'esquerra.",
-  "youtube.views": "{views} VISUALITZACIONS"
+  "youtube.views": "{views} VISUALITZACIONS",
+  "filemenu.macuWebItem": "Publica a MACU Web",
+  "filemenu.macuWebTitle": "Publica a MACU Web",
+  "filemenu.macuWebConnectHint": "A mayorawesome.com, obri la teva sèrie → Gestiona → Connecta MACU Studio → Genera connect token, copia'l i enganxa'l aquí. Connecta les credencials remotes i de push en un sol pas.",
+  "filemenu.macuWebConnectBtn": "Connecta",
+  "filemenu.macuWebConnectingBtn": "Connectant…",
+  "filemenu.macuWebConnectedHint": "Connectat a <0>{base}</0>. Els episodis marcats es publiquen; els desmarats es fan push però es mantenen com esborranys. Llavors publica.",
+  "filemenu.macuWebNoEpisodes": "Cap episodi.",
+  "filemenu.macuWebPublishBtn": "Publica {show}",
+  "filemenu.macuWebPublishingBtn": "Publicant…",
+  "toast.macuWebConnected": "Connectat a {base}",
+  "toast.macuWebPublished": "Publicat {show} ({files} fitxers) → MACU Web",
+  "toast.macuWebCommitted": "subimit localment ({files} fitxers) — estableix credencials per fer push"
 }
