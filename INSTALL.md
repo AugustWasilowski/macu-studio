@@ -66,6 +66,12 @@ Then start Studio with **`./deploy/start-studio.sh`** (it also starts the render
 service on `:8773`) and open `http://localhost:8774/`. To run on boot, see
 `sudo ./deploy/install-systemd.sh`.
 
+Studio also exposes its whole API as **MCP tools** at `http://localhost:8774/mcp`
+(no extra setup — it's built into the app, and updates pick up new Python deps
+like the MCP SDK automatically via `pip install -e .`). Connect Claude Code with
+`claude mcp add --transport http macu-studio http://localhost:8774/mcp` and an
+agent can drive the full episode loop; see `studio/README.md` § *MCP server*.
+
 ## Running on boot / in the background
 
 - **systemd (Linux, or WSL with systemd enabled):**

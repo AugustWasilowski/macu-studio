@@ -909,5 +909,7 @@
   "publish.fieldSeason": "Kausi",
   "publish.noEpisode": "Yhtään jaksoa ei ole valittu.",
   "publish.videoTitle": "Isännöity video",
-  "publish.viewLive": "katso live-sivu ↗"
+  "publish.viewLive": "katso live-sivu ↗",
+  "tour.mcp.title": "Tuo oma agentsi",
+  "tour.mcp.body": "Studio on myös MCP-palvelin — kaikki tämän oppaan sisältö on työkaluja, joita tekoälyagentti voi kutsua. Osoita Claude Code tai Claude Desktop osoitteeseen http://localhost:8774/mcp ja työnkulusta tulee yksi keskustelu: kirjoita käsikirjoitus, valitse äänet, renderöi, julkaise. Katso agenttiyhteyden muodostamisen ohjeista lisätietoja."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Sezon",
   "publish.noEpisode": "Seçili bölüm yok.",
   "publish.videoTitle": "Barındırılan video",
-  "publish.viewLive": "canlı sayfayı görüntüle ↗"
+  "publish.viewLive": "canlı sayfayı görüntüle ↗",
+  "tour.mcp.title": "Kendi ajanınızı getirin",
+  "tour.mcp.body": "Studio aynı zamanda bir MCP sunucusu — bu turun her şeyi bir yapay zeka ajanının çağırabileceği bir araçtır. Claude Code veya Claude Desktop dosyasını http://localhost:8774/mcp adresine yönlendirin ve iş akışı bir sohbete dönüşür: betiği yazın, sesleri seçin, işleyin, yayınlayın. Kurulum için Bir ajanı bağla belgelerine bakın."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Sezóna",
   "publish.noEpisode": "Není vybrána žádná epizoda.",
   "publish.videoTitle": "Hostované video",
-  "publish.viewLive": "zobrazit živou stránku ↗"
+  "publish.viewLive": "zobrazit živou stránku ↗",
+  "tour.mcp.title": "Přineste si vlastního agenta",
+  "tour.mcp.body": "Studio je také server MCP — vše v tomto průvodci je nástroj, který AI agent může volat. Nasměrujte Claude Code nebo Claude Desktop na http://localhost:8774/mcp a pracovní postup se změní na jednu konverzaci: napište scénář, vyberte hlasy, vykreslujte, publikujte. Nastavení naleznete v dokumentaci Connect-an-agent."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Isikhathi",
   "publish.noEpisode": "Ayikho i-episode ekhethiwe.",
   "publish.videoTitle": "Ividiyo ekhenyiwe",
-  "publish.viewLive": "bheka live page ↗"
+  "publish.viewLive": "bheka live page ↗",
+  "tour.mcp.title": "Hlela umuntu wakho iqembu",
+  "tour.mcp.body": "I-Studio nayo iyiseva ye-MCP — konke ekuthurini apha yithuluzi umuntu wakho ongumxhentisi unganweba. Qondisela i-Claude Code noma i-Claude Desktop ku-http://localhost:8774/mcp futhi umflowu ubuhle bengxoxo olunye: bhala isikweletu, linganise izwi, wenza, ukushela. Bona i-Connect-an-agent docs yokwenza isetaphu."
 }

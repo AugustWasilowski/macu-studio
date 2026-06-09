@@ -920,5 +920,7 @@
   "publish.fieldSeason": "Ìgba",
   "publish.noEpisode": "Kò sí ìjáde tí a yan.",
   "publish.videoTitle": "Fidio tí a fi sílẹ̀",
-  "publish.viewLive": "wò ojú ìjáde ọjó ↗"
+  "publish.viewLive": "wò ojú ìjáde ọjó ↗",
+  "tour.mcp.title": "Mu AI agbara rẹ wa",
+  "tour.mcp.body": "Studio tun jẹ MCP server — ohun gbogbo ninu iyẹn ti a sojúu ni eroja ti AI agbara le pe. Darí Claude Code tàbí Claude Desktop si http://localhost:8774/mcp ati iṣẹ iṣẹ yoo jẹ ọkọọkan orisun: kowe iwe-itán naa, yanjú àwọn ohun elo, ṣe, kede. Wo ifiranṣẹ Darapọ-akapin-eto-ori fun ṣiṣe afikun."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Säsong",
   "publish.noEpisode": "Ingen episode vald.",
   "publish.videoTitle": "Värdad video",
-  "publish.viewLive": "visa live-sida ↗"
+  "publish.viewLive": "visa live-sida ↗",
+  "tour.mcp.title": "Lägg till din egen agent",
+  "tour.mcp.body": "Studio är också en MCP-server — allt i den här guiden är verktyg som en AI-agent kan anropa. Peka Claude Code eller Claude Desktop på http://localhost:8774/mcp så blir arbetsflödet en enda konversation: skriv manuset, casta röster, rendera, publicera. Se dokumentationen Connect-an-agent för instruktioner."
 }

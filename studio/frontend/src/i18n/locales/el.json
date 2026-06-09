@@ -919,5 +919,7 @@
   "publish.fieldSeason": "Σεζόν",
   "publish.noEpisode": "Δεν επιλέχθηκε επεισόδιο.",
   "publish.videoTitle": "Φιλοξενούμενο βίντεο",
-  "publish.viewLive": "προβολή ζωντανής σελίδας ↗"
+  "publish.viewLive": "προβολή ζωντανής σελίδας ↗",
+  "tour.mcp.title": "Φέρτε τον δικό σας agent",
+  "tour.mcp.body": "Το Studio είναι επίσης ένας MCP server — όλα στην περιήγηση αυτή είναι εργαλεία που ένας AI agent μπορεί να καλέσει. Κατευθύνετε το Claude Code ή το Claude Desktop στο http://localhost:8774/mcp και η ροή εργασίας γίνεται μία συνομιλία: γράψτε το σενάριο, ορίστε τις φωνές, κάντε render, δημοσιεύστε. Δείτε τα έγγραφα Connect-an-agent για το setup."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Sezon",
   "publish.noEpisode": "Niciun episod selectat.",
   "publish.videoTitle": "Video găzduit",
-  "publish.viewLive": "vizualizați pagina live ↗"
+  "publish.viewLive": "vizualizați pagina live ↗",
+  "tour.mcp.title": "Aduce-ți propriul agent",
+  "tour.mcp.body": "Studio este și un server MCP — totul din acest tur este o unealtă pe care un agent IA o poate apela. Indică Claude Code sau Claude Desktop la http://localhost:8774/mcp și procesul devine o singură conversație: scrie scenariul, distribuie vocile, randează, publică. Vezi documentația Connect-an-agent pentru configurare."
 }

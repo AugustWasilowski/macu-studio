@@ -920,5 +920,7 @@
   "publish.fieldSeason": "Mùa",
   "publish.noEpisode": "Không có tập phim nào được chọn.",
   "publish.videoTitle": "Video được lưu trữ",
-  "publish.viewLive": "xem trang trực tiếp ↗"
+  "publish.viewLive": "xem trang trực tiếp ↗",
+  "tour.mcp.title": "Mang agent của riêng bạn",
+  "tour.mcp.body": "Studio cũng là một máy chủ MCP — mọi thứ trong tour này là một công cụ mà một agent AI có thể gọi. Chỉ Claude Code hoặc Claude Desktop đến http://localhost:8774/mcp và quy trình làm việc trở thành một cuộc trò chuyện: viết kịch bản, tuyển chọn giọng nói, kết xuất, xuất bản. Xem tài liệu Connect-an-agent để biết cách thiết lập."
 }

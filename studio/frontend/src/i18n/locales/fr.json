@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Saison",
   "publish.noEpisode": "Aucun épisode sélectionné.",
   "publish.videoTitle": "Vidéo hébergée",
-  "publish.viewLive": "afficher la page en direct ↗"
+  "publish.viewLive": "afficher la page en direct ↗",
+  "tour.mcp.title": "Apportez votre propre agent",
+  "tour.mcp.body": "Studio est aussi un serveur MCP — tout ce que vous voyez dans ce tour est un outil qu'un agent IA peut appeler. Pointez Claude Code ou Claude Desktop vers http://localhost:8774/mcp et le flux de travail devient une seule conversation : écrivez le script, choisissez les voix, rendez, publiez. Consultez la documentation Connect-an-agent pour la configuration."
 }

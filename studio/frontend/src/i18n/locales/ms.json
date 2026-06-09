@@ -922,5 +922,7 @@
   "stage.publish": "Terbitkan",
   "toast.macuWebVideoSet": "video ditetapkan ({id})",
   "toast.macuWebVideoCleared": "video dihapuskan",
-  "toast.youtubeConnected": "YouTube disambungkan"
+  "toast.youtubeConnected": "YouTube disambungkan",
+  "tour.mcp.title": "Bawa ejen anda sendiri",
+  "tour.mcp.body": "Studio juga merupakan pelayan MCP — semua yang ada dalam tur ini adalah alat yang boleh dipanggil oleh ejen AI. Arahkan Claude Code atau Claude Desktop ke http://localhost:8774/mcp dan alur kerja menjadi satu perbualan: tulis skrip, tulis watak suara, render, terbitkan. Lihat dokumen Sambungkan-ejen untuk persediaan."
 }

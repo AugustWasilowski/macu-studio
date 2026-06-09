@@ -921,5 +921,7 @@
   "publish.fieldSeason": "シーズン",
   "publish.noEpisode": "エピソードが選択されていません。",
   "publish.videoTitle": "ホストされているビデオ",
-  "publish.viewLive": "ライブページを表示 ↗"
+  "publish.viewLive": "ライブページを表示 ↗",
+  "tour.mcp.title": "あなた自身のエージェントを持ち込む",
+  "tour.mcp.body": "StudioはMCPサーバーでもあります — このツアーにある機能はすべて、AIエージェントが呼び出せるツールです。Claude CodeまたはClaude Desktopをhttp://localhost:8774/mcp に指定すれば、ワークフローは1つの会話になります: スクリプトを書く、ボイスをキャストする、レンダリングする、公開する。セットアップについては、エージェント接続ドキュメントを参照してください。"
 }

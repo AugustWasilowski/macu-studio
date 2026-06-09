@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Musim",
   "publish.noEpisode": "Tidak ada episode yang dipilih.",
   "publish.videoTitle": "Video yang dihosting",
-  "publish.viewLive": "lihat halaman langsung ↗"
+  "publish.viewLive": "lihat halaman langsung ↗",
+  "tour.mcp.title": "Bawa agen Anda sendiri",
+  "tour.mcp.body": "Studio juga merupakan server MCP — semua yang ada di tur ini adalah alat yang dapat dipanggil oleh agen AI. Arahkan Claude Code atau Claude Desktop ke http://localhost:8774/mcp dan alur kerja menjadi satu percakapan: tulis skrip, casting suara, render, publikasikan. Lihat dokumentasi Connect-an-agent untuk setup."
 }

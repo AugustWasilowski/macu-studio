@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Staffel",
   "publish.noEpisode": "Keine Episode ausgewählt.",
   "publish.videoTitle": "Gehostetes Video",
-  "publish.viewLive": "Live-Seite anzeigen ↗"
+  "publish.viewLive": "Live-Seite anzeigen ↗",
+  "tour.mcp.title": "Bringen Sie Ihren eigenen Agent",
+  "tour.mcp.body": "Studio ist auch ein MCP-Server — alles in dieser Anleitung ist ein Tool, das ein KI-Agent aufrufen kann. Richten Sie Claude Code oder Claude Desktop auf http://localhost:8774/mcp aus, und der Arbeitsablauf wird zu einem Gespräch: Schreiben Sie das Skript, besetzen Sie die Stimmen, rendern Sie und veröffentlichen Sie. Weitere Informationen finden Sie in der Dokumentation zum Verbinden eines Agenten."
 }

@@ -909,5 +909,7 @@
   "stage.publish": "نشر",
   "toast.macuWebVideoSet": "تم تعيين الفيديو ({id})",
   "toast.macuWebVideoCleared": "تم مسح الفيديو",
-  "toast.youtubeConnected": "تم توصيل YouTube"
+  "toast.youtubeConnected": "تم توصيل YouTube",
+  "tour.mcp.title": "أحضر وكيلك الخاص",
+  "tour.mcp.body": "Studio هو أيضاً خادم MCP — كل شيء في هذا الجولة هو أداة يمكن لوكيل ذكي أن ينفذها. وجه Claude Code أو Claude Desktop إلى http://localhost:8774/mcp وستصبح سير العمل محادثة واحدة: اكتب السيناريو، اختر الأصوات، قم بالتصيير، انشر. راجع وثائق Connect-an-agent للحصول على تعليمات الإعداد."
 }

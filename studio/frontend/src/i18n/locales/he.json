@@ -921,5 +921,7 @@
   "publish.fieldSeason": "עונה",
   "publish.noEpisode": "אין פרק נבחר.",
   "publish.videoTitle": "וידאו מתורגם",
-  "publish.viewLive": "צפה בדף live ↗"
+  "publish.viewLive": "צפה בדף live ↗",
+  "tour.mcp.title": "הביאו את ה-Agent שלכם",
+  "tour.mcp.body": "Studio הוא גם שרת MCP — כל דבר בסיור זה הוא כלי שה-Agent יכול להפעיל. הצביעו על Claude Code או Claude Desktop אל http://localhost:8774/mcp וההזרמה הופכת לשיחה אחת: כתבו את התסריט, השמיעו קולות, עיבדו, פרסמו. ראו את התיעוד של Connect-an-agent לקביעה."
 }

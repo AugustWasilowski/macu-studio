@@ -922,5 +922,7 @@
   "publish.fieldSeason": "季度",
   "publish.noEpisode": "未选择剧集。",
   "publish.videoTitle": "托管视频",
-  "publish.viewLive": "查看实时页面 ↗"
+  "publish.viewLive": "查看实时页面 ↗",
+  "tour.mcp.title": "带上你自己的Agent",
+  "tour.mcp.body": "Studio 也是一个 MCP 服务器——本教程中的所有内容都是 AI agent 可以调用的工具。将 Claude Code 或 Claude Desktop 指向 http://localhost:8774/mcp，工作流就变成了一个对话：编写脚本、选角、渲染、发布。参见「连接 Agent」文档了解设置步骤。"
 }

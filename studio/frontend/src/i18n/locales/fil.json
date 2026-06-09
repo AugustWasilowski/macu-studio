@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Season",
   "publish.noEpisode": "Walang episode na pinili.",
   "publish.videoTitle": "Hosted na video",
-  "publish.viewLive": "tingnan ang live page ↗"
+  "publish.viewLive": "tingnan ang live page ↗",
+  "tour.mcp.title": "Magdala ng sarili mong agent",
+  "tour.mcp.body": "Ang Studio ay isang MCP server din — lahat ng bagay sa tour na ito ay mga tool na maaaring tawagan ng isang AI agent. Ituro ang Claude Code o Claude Desktop sa http://localhost:8774/mcp at ang workflow ay nagiging isang pag-uusap: isulat ang script, pumili ng mga boses, mag-render, mag-publish. Tingnan ang Connect-an-agent docs para sa setup."
 }

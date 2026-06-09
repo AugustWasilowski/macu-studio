@@ -921,5 +921,7 @@
   "publish.fieldSeason": "Oge",
   "publish.noEpisode": "Enweghị episod ahọpụtara.",
   "publish.videoTitle": "Vidio ebudapụrụ",
-  "publish.viewLive": "lee ihu ndụ ↗"
+  "publish.viewLive": "lee ihu ndụ ↗",
+  "tour.mcp.title": "Wetara onwe gị na-agwa ọrụ AI",
+  "tour.mcp.body": "MACU Studio bụkwa MACU-server — ihe niile na nzọụkwụ a bụ ngwaọrụ nke ọrụ AI nwere ike ịkpọ. Tụnyere Claude Code ma ọ bụ Claude Desktop na http://localhost:8774/mcp ma ọkwa rụ mma ghọọ okwu otu: dee ihe ọdịnụ, tụnye ụda, mepụta, bipụta. Hụ ndokume Jikọ-ọrụ-maka maka ihe iwu."
 }

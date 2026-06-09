@@ -921,5 +921,7 @@
   "publish.fieldSeason": "فصل",
   "publish.noEpisode": "هیچ قسمتی انتخاب نشده است.",
   "publish.videoTitle": "ویدیوی میزبانی‌شده",
-  "publish.viewLive": "نمایش صفحه زنده ↗"
+  "publish.viewLive": "نمایش صفحه زنده ↗",
+  "tour.mcp.title": "عامل خود را بیاورید",
+  "tour.mcp.body": "Studio یک سرور MCP است — همه چیز در این تور ابزاری است که یک عامل هوشمند می‌تواند فراخوانی کند. Claude Code یا Claude Desktop را به http://localhost:8774/mcp اشاره دهید و گردش کار به یک گفتگو تبدیل می‌شود: اسکریپت را بنویسید، صداها را انتخاب کنید، رندر کنید، منتشر کنید. برای راه‌اندازی به اسناد Connect-an-agent مراجعه کنید."
 }

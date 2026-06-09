@@ -920,5 +920,7 @@
   "publish.fieldSeason": "Évad",
   "publish.noEpisode": "Nincs kiválasztott epizód.",
   "publish.videoTitle": "Hosztolt videó",
-  "publish.viewLive": "élő oldal megtekintése ↗"
+  "publish.viewLive": "élő oldal megtekintése ↗",
+  "tour.mcp.title": "Hozd a saját ügynökedet",
+  "tour.mcp.body": "A Studio egy MCP szerver is — ebben a bemutatóban minden egy eszköz, amit egy AI ügynök meghívhat. Mutass a Claude Code vagy Claude Desktop felé az http://localhost:8774/mcp címre, és a munkafolyamat egyetlen beszélgetés lesz: írj scriptet, válaszd meg a hangokat, renderelj, tegyél közzé. A csatlakozási útmutatóért nézd meg a Connect-an-agent dokumentációt."
 }

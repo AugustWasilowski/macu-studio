@@ -71,6 +71,12 @@ export const TOUR_STEPS: TourStep[] = [
     bodyKey: "tour.gitSync.body",
   },
   {
+    // Centered card — the MCP server has no UI control to spotlight.
+    target: null,
+    titleKey: "tour.mcp.title",
+    bodyKey: "tour.mcp.body",
+  },
+  {
     target: '[data-tour="file-menu"]',
     titleKey: "tour.ready.title",
     bodyKey: "tour.ready.body",

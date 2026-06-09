@@ -922,5 +922,7 @@
   "publish.fieldSeason": "सीज़न",
   "publish.noEpisode": "कोई एपिसोड चयनित नहीं।",
   "publish.videoTitle": "होस्ट किया गया वीडियो",
-  "publish.viewLive": "लाइव पृष्ठ देखें ↗"
+  "publish.viewLive": "लाइव पृष्ठ देखें ↗",
+  "tour.mcp.title": "आपले स्वतःचे एजंट आणा",
+  "tour.mcp.body": "Studio हे एक MCP सर्व्हर देखील आहे — याツूरमधील प्रत्येक गोष्ट एक एआই एजंट कॉल करू शकते. Claude Code किंवा Claude Desktop ला http://localhost:8774/mcp वर निर्देशित करा आणि वर्कफ्लो एक संभाषणात बदलते: स्क्रिप्ट लिहा, व्हॉयस कास्ट करा, रेंडर करा, प्रकाशित करा. सेटअपसाठी Connect-an-agent डॉक्स पहा."
 }

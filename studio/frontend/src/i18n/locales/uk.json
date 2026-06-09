@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Сезон",
   "publish.noEpisode": "Жодний епізод не вибраний.",
   "publish.videoTitle": "Розміщене відео",
-  "publish.viewLive": "переглянути живу сторінку ↗"
+  "publish.viewLive": "переглянути живу сторінку ↗",
+  "tour.mcp.title": "Принесіть свого агента",
+  "tour.mcp.body": "Studio також є MCP сервером — все в цьому турі це інструменти, які може викликати AI агент. Спрямуйте Claude Code або Claude Desktop на http://localhost:8774/mcp і робочий процес стане однією розмовою: напишіть сценарій, виберіть голоси, рендеріть, публікуйте. Див. документацію Connect-an-agent для налаштування."
 }

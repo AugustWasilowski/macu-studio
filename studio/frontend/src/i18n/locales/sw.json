@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Msimu",
   "publish.noEpisode": "Hakuna episode iliyochaguliwa.",
   "publish.videoTitle": "Video iliyohosiwa",
-  "publish.viewLive": "tazama ukurasa hai ↗"
+  "publish.viewLive": "tazama ukurasa hai ↗",
+  "tour.mcp.title": "Leteni mwenyeji wako wa AI",
+  "tour.mcp.body": "Studio pia ni seva ya MCP — kila kitu katika mwongozo huu ni zana inayoweza kuita mhusika wa AI. Elekeza Claude Code au Claude Desktop kwa http://localhost:8774/mcp na kazi inakuwa mazungumzo moja: andika hati, chagua sauti, fanya uongofu, chapisha. Angalia nyaraka za Unganisha-wakili-wa-AI kwa usanidi."
 }

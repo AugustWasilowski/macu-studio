@@ -922,5 +922,7 @@
   "publish.fieldSeason": "سیزن",
   "publish.noEpisode": "کوئی ایپی سوڈ منتخب نہیں۔",
   "publish.videoTitle": "ہوسٹ کیا گیا ویڈیو",
-  "publish.viewLive": "براہ راست صفحہ دیکھیں ↗"
+  "publish.viewLive": "براہ راست صفحہ دیکھیں ↗",
+  "tour.mcp.title": "اپنا ایجنٹ لائیں",
+  "tour.mcp.body": "Studio ایک MCP سرور بھی ہے — اس ٹور میں سب کچھ ایک ٹول ہے جو AI ایجنٹ کال کر سکتا ہے۔ Claude Code یا Claude Desktop کو http://localhost:8774/mcp پر اشارہ کریں اور ورک فلو ایک بات چیت بن جاتی ہے: اسکرپٹ لکھیں، آوازیں ڈالیں، رینڈر کریں، شائع کریں۔ سیٹ اپ کے لیے ایجنٹ سے جڑنے والی دستاویزات دیکھیں۔"
 }

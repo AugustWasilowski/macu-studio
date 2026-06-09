@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Seizoen",
   "publish.noEpisode": "Geen episode geselecteerd.",
   "publish.videoTitle": "Gehoste video",
-  "publish.viewLive": "live pagina weergeven ↗"
+  "publish.viewLive": "live pagina weergeven ↗",
+  "tour.mcp.title": "Breng je eigen agent mee",
+  "tour.mcp.body": "Studio is ook een MCP-server — alles in deze rondleiding is een tool die een AI-agent kan aanroepen. Wijs Claude Code of Claude Desktop naar http://localhost:8774/mcp en het werkproces wordt één gesprek: schrijf het script, cast de stemmen, render, publiceer. Zie de Connect-an-agent-documenten voor setup."
 }

@@ -922,5 +922,7 @@
   "publish.fieldSeason": "ฤดูกาล",
   "publish.noEpisode": "ไม่ได้เลือกตอน",
   "publish.videoTitle": "วิดีโอที่โฮสต์",
-  "publish.viewLive": "ดูหน้าสด ↗"
+  "publish.viewLive": "ดูหน้าสด ↗",
+  "tour.mcp.title": "นำเอเจนต์ของคุณมา",
+  "tour.mcp.body": "Studio ก็เป็น MCP server ด้วย — ทุกอย่างในทัวร์นี้คือเครื่องมือที่เอเจนต์ AI สามารถเรียกใช้ได้ ชี้ Claude Code หรือ Claude Desktop ไปที่ http://localhost:8774/mcp และขั้นตอนการทำงานจะกลายเป็นการสนทนาเดียว: เขียนสคริปต์, เลือกเสียง, เรนเดอร์, เผยแพร่ ดู Connect-an-agent docs สำหรับการตั้งค่า"
 }

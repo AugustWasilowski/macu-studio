@@ -922,5 +922,7 @@
   "publish.fieldSeason": "ወቅት",
   "publish.noEpisode": "ምንም ክፍል አልተመረጠም።",
   "publish.videoTitle": "የታቀደ ቪዲዮ",
-  "publish.viewLive": "የሕይወት ገጽ ይመልከቱ ↗"
+  "publish.viewLive": "የሕይወት ገጽ ይመልከቱ ↗",
+  "tour.mcp.title": "የራስህን ኤጅንት ተዘጋጁ",
+  "tour.mcp.body": "Studio ደግሞ MCP ሰርቨር ነው — በዚህ ቅይጥ ላይ ያለ ሁሉም ነገር AI ኤጅንት መጠራት የሚችለው መሳሪያ ነው። Claude Code ወይም Claude Desktop ለ http://localhost:8774/mcp ምልክት ያድርጉ እና ስራ ፍሰቱ አንድ ውይይት ይሆናል: ስክሪፕቱን ጻፉ, ድምፅን ይምረጡ, አርድገው ያሞክሩ, አወጣጡ. አንድ-ኤጅንት-ማገናኘት ሰነዱን ለ setup ይመልከቱ."
 }

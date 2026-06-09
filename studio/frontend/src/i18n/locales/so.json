@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Season",
   "publish.noEpisode": "Codee la doortay ma jiraan.",
   "publish.videoTitle": "Video la haysto",
-  "publish.viewLive": "view live page ↗"
+  "publish.viewLive": "view live page ↗",
+  "tour.mcp.title": "Iibka inta kaa ah lagu soo dhoweeyo",
+  "tour.mcp.body": "Studio waxaa sidoo kale ah MCP server — wax kasta oo jira sheekadan waa qalab oo AI agent ay isticmaali karto. Studio-ga (Claude Code ama Claude Desktop) la tixgeeli http://localhost:8774/mcp markaas waxtar-kumaal noqon doonaa mid hadal: qor sheekada, codada la mid ah, soo saari, dhaliso. Eeg dukumeentiyada Connect-an-agent-ka si loo setup-o."
 }

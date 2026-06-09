@@ -922,5 +922,7 @@
   "publish.fieldSeason": "季數",
   "publish.noEpisode": "未選擇劇集。",
   "publish.videoTitle": "託管影片",
-  "publish.viewLive": "檢視實時頁面 ↗"
+  "publish.viewLive": "檢視實時頁面 ↗",
+  "tour.mcp.title": "帶上你自己的代理",
+  "tour.mcp.body": "Studio 也是一個 MCP 伺服器 — 本教學中的所有內容都是 AI 代理可以呼叫的工具。將 Claude Code 或 Claude Desktop 指向 http://localhost:8774/mcp，工作流程就變成一場對話：編寫劇本、選角配音、渲染、發布。查看連接代理文件以獲取設定說明。"
 }

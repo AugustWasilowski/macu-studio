@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Sæson",
   "publish.noEpisode": "Ingen episode valgt.",
   "publish.videoTitle": "Hostet video",
-  "publish.viewLive": "se live-side ↗"
+  "publish.viewLive": "se live-side ↗",
+  "tour.mcp.title": "Bring din egen agent",
+  "tour.mcp.body": "Studio er også en MCP-server — alt i denne rundvisning er et værktøj, som en AI-agent kan kalde. Peg Claude Code eller Claude Desktop mod http://localhost:8774/mcp, og arbejdsgangen bliver én samtale: skriv manuskriptet, vælg stemmerne, render og udgiv. Se dokumentationen om Tilslut en agent for opsætning."
 }

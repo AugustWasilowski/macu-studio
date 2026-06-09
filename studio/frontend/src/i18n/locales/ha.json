@@ -922,5 +922,7 @@
   "publish.fieldSeason": "Kakar",
   "publish.noEpisode": "Babu kashi da aka zaɓa.",
   "publish.videoTitle": "Bideo da aka ajiye",
-  "publish.viewLive": "duba shafin raye ↗"
+  "publish.viewLive": "duba shafin raye ↗",
+  "tour.mcp.title": "Kawo da ajancinki mai",
+  "tour.mcp.body": "Studio kuma shine MCP server — komai a cikin jerin wannan gida abu ne dan aikin AI ake iya kirawa. Nuna Claude Code ko Claude Desktop zuwa http://localhost:8774/mcp kuma aiki ya zama jita-jita gida: rubuta rubutu, jefa muryoyi, fito, aika. Duba Connect-an-agent gida don saitacciyar saita."
 }

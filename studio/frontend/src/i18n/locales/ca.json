@@ -919,5 +919,7 @@
   "publish.fieldSeason": "Temporada",
   "publish.noEpisode": "Cap episodi seleccionat.",
   "publish.videoTitle": "Vídeo allotjat",
-  "publish.viewLive": "veure pàgina en directe ↗"
+  "publish.viewLive": "veure pàgina en directe ↗",
+  "tour.mcp.title": "Porta el teu propi agent",
+  "tour.mcp.body": "Studio és també un servidor MCP — tot el que hi ha en aquest recorregut és una eina que un agent IA pot cridar. Apunta Claude Code o Claude Desktop a http://localhost:8774/mcp i el flux de treball es converteix en una conversa: escriu el guió, assigna les veus, renderitza, publica. Consulta la documentació de Connectar un agent per a la configuració."
 }

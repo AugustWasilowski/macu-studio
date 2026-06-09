@@ -922,5 +922,7 @@
   "publish.fieldSeason": "ਸੀਜ਼ਨ",
   "publish.noEpisode": "ਕੋਈ ਐਪੀਸੋਡ ਨਹੀਂ ਚੁਣਿਆ ਗਿਆ।",
   "publish.videoTitle": "ਹੋਸਟ ਕੀਤਾ ਵਿਡੀਓ",
-  "publish.viewLive": "ਲਾਈਵ ਪੰਨਾ ਦੇਖੋ ↗"
+  "publish.viewLive": "ਲਾਈਵ ਪੰਨਾ ਦੇਖੋ ↗",
+  "tour.mcp.title": "ਆਪਣਾ ਏਜੰਟ ਲਿਆਓ",
+  "tour.mcp.body": "Studio ਇਸ ਨਾਲ ਇੱਕ MCP ਸਰਵਰ ਵੀ ਹੈ — ਇਸ ਗਾਈਡ ਵਿਚ ਸਭ ਕੁਝ ਇੱਕ ਏਜੰਟ ਟੂਲ ਕਾਲ ਕਰ ਸਕਦਾ ਹੈ। Claude Code ਜਾਂ Claude Desktop ਨੂੰ http://localhost:8774/mcp ਵੱਲ ਇਸ਼ਾਰਾ ਕਰੋ ਅਤੇ ਵਰਕਫਲੋ ਇੱਕ ਗੱਲਬਾਤ ਬਣ ਜਾਂਦਾ ਹੈ: ਸਕ੍ਰਿਪਟ ਲਿਖੋ, ਆਵਾਜ਼ਾਂ ਸ਼ਾਮਲ ਕਰੋ, ਰੈਂਡਰ ਕਰੋ, ਪ੍ਰਕਾਸ਼ਿਤ ਕਰੋ। ਸੈਟਅਪ ਲਈ ਕਨੈਕਟ-ਏ-ਏਜੰਟ ਡਾਕੁਮੈਂਟੇਸ਼ਨ ਦੇਖੋ।"
 }
