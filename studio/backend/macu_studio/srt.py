@@ -3,7 +3,7 @@ from __future__ import annotations
 import os, re, tempfile
 from pathlib import Path
 
-from .episodes import episode_dir
+from .episodes import episode_dir, final_srt_path
 
 
 SRT_BLOCK = re.compile(
@@ -13,7 +13,8 @@ SRT_BLOCK = re.compile(
 
 
 def srt_path(slug: str) -> Path:
-    return episode_dir(slug) / "final" / f"{slug}.srt"
+    # For a localized variant this resolves to its translated <slug>.<lang>.srt.
+    return final_srt_path(episode_dir(slug), slug)
 
 
 def read(slug: str) -> dict:

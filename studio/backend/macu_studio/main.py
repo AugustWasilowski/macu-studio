@@ -321,7 +321,7 @@ def get_final_video(slug: str, request: Request):
 
 @app.get("/api/episodes/{slug}/final/thumb")
 def get_final_thumb(slug: str, request: Request):
-    p = ep_mod.episode_dir(slug) / "final" / f"{slug}_thumbs.jpg"
+    p = ep_mod.final_thumb_path(ep_mod.episode_dir(slug), slug)
     return media_mod.stream_file(request, p, content_type="image/jpeg")
 
 

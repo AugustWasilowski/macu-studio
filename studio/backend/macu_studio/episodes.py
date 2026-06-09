@@ -70,26 +70,71 @@ _VID_URL = _re.compile(
 _ALIAS_RE = _re.compile(r"^ep\d+$")            # bare alias symlink (ep9 -> ep-009): plumbing, hidden
 _VARIANT_RE = _re.compile(r"^(ep\d+)-([a-z]{2})$")  # localized variant (ep9-uk): grouped under parent
 _ARCHIVE_MP4_RE = _re.compile(r"\.\d{8}-\d{6}\.mp4$")  # archived final, e.g. <slug>.20260101-000000.mp4
+_CANON_RE = _re.compile(r"^ep-0*(\d+)$")               # canonical ep-009 -> short alias ep9
+
+
+def _base_names(slug: str) -> list[str]:
+    """Candidate final-file basenames for an episode's MAIN render. Episode finals
+    were historically named inconsistently — both `ep-009.mp4` and the short
+    `ep9.mp4` form appear (the short form is also the localization alias) — so a
+    canonical slug also tries its short-alias form. Order = preference."""
+    names = [slug]
+    m = _CANON_RE.match(slug)
+    if m:
+        names.append("ep" + m.group(1))
+    return names
 
 
 def final_video_path(ep: Path, slug: str) -> Path:
-    """Resolve an episode's final video, preferring a localized dub for variants.
-
-    English episodes render `final/<slug>.mp4`. Localized variants render
-    `final/<slug>.<lang>.mp4` (e.g. ep9-uk.uk.mp4) — there is no bare `<slug>.mp4`.
-    Returns the non-existent `<slug>.mp4` default when nothing is found so callers
-    can still branch on `.exists()`."""
-    direct = ep / "final" / f"{slug}.mp4"
-    if direct.exists():
-        return direct
+    """Resolve an episode's final video. A localized variant (ep9-uk) renders
+    `final/<slug>.<lang>.mp4` (the dub, no bare `<slug>.mp4`); a canonical episode
+    renders `final/<slug>.mp4` OR the legacy short form `final/<short>.mp4`
+    (ep-009 → ep9). Returns the non-existent `<slug>.mp4` default when nothing is
+    found so callers can still branch on `.exists()`."""
     fdir = ep / "final"
-    if fdir.is_dir():
-        cands = sorted(
-            p for p in fdir.glob(f"{slug}.*.mp4") if not _ARCHIVE_MP4_RE.search(p.name)
-        )
+    vm = _VARIANT_RE.match(slug)
+    if vm:
+        loc = fdir / f"{slug}.{vm.group(2)}.mp4"
+        if loc.exists():
+            return loc
+    for base in _base_names(slug):
+        p = fdir / f"{base}.mp4"
+        if p.exists():
+            return p
+    if fdir.is_dir():  # last resort: a non-archive dub-style file for this slug
+        cands = sorted(p for p in fdir.glob(f"{slug}.*.mp4") if not _ARCHIVE_MP4_RE.search(p.name))
         if cands:
             return cands[0]
-    return direct
+    return fdir / f"{slug}.mp4"
+
+
+def final_srt_path(ep: Path, slug: str) -> Path:
+    """Resolve an episode's subtitle file. A variant (ep9-uk) has a REAL translated
+    `final/<slug>.<lang>.srt` plus a `final/<slug>.srt` symlink back to the English
+    source — prefer the translated one so the SRT tab shows (and edits) the dub's
+    subs, not English. A canonical episode tries `<slug>.srt` then the short form."""
+    fdir = ep / "final"
+    vm = _VARIANT_RE.match(slug)
+    if vm:
+        loc = fdir / f"{slug}.{vm.group(2)}.srt"
+        if loc.exists():
+            return loc
+    for base in _base_names(slug):
+        p = fdir / f"{base}.srt"
+        if p.exists():
+            return p
+    return fdir / f"{slug}.srt"
+
+
+def final_thumb_path(ep: Path, slug: str) -> Path:
+    """Resolve an episode's contact-strip thumbnail (`<base>_thumbs.jpg`), trying
+    the slug then its short-alias form, mirroring the final-video naming."""
+    fdir = ep / "final"
+    for base in _base_names(slug):
+        p = fdir / f"{base}_thumbs.jpg"
+        if p.exists():
+            return p
+    return fdir / f"{slug}_thumbs.jpg"
 
 
 def youtube_id_of(ep_dir: Path) -> str | None:
