@@ -48,15 +48,28 @@ def _clean_message(message: str | None, slug: str) -> str:
 REMOTE_REF = os.environ.get("MACU_CONTENT_REMOTE_REF", "origin/main")
 
 
+def _git_env() -> dict[str, str]:
+    """Environment for Studio's own git calls, with any inherited global SSH override
+    stripped. A machine-wide ``GIT_SSH_COMMAND``/``GIT_SSH`` is an anti-pattern: it hijacks
+    *every* git-over-ssh on the box (e.g. a stray ``-p <port>`` meant for one host silently
+    forces GitHub onto that port and times out). We refuse to inherit it so Studio's pushes
+    stay self-contained; legitimate per-host needs belong in ``~/.ssh/config``, which git's
+    default ssh honors regardless."""
+    env = os.environ.copy()
+    env.pop("GIT_SSH_COMMAND", None)
+    env.pop("GIT_SSH", None)
+    return env
+
+
 def _git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=CONTENT_REPO, text=True, capture_output=True)
+    return subprocess.run(["git", *args], cwd=CONTENT_REPO, text=True, capture_output=True, env=_git_env())
 
 
 def _ensure_repo() -> None:
     """Create + `git init` the content repo on first use (idempotent)."""
     CONTENT_REPO.mkdir(parents=True, exist_ok=True)
     if not (CONTENT_REPO / ".git").exists():
-        subprocess.run(["git", "init", "-q"], cwd=CONTENT_REPO, text=True, capture_output=True)
+        subprocess.run(["git", "init", "-q"], cwd=CONTENT_REPO, text=True, capture_output=True, env=_git_env())
 
 
 def _has_remote() -> bool:

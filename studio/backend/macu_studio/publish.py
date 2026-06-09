@@ -134,8 +134,21 @@ def text_bundle_entries(show: str) -> dict[str, bytes]:
     return entries
 
 
+def _git_env() -> dict[str, str]:
+    """Environment for Studio's own git calls, with any inherited global SSH override
+    stripped. A machine-wide ``GIT_SSH_COMMAND``/``GIT_SSH`` hijacks *every* git-over-ssh on
+    the box (e.g. a stray ``-p <port>`` meant for one host silently forces GitHub onto that
+    port and times out). We refuse to inherit it so Studio stays self-contained — even though
+    the macu-web push itself is HTTPS — and never propagates one. Per-host needs belong in
+    ``~/.ssh/config``, which git's default ssh honors regardless."""
+    env = os.environ.copy()
+    env.pop("GIT_SSH_COMMAND", None)
+    env.pop("GIT_SSH", None)
+    return env
+
+
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=repo, text=True, capture_output=True)
+    return subprocess.run(["git", *args], cwd=repo, text=True, capture_output=True, env=_git_env())
 
 
 def publish(show: str, message: str | None = None) -> dict:
