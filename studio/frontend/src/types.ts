@@ -44,6 +44,8 @@ export interface EpisodeSummary {
   show?: string; // owning show id
   published?: boolean; // manifest `published` → public on macu-web (else hidden draft)
   youtube_id?: string | null; // video id from youtube.txt → drives the macu-web embed
+  parent_slug?: string | null; // localized variant (ep9-uk) → its English source slug (ep-009); else null
+  language?: string | null; // 2-letter code for a localized variant (uk/hi/es); null for the English canonical
 }
 
 // ---- Multi-show ----

@@ -13,6 +13,7 @@ import { JobStatus } from "./JobStatus";
 import { FileMenu } from "./FileMenu";
 import type { Route } from "../route";
 import { useT } from "../i18n";
+import { LOCALES } from "../i18n/locales";
 
 interface Props {
   episodes: EpisodeSummary[];
@@ -37,6 +38,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   const t = useT();
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
   const [stopping, setStopping] = useState(false);
   const qc = useQueryClient();
@@ -91,6 +93,28 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
     return () => clearInterval(t);
   }, []);
 
+  // Auto-expand a localized group when one of its variants becomes the active episode.
+  useEffect(() => {
+    const p = episodes.find((e) => e.slug === slug)?.parent_slug;
+    if (p) setExpanded((s) => (s.has(p) ? s : new Set(s).add(p)));
+  }, [slug, episodes]);
+
+  // Group episodes so localized variants (ep9-uk, ep9-hi) nest under their English
+  // parent (ep-009). Canonicals come first in the (slug-sorted) list, so insertion
+  // order = natural episode order; variants attach to their already-seen parent key.
+  const groups = (() => {
+    const m = new Map<string, { parent?: EpisodeSummary; children: EpisodeSummary[] }>();
+    for (const e of episodes) {
+      const key = e.parent_slug ?? e.slug;
+      let g = m.get(key);
+      if (!g) { g = { children: [] }; m.set(key, g); }
+      if (e.parent_slug) g.children.push(e); else g.parent = e;
+    }
+    return Array.from(m.entries()).map(([key, g]) => ({ key, ...g }));
+  })();
+  const langLabel = (code?: string | null) =>
+    (code && LOCALES.find((l) => l.code === code)?.nativeName) || (code ? code.toUpperCase() : "");
+
   const cur = episodes.find((e) => e.slug === slug);
   const curIdx = episodes.findIndex((e) => e.slug === slug);
   const prevEp = curIdx > 0 ? episodes[curIdx - 1] : null;
@@ -129,27 +153,60 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
         </button>
         {open && (
           <div className="absolute top-[36px] left-0 z-50 panel w-[420px] max-h-[400px] overflow-y-auto">
-            {episodes.map((e) => (
-              <button
-                key={e.slug}
-                className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-bg-3"
-                onClick={() => { setOpen(false); onPick(e.slug); }}
-              >
-                <span
-                  className="flex-none rounded-full"
-                  style={{
-                    width: 8, height: 8,
-                    background: e.synced === false ? "var(--red)" : "var(--green)",
-                    boxShadow: `0 0 5px ${e.synced === false ? "var(--red)" : "var(--green)"}`,
-                  }}
-                  title={e.synced === false ? t("topbar.syncDotPending") : t("topbar.syncDotSynced")}
-                />
-                <span className="text-amber font-bold w-12">{e.slug}</span>
-                <span className="seg-readout cyan text-[10px] w-[52px] text-center">{e.se_label ?? ""}</span>
-                <span className="flex-1 truncate text-txt-dim">{e.title}</span>
-                <span className="seg-readout">{e.done_stages}/5</span>
-              </button>
-            ))}
+            {groups.map((g) => {
+              const hasKids = g.children.length > 0;
+              const isOpen = expanded.has(g.key);
+              const row = (e: EpisodeSummary, child: boolean) => (
+                <button
+                  key={e.slug}
+                  className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2 text-left hover:bg-bg-3"
+                  onClick={() => { setOpen(false); onPick(e.slug); }}
+                >
+                  <span
+                    className="flex-none rounded-full"
+                    style={{
+                      width: 8, height: 8,
+                      background: e.synced === false ? "var(--red)" : "var(--green)",
+                      boxShadow: `0 0 5px ${e.synced === false ? "var(--red)" : "var(--green)"}`,
+                    }}
+                    title={e.synced === false ? t("topbar.syncDotPending") : t("topbar.syncDotSynced")}
+                  />
+                  <span className="text-amber font-bold w-16">{e.slug}</span>
+                  {child && e.language ? (
+                    <span className="seg-readout text-[10px] w-[52px] text-center" style={{ color: "var(--cyan)" }}>{langLabel(e.language)}</span>
+                  ) : (
+                    <span className="seg-readout cyan text-[10px] w-[52px] text-center">{e.se_label ?? ""}</span>
+                  )}
+                  <span className="flex-1 truncate text-txt-dim">{e.title}</span>
+                  <span className="seg-readout">{e.done_stages}/5</span>
+                </button>
+              );
+              return (
+                <div key={g.key}>
+                  <div className="flex items-center">
+                    {hasKids ? (
+                      <button
+                        className="flex-none w-[22px] py-2 flex items-center justify-center text-txt-dim hover:text-amber"
+                        onClick={() => setExpanded((s) => { const n = new Set(s); n.has(g.key) ? n.delete(g.key) : n.add(g.key); return n; })}
+                        title={isOpen ? "Hide localizations" : "Show localizations"}
+                      >
+                        <IChevron size={12} style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+                      </button>
+                    ) : (
+                      <span className="flex-none w-[22px]" />
+                    )}
+                    {g.parent ? row(g.parent, false) : (
+                      <span className="flex-1 px-3 py-2 text-amber font-bold">{g.key}</span>
+                    )}
+                  </div>
+                  {hasKids && isOpen && g.children.map((c) => (
+                    <div key={c.slug} className="flex items-center" style={{ paddingLeft: 22 }}>
+                      {row(c, true)}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

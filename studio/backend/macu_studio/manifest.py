@@ -4,7 +4,7 @@ import hashlib, json, os, tempfile, time, wave
 from pathlib import Path
 from typing import Any
 
-from .episodes import episode_dir, manifest_path
+from .episodes import episode_dir, manifest_path, final_video_path
 from .config import SHARES
 from . import models
 from . import version
@@ -347,7 +347,7 @@ def episode_pipeline_status(slug: str) -> list[dict]:
 
 def final_info(slug: str) -> dict:
     ep = episode_dir(slug)
-    final = ep / "final" / f"{slug}.mp4"
+    final = final_video_path(ep, slug)  # English <slug>.mp4 or a localized variant's <slug>.<lang>.mp4
     thumb = ep / "final" / f"{slug}_thumbs.jpg"
     srt = ep / "final" / f"{slug}.srt"
     out = {

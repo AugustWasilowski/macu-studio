@@ -29,6 +29,8 @@ class EpisodeSummary:
     show: str = shows_mod.DEFAULT_SHOW  # owning show id
     published: bool = False  # manifest `published` flag → public on macu-web (else hidden draft)
     youtube_id: str | None = None  # video id parsed from youtube.txt (drives the macu-web embed)
+    parent_slug: str | None = None  # for a localized variant (ep9-uk): the English source slug (ep-009); else None
+    language: str | None = None  # 2-letter code for a localized variant (uk/hi/es); None for the English canonical
 
 
 def _utc_iso(ts: float) -> str:
@@ -60,6 +62,34 @@ _VID_LINE = _re.compile(r"^\s*video_id\s*:\s*([A-Za-z0-9_-]{11})\s*$", _re.M)
 _VID_URL = _re.compile(
     r"(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
 )
+
+# Localized sister-show variant assembly creates, alongside each English episode
+# `ep-00N`, a short alias symlink `epN -> ep-00N` plus per-language sibling dirs
+# `epN-<lang>` (e.g. ep9-uk). The variant dirs symlink the shared manifest/vo back
+# to the English source but carry REAL localized titles/ + dubbed final/.
+_ALIAS_RE = _re.compile(r"^ep\d+$")            # bare alias symlink (ep9 -> ep-009): plumbing, hidden
+_VARIANT_RE = _re.compile(r"^(ep\d+)-([a-z]{2})$")  # localized variant (ep9-uk): grouped under parent
+_ARCHIVE_MP4_RE = _re.compile(r"\.\d{8}-\d{6}\.mp4$")  # archived final, e.g. <slug>.20260101-000000.mp4
+
+
+def final_video_path(ep: Path, slug: str) -> Path:
+    """Resolve an episode's final video, preferring a localized dub for variants.
+
+    English episodes render `final/<slug>.mp4`. Localized variants render
+    `final/<slug>.<lang>.mp4` (e.g. ep9-uk.uk.mp4) — there is no bare `<slug>.mp4`.
+    Returns the non-existent `<slug>.mp4` default when nothing is found so callers
+    can still branch on `.exists()`."""
+    direct = ep / "final" / f"{slug}.mp4"
+    if direct.exists():
+        return direct
+    fdir = ep / "final"
+    if fdir.is_dir():
+        cands = sorted(
+            p for p in fdir.glob(f"{slug}.*.mp4") if not _ARCHIVE_MP4_RE.search(p.name)
+        )
+        if cands:
+            return cands[0]
+    return direct
 
 
 def youtube_id_of(ep_dir: Path) -> str | None:
@@ -100,6 +130,24 @@ def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
     for entry in sorted(ep_root.iterdir(), key=lambda p: p.name):
         if not entry.is_dir():
             continue
+        name = entry.name
+        # Hide the bare alias symlinks (ep9 -> ep-009): pure localization plumbing
+        # that would otherwise list as a duplicate of its English target.
+        if entry.is_symlink() and _ALIAS_RE.match(name):
+            continue
+        # Classify localized variants (ep9-uk) so the frontend can nest them under
+        # their English parent. The variant's manifest is a symlink to the English
+        # source, so title/season/episode_num below come out matching the parent.
+        parent_slug: str | None = None
+        language: str | None = None
+        vm = _VARIANT_RE.match(name)
+        if vm:
+            base, language = vm.group(1), vm.group(2)
+            base_path = ep_root / base
+            try:
+                parent_slug = base_path.resolve().name if base_path.exists() else None
+            except OSError:
+                parent_slug = None
         manifest = entry / "manifest.json"
         if not manifest.exists():
             continue
@@ -129,6 +177,8 @@ def list_episodes(show: str | None = None) -> list[EpisodeSummary]:
                 show=show,
                 published=data.get("published") is True,
                 youtube_id=(data.get("youtube") or {}).get("video_id") or youtube_id_of(entry),
+                parent_slug=parent_slug,
+                language=language,
             )
         )
     return out
@@ -182,7 +232,7 @@ def _done_stages(ep: Path, manifest: dict) -> int:
     clips_present = {p.name.replace("_master.zs.webp", "") for p in (ep / "clips").glob("*_master.zs.webp")} if (ep / "clips").exists() else set()
     if keys_needed and keys_needed.issubset(clips_present):
         score += 1
-    final = ep / "final" / f"{ep.name}.mp4"
+    final = final_video_path(ep, ep.name)  # English <slug>.mp4 or a variant's <slug>.<lang>.mp4
     if final.exists():
         score += 1
     return score

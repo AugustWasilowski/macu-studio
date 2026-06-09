@@ -314,7 +314,8 @@ def get_title_preview(slug: str, key: str, request: Request):
 
 @app.get("/api/episodes/{slug}/final/video")
 def get_final_video(slug: str, request: Request):
-    p = ep_mod.episode_dir(slug) / "final" / f"{slug}.mp4"
+    # For a localized variant the dub is final/<slug>.<lang>.mp4 (no bare <slug>.mp4).
+    p = ep_mod.final_video_path(ep_mod.episode_dir(slug), slug)
     return media_mod.stream_file(request, p, content_type="video/mp4")
 
 
