@@ -124,6 +124,29 @@ def short_commit() -> "str | None":
     return _SHORT_COMMIT or None
 
 
+_RELEASE: "str | None" = None
+
+
+def release() -> "str | None":
+    """Nearest release tag at-or-before HEAD (e.g. 'v0.2.2'), cached for the process.
+    Git tags are the single source of truth for releases — cutting one on GitHub is
+    the whole release process; nothing in the tree needs a bump. Falls back to the
+    installed package version (pyproject) for tag-less checkouts (tarball installs,
+    shallow clones)."""
+    global _RELEASE
+    if _RELEASE is None:
+        p = _git("describe", "--tags", "--abbrev=0")
+        tag = p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else ""
+        if not tag:
+            try:
+                from importlib.metadata import version as _pkg_version
+                tag = "v" + _pkg_version("macu-studio")
+            except Exception:  # noqa: BLE001 — version display must never break boot
+                tag = ""
+        _RELEASE = tag
+    return _RELEASE or None
+
+
 def _can_autorestart() -> bool:
     """True when we were launched by systemd — a non-zero exit will be restarted.
     (systemd sets INVOCATION_ID for every service it runs.)"""
@@ -135,6 +158,7 @@ def current() -> dict:
     return {
         "commit": _git("rev-parse", "HEAD").stdout.strip(),
         "short": _git("rev-parse", "--short", "HEAD").stdout.strip(),
+        "release": release(),
         "branch": _git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
         "subject": _git("log", "-1", "--format=%s").stdout.strip(),
         "committed_iso": _git("log", "-1", "--format=%cI").stdout.strip() or None,
@@ -172,7 +196,10 @@ def check(do_fetch: bool = True) -> dict:
 
     if do_fetch:
         try:
-            f = _git("fetch", "--quiet", timeout=120)
+            # --tags: release tags are cut on GitHub after their commit is pushed, so a
+            # plain fetch (which only grabs tags on newly-downloaded history) would miss
+            # them and the release readout would go stale.
+            f = _git("fetch", "--quiet", "--tags", timeout=120)
         except subprocess.TimeoutExpired:
             info["error"] = "git fetch timed out"
             _store(info)

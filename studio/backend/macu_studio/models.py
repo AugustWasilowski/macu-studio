@@ -124,6 +124,7 @@ class Manifest(BaseModel):
     # Provenance + migration (stamped by manifest.save; see migrate() + MANIFEST_SCHEMA.md):
     schema_version: Optional[int] = None   # the manifest schema this was written under
     studio_commit: Optional[str] = None    # short macu-studio commit that last wrote it
+    studio_release: Optional[str] = None   # release tag of that commit (e.g. "v0.2.2")
     riffed_from: Optional[str] = None       # source show id, stamped on import-as-riff (lineage)
     notes: Optional[str] = None            # episode description (macu-web synopsis)
     youtube: Optional[dict[str, Any]] = None  # { video_id, description?, tags? } (replaced youtube.txt)

@@ -4,6 +4,7 @@
 export interface VersionCurrent {
   commit: string;
   short: string;
+  release: string | null; // nearest release tag, e.g. "v0.2.2"
   branch: string;
   subject: string;
   committed_iso: string | null;

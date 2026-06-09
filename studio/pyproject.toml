@@ -1,6 +1,8 @@
 [project]
 name = "macu-studio"
-version = "0.1.0"
+# Fallback only — the running app derives its version from the nearest git release
+# tag (version.release()); this is what tag-less installs report. Bumped at releases.
+version = "0.2.2"
 description = "Local production dashboard for the MACU Report pipeline"
 requires-python = ">=3.11"
 dependencies = [

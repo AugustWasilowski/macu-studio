@@ -36,6 +36,7 @@ from . import emergency as emergency_mod
 from . import activity as activity_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish
 from . import mcp_server
+from . import version as version_mod
 from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -68,7 +69,10 @@ async def lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(title="MACU Studio", version="0.1.0", lifespan=lifespan)
+# App version tracks the git release tag (v0.2.2 → "0.2.2"); see version.release().
+app = FastAPI(title="MACU Studio",
+              version=(version_mod.release() or "v0.0.0-dev").lstrip("v"),
+              lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,7 +85,8 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "episodes_dir": str(EPISODES), "render_url": pipeline_mod.RENDER_URL}
+    return {"ok": True, "release": version_mod.release(),
+            "episodes_dir": str(EPISODES), "render_url": pipeline_mod.RENDER_URL}
 
 
 @app.get("/api/sysstat")

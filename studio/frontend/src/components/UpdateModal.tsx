@@ -174,7 +174,8 @@ export function UpdateModal() {
           <div className="flex flex-col gap-1">
             <div className="label-tiny">{t("update.installed")}</div>
             <div className="text-[13px]">
-              <span className="font-mono text-amber">{cur?.short ?? "…"}</span>
+              {cur?.release && <span className="font-mono text-amber">{cur.release} </span>}
+              <span className={`font-mono ${cur?.release ? "text-txt-dim" : "text-amber"}`}>{cur?.short ?? "…"}</span>
               <span className="text-txt-dim"> · {cur?.branch}</span>
             </div>
             {cur?.subject && <div className="label-tiny truncate">{cur.subject}</div>}

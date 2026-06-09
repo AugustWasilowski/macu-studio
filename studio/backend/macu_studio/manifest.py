@@ -55,6 +55,9 @@ def save(slug: str, data: dict[str, Any], validate: bool = True) -> dict[str, An
     commit = version.short_commit()
     if commit:
         data["studio_commit"] = commit
+    rel = version.release()
+    if rel:
+        data["studio_release"] = rel
     if validate:
         models.validate(data)
     # Validate that it's serializable round-trip.
