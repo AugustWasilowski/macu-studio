@@ -26,6 +26,17 @@ def _whisper_python() -> str:
 
 WHISPER_VENV = _whisper_python()
 
+
+def _whisper_cache() -> str:
+    """HF cache dir for the ASR models. MACU_WHISPER_CACHE wins; else <repo>/.whisper-cache
+    so the multi-GB faster-whisper models live inside the install dir instead of ~/.cache on
+    the system disk. Exported as HF_HOME to the subprocess (faster-whisper / huggingface_hub
+    store snapshots under <HF_HOME>/hub)."""
+    return os.environ.get("MACU_WHISPER_CACHE") or os.path.join(_REPO, ".whisper-cache")
+
+
+WHISPER_CACHE = _whisper_cache()
+
 # Estimated wall-time multiplier for faster-whisper large-v3 CPU int8 on max.
 # Empirically ~10 min for a 4-min episode = 2.5×, padded a bit.
 WHISPER_WALL_MULTIPLIER = 2.5
@@ -96,7 +107,11 @@ print("whisper: %d segs, %d words, %.1fs" % (len(out_segs),
     try:
         # Cap the transcription so a wedged whisper process fails the stage (releasing
         # the render lock) instead of hanging. 30 min is far above a real episode's ASR.
-        subprocess.run([WHISPER_VENV, "-c", script, wav, out], check=True, timeout=1800)
+        # HF_HOME keeps the model snapshots in the install dir (or MACU_WHISPER_CACHE),
+        # not ~/.cache on the system disk.
+        os.makedirs(WHISPER_CACHE, exist_ok=True)
+        subprocess.run([WHISPER_VENV, "-c", script, wav, out], check=True, timeout=1800,
+                       env={**os.environ, "HF_HOME": WHISPER_CACHE})
     finally:
         stop_ticker.set()
     progress_tick(6, "whisper", 1.0)
