@@ -40,6 +40,31 @@ boot, use `sudo ../deploy/install-systemd.sh` (templates the unit to this machin
   stands up; until then it will refuse to connect. (Port/session are build-time
   configurable via `VITE_TERMINAL_URL` / `VITE_TERMINAL_PORT` / `VITE_TERMINAL_SESSION`.)
 
+## MCP server (drive Studio from an agent)
+
+Studio exposes its API as **MCP tools** at `http://<host>:8774/mcp` (Streamable
+HTTP, stateless, no auth — same LAN-only trust model as the rest of the app).
+Any MCP client can write scripts, build manifests, run LLM shot/SFX/card
+generation, kick renders, and publish — the whole episode loop, no UI required.
+
+```sh
+# Claude Code
+claude mcp add --transport http macu-studio http://127.0.0.1:8774/mcp
+
+# Claude Desktop (claude_desktop_config.json)
+{ "mcpServers": { "macu-studio": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote@latest", "http://<host>:8774/mcp", "--allow-http"] } } }
+```
+
+27 tools, designed to hand-hold smaller models: call `studio_overview` first —
+it returns the shows, what's connected, and a step-by-step workflow guide
+(create episode → write script → manifest → shots → render → publish). All
+`generate_*` tools are dry-runs unless `apply=true`; every error carries a
+`hint` with the next thing to try. Implementation: `backend/macu_studio/mcp_server.py`
+calls the REST routes in-process (httpx `ASGITransport`), so tools can never
+drift from the UI's behavior.
+
 ## Dev loop
 
 ```sh

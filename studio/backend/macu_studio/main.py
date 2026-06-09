@@ -35,6 +35,7 @@ from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish
+from . import mcp_server
 from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
@@ -61,7 +62,10 @@ async def lifespan(app: FastAPI):
                          daemon=True, name="macu-version-check").start()
     except Exception as e:
         print(f"[macu-studio] startup version check skipped: {e}")
-    yield
+    # The MCP endpoint's session manager must run for the app's lifetime —
+    # without it every POST /mcp 500s with "task group not initialized".
+    async with mcp_server.session_manager().run():
+        yield
 
 
 app = FastAPI(title="MACU Studio", version="0.1.0", lifespan=lifespan)
@@ -934,6 +938,32 @@ app.include_router(routes_version.router)
 app.include_router(routes_diag.router)
 app.include_router(routes_localize.router)
 app.include_router(routes_publish.router)
+
+
+# ---------- MCP server (Streamable HTTP at /mcp) ----------
+# Exposes the API above as MCP tools so agents (Claude Desktop/Code via
+# `mcp-remote http://<host>:8774/mcp --allow-http`) can drive Studio. Same
+# trust model as the rest of the app: no auth, loopback bind by default.
+app.mount("/mcp", mcp_server.attach(app))
+
+
+class _McpSlash:
+    """Pure-ASGI rewrite of /mcp -> /mcp/ . Clients POST to the bare path, but a
+    Starlette Mount only matches its subtree — without this the request falls
+    through to the SPA static mount and 405s."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("path") == "/mcp":
+            scope = dict(scope)
+            scope["path"] = "/mcp/"
+            scope["raw_path"] = b"/mcp/"
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(_McpSlash)
 
 
 # ---------- HyperFrames template preview (read-only static serve of the template dirs) ----------
