@@ -82,9 +82,16 @@ def macu_web_connect(body: dict = Body(...)):
     except Exception as e:
         raise HTTPException(400, f"invalid connect token: {e}")
     CREDS.parent.mkdir(parents=True, exist_ok=True)
-    CREDS.write_text(json.dumps({"base": base, "web": web, "token": token}, indent=2))
+    # Create 0600 from the start: a plain write_text + later chmod leaves the macu-web token
+    # world/group-readable in the window between the two calls (and forever if chmod fails).
+    payload = json.dumps({"base": base, "web": web, "token": token}, indent=2)
+    fd = os.open(CREDS, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     try:
-        CREDS.chmod(0o600)
+        os.write(fd, payload.encode("utf-8"))
+    finally:
+        os.close(fd)
+    try:
+        CREDS.chmod(0o600)  # tighten if the file pre-existed with looser perms
     except OSError:
         pass
     return {"ok": True, "base": base, "web": web}
