@@ -24,11 +24,29 @@ interface Props {
 
 type Dialog = null | "new-show" | "new-episode" | "export" | "macu-web" | "shutdown";
 
+// navigator.clipboard needs a secure context (https / localhost) — over plain
+// LAN http it's undefined, so fall back to the legacy execCommand path.
+function copyText(s: string): boolean {
+  try {
+    if (navigator.clipboard?.writeText) { void navigator.clipboard.writeText(s); return true; }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = s;
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+
 export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial, onGoAssembly }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [cloneVoices, setCloneVoices] = useState<{ show: string; names: string[] } | null>(null);
+  const [folderInfo, setFolderInfo] = useState<{ path: string; windows_path: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const setActiveShow = useStore((s) => s.setActiveShow);
   const pushToast = useStore((s) => s.pushToast);
@@ -56,6 +74,18 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
     qc.invalidateQueries({ queryKey: ["episodes"] });
     go({ page: "stage", slug: "", stage: "assembly" }); // empty slug → default-pick effect
     close();
+  }
+
+  // Try the server-side open; when the server can't (headless, or you're browsing
+  // from another machine) fall back to a dialog with the copyable path(s).
+  async function onOpenFolder() {
+    try {
+      const r = await showsApi.openFolder(activeShow);
+      if (r.opened) pushToast(t("toast.folderOpened", { path: r.windows_path ?? r.path }), "ok");
+      else setFolderInfo({ path: r.path, windows_path: r.windows_path });
+    } catch (e) {
+      pushToast(`open folder failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+    }
   }
 
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -146,6 +176,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
               </div>
             )}
             <Item label={t("filemenu.newShow")} onClick={() => setDialog("new-show")} />
+            <Item label={t("filemenu.openFolder")} onClick={onOpenFolder} />
 
             <Section label={t("filemenu.sectionEpisode")} />
             <Item label={t("filemenu.newEpisode")} onClick={() => setDialog("new-episode")} />
@@ -198,7 +229,50 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
       {cloneVoices && (
         <CloneVoicesModal show={cloneVoices.show} names={cloneVoices.names} onClose={() => setCloneVoices(null)} />
       )}
+      {folderInfo && (
+        <FolderDialog path={folderInfo.path} windowsPath={folderInfo.windows_path} onClose={() => setFolderInfo(null)} />
+      )}
     </div>
+  );
+}
+
+// Fallback when the backend couldn't open a file manager (headless server, or the
+// browser is on a different machine): show the on-disk path(s) with copy buttons.
+function FolderDialog({ path, windowsPath, onClose }: { path: string; windowsPath: string | null; onClose: () => void }) {
+  const t = useT();
+  const pushToast = useStore((s) => s.pushToast);
+
+  const Row = ({ label, value }: { label?: string; value: string }) => (
+    <div className="flex flex-col gap-1">
+      {label && <div className="label-tiny">{label}</div>}
+      <div className="flex items-center gap-2">
+        <div className="font-mono text-[11px] bg-black/50 rounded px-2 py-1.5 select-all flex-1 break-all">
+          {value}
+        </div>
+        <button
+          className="btn flex-none"
+          onClick={() => {
+            const ok = copyText(value);
+            pushToast(ok ? t("toast.copied") : t("toast.copyFailed"), ok ? "ok" : "err");
+          }}
+        >
+          {t("common.copy")}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <Modal
+      open onClose={onClose} title={t("filemenu.folderTitle")} width={520}
+      footer={<button className="btn btn-amber" onClick={onClose}>{t("common.close")}</button>}
+    >
+      <div className="flex flex-col gap-3">
+        <p className="label-tiny leading-relaxed">{t("filemenu.folderBody")}</p>
+        <Row value={path} />
+        {windowsPath && <Row label={t("filemenu.folderWindowsHint")} value={windowsPath} />}
+      </div>
+    </Modal>
   );
 }
 

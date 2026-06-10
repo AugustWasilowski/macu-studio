@@ -18,6 +18,10 @@ from __future__ import annotations
 
 import io
 import json
+import os
+import shutil
+import subprocess
+import sys
 import time
 import zipfile
 from pathlib import Path
@@ -224,6 +228,74 @@ def post_episode(show: str, body: dict = Body(...)):
         raise HTTPException(404, str(e))
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+# --------------------------------------------------------------------------- #
+# Open show folder in the OS file manager
+# --------------------------------------------------------------------------- #
+#
+# Only meaningful when the Studio process runs on the machine the user is sitting
+# at — the common localhost install, including WSL, where explorer.exe crosses the
+# Linux→Windows boundary. On a headless or remote box there is no desktop to open,
+# so we return opened=false plus the path(s) and the UI falls back to "copy this
+# path". Never an HTTP error for "couldn't open"; only unknown-show 404s.
+
+def _show_folder(show: str) -> Path:
+    d = Path(shows_mod.get_show(show)["episodes_dir"])
+    # Registry shows live at SHARES/shows/<id>/episodes — open the show base
+    # (episodes + assets). The legacy default show's flat dir IS its content dir.
+    if d.name == "episodes" and d.parent.name == show:
+        return d.parent
+    return d
+
+
+def _wsl_windows_path(path: Path) -> str | None:
+    r"""The \\wsl.localhost\... form of *path*, or None when not running under WSL."""
+    try:
+        if "microsoft" not in Path("/proc/version").read_text().lower():
+            return None
+    except OSError:
+        return None
+    try:
+        out = subprocess.run(["wslpath", "-w", str(path)],
+                             capture_output=True, text=True, timeout=5)
+        return (out.stdout.strip() or None) if out.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def _open_in_file_manager(path: Path, win_path: str | None) -> tuple[bool, str | None]:
+    """(opened, reason). Fire-and-forget; never raises."""
+    try:
+        if win_path:
+            # explorer.exe exits 1 even on success — launch detached, don't check.
+            subprocess.Popen(["explorer.exe", win_path], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True, None
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", str(path)], start_new_session=True)
+            return True, None
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+            if shutil.which("xdg-open"):
+                subprocess.Popen(["xdg-open", str(path)], start_new_session=True,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return True, None
+            return False, "no xdg-open on this system"
+        return False, "no desktop session on the Studio machine"
+    except OSError as e:
+        return False, str(e)
+
+
+@router.post("/api/shows/{show}/open-folder")
+def post_open_show_folder(show: str):
+    try:
+        folder = _show_folder(show)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    win_path = _wsl_windows_path(folder)
+    opened, reason = _open_in_file_manager(folder, win_path)
+    return {"ok": True, "opened": opened, "path": str(folder),
+            "windows_path": win_path, "reason": reason}
 
 
 # --------------------------------------------------------------------------- #

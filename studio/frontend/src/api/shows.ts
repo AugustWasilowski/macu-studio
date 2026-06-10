@@ -30,6 +30,12 @@ export const showsApi = {
     fd.append("file", file);
     return fetch("/api/import", { method: "POST", body: fd }).then((r) => J<ImportResult>(r));
   },
+  // Ask the backend to open the show's folder in its OS file manager. opened=false
+  // (headless / remote server) is a normal outcome — the UI falls back to showing
+  // the returned path(s) for manual copy.
+  openFolder: (show: string) =>
+    fetch(`/api/shows/${show}/open-folder`, { method: "POST" }).then((r) =>
+      J<{ ok: boolean; opened: boolean; path: string; windows_path: string | null; reason: string | null }>(r)),
 };
 
 // Browser-download URLs (Content-Disposition: attachment served by the backend).
