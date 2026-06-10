@@ -14,6 +14,7 @@ import { Publish } from "./stages/Publish";
 import { Docs } from "./stages/Docs";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
+import { WizardPanel } from "./components/WizardPanel";
 import { LogDrawer } from "./components/LogDrawer";
 import { TerminalDrawer } from "./components/TerminalDrawer";
 import { UpdateModal } from "./components/UpdateModal";
@@ -22,6 +23,7 @@ import { useRoute, Page } from "./route";
 import { useServerEvents } from "./hooks";
 import { useStore } from "./store";
 import { versionApi } from "./api/version";
+import { STARTER_SLUG } from "./wizard/starterScript";
 import { UIStage } from "./types";
 
 const qc = new QueryClient({
@@ -52,6 +54,8 @@ function Shell() {
   const activeShow = useStore((s) => s.activeShow);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(() => !localStorage.getItem(TOUR_DONE_KEY));
+  const startWizard = useStore((s) => s.startWizard);
+  const wizardActive = useStore((s) => s.wizard?.status === "active");
   const episodes = useQuery({
     queryKey: ["episodes", activeShow],
     queryFn: () => api.episodes(activeShow),
@@ -73,10 +77,10 @@ function Shell() {
   const updateAvailable = !!launchCheck.data?.update_available;
   const [autoPrompted, setAutoPrompted] = useState(false);
   useEffect(() => {
-    if (autoPrompted || tourOpen || !updateAvailable || updateOpen) return;
+    if (autoPrompted || tourOpen || wizardActive || !updateAvailable || updateOpen) return;
     setAutoPrompted(true);
     openUpdate();
-  }, [autoPrompted, tourOpen, updateAvailable, updateOpen, openUpdate]);
+  }, [autoPrompted, tourOpen, wizardActive, updateAvailable, updateOpen, openUpdate]);
 
   // Keep the store's activeSlug in sync with the routed slug on stage pages.
   useEffect(() => {
@@ -132,7 +136,15 @@ function Shell() {
       <UpdateModal />
       <DiagnosticsModal />
       {settingsOpen && <Settings show={activeShow} onClose={() => setSettingsOpen(false)} />}
-      {tourOpen && <Tour slug={slug} go={go} onClose={() => setTourOpen(false)} />}
+      {tourOpen && (
+        <Tour
+          slug={slug}
+          go={go}
+          onClose={() => setTourOpen(false)}
+          onStartWizard={() => { setTourOpen(false); startWizard(STARTER_SLUG); }}
+        />
+      )}
+      <WizardPanel routedSlug={slug} go={go} />
     </div>
   );
 }

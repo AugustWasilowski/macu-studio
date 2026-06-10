@@ -23,6 +23,12 @@ export function Markdown({ text }: { text: string }) {
             </div>
           );
         }
+        // Standalone image line: ![alt](src). Only same-origin/relative or http(s) srcs
+        // render (docs can be user-authored — never let an exotic scheme through).
+        const img = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/);
+        if (img && /^(\/|https?:\/\/)/.test(img[2])) {
+          return <img key={i} src={img[2]} alt={img[1]} className="my-3 rounded-[3px] hairline max-w-full" loading="lazy" />;
+        }
         if (line.startsWith("# ")) return <h1 key={i} className="text-amber font-bold text-xl mt-3 mb-1" style={{ textShadow: "var(--glow-amber)" }}>{line.slice(2)}</h1>;
         if (line.startsWith("## ")) return <h2 key={i} className="text-amber font-semibold text-base mt-2 mb-1">{line.slice(3)}</h2>;
         if (line.startsWith("### ")) return <h3 key={i} className="text-amber font-semibold text-sm mt-2 mb-1">{line.slice(4)}</h3>;

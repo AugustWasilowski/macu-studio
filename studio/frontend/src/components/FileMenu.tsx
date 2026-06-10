@@ -7,6 +7,8 @@ import { useStore } from "../store";
 import { showsApi, exportUrl, cloneVoiceRef } from "../api/shows";
 import { macuWeb } from "../api/macuweb";
 import { api } from "../api";
+import { WIZARD_STEPS } from "../wizard/wizard";
+import { STARTER_SLUG } from "../wizard/starterScript";
 import type { Route } from "../route";
 import { useT } from "../i18n";
 import { Trans } from "../i18n/Trans";
@@ -32,7 +34,17 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
   const pushToast = useStore((s) => s.pushToast);
   const openUpdate = useStore((s) => s.openUpdate);
   const openDiagnostics = useStore((s) => s.openDiagnostics);
+  const wizard = useStore((s) => s.wizard);
+  const startWizard = useStore((s) => s.startWizard);
+  const setWizardStep = useStore((s) => s.setWizardStep);
   const qc = useQueryClient();
+
+  // Resume a paused/active walkthrough where it left off; otherwise start a fresh one.
+  function startOrResumeWizard() {
+    if (wizard && (wizard.status === "paused" || wizard.status === "active")) setWizardStep(wizard.step);
+    else startWizard(STARTER_SLUG);
+  }
+  const resumable = wizard?.status === "paused";
 
   const shows = useQuery({ queryKey: ["shows"], queryFn: showsApi.list, enabled: open });
   const curShow = shows.data?.shows.find((s) => s.id === activeShow);
@@ -136,11 +148,18 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
             <Item label={t("filemenu.export")} onClick={() => setDialog("export")} />
             <Item label={t("filemenu.macuWebItem")} onClick={() => setDialog("macu-web")} hint="↗" />
 
+            <Section label={t("filemenu.sectionLearn")} />
+            <Item label={t("filemenu.tutorial")} onClick={onStartTutorial} />
+            <Item
+              label={resumable ? t("filemenu.resumeWalkthrough", { n: wizard!.step + 1, total: WIZARD_STEPS.length }) : t("filemenu.walkthrough")}
+              onClick={startOrResumeWizard}
+            />
+            <Item label={t("filemenu.visitMacuWeb")} onClick={() => window.open("https://mayorawesome.com", "_blank", "noopener,noreferrer")} hint="↗" />
+
             <Section label={t("filemenu.sectionMore")} />
             <Item label={t("filemenu.settings")} onClick={onOpenSettings} />
             <Item label={t("filemenu.checkUpdates")} onClick={openUpdate} />
             <Item label={t("filemenu.runDiagnostics")} onClick={openDiagnostics} />
-            <Item label={t("filemenu.tutorial")} onClick={onStartTutorial} />
             <Item label={t("filemenu.goToAssembly")} onClick={onGoAssembly} />
             <Item label={t("filemenu.shutDown")} onClick={() => setDialog("shutdown")} />
           </div>

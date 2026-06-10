@@ -6,6 +6,7 @@ import { Modal } from "../components/Modal";
 import { Markdown } from "../components/Markdown";
 import { useT, t as tFn } from "../i18n";
 import { Trans } from "../i18n/Trans";
+import { STARTER_SLUG as WIZARD_STARTER_SLUG } from "../wizard/starterScript";
 
 const WPM = 150;
 
@@ -93,7 +94,9 @@ export function Script({ slug }: { slug: string }) {
   const ss = String(runtime % 60).padStart(2, "0");
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col h-full">
+      <WizardBanner />
+      <div className="flex flex-1 min-h-0">
       <section className="panel flex flex-col flex-1 min-w-0">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
           <div className="panel-title flex items-center gap-2">
@@ -163,6 +166,28 @@ export function Script({ slug }: { slug: string }) {
         onApply={() => applyMut.mutate()}
         applying={applyMut.isPending}
       />
+      </div>
+    </div>
+  );
+}
+
+// One-time, dismissible nudge toward the guided walkthrough — only shown to users who have
+// never started one. Once dismissed (or the walkthrough begins) it never returns.
+function WizardBanner() {
+  const t = useT();
+  const wizard = useStore((s) => s.wizard);
+  const startWizard = useStore((s) => s.startWizard);
+  const [dismissed, setDismissed] = useState(() => !!localStorage.getItem("macu.wizard.bannerDismissed"));
+  if (wizard || dismissed) return null;
+  function dismiss() {
+    localStorage.setItem("macu.wizard.bannerDismissed", "1");
+    setDismissed(true);
+  }
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 mb-2 rounded-[3px] text-[12px]" style={{ background: "rgba(51,221,255,0.07)", borderLeft: "2px solid var(--cyan)" }}>
+      <span className="text-txt-dim flex-1">{t("wizard.bannerHint")}</span>
+      <button className="btn btn-cyan px-2 py-0.5" onClick={() => startWizard(WIZARD_STARTER_SLUG)}>{t("wizard.bannerStart")}</button>
+      <button className="label-tiny hover:text-amber px-1" onClick={dismiss} title={t("common.close")}>✕</button>
     </div>
   );
 }

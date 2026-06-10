@@ -30,6 +30,34 @@ export interface AssemblyRun {
 }
 export const DEFAULT_RUN: AssemblyRun = { jobId: null, running: false, seen: 0, logLines: [], live: {} };
 
+// ---- Guided walkthrough ("wizard") — opt-in, follow-along, survives reloads. -------------
+// Distinct from the first-run spotlight Tour: the wizard is a non-blocking docked panel and
+// its progress is tied to a real practice episode it seeds in the active show.
+export type WizardStatus = "active" | "paused" | "done" | "dismissed";
+export interface WizardState {
+  slug: string;          // the practice episode the walkthrough drives
+  step: number;          // index into WIZARD_STEPS
+  skipped: string[];     // ids of steps the user skipped (shown in the recap)
+  status: WizardStatus;
+  collapsed: boolean;    // shrunk to the corner chip while the user works
+}
+const WIZARD_KEY = "macu.wizard.v1";
+function loadWizard(): WizardState | null {
+  try {
+    const raw = localStorage.getItem(WIZARD_KEY);
+    if (!raw) return null;
+    const w = JSON.parse(raw) as WizardState;
+    if (typeof w?.slug === "string" && typeof w?.step === "number") return w;
+  } catch { /* corrupt → ignore */ }
+  return null;
+}
+function saveWizard(w: WizardState | null) {
+  try {
+    if (w) localStorage.setItem(WIZARD_KEY, JSON.stringify(w));
+    else localStorage.removeItem(WIZARD_KEY);
+  } catch { /* storage full / disabled — non-fatal */ }
+}
+
 interface State {
   drawerOpen: boolean;
   logOpen: boolean;
@@ -47,6 +75,7 @@ interface State {
   playingKey: string | null;
   busy: Record<string, boolean>;
   runs: Record<string, AssemblyRun>;
+  wizard: WizardState | null;
 }
 
 interface Actions {
@@ -78,6 +107,13 @@ interface Actions {
   patchRun: (slug: string, partial: Partial<AssemblyRun>) => void;
   appendRunLog: (slug: string, line: string, seen: number) => void;
   setRunLive: (slug: string, key: string, status: StageStatus) => void;
+  startWizard: (slug: string) => void;
+  setWizardStep: (step: number) => void;
+  skipWizardStep: (id: string) => void;
+  setWizardCollapsed: (collapsed: boolean) => void;
+  pauseWizard: () => void;
+  finishWizard: () => void;
+  dismissWizard: () => void;
 }
 
 let toastSeq = 1;
@@ -99,6 +135,7 @@ export const useStore = create<State & Actions>((set) => ({
   playingKey: null,
   busy: {},
   runs: {},
+  wizard: loadWizard(),
 
   // Opening one right-hand drawer closes the others so they don't overlap.
   openDrawer: () => set({ drawerOpen: true, logOpen: false, terminalOpen: false }),
@@ -144,5 +181,46 @@ export const useStore = create<State & Actions>((set) => ({
   setRunLive: (slug, key, status) => set((s) => {
     const r = s.runs[slug] ?? DEFAULT_RUN;
     return { runs: { ...s.runs, [slug]: { ...r, live: { ...r.live, [key]: status } } } };
+  }),
+  // Wizard actions — every mutation mirrors to localStorage so progress survives reloads.
+  startWizard: (slug) => set(() => {
+    const w: WizardState = { slug, step: 0, skipped: [], status: "active", collapsed: false };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  setWizardStep: (step) => set((s) => {
+    if (!s.wizard) return {};
+    const w = { ...s.wizard, step: Math.max(0, step), status: "active" as WizardStatus, collapsed: false };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  skipWizardStep: (id) => set((s) => {
+    if (!s.wizard) return {};
+    const skipped = s.wizard.skipped.includes(id) ? s.wizard.skipped : [...s.wizard.skipped, id];
+    const w = { ...s.wizard, skipped };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  setWizardCollapsed: (collapsed) => set((s) => {
+    if (!s.wizard) return {};
+    const w = { ...s.wizard, collapsed };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  pauseWizard: () => set((s) => {
+    if (!s.wizard) return {};
+    const w = { ...s.wizard, status: "paused" as WizardStatus };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  finishWizard: () => set((s) => {
+    if (!s.wizard) return {};
+    const w = { ...s.wizard, status: "done" as WizardStatus };
+    saveWizard(w);
+    return { wizard: w };
+  }),
+  dismissWizard: () => set(() => {
+    saveWizard(null);
+    return { wizard: null };
   }),
 }));

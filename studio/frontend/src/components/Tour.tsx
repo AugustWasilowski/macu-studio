@@ -9,11 +9,12 @@ interface Props {
   slug: string;
   go: (r: Partial<Route>) => void;
   onClose: () => void;
+  onStartWizard: () => void;
 }
 
 const PAD = 6;
 
-export function Tour({ slug, go, onClose }: Props) {
+export function Tour({ slug, go, onClose, onStartWizard }: Props) {
   const t = useT();
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -99,6 +100,14 @@ export function Tour({ slug, go, onClose }: Props) {
           <span className="label-tiny">{i + 1}/{TOUR_STEPS.length}</span>
         </div>
         <p className="text-[12px] leading-relaxed text-txt">{t(step.bodyKey)}</p>
+        {last && (
+          <button
+            className="btn btn-cyan justify-center"
+            onClick={() => { finish(); onStartWizard(); }}
+          >
+            {t("tour.startWalkthrough")}
+          </button>
+        )}
         <div className="flex items-center justify-between pt-1">
           <button className="btn" onClick={finish}>{last ? t("common.close") : t("tour.skip")}</button>
           <div className="flex gap-2">
