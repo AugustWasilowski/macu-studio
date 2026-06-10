@@ -69,9 +69,22 @@ async function J<T>(r: Response): Promise<T> {
   return r.json() as Promise<T>;
 }
 
+export type UpdateStart = { ok: true } | { ok: false; gpuBusy: true; freeMib: number | null };
+
 export const versionApi = {
   get: () => fetch("/api/version").then((r) => J<VersionInfo>(r)),
   check: () => fetch("/api/version/check", { method: "POST" }).then((r) => J<VersionCheck>(r)),
-  update: () => fetch("/api/version/update", { method: "POST" }).then((r) => J<{ ok: boolean }>(r)),
+  // A GPU-busy 409 is an expected outcome (the UI asks "update anyway?"), so it's
+  // returned as a value rather than thrown; force=true retries past that guard.
+  update: async (force = false): Promise<UpdateStart> => {
+    const r = await fetch(`/api/version/update${force ? "?force=true" : ""}`, { method: "POST" });
+    if (r.status === 409) {
+      const detail = (await r.json().catch(() => null))?.detail;
+      if (detail && typeof detail === "object" && detail.code === "gpu_busy")
+        return { ok: false, gpuBusy: true, freeMib: detail.free_mib ?? null };
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail ?? "409 Conflict"));
+    }
+    return J<{ ok: true }>(r);
+  },
   status: () => fetch("/api/version/update/status").then((r) => J<UpdateState>(r)),
 };

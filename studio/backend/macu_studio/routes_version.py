@@ -33,12 +33,18 @@ def get_update_status():
 
 
 @router.post("/api/version/update")
-def post_version_update():
+def post_version_update(force: bool = False):
     # Don't pull+rebuild on top of a live render: the render service shares this
     # checkout (and the studio venv), and the restart would interrupt the UI.
+    # ?force=1 (set after the UI's "GPU busy — update anyway?" confirm) skips
+    # only this guard — dirty-tree and manual-setup blocks still apply.
     busy, free = agen_mod.gpu_busy()
-    if busy:
-        raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; update when idle")
+    if busy and not force:
+        raise HTTPException(409, {
+            "code": "gpu_busy",
+            "free_mib": free,
+            "message": f"GPU busy ({free} MiB free) — a render is active; update when idle",
+        })
     cur = version_mod.current()
     if cur["dirty"]:
         raise HTTPException(409, "working tree has local changes — refusing to auto-update")

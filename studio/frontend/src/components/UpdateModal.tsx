@@ -59,10 +59,17 @@ export function UpdateModal() {
     }
   }
 
-  async function onUpdate() {
+  // GPU-busy confirm: holds the reported free MiB while we ask "update anyway?".
+  const [gpuConfirm, setGpuConfirm] = useState<number | null>(null);
+
+  async function onUpdate(force = false) {
     if (job) return;
     try {
-      await versionApi.update();
+      const r = await versionApi.update(force);
+      if (!r.ok) {
+        setGpuConfirm(r.freeMib ?? 0);
+        return;
+      }
       setJob({ phase: "pulling", log: [], error: null, started: Date.now() });
     } catch (e) {
       pushToast(t("toast.updateStartFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
@@ -118,6 +125,7 @@ export function UpdateModal() {
   useEffect(() => {
     if (open) {
       setJob(null);
+      setGpuConfirm(null);
       restartAt.current = null;
       onCheck();
     }
@@ -130,6 +138,27 @@ export function UpdateModal() {
   const upToDate = chk && !chk.update_available && !chk.error;
 
   return (
+    <>
+    {gpuConfirm !== null && (
+      <Modal
+        open
+        onClose={() => setGpuConfirm(null)}
+        title={t("update.gpuBusyTitle")}
+        width={440}
+        footer={
+          <>
+            <button className="btn" onClick={() => setGpuConfirm(null)}>{t("update.gpuBusyNo")}</button>
+            <button className="btn btn-amber" onClick={() => { setGpuConfirm(null); onUpdate(true); }}>
+              {t("update.gpuBusyYes")}
+            </button>
+          </>
+        }
+      >
+        <p className="label-tiny leading-relaxed">
+          {t("update.gpuBusyBody", { free: gpuConfirm })}
+        </p>
+      </Modal>
+    )}
     <Modal
       open
       onClose={running ? () => {} : close}
@@ -146,7 +175,7 @@ export function UpdateModal() {
               {checking ? t("update.checking") : t("update.checkBtn")}
             </button>
             {chk?.update_available && !dirty && !chk?.requires_setup && (
-              <button className="btn btn-amber" onClick={onUpdate}>{t("update.updateBtn")}</button>
+              <button className="btn btn-amber" onClick={() => onUpdate()}>{t("update.updateBtn")}</button>
             )}
             <button className="btn" onClick={close}>{t("common.close")}</button>
           </>
@@ -249,5 +278,6 @@ export function UpdateModal() {
         </div>
       )}
     </Modal>
+    </>
   );
 }
