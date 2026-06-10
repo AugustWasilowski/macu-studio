@@ -152,3 +152,17 @@ panel mentions new config options, diff your `.env` against `.env.example`.
 
 See `deploy/services/README.md` for the individual compose stacks, ports, and
 data layout.
+
+## Uninstalling
+
+```bash
+./deploy/uninstall.sh            # removes services, containers, images, venvs — KEEPS your data
+./deploy/uninstall.sh --dry-run  # preview every action first
+```
+
+By default your shows, voices, and downloaded models under the data root survive an
+uninstall; add `--purge-data` to delete them too (a custom data root must be typed
+back to confirm — it can live on a drive shared with non-MACU data). `--keep-images`
+skips deleting the multi-GB Docker images so a reinstall is fast. System tools the
+installer added (docker, node, ttyd, tmux) are left alone, and the script ends by
+printing the one `rm -rf` you run yourself to drop the repo checkout.

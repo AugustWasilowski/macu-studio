@@ -82,6 +82,8 @@ Full prerequisites, the staged flow, and the per-service compose stacks: **[INST
 - **Service (persistent):** install the systemd unit (the app installer prints the exact commands) to start
   Studio on boot and auto-restart it. Stop/disable later with `sudo systemctl stop macu-studio` /
   `sudo systemctl disable --now macu-studio`.
+- **Uninstall:** `./deploy/uninstall.sh` — removes services/venvs/images, keeps your shows and models
+  (`--purge-data` deletes those too; `--dry-run` previews). Details in [INSTALL.md](INSTALL.md).
 
 From inside the app, the project menu (top-left **MACU STUDIO** → **More → Shut down Studio…**) stops the
 server and **frees the GPU first** — it stops the ComfyUI / OmniVoice / Ollama containers, then exits. Start
