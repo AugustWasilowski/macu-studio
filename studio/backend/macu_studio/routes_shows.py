@@ -401,9 +401,23 @@ async def import_zip(file: UploadFile = File(...)):
 
     kind = meta.get("kind")
     # A voices-only export carries no show — just drop the reference clips. The
-    # caller offers the optional GPU re-clone step afterward.
+    # caller offers the optional GPU re-clone step afterward. Shape matches the
+    # full import response so the UI's one handler works for every kind.
     if kind == "voices":
-        return {"ok": True, "kind": "voices", "voices": _extract_voices(zf, names)}
+        return {
+            "ok": True,
+            "show": "",
+            "kind": "voices",
+            "created_show": False,
+            "created": [],
+            "updated": [],
+            "templates": [],
+            "voices": _extract_voices(zf, names),
+            "sfx": [],
+            "music": [],
+            "docs": [],
+            "errors": [],
+        }
     show_id = _safe_slug(meta.get("show") or "")
     if not show_id:
         raise HTTPException(400, "export.json has no valid show id")

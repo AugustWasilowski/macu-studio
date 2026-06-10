@@ -65,28 +65,35 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
     pushToast(t("toast.importing", { name: f.name }), "run");
     try {
       const r = await showsApi.importZip(f);
+      // A voices-only import carries no show and no episode arrays — default
+      // everything so one handler covers every export kind.
+      const created = r.created ?? [];
+      const updated = r.updated ?? [];
+      const errors = r.errors ?? [];
+      const importShow = r.show || activeShow;
       const bits = [
-        r.created.length ? t("filemenu.importBitNew", { n: r.created.length }) : "",
-        r.updated.length ? t("filemenu.importBitUpdated", { n: r.updated.length }) : "",
+        created.length ? t("filemenu.importBitNew", { n: created.length }) : "",
+        updated.length ? t("filemenu.importBitUpdated", { n: updated.length }) : "",
         r.templates?.length ? t("filemenu.importBitTemplates", { count: r.templates.length }) : "",
         r.voices?.length ? t("filemenu.importBitVoices", { count: r.voices.length }) : "",
         r.sfx?.length ? t("filemenu.importBitSfx", { n: r.sfx.length }) : "",
         r.music?.length ? t("filemenu.importBitMusic", { n: r.music.length }) : "",
-        r.created_show ? t("filemenu.importBitShowCreated", { show: r.show }) : "",
+        r.created_show ? t("filemenu.importBitShowCreated", { show: importShow }) : "",
       ].filter(Boolean).join(", ");
-      pushToast(t("toast.importDone", { show: r.show, bits: bits || t("filemenu.importNoEpisodes") }), r.errors.length ? "info" : "ok");
-      r.errors.forEach((err) => pushToast(`import: ${err}`, "err"));
+      pushToast(t("toast.importDone", { show: importShow, bits: bits || t("filemenu.importNoEpisodes") }), errors.length ? "info" : "ok");
+      errors.forEach((err) => pushToast(`import: ${err}`, "err"));
       qc.invalidateQueries({ queryKey: ["episodes"] });
       qc.invalidateQueries({ queryKey: ["shows"] });
       // Jump to the script page of the first imported episode (sorted → ep-001 of
       // a season, or the lone episode of a single-episode import).
-      const imported = [...r.created, ...r.updated].sort();
+      const imported = [...created, ...updated].sort();
       if (imported.length) {
-        setActiveShow(r.show);
+        setActiveShow(importShow);
         go({ page: "stage", slug: imported[0], stage: "script" });
       }
-      // Voices arrive as reference clips — offer the optional GPU re-clone step.
-      if (r.voices?.length) setCloneVoices({ show: r.show, names: r.voices });
+      // Voices arrive as reference clips — offer the optional GPU re-clone step
+      // (rebinding the active show when the zip was a voices-only export).
+      if (r.voices?.length) setCloneVoices({ show: importShow, names: r.voices });
     } catch (err) {
       pushToast(`import failed: ${err instanceof Error ? err.message : String(err)}`, "err");
     }

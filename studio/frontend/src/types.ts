@@ -71,16 +71,16 @@ export interface ShowConfig {
 
 export interface ImportResult {
   ok: boolean;
-  show: string;
+  show?: string; // "" / absent for voices-only imports
   kind: string;
-  created_show: boolean;
-  created: string[];
-  updated: string[];
+  created_show?: boolean;
+  created?: string[];
+  updated?: string[];
   templates?: string[];
   voices?: string[];
   sfx?: string[];
   music?: string[];
-  errors: string[];
+  errors?: string[];
 }
 
 export interface Cue {
