@@ -8,7 +8,7 @@ import { showsApi } from "../api/shows";
 import { servicesApi } from "../api/diagnostics";
 import { WIZARD_STEPS, type WizardService } from "../wizard/wizard";
 import { useWizardGates } from "../wizard/useWizardGates";
-import { STARTER_SLUG, STARTER_TITLE, STARTER_SCRIPT } from "../wizard/starterScript";
+import { STARTER_SLUG, STARTER_TITLE, STARTER_SCRIPT, STARTER_SHOW, STARTER_SHOW_NAME } from "../wizard/starterScript";
 
 interface Props {
   routedSlug: string;
@@ -49,17 +49,34 @@ export function WizardPanel({ routedSlug, go }: Props) {
     !!s && services.data != null && services.data[s] === false;
   const down = serviceDown(step?.requiresService);
 
+  const setActiveShow = useStore((s) => s.setActiveShow);
   const createMut = useMutation({
     mutationFn: async () => {
-      try {
-        await showsApi.createEpisode(activeShow, STARTER_SLUG, STARTER_TITLE);
-        await api.putScript(STARTER_SLUG, STARTER_SCRIPT); // seed the starter only on a fresh create
-      } catch (e) {
-        // Already created (resume / re-run): don't clobber an edited script — just proceed.
-        if (!/exist/i.test(String(e))) throw e;
+      // The walkthrough always teaches inside the neutral starter show — never in
+      // a real (possibly imported) show that happens to be active. Episode slugs
+      // are globally unique, so if a previous run already created the starter
+      // (in ANY show), adopt it where it lives instead of erroring; don't clobber
+      // an edited script on resume/re-run.
+      const { shows } = await showsApi.list();
+      let owner: string | null = null;
+      for (const s of shows) {
+        const { episodes } = await api.episodes(s.id);
+        if (episodes.some((e) => e.slug === STARTER_SLUG)) { owner = s.id; break; }
       }
+      if (!owner) {
+        if (!shows.some((s) => s.id === STARTER_SHOW)) {
+          await showsApi.create(STARTER_SHOW, STARTER_SHOW_NAME);
+        }
+        await showsApi.createEpisode(STARTER_SHOW, STARTER_SLUG, STARTER_TITLE);
+        await api.putScript(STARTER_SLUG, STARTER_SCRIPT);
+        owner = STARTER_SHOW;
+      }
+      setActiveShow(owner);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["episodes"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["episodes"] });
+      qc.invalidateQueries({ queryKey: ["shows"] });
+    },
     onError: (e: Error) => push(t("wizard.createFailed", { msg: e.message }), "err"),
   });
 

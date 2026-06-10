@@ -1,4 +1,4 @@
-// The practice episode the guided walkthrough seeds into the active show.
+// The practice episode the guided walkthrough seeds into the starter show.
 //
 // NOT internationalized on purpose: the script *grammar* is structural — `## SEGMENT`
 // headers, `**SPEAKER:**` cues, and `»` shot directives are parsed by gen_manifest.py,
@@ -11,6 +11,10 @@
 
 export const STARTER_SLUG = "my-first-episode";
 export const STARTER_TITLE = "My First Episode";
+// The walkthrough always teaches inside the neutral starter show — mirrors the
+// backend's STARTER_SHOW/STARTER_SHOW_NAME (shows.py), which a fresh install seeds.
+export const STARTER_SHOW = "example-show";
+export const STARTER_SHOW_NAME = "Example Show";
 
 export const STARTER_SCRIPT = `# My First Episode
 
