@@ -33,8 +33,9 @@ def _build_music_bed(bed, music, cum, cue_dur, total_dur, music_dir):
     """Render a single music bed wav. Returns (wav_path, ep_start_s, info)."""
     sum_dur = sum(cue_dur[c] for c in bed["cues"])
     bed_len = min(sum_dur, bed["max_seconds"])
-    clip = random.choice(music["clips"])
-    clip_seconds = music["clip_seconds"]
+    # A bed may pin its clip with `file`; otherwise draw from the shared pool.
+    clip = bed.get("file") or random.choice(music["clips"])
+    clip_seconds = probe_dur(f"{music['source_dir']}/{clip}") or music["clip_seconds"]
     loop = bool(bed.get("loop")) and clip_seconds < bed_len
     if loop:
         # Offset is seek-into-source; clamp inside one clip period.
