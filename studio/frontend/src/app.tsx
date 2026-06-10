@@ -19,6 +19,7 @@ import { TerminalDrawer } from "./components/TerminalDrawer";
 import { UpdateModal } from "./components/UpdateModal";
 import { DiagnosticsModal } from "./components/DiagnosticsModal";
 import { useRoute, Page } from "./route";
+import { useServerEvents } from "./hooks";
 import { useStore } from "./store";
 import { versionApi } from "./api/version";
 import { UIStage } from "./types";
@@ -44,6 +45,7 @@ export function App() {
 }
 
 function Shell() {
+  useServerEvents();   // toast everything the box does, MCP/API-driven included
   const [route, go] = useRoute();
   const activeSlug = useStore((s) => s.activeSlug);
   const setActiveSlug = useStore((s) => s.setActiveSlug);

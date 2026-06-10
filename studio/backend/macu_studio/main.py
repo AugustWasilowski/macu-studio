@@ -26,6 +26,7 @@ from . import agen as agen_mod
 from . import assets as assets_mod
 from . import sysstat as sysstat_mod
 from . import hyperframes as hf_mod
+from . import events as events_mod
 from . import chat as chat_mod
 from . import shotgen as shotgen_mod
 from . import sfxgen as sfxgen_mod
@@ -382,6 +383,18 @@ def get_hf_job(job_id: str):
 async def get_hf_job_stream(job_id: str, since: int = 0):
     return StreamingResponse(
         hf_mod.stream(job_id, since=since),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.get("/api/events/stream")
+async def get_events_stream(since: int = 0):
+    """Global server-event SSE for the toast stack — every events.emit() from any
+    source (HyperFrames jobs, agen/LLM activity, mutating MCP calls). One
+    subscription per browser tab; only events after connect are sent."""
+    return StreamingResponse(
+        events_mod.stream(since=since),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )

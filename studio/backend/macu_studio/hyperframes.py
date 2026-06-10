@@ -20,6 +20,7 @@ from typing import AsyncIterator
 
 from .config import SHARES
 from .episodes import episode_dir
+from . import events
 from . import manifest as manifest_mod
 from . import versions as versions_mod
 from . import shows as shows_mod
@@ -62,6 +63,13 @@ class Job:
         async with self.event_cond:
             self.events.append(ev)
             self.event_cond.notify_all()
+        # Mirror job lifecycle to the global event feed (toast stack).
+        if kind == "job.started":
+            events.emit("hf", f"Graphics render: {self.key} ({self.slug})", level="running")
+        elif kind == "job.done":
+            events.emit("hf", f"Graphics done: {self.key} ({self.slug})", level="success")
+        elif kind == "job.error":
+            events.emit("hf", f"Graphics failed: {self.key} — {payload.get('error', '')}", level="error")
 
 
 JOBS: dict[str, Job] = {}

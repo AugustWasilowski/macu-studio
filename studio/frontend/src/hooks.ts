@@ -41,3 +41,26 @@ export function useBusy() {
   const setBusy = useStore((s) => s.setBusy);
   return { busy, setBusy };
 }
+
+interface ServerEvent { seq: number; ts: number; kind: string; level: string; label: string }
+
+const LEVEL_TO_KIND: Record<string, "info" | "ok" | "run" | "err"> = {
+  info: "info", running: "run", success: "ok", error: "err",
+};
+
+/** Subscribe once to the global server-event feed (/api/events/stream) and toast
+ *  everything the box does — including work kicked off by MCP/API calls that no
+ *  browser initiated. EventSource auto-reconnects; only post-connect events arrive. */
+export function useServerEvents() {
+  const push = useStore((s) => s.pushToast);
+  useEffect(() => {
+    const es = new EventSource("/api/events/stream");
+    es.onmessage = (m) => {
+      let ev: ServerEvent;
+      try { ev = JSON.parse(m.data); } catch { return; }
+      if (!ev.label) return;
+      push(ev.label, LEVEL_TO_KIND[ev.level] ?? "info");
+    };
+    return () => es.close();
+  }, [push]);
+}

@@ -26,6 +26,9 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
+from . import activity as activity_mod
+from . import events as events_mod
+
 WORKFLOW_GUIDE = """\
 MACU Studio drives an end-to-end AI video pipeline (scripts -> voices -> video ->
 subtitles -> YouTube/web publish). Episodes live under a SHOW; each episode has a
@@ -108,6 +111,16 @@ _HINTS = {
 }
 
 
+def _mcp_label(path: str) -> str:
+    """Human line for the event feed: '/api/episodes/awb-001/git-sync' → 'awb-001 git-sync'."""
+    p = path.split("?")[0].strip("/")
+    if p.startswith("api/"):
+        p = p[4:]
+    if p.startswith("episodes/"):
+        p = p[len("episodes/"):]
+    return p.replace("/", " ")
+
+
 async def _api(method: str, path: str, *, body: dict | None = None,
                text: str | None = None, params: dict | None = None) -> Any:
     """Call a Studio REST route in-process. Returns parsed JSON, or an
@@ -115,12 +128,21 @@ async def _api(method: str, path: str, *, body: dict | None = None,
     confused client gets something actionable back."""
     if _app is None:
         return {"error": True, "detail": "MCP server not attached to the Studio app (startup bug)"}
+    # Surface mutating MCP calls in the topbar + toast stack: the box should
+    # never look IDLE while an agent is driving it (reads stay silent).
+    mutating = method in ("POST", "PUT", "DELETE", "PATCH")
+    label = f"MCP: {_mcp_label(path)}" if mutating else ""
+    if mutating:
+        events_mod.emit("mcp", label, level="running")
+        activity_mod.set_running(label, ttl=4.0, quiet=True)
     transport = httpx.ASGITransport(app=_app)
     try:
         async with httpx.AsyncClient(transport=transport, base_url="http://studio",
                                      timeout=_TIMEOUT) as client:
             r = await client.request(method, path, json=body, content=text, params=params)
     except Exception as e:  # noqa: BLE001 — surface, don't crash the session
+        if mutating:
+            events_mod.emit("mcp", f"{label} failed: {type(e).__name__}", level="error")
         return {"error": True, "detail": f"{type(e).__name__}: {e}",
                 "hint": "Internal call failed — is the episode dir readable? studio_status may help."}
     if r.status_code >= 400:
@@ -131,6 +153,8 @@ async def _api(method: str, path: str, *, body: dict | None = None,
         out = {"error": True, "status": r.status_code, "detail": detail}
         if r.status_code in _HINTS:
             out["hint"] = _HINTS[r.status_code]
+        if mutating:
+            events_mod.emit("mcp", f"{label} failed ({r.status_code})", level="error")
         return out
     try:
         return r.json()

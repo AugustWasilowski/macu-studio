@@ -11,18 +11,23 @@ from __future__ import annotations
 import threading
 import time
 
+from . import events
+
 _lock = threading.Lock()
 _slot = {"state": "idle", "label": "", "ts": 0.0, "ttl": 0.0}
 
 
-def set_running(label: str, ttl: float = 30.0) -> None:
+def set_running(label: str, ttl: float = 30.0, quiet: bool = False) -> None:
     with _lock:
         _slot.update(state="running", label=label, ts=time.time(), ttl=ttl)
+    if not quiet:
+        events.emit("job", label, level="running")
 
 
 def set_error(label: str, ttl: float = 6.0) -> None:
     with _lock:
         _slot.update(state="error", label=label, ts=time.time(), ttl=ttl)
+    events.emit("job", label, level="error")
 
 
 def clear() -> None:
