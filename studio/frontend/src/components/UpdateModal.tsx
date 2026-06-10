@@ -112,13 +112,16 @@ export function UpdateModal() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [job?.log.length]);
 
-  // Reset transient state each time the modal is freshly opened.
+  // Reset transient state each time the modal is freshly opened, and kick off a
+  // fresh check right away — opening the modal *is* the ask; don't make the user
+  // click "Check for updates" to get past a stale cached result.
   useEffect(() => {
     if (open) {
       setJob(null);
       restartAt.current = null;
+      onCheck();
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
@@ -188,7 +191,9 @@ export function UpdateModal() {
             </p>
           )}
 
-          {chk?.error ? (
+          {checking ? (
+            <div className="text-[13px] text-txt-dim">{t("update.checking")}</div>
+          ) : chk?.error ? (
             <p className="label-tiny text-err leading-relaxed">{t("update.checkError", { error: chk.error })}</p>
           ) : chk?.update_available ? (
             <div className="flex flex-col gap-1">
