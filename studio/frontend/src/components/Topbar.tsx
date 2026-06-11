@@ -123,7 +123,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   return (
     <header
       className="flex items-center gap-4 px-3 h-[54px] border-b hairline shrink-0"
-      style={{ background: "linear-gradient(180deg, #161513 0%, #0c0c0b 100%)" }}
+      style={{ background: "var(--topbar-bg)" }}
     >
       <div className="flex items-center gap-2">
         <span className="led-dot pulse" style={{ "--led-c": "#ff4d4d" } as React.CSSProperties} />

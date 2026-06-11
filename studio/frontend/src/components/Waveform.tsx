@@ -50,10 +50,11 @@ export function Waveform({ seed = 1, w = 220, h = 34, playing = false, dense = 1
       preserveAspectRatio="none"
       className={playing ? "wave playing" : "wave"}
     >
-      <line x1="0" y1={mid} x2={w} y2={mid} stroke="rgba(51,255,102,0.18)" strokeWidth="1" />
-      <path d={d} fill="rgba(51,255,102,0.10)" stroke="#33ff66" strokeWidth="1" />
+      {/* var() only resolves via CSS, so colors go through style, not attrs */}
+      <line x1="0" y1={mid} x2={w} y2={mid} strokeWidth="1" style={{ stroke: "rgb(var(--green-rgb) / 0.18)" }} />
+      <path d={d} strokeWidth="1" style={{ fill: "rgb(var(--green-rgb) / 0.10)", stroke: "var(--green)" }} />
       {playing && (
-        <rect className="wave-scan" x="0" y="0" width="2" height={h} fill="rgba(245,166,35,0.9)">
+        <rect className="wave-scan" x="0" y="0" width="2" height={h} style={{ fill: "rgb(var(--amber-rgb) / 0.9)" }}>
           <animate attributeName="x" from="0" to={w} dur="2.4s" repeatCount="indefinite" />
         </rect>
       )}

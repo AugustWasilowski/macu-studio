@@ -7,20 +7,39 @@
   --bg-1: #121212;
   --bg-2: #181715;
   --bg-3: #201e1a;
-  --line: rgba(245, 166, 35, 0.13);
+  /* Accent channels (space-separated RGB) — tints and glows derive from these,
+     so an accent preset only has to override --amber-rgb + --amber-dim. */
+  --amber-rgb: 245 166 35;
+  --cyan-rgb: 0 229 255;
+  --green-rgb: 51 255 102;
+  --red-rgb: 255 77 77;
+  --line: rgb(var(--amber-rgb) / 0.13);
   --line-soft: rgba(255, 255, 255, 0.07);
-  --amber: #f5a623;
+  --amber: rgb(var(--amber-rgb));
   --amber-dim: #b87811;
-  --cyan: #00e5ff;
-  --green: #33ff66;
-  --red: #ff4d4d;
+  --cyan: rgb(var(--cyan-rgb));
+  --green: rgb(var(--green-rgb));
+  --red: rgb(var(--red-rgb));
   --violet: #c08bff;
   --txt: #ded9cf;
   --txt-dim: #938d82;
   --txt-faint: #5f5a51;
-  --glow-amber: 0 0 6px rgba(245, 166, 35, 0.55);
-  --glow-cyan: 0 0 6px rgba(0, 229, 255, 0.5);
+  --glow-amber: 0 0 6px rgb(var(--amber-rgb) / 0.55);
+  --glow-cyan: 0 0 6px rgb(var(--cyan-rgb) / 0.5);
+  --glow-green: 0 0 6px rgb(var(--green-rgb) / 0.55);
   --row-h: 38px;
+  /* Shape + type + surfaces — full themes (themes.css) override these. */
+  --radius: 3px;
+  --radius-btn: 3px;
+  --font-ui: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace; /* data font — themes never override */
+  --body-bg: radial-gradient(1200px 700px at 50% 0%, #131311 0%, transparent 60%), #0d0d0d;
+  --panel-bg: linear-gradient(180deg, var(--bg-1) 0%, #0f0f0e 100%);
+  --topbar-bg: linear-gradient(180deg, #161513 0%, #0c0c0b 100%);
+  --input-bg: #0b0b0a;
+  --logtail-bg: #050505;
+  --logtail-fg: var(--green);
 }
 
 html, body, #root {
@@ -28,11 +47,9 @@ html, body, #root {
 }
 
 body {
-  background:
-    radial-gradient(1200px 700px at 50% 0%, #131311 0%, transparent 60%),
-    #0d0d0d;
+  background: var(--body-bg);
   color: var(--txt);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -80,9 +97,9 @@ body {
 
 /* Panels */
 .panel {
-  background: linear-gradient(180deg, var(--bg-1) 0%, #0f0f0e 100%);
+  background: var(--panel-bg);
   border: 1px solid var(--line);
-  border-radius: var(--radius, 3px);
+  border-radius: var(--radius);
 }
 .panel-soft {
   border-color: var(--line-soft);
@@ -92,19 +109,20 @@ body {
 
 /* 7-segment readouts */
 .seg-readout {
-  background: rgba(51, 255, 102, 0.06);
-  border: 1px solid rgba(51, 255, 102, 0.25);
+  background: rgb(var(--green-rgb) / 0.06);
+  border: 1px solid rgb(var(--green-rgb) / 0.25);
   color: var(--green);
   padding: 2px 8px;
   font-weight: 600;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px rgba(51, 255, 102, 0.55);
+  font-family: var(--font-mono);
+  text-shadow: var(--glow-green);
 }
 .seg-readout.cyan {
-  background: rgba(0, 229, 255, 0.06);
-  border-color: rgba(0, 229, 255, 0.25);
+  background: rgb(var(--cyan-rgb) / 0.06);
+  border-color: rgb(var(--cyan-rgb) / 0.25);
   color: var(--cyan);
-  text-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
+  text-shadow: var(--glow-cyan);
 }
 .label-tiny {
   font-size: 10px;
@@ -117,6 +135,7 @@ body {
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  font-family: var(--font-display);
   color: var(--amber);
   text-shadow: var(--glow-amber);
 }
@@ -159,21 +178,21 @@ body {
   background: var(--bg-2);
   color: var(--txt);
   border: 1px solid var(--line-soft);
-  border-radius: 3px;
+  border-radius: var(--radius-btn);
   font: inherit;
   cursor: pointer;
 }
 .btn:hover { background: var(--bg-3); }
 .btn-amber {
-  background: rgba(245, 166, 35, 0.1);
+  background: rgb(var(--amber-rgb) / 0.1);
   color: var(--amber);
-  border-color: rgba(245, 166, 35, 0.4);
+  border-color: rgb(var(--amber-rgb) / 0.4);
   text-shadow: var(--glow-amber);
 }
 .btn-cyan {
-  background: rgba(0, 229, 255, 0.08);
+  background: rgb(var(--cyan-rgb) / 0.08);
   color: var(--cyan);
-  border-color: rgba(0, 229, 255, 0.35);
+  border-color: rgb(var(--cyan-rgb) / 0.35);
 }
 .btn-big {
   height: 40px;
@@ -187,10 +206,10 @@ body {
 .input {
   height: 28px;
   padding: 0 8px;
-  background: #0b0b0a;
+  background: var(--input-bg);
   color: var(--txt);
   border: 1px solid var(--line-soft);
-  border-radius: 3px;
+  border-radius: var(--radius);
   font: inherit;
 }
 .input:focus {
@@ -206,7 +225,7 @@ body {
   width: 22px;
   height: 22px;
   border: 1px solid var(--line-soft);
-  border-radius: 3px;
+  border-radius: var(--radius);
   font-weight: 700;
   color: var(--txt-dim);
 }
@@ -217,15 +236,16 @@ body {
 }
 .tab-num.done {
   color: var(--green);
-  border-color: rgba(51, 255, 102, 0.4);
+  border-color: rgb(var(--green-rgb) / 0.4);
 }
 
 /* Log tail */
 .logtail {
-  background: #050505;
-  color: var(--green);
-  border: 1px solid rgba(51, 255, 102, 0.15);
-  border-radius: 3px;
+  background: var(--logtail-bg);
+  color: var(--logtail-fg);
+  border: 1px solid rgb(var(--green-rgb) / 0.15);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
   padding: 8px 10px;
   height: 220px;
   overflow-y: auto;
@@ -250,15 +270,15 @@ body {
   background: var(--bg-2);
   border: 1px solid var(--line-soft);
   padding: 8px 14px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   min-width: 220px;
   font-size: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
 }
-.toast.ok { border-color: rgba(51, 255, 102, 0.45); color: var(--green); }
-.toast.run { border-color: rgba(0, 229, 255, 0.45); color: var(--cyan); }
-.toast.info { border-color: rgba(245, 166, 35, 0.45); color: var(--amber); }
-.toast.err { border-color: rgba(255, 77, 77, 0.45); color: var(--red); }
+.toast.ok { border-color: rgb(var(--green-rgb) / 0.45); color: var(--green); }
+.toast.run { border-color: rgb(var(--cyan-rgb) / 0.45); color: var(--cyan); }
+.toast.info { border-color: rgb(var(--amber-rgb) / 0.45); color: var(--amber); }
+.toast.err { border-color: rgb(var(--red-rgb) / 0.45); color: var(--red); }
 
 /* Themed scrollbars (override the browser default app-wide) */
 * {
@@ -268,7 +288,7 @@ body {
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: var(--bg-1); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 166, 35, 0.85);        /* amber accent — the draggable part */
+  background: rgb(var(--amber-rgb) / 0.85);    /* amber accent — the draggable part */
   border: 2px solid var(--bg-1);               /* inset so the thumb reads as a pill */
   border-radius: 6px;
 }

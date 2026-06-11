@@ -143,7 +143,7 @@ export function Script({ slug }: { slug: string }) {
             <DiffView slug={slug} fontPx={fontPx} />
           ) : (
             <textarea
-              className="w-full h-full p-3 font-mono bg-[#0b0b0a] text-txt resize-none outline-none border-0"
+              className="w-full h-full p-3 font-mono bg-[var(--input-bg)] text-txt resize-none outline-none border-0"
               style={{ fontSize: fontPx }}
               spellCheck={false}
               value={text}

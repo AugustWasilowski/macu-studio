@@ -61,7 +61,11 @@ function ThemePanel() {
             className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (sel === th.id ? "btn-amber" : "hover:bg-bg-3")}
             onClick={() => { setTheme(th.id); setSel(th.id); }}
           >
-            <span className="rounded-full" style={{ width: 16, height: 16, background: th.accent, boxShadow: `0 0 7px ${th.accent}` }} />
+            <span className="flex items-center gap-1">
+              {(th.swatch ?? [th.accent]).map((c, i) => (
+                <span key={i} className="rounded-full" style={{ width: 16, height: 16, background: c, boxShadow: i === 0 ? `0 0 7px ${c}` : undefined }} />
+              ))}
+            </span>
             <span className="text-[12px]">{th.label}</span>
             {sel === th.id && <span className="label-tiny ml-auto">{t("common.active")}</span>}
           </button>

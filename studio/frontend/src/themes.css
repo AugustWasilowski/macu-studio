@@ -1,0 +1,113 @@
+/* Full themes — each block overrides the token set from tokens.css :root.
+   Selected by theme.ts setting data-theme on <html>; no attribute = the
+   default amber terminal look (accent presets layer inline vars on top of
+   that, never on top of a data-theme). --font-mono is intentionally never
+   overridden: tables, timelines, and editors stay monospace in every theme. */
+
+/* Starship — TNG-bridge homage. Pure black, pastel panels, pill buttons,
+   flat (no glow, no scanlines), condensed display type. */
+[data-theme="starship"] {
+  --bg: #000000;
+  --bg-1: #000000;
+  --bg-2: #0d0d12;
+  --bg-3: #16161e;
+  --amber-rgb: 255 156 0;     /* LCARS-ish orange */
+  --amber-dim: #b86f00;
+  --cyan-rgb: 153 153 255;    /* periwinkle */
+  --green-rgb: 153 204 153;
+  --red-rgb: 204 102 102;
+  --violet: #cc99cc;
+  --txt: #e8e8f0;
+  --txt-dim: #9a9aa8;
+  --txt-faint: #62626e;
+  --line: rgb(var(--amber-rgb) / 0.45);
+  --line-soft: rgba(255, 255, 255, 0.12);
+  --glow-amber: none;
+  --glow-cyan: none;
+  --glow-green: none;
+  --radius: 14px;
+  --radius-btn: 999px;
+  --font-ui: "Antonio", "Arial Narrow", sans-serif;
+  --font-display: "Antonio", "Arial Narrow", sans-serif;
+  --body-bg: #000000;
+  --panel-bg: #000000;
+  --topbar-bg: #000000;
+  --input-bg: #0a0a0e;
+  --logtail-bg: #050507;
+}
+[data-theme="starship"] .crt-overlay {
+  display: none;
+}
+
+/* Wasteland — post-apocalyptic rust & dust. Desaturated brown/olive
+   surfaces, rust accent, faded-paper text, hard square corners, typewriter
+   panel titles, and a grittier, faster CRT flicker. */
+[data-theme="wasteland"] {
+  --bg: #14110b;
+  --bg-1: #191510;
+  --bg-2: #201a12;
+  --bg-3: #2a2217;
+  --amber-rgb: 193 68 14;     /* rust */
+  --amber-dim: #7e2e08;
+  --cyan-rgb: 122 168 159;    /* oxidized copper */
+  --green-rgb: 154 168 91;    /* olive drab */
+  --red-rgb: 217 83 79;
+  --violet: #9b8aa6;
+  --txt: #d9cfb8;             /* faded paper */
+  --txt-dim: #998c72;
+  --txt-faint: #645a49;
+  --line: rgb(var(--amber-rgb) / 0.25);
+  --line-soft: rgba(217, 207, 184, 0.08);
+  /* glows keep their defaults — they derive rust/olive from the channels */
+  --radius: 0px;
+  --radius-btn: 0px;
+  --font-display: "Special Elite", "Courier New", monospace;
+  --body-bg: radial-gradient(1200px 700px at 50% 0%, #1d1810 0%, transparent 60%), #14110b;
+  --panel-bg: linear-gradient(180deg, var(--bg-1) 0%, #15120c 100%);
+  --topbar-bg: linear-gradient(180deg, #221c12 0%, #15110b 100%);
+  --input-bg: #100d08;
+  --logtail-bg: #0a0805;
+}
+[data-theme="wasteland"] .crt-overlay::before {
+  opacity: 0.92; /* heavier grit than the default 0.7 */
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme="wasteland"] .crt-overlay {
+    animation-duration: 2.4s; /* twitchier flicker */
+  }
+}
+
+/* Slate Pro — quiet dark professional. Neutral slate, calm blue accent,
+   Inter, flat, soft corners. */
+[data-theme="pro"] {
+  --bg: #0f1115;
+  --bg-1: #14171d;
+  --bg-2: #191d24;
+  --bg-3: #20252e;
+  --amber-rgb: 77 144 255;    /* calm blue */
+  --amber-dim: #2f64b8;
+  --cyan-rgb: 56 189 173;     /* teal */
+  --green-rgb: 74 222 128;
+  --red-rgb: 248 113 113;
+  --violet: #a78bfa;
+  --txt: #d7dbe2;
+  --txt-dim: #8b919d;
+  --txt-faint: #585e69;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --glow-amber: none;
+  --glow-cyan: none;
+  --glow-green: none;
+  --radius: 6px;
+  --radius-btn: 6px;
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-display: "Inter", system-ui, sans-serif;
+  --body-bg: #0f1115;
+  --panel-bg: #14171d;
+  --topbar-bg: #12151a;
+  --input-bg: #0c0e12;
+  --logtail-bg: #0b0d11;
+}
+[data-theme="pro"] .crt-overlay {
+  display: none;
+}

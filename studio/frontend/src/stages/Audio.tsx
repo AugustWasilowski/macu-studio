@@ -365,7 +365,7 @@ function CueInspector({
         </span>
         <Badge status={isBusy ? "running" : cue.status} />
       </div>
-      <div className="bg-[#050505] hairline-soft p-2 rounded">
+      <div className="bg-[var(--logtail-bg)] hairline-soft p-2 rounded">
         <Waveform seed={(parseInt(cue.id.replace(/\D/g, ""), 10) || 1) + 7} w={320} h={72} playing={isPlaying} dense={160} />
       </div>
       <div className="flex items-center gap-2">

@@ -1,18 +1,19 @@
 import { AssetStatus } from "../types";
 
+// var() references so badges/dots follow the active theme's palette.
 export const statusColor: Record<AssetStatus | string, string> = {
-  generated: "#33ff66",
-  rendered: "#33ff66",
-  exists: "#33ff66",
-  done: "#33ff66",
-  ok: "#33ff66",
-  stale: "#f5a623",
-  draft: "#f5a623",
-  running: "#00e5ff",
-  idle: "#5f5a51",
-  missing: "#ff4d4d",
-  failed: "#ff4d4d",
-  shared: "#938d82",
+  generated: "var(--green)",
+  rendered: "var(--green)",
+  exists: "var(--green)",
+  done: "var(--green)",
+  ok: "var(--green)",
+  stale: "var(--amber)",
+  draft: "var(--amber)",
+  running: "var(--cyan)",
+  idle: "var(--txt-faint)",
+  missing: "var(--red)",
+  failed: "var(--red)",
+  shared: "var(--txt-dim)",
 };
 
 export const statusLabel = (s: AssetStatus | string): string => {

@@ -7,9 +7,11 @@
     <title>MACU Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Antonio:wght@400;600&family=Inter:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-bg text-txt font-mono">
+  <!-- Body font comes from tokens.css --font-ui so full themes can change it;
+       font-mono utility stays available per-element as the data font. -->
+  <body class="bg-bg text-txt">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
