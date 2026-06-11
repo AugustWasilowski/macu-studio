@@ -68,10 +68,16 @@ def apply(slug, refresh_clean=False):
     warnings = []
 
     if not overlays:
-        # No graphics: leave nosubs as-is (clean snapshot is irrelevant). If a clean
-        # snapshot exists from a prior overlay run, restore it so removing all overlays
-        # cleanly reverts the baked-in graphics.
-        if os.path.exists(clean) and os.path.exists(nosubs):
+        if refresh_clean:
+            # Called from stage 4 right after a FRESH assembly: the new nosubs is the
+            # truth. Update the snapshot; NEVER restore an older clean over new work.
+            # (2026-06-11 incident: a stale Jun-4 snapshot silently replaced a fully
+            # re-assembled episode because this branch restored unconditionally.)
+            if os.path.exists(nosubs):
+                shutil.copy2(nosubs, clean)
+        elif os.path.exists(clean) and os.path.exists(nosubs):
+            # Standalone run (overlay editing): removing all overlays reverts the
+            # baked-in graphics by restoring the clean snapshot.
             shutil.copy2(clean, nosubs)
         return {"overlays": 0, "applied": 0, "warnings": warnings}
 
