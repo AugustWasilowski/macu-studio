@@ -111,3 +111,101 @@
 [data-theme="pro"] .crt-overlay {
   display: none;
 }
+
+/* Movie Palace — red-velvet-and-gold cinema lobby. Plush maroon surfaces,
+   gold marquee accents (glows kept — they read as marquee bulbs), art-deco
+   Limelight display type. */
+[data-theme="marquee"] {
+  --bg: #120607;
+  --bg-1: #1a090b;
+  --bg-2: #220c0f;
+  --bg-3: #2e1014;
+  --amber-rgb: 212 175 55;    /* marquee gold */
+  --amber-dim: #8a6d1f;
+  --cyan-rgb: 232 180 184;    /* velvet rose */
+  --green-rgb: 142 196 110;
+  --red-rgb: 229 57 53;
+  --violet: #d59ab8;
+  --txt: #ecdfc8;             /* house-lights cream */
+  --txt-dim: #a8987e;
+  --txt-faint: #6e6353;
+  --line: rgb(var(--amber-rgb) / 0.3);
+  --line-soft: rgba(236, 223, 200, 0.09);
+  --radius: 8px;
+  --radius-btn: 8px;
+  --font-display: "Limelight", "Georgia", serif;
+  --body-bg: radial-gradient(1200px 700px at 50% 0%, #200a0e 0%, transparent 60%), #120607;
+  --panel-bg: linear-gradient(180deg, var(--bg-1) 0%, #150708 100%);
+  --topbar-bg: linear-gradient(180deg, #260d11 0%, #150708 100%);
+  --input-bg: #15080a;
+  --logtail-bg: #0d0506;
+}
+[data-theme="marquee"] .crt-overlay {
+  display: none;
+}
+
+/* Dracula — gothic Halloween. Purple-black night, blood-red accent,
+   ghostly violet, horror-poster Creepster titles, CRT flicker kept. */
+[data-theme="dracula"] {
+  --bg: #0b0710;
+  --bg-1: #110a18;
+  --bg-2: #170e20;
+  --bg-3: #1f1430;
+  --amber-rgb: 196 30 58;     /* blood red */
+  --amber-dim: #7a1226;
+  --cyan-rgb: 178 136 255;    /* ghost violet */
+  --green-rgb: 134 222 98;    /* eerie green */
+  --red-rgb: 255 82 82;
+  --violet: #9d6bff;
+  --txt: #d8d0e0;
+  --txt-dim: #968ca8;
+  --txt-faint: #5f5870;
+  --line: rgb(var(--amber-rgb) / 0.3);
+  --line-soft: rgba(216, 208, 224, 0.08);
+  --radius: 0px;
+  --radius-btn: 0px;
+  --font-display: "Creepster", "Georgia", serif;
+  --body-bg: radial-gradient(1200px 700px at 50% 0%, #150d20 0%, transparent 60%), #0b0710;
+  --panel-bg: linear-gradient(180deg, var(--bg-1) 0%, #0d0813 100%);
+  --topbar-bg: linear-gradient(180deg, #190f24 0%, #0d0813 100%);
+  --input-bg: #0d0813;
+  --logtail-bg: #070409;
+}
+
+/* Pretty Princess — pastel-pink candy LIGHT theme. Hot-pink accent, sky/
+   sunny secondaries, bubbly Baloo 2 type, pill buttons, no CRT. A couple of
+   content-coded dark slabs (timeline clips, diff hunks) intentionally stay
+   dark — they read as chips on the pastel surface. */
+[data-theme="princess"] {
+  --bg: #fff5fa;
+  --bg-1: #ffeaf4;
+  --bg-2: #ffdfee;
+  --bg-3: #ffd0e6;
+  --amber-rgb: 236 72 153;    /* hot pink */
+  --amber-dim: #b03088;
+  --cyan-rgb: 56 152 224;     /* sky blue */
+  --green-rgb: 52 168 83;
+  --red-rgb: 217 48 37;
+  --violet: #a855f7;
+  --txt: #4a2040;             /* dark plum */
+  --txt-dim: #8a5f7d;
+  --txt-faint: #b893a9;
+  --line: rgb(var(--amber-rgb) / 0.35);
+  --line-soft: rgba(74, 32, 64, 0.14);
+  --glow-amber: 0 0 6px rgb(var(--amber-rgb) / 0.3);
+  --glow-cyan: 0 0 6px rgb(var(--cyan-rgb) / 0.3);
+  --glow-green: 0 0 6px rgb(var(--green-rgb) / 0.3);
+  --radius: 12px;
+  --radius-btn: 999px;
+  --font-ui: "Baloo 2", "Comic Sans MS", sans-serif;
+  --font-display: "Baloo 2", "Comic Sans MS", sans-serif;
+  --body-bg: radial-gradient(1200px 700px at 50% 0%, #ffe3f0 0%, transparent 60%), #fff5fa;
+  --panel-bg: #ffeaf4;
+  --topbar-bg: linear-gradient(180deg, #ffe3f0 0%, #ffd8ea 100%);
+  --input-bg: #ffffff;
+  --logtail-bg: #fff0f7;
+  --logtail-fg: #2f9e44;
+}
+[data-theme="princess"] .crt-overlay {
+  display: none;
+}

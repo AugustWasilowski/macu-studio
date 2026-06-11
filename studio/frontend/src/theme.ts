@@ -22,6 +22,9 @@ export const THEMES: Theme[] = [
   { id: "starship", label: "Starship", kind: "full", accent: "#ff9c00", swatch: ["#ff9c00", "#cc99cc", "#9999ff"] },
   { id: "wasteland", label: "Wasteland", kind: "full", accent: "#c1440e", swatch: ["#c1440e", "#9aa85b", "#d9cfb8"] },
   { id: "pro", label: "Slate Pro", kind: "full", accent: "#4d90ff", swatch: ["#4d90ff", "#14171d", "#d7dbe2"] },
+  { id: "marquee", label: "Movie Palace", kind: "full", accent: "#d4af37", swatch: ["#d4af37", "#a3132f", "#1a090b"] },
+  { id: "dracula", label: "Dracula", kind: "full", accent: "#c41e3a", swatch: ["#c41e3a", "#9d6bff", "#110a18"] },
+  { id: "princess", label: "Pretty Princess", kind: "full", accent: "#ec4899", swatch: ["#ec4899", "#ffd166", "#38b6ff"] },
 ];
 
 const VARS = ["--amber-rgb", "--amber-dim"] as const;
