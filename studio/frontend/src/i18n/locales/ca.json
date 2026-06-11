@@ -981,5 +981,7 @@
   "wizard.publish.title": "8 · Publicació (una parada de visita)",
   "wizard.publish.body": "Quan un episodi està llestos pots publicar-lo al teu lloc MACU Web i enllaçar un vídeo de YouTube aquí. No publicarem res durant la visita — és només perquè sàpigues on viu. Mira al voltant, després continua.",
   "wizard.done.title": "És tot el cicle!",
-  "wizard.done.body": "Has pres un script fins a un episodi acabat. D'aquí en avant: edita l'episodi de pràctica lliurement, comença un de real des del menú, o obrir Docs per a la referència més detallada. Pots repetir aquesta visita en qualsevol moment des del menú."
+  "wizard.done.body": "Has pres un script fins a un episodi acabat. D'aquí en avant: edita l'episodi de pràctica lliurement, comença un de real des del menú, o obrir Docs per a la referència més detallada. Pots repetir aquesta visita en qualsevol moment des del menú.",
+  "common.undo": "Desfés",
+  "timeline.removeClip": "Elimina de la línia de temps"
 }

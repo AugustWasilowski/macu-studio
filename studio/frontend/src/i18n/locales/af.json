@@ -981,5 +981,7 @@
   "wizard.publish.title": "8 · Uitgewers (ʼn tourstoep)",
   "wizard.publish.body": "Wanneer ʼn episode gereed is, kan u dit op u MACU Web-werf uitgewers en hier ʼn YouTube-video koppel. Ons sal niks tydens die oorsig uitgewers nie — dit is net sodat u weet waar dit woon. Kyk rond, en gaan dan voort.",
   "wizard.done.title": "Dit is die hele lus!",
-  "wizard.done.body": "U het ʼn skrip al die manier na ʼn voltooide episode geneem. Van hier af: wysig die oefepisode vry, begin ʼn regte een vanuit die menu, of open Dokumente vir die dieper verwysing. U kan hierdie oorsig enige tyd vanuit die menu herhaal."
+  "wizard.done.body": "U het ʼn skrip al die manier na ʼn voltooide episode geneem. Van hier af: wysig die oefepisode vry, begin ʼn regte een vanuit die menu, of open Dokumente vir die dieper verwysing. U kan hierdie oorsig enige tyd vanuit die menu herhaal.",
+  "common.undo": "Ongedaan maak",
+  "timeline.removeClip": "Verwyder van tydlyn"
 }

@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Udgivelse (et turtrin)",
   "wizard.publish.body": "Når en episode er klar kan du udgive den på dit MACU Web-site og linke en YouTube-video her. Vi vil ikke udgive noget under gennemgangen — dette er bare så du ved hvor det ligger. Kig omkring, gå derefter videre.",
   "wizard.done.title": "Det er hele cyklussen!",
-  "wizard.done.body": "Du tog et script hele vejen til en færdig episode. Herfra: rediger øvelsesepisoden frit, start en rigtig fra menuen, eller åbn Docs for den dybere reference. Du kan genlyder denne gennemgang når som helst fra menuen."
+  "wizard.done.body": "Du tog et script hele vejen til en færdig episode. Herfra: rediger øvelsesepisoden frit, start en rigtig fra menuen, eller åbn Docs for den dybere reference. Du kan genlyder denne gennemgang når som helst fra menuen.",
+  "common.undo": "Fortryd",
+  "timeline.removeClip": "Fjern fra tidslinje"
 }

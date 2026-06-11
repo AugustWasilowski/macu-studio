@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publicare (o oprire a turului)",
   "wizard.publish.body": "Când un episod este gata, îl puteți publica pe site-ul MACU Web și puteți lega un videoclip YouTube aici. Nu vom publica nimic în timp ce urmați ghidul — aceasta este doar pentru a ști unde se află. Aruncați o privire, apoi continuați.",
   "wizard.done.title": "Asta-i toată bucla!",
-  "wizard.done.body": "Ați dus un script până la un episod terminat. De aici: editați episodul de practică liber, porniți unul real din meniu, sau deschideți Docs pentru referința mai profundă. Puteți relua acest ghid oricând din meniu."
+  "wizard.done.body": "Ați dus un script până la un episod terminat. De aici: editați episodul de practică liber, porniți unul real din meniu, sau deschideți Docs pentru referința mai profundă. Puteți relua acest ghid oricând din meniu.",
+  "common.undo": "Anulează",
+  "timeline.removeClip": "Șterge din cronologie"
 }

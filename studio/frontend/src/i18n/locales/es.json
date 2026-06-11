@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publicación (una parada del recorrido)",
   "wizard.publish.body": "Cuando un episodio está listo puedes publicarlo en tu sitio MACU Web y vincular un video de YouTube aquí. No publicaremos nada durante el recorrido — esto es solo para que sepas dónde vive. Echa un vistazo alrededor, luego continúa.",
   "wizard.done.title": "¡Ese es todo el ciclo!",
-  "wizard.done.body": "Llevaste un guión hasta un episodio terminado. De aquí en adelante: edita el episodio de práctica libremente, comienza uno real desde el menú, o abre Docs para la referencia más profunda. Puedes repetir este recorrido cuando quieras desde el menú."
+  "wizard.done.body": "Llevaste un guión hasta un episodio terminado. De aquí en adelante: edita el episodio de práctica libremente, comienza uno real desde el menú, o abre Docs para la referencia más profunda. Puedes repetir este recorrido cuando quieras desde el menú.",
+  "common.undo": "Deshacer",
+  "timeline.removeClip": "Eliminar del cronograma"
 }

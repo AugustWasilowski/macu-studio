@@ -982,5 +982,7 @@
   "wizard.publish.title": "8 · Közzététel (egy bemutatóállomás)",
   "wizard.publish.body": "Amikor egy epizód kész van, közzéteheted a MACU Web oldalon és összekapcsolhatsz egy YouTube-videót itt. Nem fogunk semmit közzétenni a bemutató alatt — ez csak arról szól, hogy tudd, hol van. Nézd meg, majd folytasd.",
   "wizard.done.title": "Ez az egész ciklus!",
-  "wizard.done.body": "Végighoztál egy forgatókönyvet egy kész epizódig. Innen: szerkeszd szabadon a gyakorló epizódot, indíts egy valódit a menüből, vagy nyisd meg a Docs-ot a mélyebb referenciához. Ezt a bemutatót bármikor visszajátszhatod a menüből."
+  "wizard.done.body": "Végighoztál egy forgatókönyvet egy kész epizódig. Innen: szerkeszd szabadon a gyakorló epizódot, indíts egy valódit a menüből, vagy nyisd meg a Docs-ot a mélyebb referenciához. Ezt a bemutatót bármikor visszajátszhatod a menüből.",
+  "common.undo": "Visszavonás",
+  "timeline.removeClip": "Eltávolítás az idővonalból"
 }

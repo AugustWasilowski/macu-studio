@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Yayınlama (bir tur durağı)",
   "wizard.publish.body": "Bir bölüm hazır olduğunda, bunu MACU Web sitenize yayınlayabilir ve buraya bir YouTube videosu bağlayabilirsiniz. Tur sırasında hiçbir şey yayınlamayacağız — bu sadece nerede yaşadığını bilmeniz için. Etrafı bir göz atın, ardından devam edin.",
   "wizard.done.title": "Tüm döngü bu kadar!",
-  "wizard.done.body": "Bir senaryoyu baştan sonuna hazır bir bölüme dönüştürdünüz. Buradan: pratik bölümü serbestçe düzenleyin, menüden gerçek birini başlatın veya daha derin referans için Docs'u açın. Bu rehberli turu istediğiniz zaman menüden yeniden oynayabilirsiniz."
+  "wizard.done.body": "Bir senaryoyu baştan sonuna hazır bir bölüme dönüştürdünüz. Buradan: pratik bölümü serbestçe düzenleyin, menüden gerçek birini başlatın veya daha derin referans için Docs'u açın. Bu rehberli turu istediğiniz zaman menüden yeniden oynayabilirsiniz.",
+  "common.undo": "Geri Al",
+  "timeline.removeClip": "Zaman Çizelgesinden Kaldır"
 }

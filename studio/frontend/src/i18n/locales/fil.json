@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Paglalathala (isang tour stop)",
   "wizard.publish.body": "Kapag handa na ang isang episode, maaari mong ilathala ito sa iyong MACU Web site at mag-link ng YouTube video dito. Hindi namin ilalathala ang kahit ano sa panahon ng pagsusuri — ito ay para malaman mo lamang kung nasaan ito naroroon. Tuklasin, pagkatapos ay magpatuloy.",
   "wizard.done.title": "Iyan na ang buong loop!",
-  "wizard.done.body": "Dala mo ang isang script hanggang sa isang tapos na episode. Mula dito: i-edit ang practice episode nang libre, magsimula ng tunay na mula sa menu, o buksan ang Docs para sa mas malalim na sanggunian. Maaari mong i-replay ang pagsusuring ito anumang oras mula sa menu."
+  "wizard.done.body": "Dala mo ang isang script hanggang sa isang tapos na episode. Mula dito: i-edit ang practice episode nang libre, magsimula ng tunay na mula sa menu, o buksan ang Docs para sa mas malalim na sanggunian. Maaari mong i-replay ang pagsusuring ito anumang oras mula sa menu.",
+  "common.undo": "I-undo",
+  "timeline.removeClip": "Alisin mula sa timeline"
 }

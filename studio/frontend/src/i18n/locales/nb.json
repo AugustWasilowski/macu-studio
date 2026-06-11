@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publisering (et stoppested)",
   "wizard.publish.body": "Når en episode er klar kan du publisere den til ditt MACU Web-nettsted og lenke en YouTube-video her. Vi publiserer ikke noe under gjennomgangen — dette er bare slik at du vet hvor det ligger. Se deg omkring, og fortsett deretter.",
   "wizard.done.title": "Det er hele løkken!",
-  "wizard.done.body": "Du tok et manus hele veien til en ferdig episode. Herfra: rediger øvingsepisoden fritt, start en riktig fra menyen, eller åpne Docs for den dypere referansen. Du kan gjenta denne gjennomgangen når som helst fra menyen."
+  "wizard.done.body": "Du tok et manus hele veien til en ferdig episode. Herfra: rediger øvingsepisoden fritt, start en riktig fra menyen, eller åpne Docs for den dypere referansen. Du kan gjenta denne gjennomgangen når som helst fra menyen.",
+  "common.undo": "Angre",
+  "timeline.removeClip": "Fjern fra tidslinje"
 }

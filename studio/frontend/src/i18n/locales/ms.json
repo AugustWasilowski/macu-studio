@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Penerbitan (halenti tur)",
   "wizard.publish.body": "Apabila episod siap anda boleh menerbitkannya ke laman web MACU anda dan menautkan video YouTube di sini. Kami tidak akan menerbitkan apa-apa semasa panduan — ini hanya supaya anda tahu di mana ia berada. Lihat sekeliling, kemudian teruskan.",
   "wizard.done.title": "Itulah gelung lengkap!",
-  "wizard.done.body": "Anda mengambil skrip semua cara ke episod yang selesai. Dari sini: edit episod latihan dengan bebas, mulai yang sebenar daripada menu, atau buka Docs untuk rujukan yang lebih mendalam. Anda boleh putar semula panduan ini pada bila-bila masa daripada menu."
+  "wizard.done.body": "Anda mengambil skrip semua cara ke episod yang selesai. Dari sini: edit episod latihan dengan bebas, mulai yang sebenar daripada menu, atau buka Docs untuk rujukan yang lebih mendalam. Anda boleh putar semula panduan ini pada bila-bila masa daripada menu.",
+  "common.undo": "Batalkan",
+  "timeline.removeClip": "Buang dari garis masa"
 }

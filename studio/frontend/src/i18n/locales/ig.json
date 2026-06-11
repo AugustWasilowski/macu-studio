@@ -983,5 +983,7 @@
   "wizard.publish.title": "8 · Bipụta (ogere ntụrụndụ)",
   "wizard.publish.body": "Mgbe ihe omume dị njikere, ị nwere ike ibipụta ya na saịtị MACU Web gị ma jikọta vidio YouTube ebe a. Anyị agaghị bipụta ihe ọbụla n'oge ntụrụndụ — nke a bụ ịka matawali ebe o bi. Lelee gburugburu, mgbe ahụ gawa n'ihu.",
   "wizard.done.title": "Nke a bụ usoro ziri ezi!",
-  "wizard.done.body": "I wepụtara script ruo n'ihe omume emepụtahwo. Site ebe a: mee ihe omume mmanya ka ịchọrọ, malite nke ziri ezi site n'ọgụgụ isi, ma ọ bụ meghee Docs maka ntụziaka miri emi. Ị nwere ike ịmeghee ntụrụndụ a mgbe ọ bụla site n'ọgụgụ isi."
+  "wizard.done.body": "I wepụtara script ruo n'ihe omume emepụtahwo. Site ebe a: mee ihe omume mmanya ka ịchọrọ, malite nke ziri ezi site n'ọgụgụ isi, ma ọ bụ meghee Docs maka ntụziaka miri emi. Ị nwere ike ịmeghee ntụrụndụ a mgbe ọ bụla site n'ọgụgụ isi.",
+  "common.undo": "Ịkpeghachi",
+  "timeline.removeClip": "Wepụ site na timeline"
 }

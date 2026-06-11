@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publicering (ett turnstopp)",
   "wizard.publish.body": "När ett avsnitt är klart kan du publicera det på din MACU Web-webbplats och länka en YouTube-video här. Vi publicerar inte något under genomgången — det här är bara för att du ska veta var det finns. Titta omkring, fortsätt sedan.",
   "wizard.done.title": "Det är hela loopen!",
-  "wizard.done.body": "Du tog ett manus hela vägen till ett avslutat avsnitt. Härifrån: redigera övningsavsnittet fritt, starta ett riktigt från menyn, eller öppna Docs för den djupare referensen. Du kan spela denna genomgång när som helst från menyn."
+  "wizard.done.body": "Du tog ett manus hela vägen till ett avslutat avsnitt. Härifrån: redigera övningsavsnittet fritt, starta ett riktigt från menyn, eller öppna Docs för den djupare referensen. Du kan spela denna genomgång när som helst från menyn.",
+  "common.undo": "Ångra",
+  "timeline.removeClip": "Ta bort från tidslinje"
 }

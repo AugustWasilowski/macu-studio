@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Ukucafula (i-tour stop)",
   "wizard.publish.body": "Uma i-episode ikulungile ungayicafula kusite lakho lwe-MACU Web futhi unxibele ividiyo yeYouTube lapha. Ayicafuli okukhulu ngesikhathi somhlahlandlela — lena nje uze wakwazi lapho ihlala khona. Buka inzuzo, bukhona qalekeza.",
   "wizard.done.title": "Lena indawo yonke! ",
-  "wizard.done.body": "Wuthathe umbhalo ngabakho uze wafika ku-episode eyayigcina. Kusukela lapha: shintsha i-episode yokuqwashela ngokungokhonza, qala eyangempela emenyueni, noma vula idokhumenti yonobuhlakani. Ungayilalisela lomhlahlandlela noma nini kusukela kumenyui."
+  "wizard.done.body": "Wuthathe umbhalo ngabakho uze wafika ku-episode eyayigcina. Kusukela lapha: shintsha i-episode yokuqwashela ngokungokhonza, qala eyangempela emenyueni, noma vula idokhumenti yonobuhlakani. Ungayilalisela lomhlahlandlela noma nini kusukela kumenyui.",
+  "common.undo": "Hlehlisa",
+  "timeline.removeClip": "Susa ku-timeline"
 }

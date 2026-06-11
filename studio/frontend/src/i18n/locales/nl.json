@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publiceren (een toerstop)",
   "wizard.publish.body": "Wanneer een episode klaar is, kun je deze publiceren op je MACU Web-site en hier een YouTube-video linken. We publiceren niets tijdens de rondleiding — dit is alleen zodat je weet waar het leeft. Kijk rond, ga dan verder.",
   "wizard.done.title": "Dat is de hele loop!",
-  "wizard.done.body": "Je hebt een script helemaal naar een afgeronde episode genomen. Van hier af: bewerk de oefenepisode vrijelijk, start er een echte vanuit het menu, of open Docs voor de diepere referentie. Je kunt deze rondleiding op elk moment vanuit het menu opnieuw afspelen."
+  "wizard.done.body": "Je hebt een script helemaal naar een afgeronde episode genomen. Van hier af: bewerk de oefenepisode vrijelijk, start er een echte vanuit het menu, of open Docs voor de diepere referentie. Je kunt deze rondleiding op elk moment vanuit het menu opnieuw afspelen.",
+  "common.undo": "Ongedaan maken",
+  "timeline.removeClip": "Uit timeline verwijderen"
 }

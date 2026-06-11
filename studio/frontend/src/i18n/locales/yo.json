@@ -982,5 +982,7 @@
   "wizard.publish.title": "8 · Ìgbékalẹ̀ (apá ìkọkọ àlàfo)",
   "wizard.publish.body": "Nígbà ẹ̀kọ kan yóò déyè, ẹ̀ lè gbékalẹ̀ sí MACU Web ìta rẹ àti kápásì fídíò YouTube níhín. A kò gba nǹkan sílẹ̀ nígbà ìkọkọ àlàfo — nwu èyí jẹ́ láti mọ ibi tí ó wà. Wo yín kàrà, lẹ́yìn náà tẹ̀ síwájú.",
   "wizard.done.title": "Èyí ní gbogbo ìfipàdí!",
-  "wizard.done.body": "Ẹ̀ mú ìkòwe lọ́wọ́lọ́wọ́ sí ẹ̀kọ òpẹ̀. Láti ibí: ẹ̀dìtì ẹ̀kọ-ìdánwò ni à ṣẹ̀ọ̀fẹ́, bẹrẹ ẹ̀kọ gidi kúrò inú àtẹ̀jáde, tàbí ṣí Docs fún àkójú jìjìnle. Ẹ̀ lè tún ìkọkọ àlàfo yìí àkòkò ká kúrò inú àtẹ̀jáde."
+  "wizard.done.body": "Ẹ̀ mú ìkòwe lọ́wọ́lọ́wọ́ sí ẹ̀kọ òpẹ̀. Láti ibí: ẹ̀dìtì ẹ̀kọ-ìdánwò ni à ṣẹ̀ọ̀fẹ́, bẹrẹ ẹ̀kọ gidi kúrò inú àtẹ̀jáde, tàbí ṣí Docs fún àkójú jìjìnle. Ẹ̀ lè tún ìkọkọ àlàfo yìí àkòkò ká kúrò inú àtẹ̀jáde.",
+  "common.undo": "Padilọ",
+  "timeline.removeClip": "Lọ kuro ninu ila akoko"
 }

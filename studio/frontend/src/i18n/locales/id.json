@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Penerbitan (tur stop)",
   "wizard.publish.body": "Ketika episode siap, Anda bisa menerbitkannya ke situs MACU Web Anda dan menautkan video YouTube di sini. Kami tidak akan menerbitkan apa pun selama panduan — ini hanya agar Anda tahu di mana letaknya. Lihat-lihat sebentar, kemudian lanjutkan.",
   "wizard.done.title": "Itulah seluruh prosesnya!",
-  "wizard.done.body": "Anda membawa skenario hingga episode selesai. Dari sini: edit episode latihan dengan bebas, mulai yang baru dari menu, atau buka Docs untuk referensi yang lebih mendalam. Anda bisa memutar kembali panduan ini kapan saja dari menu."
+  "wizard.done.body": "Anda membawa skenario hingga episode selesai. Dari sini: edit episode latihan dengan bebas, mulai yang baru dari menu, atau buka Docs untuk referensi yang lebih mendalam. Anda bisa memutar kembali panduan ini kapan saja dari menu.",
+  "common.undo": "Batalkan",
+  "timeline.removeClip": "Hapus dari timeline"
 }

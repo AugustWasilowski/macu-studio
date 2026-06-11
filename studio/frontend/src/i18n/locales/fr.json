@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publication (un point d'arrêt)",
   "wizard.publish.body": "Quand un épisode est prêt, vous pouvez le publier sur votre site MACU Web et lier une vidéo YouTube ici. Nous ne publierons rien pendant la visite — c'est juste pour vous montrer où cela se trouve. Regardez autour, puis continuez.",
   "wizard.done.title": "Et voilà !",
-  "wizard.done.body": "Vous avez mené un scénario jusqu'à un épisode terminé. À partir d'ici : modifiez librement l'épisode d'entraînement, commencez un vrai projet via le menu, ou ouvrez la Documentation pour des références plus détaillées. Vous pouvez rejouer cette visite à tout moment via le menu."
+  "wizard.done.body": "Vous avez mené un scénario jusqu'à un épisode terminé. À partir d'ici : modifiez librement l'épisode d'entraînement, commencez un vrai projet via le menu, ou ouvrez la Documentation pour des références plus détaillées. Vous pouvez rejouer cette visite à tout moment via le menu.",
+  "common.undo": "Annuler",
+  "timeline.removeClip": "Supprimer de la chronologie"
 }

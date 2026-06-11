@@ -979,5 +979,7 @@
   "wizard.publish.title": "8 · Pubblicazione (una tappa del tour)",
   "wizard.publish.body": "Quando un episodio è pronto puoi pubblicarlo sul tuo sito MACU Web e collegare un video YouTube qui. Non pubblicheremo nulla durante la procedura guidata — è solo per farti sapere dove vive. Dai un'occhiata in giro, poi continua.",
   "wizard.done.title": "È l'intero ciclo!",
-  "wizard.done.body": "Hai portato uno script fino a un episodio finito. Da qui: modifica liberamente l'episodio di prova, inizia uno vero dal menu, o apri Docs per il riferimento più approfondito. Puoi ripetere questa procedura guidata in qualsiasi momento dal menu."
+  "wizard.done.body": "Hai portato uno script fino a un episodio finito. Da qui: modifica liberamente l'episodio di prova, inizia uno vero dal menu, o apri Docs per il riferimento più approfondito. Puoi ripetere questa procedura guidata in qualsiasi momento dal menu.",
+  "common.undo": "Annulla",
+  "timeline.removeClip": "Rimuovi dalla timeline"
 }

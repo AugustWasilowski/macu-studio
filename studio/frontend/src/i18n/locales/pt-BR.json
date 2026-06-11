@@ -978,5 +978,7 @@
   "wizard.publish.title": "8 · Publicação (um ponto de parada)",
   "wizard.publish.body": "Quando um episódio está pronto você pode publicá-lo no seu site MACU Web e vincular um vídeo do YouTube aqui. Não vamos publicar nada durante o passo-a-passo — é só para você saber onde fica. Dê uma olhada, depois continue.",
   "wizard.done.title": "É todo o ciclo!",
-  "wizard.done.body": "Você levou um script até um episódio finalizado. De aqui: edite livremente o episódio de prática, comece um real pelo menu, ou abra a Documentação para a referência completa. Você pode repetir este passo-a-passo quando quiser pelo menu."
+  "wizard.done.body": "Você levou um script até um episódio finalizado. De aqui: edite livremente o episódio de prática, comece um real pelo menu, ou abra a Documentação para a referência completa. Você pode repetir este passo-a-passo quando quiser pelo menu.",
+  "common.undo": "Desfazer",
+  "timeline.removeClip": "Remover do cronograma"
 }

@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publishing (tour stop)",
   "wizard.publish.body": "Markay episode-ka diyaar yahay waxaad isu daabicsan kartaa MACU Web site-ka iyo link YouTube video-ga halkan. Waxaan daabici mayno wax kastaa tallaalkan-jira — tallaalkan waxa uu yiqiin inaan lugar-sada jira. Eeg meel midig, markaasba wad.",
   "wizard.done.title": "Taasi waxa ay tahay loopdii oo dhan!",
-  "wizard.done.body": "Waxaad qaadatay script-ka tan iyo dhamaystir episode-ka. Halka halkan: edit-geli episode-ka casriga qaac, billow mid adag oo menu-ka, iyo ama fur Docs for the deeper reference. Tallaalkan-ga waxaad dib u ciyaari kartaa waqtiga kasta oo menu-ka."
+  "wizard.done.body": "Waxaad qaadatay script-ka tan iyo dhamaystir episode-ka. Halka halkan: edit-geli episode-ka casriga qaac, billow mid adag oo menu-ka, iyo ama fur Docs for the deeper reference. Tallaalkan-ga waxaad dib u ciyaari kartaa waqtiga kasta oo menu-ka.",
+  "common.undo": "Celin",
+  "timeline.removeClip": "Tirtir ka mid ahaan jadwalka"
 }

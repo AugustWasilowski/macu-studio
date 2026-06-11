@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Kuchapisha (hatua ya ziara)",
   "wizard.publish.body": "Wakati kihande kiko tayari unaweza kulichapisha kwenye saiti yako ya MACU Web na kuunganisha video ya YouTube hapa. Hatutachapisha chochote wakati wa mwongozo — hii ni tu ili ujue wapi inaishi. Angalia kuzunguka, kisha endelea.",
   "wizard.done.title": "Hiyo ndio kitanzi kizima!",
-  "wizard.done.body": "Ulichukua hati nzima hadi kihande kimetengenezwa. Kutoka hapa: badilisha kihande cha mazoezi kwa uhuru, anza halisi kutoka menyu, au fungua Hati za kumbukumbu kwa ajili ya rejea ya kina. Unaweza kurudia mwongozo huu wakati wowote kutoka menyu."
+  "wizard.done.body": "Ulichukua hati nzima hadi kihande kimetengenezwa. Kutoka hapa: badilisha kihande cha mazoezi kwa uhuru, anza halisi kutoka menyu, au fungua Hati za kumbukumbu kwa ajili ya rejea ya kina. Unaweza kurudia mwongozo huu wakati wowote kutoka menyu.",
+  "common.undo": "Tendua",
+  "timeline.removeClip": "Ondoa kwenye rekodi ya matukio"
 }

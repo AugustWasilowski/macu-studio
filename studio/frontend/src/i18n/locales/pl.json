@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publikacja (punkt z przewodnikiem)",
   "wizard.publish.body": "Gdy odcinek jest gotowy, możesz opublikować go na swojej stronie MACU Web i powiązać tutaj wideo YouTube. Nie będziemy publikować nic podczas przewodnika — to jest po prostu żebyś wiedział, gdzie to mieszka. Rozejrzyj się, następnie kontynuuj.",
   "wizard.done.title": "To cała pętla!",
-  "wizard.done.body": "Zabierałeś scenariusz aż do gotowego odcinka. Stąd: edytuj odcinek treningowy swobodnie, rozpocznij prawdziwy z menu, lub otwórz Docs, aby uzyskać głębszą referencję. Możesz powtórzyć ten przewodnik w dowolnym momencie z menu."
+  "wizard.done.body": "Zabierałeś scenariusz aż do gotowego odcinka. Stąd: edytuj odcinek treningowy swobodnie, rozpocznij prawdziwy z menu, lub otwórz Docs, aby uzyskać głębszą referencję. Możesz powtórzyć ten przewodnik w dowolnym momencie z menu.",
+  "common.undo": "Cofnij",
+  "timeline.removeClip": "Usuń z osi czasu"
 }

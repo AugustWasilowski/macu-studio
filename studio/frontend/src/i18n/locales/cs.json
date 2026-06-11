@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Publikování (zastávka průvodce)",
   "wizard.publish.body": "Když je epizoda připravena, můžete ji publikovat na svou MACU Web stránku a propojit zde video z YouTube. Během průvodce nic nepublikujeme — je to jen proto, abyste věděli, kde to žije. Podívejte se kolem a potom pokračujte.",
   "wizard.done.title": "To je celá smyčka!",
-  "wizard.done.body": "Vzali jste scénář až k hotové epizodě. Odtud: libovolně upravujte praktickou epizodu, začněte novou z menu nebo otevřete Docs pro hlubší reference. Tento průvodce si můžete přehrát kdykoli z menu."
+  "wizard.done.body": "Vzali jste scénář až k hotové epizodě. Odtud: libovolně upravujte praktickou epizodu, začněte novou z menu nebo otevřete Docs pro hlubší reference. Tento průvodce si můžete přehrát kdykoli z menu.",
+  "common.undo": "Zpět",
+  "timeline.removeClip": "Odebrat z časové osy"
 }

@@ -984,5 +984,7 @@
   "wizard.publish.title": "8 · Buga (a madadin jayayya)",
   "wizard.publish.body": "Lokacin da ɗan sari ya shiryar kuna iya bugawa shi zuwa sabon gida MACU kuma haɗa fina-finai YouTube nan. Ba za mu bug kome a lokacin jayayya — wannan shine kuma ka san inda ya zama. Sani a sa'a, sannan ci gaba.",
   "wizard.done.title": "Shi ne dukan madawwaki!",
-  "wizard.done.body": "Ka canza rubutu zuwa ɗan sari na gama. Daga nan: gyara ɗan sari na aiki da kyau, fara gaskiya daya daga menu, ko bugi Docs don bayani na zurfafa. Za ka iya sake jayayya nan daga menu a kowane lokaci."
+  "wizard.done.body": "Ka canza rubutu zuwa ɗan sari na gama. Daga nan: gyara ɗan sari na aiki da kyau, fara gaskiya daya daga menu, ko bugi Docs don bayani na zurfafa. Za ka iya sake jayayya nan daga menu a kowane lokaci.",
+  "common.undo": "Soke",
+  "timeline.removeClip": "Cire daga layi na lokaci"
 }

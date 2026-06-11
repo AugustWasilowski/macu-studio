@@ -971,5 +971,7 @@
   "wizard.publish.title": "8 · Julkaisu (kiertomainen pysähdys)",
   "wizard.publish.body": "Kun jakso on valmis, voit julkaista sen MACU Web-sivustollesi ja linkittää YouTube-videon tänne. Emme julkaise mitään opastuksen aikana — tämä on vain jotta tiedät missä se sijaitsee. Katso ympärille, sitten jatka.",
   "wizard.done.title": "Siinä koko silmukka!",
-  "wizard.done.body": "Otit käsikirjoituksen valmiiseen jaksoon asti. Täältä: muokkaa harjoitusjaksoa vapaasti, aloita oikea sarjasta valikosta, tai avaa Dokumentit syvemmän viitteen saamiseksi. Voit toistaa tämän opastuksen milloin tahansa valikosta."
+  "wizard.done.body": "Otit käsikirjoituksen valmiiseen jaksoon asti. Täältä: muokkaa harjoitusjaksoa vapaasti, aloita oikea sarjasta valikosta, tai avaa Dokumentit syvemmän viitteen saamiseksi. Voit toistaa tämän opastuksen milloin tahansa valikosta.",
+  "common.undo": "Kumoa",
+  "timeline.removeClip": "Poista aikajanalta"
 }
