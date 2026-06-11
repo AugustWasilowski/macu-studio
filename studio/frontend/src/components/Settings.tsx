@@ -50,16 +50,45 @@ export function Settings({ show, onClose }: { show: string; onClose: () => void 
 function ThemePanel() {
   const t = useT();
   const [sel, setSel] = useState(currentTheme());
+  const accents = THEMES.filter((th) => th.kind === "accent");
+  const fulls = THEMES.filter((th) => th.kind === "full");
+  const activeAccent = accents.find((a) => a.id === sel);
+  const pick = (id: string) => { setTheme(id); setSel(id); };
   return (
     <div className="flex flex-col gap-3">
       <div className="label-tiny">{t("settings.theme.title")}</div>
       <p className="label-tiny leading-relaxed">{t("settings.theme.help")}</p>
       <div className="flex flex-col gap-2">
-        {THEMES.map((th) => (
+        {/* The five accent presets live in ONE "Terminal" row — pick the color
+            by clicking its dot. (Theme names stay untranslated by design.) */}
+        <div className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft " + (activeAccent ? "btn-amber" : "")}>
+          <span className="flex items-center gap-2">
+            {accents.map((a) => (
+              <button
+                key={a.id}
+                title={a.label}
+                aria-label={a.label}
+                onClick={() => pick(a.id)}
+                className="rounded-full"
+                style={{
+                  width: 16, height: 16, background: a.accent, flexShrink: 0,
+                  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  transform: sel === a.id ? "scale(1.2)" : undefined,
+                  boxShadow: sel === a.id
+                    ? `0 0 0 2px var(--bg-1), 0 0 0 3.5px ${a.accent}, 0 0 8px ${a.accent}`
+                    : undefined,
+                }}
+              />
+            ))}
+          </span>
+          <span className="text-[12px]">Terminal</span>
+          {activeAccent && <span className="label-tiny ml-auto">{t("common.active")} · {activeAccent.label}</span>}
+        </div>
+        {fulls.map((th) => (
           <button
             key={th.id}
             className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (sel === th.id ? "btn-amber" : "hover:bg-bg-3")}
-            onClick={() => { setTheme(th.id); setSel(th.id); }}
+            onClick={() => pick(th.id)}
           >
             <span className="flex items-center gap-1">
               {(th.swatch ?? [th.accent]).map((c, i) => (
