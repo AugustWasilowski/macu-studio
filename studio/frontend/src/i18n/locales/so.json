@@ -986,5 +986,10 @@
   "wizard.done.title": "Taasi waxa ay tahay loopdii oo dhan!",
   "wizard.done.body": "Waxaad qaadatay script-ka tan iyo dhamaystir episode-ka. Halka halkan: edit-geli episode-ka casriga qaac, billow mid adag oo menu-ka, iyo ama fur Docs for the deeper reference. Tallaalkan-ga waxaad dib u ciyaari kartaa waqtiga kasta oo menu-ka.",
   "common.undo": "Celin",
-  "timeline.removeClip": "Tirtir ka mid ahaan jadwalka"
+  "timeline.removeClip": "Tirtir ka mid ahaan jadwalka",
+  "tour.theme.title": "Dhig inoo leh",
+  "tour.theme.body": "Isgaarsiinaha → Jilka (menu-kan) ayaa dib u dhakhatiri karta Studio buuxa oo dhan: terminal amber leh laba lagu dhajiyay, iyo shan guddiyad — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, iyo Pretty Princess. Beddelka waa dhakhso ah oo la xusuusto.",
+  "wizard.theme.title": "Dooro muuqaalkaaga",
+  "wizard.theme.body": "Intaanan waxkabuur, dhig agtada inoo leh. Fur menu-ga projects (kaas midig) → Isgaarsiinaha → Jilka. Dhig webka midka color row Terminal ah si deg deg ah ama isku day jilk buuxa sida Starship ama Movie Palace. Waxaa saldhiga ah oo barkootada ah browser-kaan.",
+  "wizard.theme.goal": "Dooro jilk kasta — ama dhaaf terminal amber leh oo wad joogtaan."
 }

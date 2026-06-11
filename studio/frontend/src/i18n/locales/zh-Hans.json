@@ -986,5 +986,10 @@
   "wizard.done.title": "这就是全部流程！",
   "wizard.done.body": "您已经将一个剧本制作成了一个完整的片段。从这里：自由编辑练习片段，从菜单开始一个真实的片段，或打开文档以获取更深入的参考。您可以随时从菜单重放此演练。",
   "common.undo": "撤销",
-  "timeline.removeClip": "从时间线移除"
+  "timeline.removeClip": "从时间线移除",
+  "tour.theme.title": "属于你的风格",
+  "tour.theme.body": "设置 → 主题（在此菜单中）可以重新设计整个 MACU Studio：琥珀色终端加五种强调色，以及完整主题——Starship、Wasteland、Slate Pro、Movie Palace、Dracula 和 Pretty Princess。切换即时生效并被记住。",
+  "wizard.theme.title": "选择你的风格",
+  "wizard.theme.body": "在我们开始制作前，先让这间工作室属于你。打开项目菜单（左上角）→ 设置 → 主题。点击终端行上的颜色点快速更换强调色，或尝试完整主题如 Starship 或 Movie Palace。更改即时生效并保存在此浏览器中。",
+  "wizard.theme.goal": "选择任何主题——或保持琥珀色终端并继续。"
 }

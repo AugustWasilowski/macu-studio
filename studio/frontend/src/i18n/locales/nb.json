@@ -986,5 +986,10 @@
   "wizard.done.title": "Det er hele løkken!",
   "wizard.done.body": "Du tok et manus hele veien til en ferdig episode. Herfra: rediger øvingsepisoden fritt, start en riktig fra menyen, eller åpne Docs for den dypere referansen. Du kan gjenta denne gjennomgangen når som helst fra menyen.",
   "common.undo": "Angre",
-  "timeline.removeClip": "Fjern fra tidslinje"
+  "timeline.removeClip": "Fjern fra tidslinje",
+  "tour.theme.title": "Gjør det til ditt",
+  "tour.theme.body": "Innstillinger → Tema (i denne menyen) gir studio-et et nytt utseende: den gule terminalen med fem aksentfarger, pluss fulle temaer — Starship, Wasteland, Slate Pro, Movie Palace, Dracula og Pretty Princess. Bytte er øyeblikkelig og huskes.",
+  "wizard.theme.title": "Velg ditt utseende",
+  "wizard.theme.body": "Før vi bygger noe, gjør rommet ditt. Åpne prosjektmenyen (øvre venstre) → Innstillinger → Tema. Klikk en fargeprikk på Terminal-raden for rask aksentendring, eller prøv et fullt tema som Starship eller Movie Palace. Det brukes øyeblikkelig og lagres i denne nettleseren.",
+  "wizard.theme.goal": "Velg et tema — eller behold den gule terminalen og fortsett."
 }

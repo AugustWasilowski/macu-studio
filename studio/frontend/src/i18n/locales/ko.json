@@ -985,5 +985,10 @@
   "wizard.done.title": "전체 과정입니다!",
   "wizard.done.body": "스크립트에서 완성된 에피소드까지 만들었습니다. 여기서: 연습용 에피소드를 자유롭게 편집하거나, 메뉴에서 실제 에피소드를 시작하거나, 더 자세한 참고용으로 Docs를 열어보세요. 언제든지 메뉴에서 이 투어를 다시 재생할 수 있습니다.",
   "common.undo": "실행 취소",
-  "timeline.removeClip": "타임라인에서 제거"
+  "timeline.removeClip": "타임라인에서 제거",
+  "tour.theme.title": "당신만의 스튜디오 만들기",
+  "tour.theme.body": "설정 → Theme (이 메뉴 내)으로 전체 스튜디오를 다시 스타일링할 수 있습니다: 다섯 가지 악센트 컬러의 앰버 터미널, 그리고 Starship, Wasteland, Slate Pro, Movie Palace, Dracula, Pretty Princess 같은 풀 테마들이 있습니다. 테마 전환은 즉시 반영되고 저장됩니다.",
+  "wizard.theme.title": "당신의 스타일 선택하기",
+  "wizard.theme.body": "뭔가를 만들기 전에 먼저 스튜디오를 당신만의 공간으로 만들어봅시다. 프로젝트 메뉴(좌측 상단) → 설정 → Theme을 엽니다. Terminal 행의 색상 점을 클릭하면 빠른 악센트 변경이 가능하고, Starship이나 Movie Palace 같은 풀 테마를 시도해볼 수 있습니다. 즉시 적용되며 이 브라우저에 저장됩니다.",
+  "wizard.theme.goal": "아무 테마나 선택하세요 — 또는 앰버 터미널을 유지하고 계속 진행하세요."
 }

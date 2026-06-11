@@ -984,5 +984,10 @@
   "wizard.done.title": "Ez az egész ciklus!",
   "wizard.done.body": "Végighoztál egy forgatókönyvet egy kész epizódig. Innen: szerkeszd szabadon a gyakorló epizódot, indíts egy valódit a menüből, vagy nyisd meg a Docs-ot a mélyebb referenciához. Ezt a bemutatót bármikor visszajátszhatod a menüből.",
   "common.undo": "Visszavonás",
-  "timeline.removeClip": "Eltávolítás az idővonalból"
+  "timeline.removeClip": "Eltávolítás az idővonalból",
+  "tour.theme.title": "Tedd a sajátoddá",
+  "tour.theme.body": "Beállítások → Téma (ebben a menüben) átrendezi az egész studiót: a borostyán terminál öt hangsúlyszínnel, valamint teljes megjelenések – Starship, Wasteland, Slate Pro, Movie Palace, Dracula és Pretty Princess. A váltás pillanatnyilag megtörténik és megjegyzésre kerül.",
+  "wizard.theme.title": "Válassz kinézetet",
+  "wizard.theme.body": "Mielőtt bármit is elkészítünk, tedd a szobát a sajátoddá. Nyisd meg a projekt menüt (bal felső) → Beállítások → Téma. Kattints egy színpontra a Terminal sorban a gyors hangsúlyváltáshoz, vagy próbálj ki egy teljes témát, mint a Starship vagy Movie Palace. Ez azonnal érvényre lép és ebben a böngészőben mentésre kerül.",
+  "wizard.theme.goal": "Válassz bármelyik témát – vagy tartsd meg a borostyán terminált és lépj tovább."
 }

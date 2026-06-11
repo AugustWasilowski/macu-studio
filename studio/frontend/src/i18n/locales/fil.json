@@ -986,5 +986,10 @@
   "wizard.done.title": "Iyan na ang buong loop!",
   "wizard.done.body": "Dala mo ang isang script hanggang sa isang tapos na episode. Mula dito: i-edit ang practice episode nang libre, magsimula ng tunay na mula sa menu, o buksan ang Docs para sa mas malalim na sanggunian. Maaari mong i-replay ang pagsusuring ito anumang oras mula sa menu.",
   "common.undo": "I-undo",
-  "timeline.removeClip": "Alisin mula sa timeline"
+  "timeline.removeClip": "Alisin mula sa timeline",
+  "tour.theme.title": "Gawin itong sa iyo",
+  "tour.theme.body": "Mga Setting → Tema (sa menu na ito) ay nag-restyle ng buong studio: ang amber terminal na may limang kulay sa aksento, kasama ang buong hitsura — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, at Pretty Princess. Ang pagpalit ay agarang nangyayari at naaalala.",
+  "wizard.theme.title": "Piliin ang iyong hitsura",
+  "wizard.theme.body": "Bago kami bumuo ng kahit ano, gawing sa iyo ang silid. Buksan ang menu ng proyekto (sa itaas-kaliwa) → Mga Setting → Tema. Mag-click ng kulay na tuldok sa hilera ng Terminal para sa mabilis na pagbabago ng aksento, o subukan ang buong tema tulad ng Starship o Movie Palace. Ito ay inilalapat kaagad at nakakatipid sa browser na ito.",
+  "wizard.theme.goal": "Pumili ng anumang tema — o panatilihin ang amber terminal at magpatuloy."
 }

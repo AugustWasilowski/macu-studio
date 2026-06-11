@@ -71,6 +71,12 @@ export const TOUR_STEPS: TourStep[] = [
     bodyKey: "tour.gitSync.body",
   },
   {
+    // Theme picker lives in the project menu → Settings (default tab).
+    target: '[data-tour="file-menu"]',
+    titleKey: "tour.theme.title",
+    bodyKey: "tour.theme.body",
+  },
+  {
     // Centered card — the MCP server has no UI control to spotlight.
     target: null,
     titleKey: "tour.mcp.title",

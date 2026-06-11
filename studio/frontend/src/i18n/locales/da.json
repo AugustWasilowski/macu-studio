@@ -986,5 +986,10 @@
   "wizard.done.title": "Det er hele cyklussen!",
   "wizard.done.body": "Du tog et script hele vejen til en færdig episode. Herfra: rediger øvelsesepisoden frit, start en rigtig fra menuen, eller åbn Docs for den dybere reference. Du kan genlyder denne gennemgang når som helst fra menuen.",
   "common.undo": "Fortryd",
-  "timeline.removeClip": "Fjern fra tidslinje"
+  "timeline.removeClip": "Fjern fra tidslinje",
+  "tour.theme.title": "Gør det til dit eget",
+  "tour.theme.body": "Indstillinger → Tema (i denne menu) omkonfigurerer hele studiet: terminalen i amber med fem accentfarver plus fulde udseender — Starship, Wasteland, Slate Pro, Movie Palace, Dracula og Pretty Princess. Skift sker øjeblikkeligt og huskes.",
+  "wizard.theme.title": "Vælg dit look",
+  "wizard.theme.body": "Før vi bygger noget, skal du gøre rummet til dit eget. Åbn projektmenuen (øverst til venstre) → Indstillinger → Tema. Klik på en farve-prik på Terminal-rækken for hurtigt at ændre accent, eller prøv et fuldt tema som Starship eller Movie Palace. Det anvendes øjeblikkeligt og gemmes i denne browser.",
+  "wizard.theme.goal": "Vælg et tema — eller behold terminalen i amber og gå videre."
 }

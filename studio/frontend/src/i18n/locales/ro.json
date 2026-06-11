@@ -986,5 +986,10 @@
   "wizard.done.title": "Asta-i toată bucla!",
   "wizard.done.body": "Ați dus un script până la un episod terminat. De aici: editați episodul de practică liber, porniți unul real din meniu, sau deschideți Docs pentru referința mai profundă. Puteți relua acest ghid oricând din meniu.",
   "common.undo": "Anulează",
-  "timeline.removeClip": "Șterge din cronologie"
+  "timeline.removeClip": "Șterge din cronologie",
+  "tour.theme.title": "Fă-l al tău",
+  "tour.theme.body": "Setări → Temă (în acest meniu) restyling-ul întregului studio: terminalul auriu cu cinci culori de accent, plus teme complete — Starship, Wasteland, Slate Pro, Movie Palace, Dracula și Pretty Princess. Schimbarea este instantanee și se memorizează.",
+  "wizard.theme.title": "Alege-ți aspectul",
+  "wizard.theme.body": "Înainte să construim ceva, fă camera a ta. Deschide meniul proiectului (stânga sus) → Setări → Temă. Clic pe un punct de culoare în rândul Terminal pentru o schimbare rapidă de accent, sau încearcă o temă completă precum Starship sau Movie Palace. Se aplică instantaneu și se salvează în acest browser.",
+  "wizard.theme.goal": "Alege orice temă — sau păstrează terminalul auriu și continuă."
 }

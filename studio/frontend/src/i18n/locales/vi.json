@@ -984,5 +984,10 @@
   "wizard.done.title": "Đó là toàn bộ vòng lặp!",
   "wizard.done.body": "Bạn đã đưa một kịch bản đến một tập hoàn thành. Từ đây: chỉnh sửa tập luyện tập tự do, bắt đầu một tập thực sự từ menu, hoặc mở Docs để có tài liệu tham khảo sâu hơn. Bạn có thể phát lại hướng dẫn này bất kỳ lúc nào từ menu.",
   "common.undo": "Hoàn tác",
-  "timeline.removeClip": "Xóa khỏi dòng thời gian"
+  "timeline.removeClip": "Xóa khỏi dòng thời gian",
+  "tour.theme.title": "Làm cho nó của riêng bạn",
+  "tour.theme.body": "Cài đặt → Chủ đề (trong menu này) làm lại phong cách toàn bộ studio: terminal màu hổ phách với năm màu nhấn, cộng với các giao diện đầy đủ — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, và Pretty Princess. Chuyển đổi là tức thì và được ghi nhớ.",
+  "wizard.theme.title": "Chọn giao diện của bạn",
+  "wizard.theme.body": "Trước khi chúng ta xây dựng bất cứ điều gì, hãy làm cho phòng này trở thành của riêng bạn. Mở menu dự án (góc trên cùng bên trái) → Cài đặt → Chủ đề. Nhấp vào một chấm màu trên hàng Terminal để thay đổi nhấn nhanh chóng, hoặc hãy thử một chủ đề đầy đủ như Starship hoặc Movie Palace. Nó được áp dụng ngay lập tức và được lưu trong trình duyệt này.",
+  "wizard.theme.goal": "Chọn bất kỳ chủ đề nào — hoặc giữ lại terminal màu hổ phách và tiếp tục."
 }

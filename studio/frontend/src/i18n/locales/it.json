@@ -981,5 +981,10 @@
   "wizard.done.title": "È l'intero ciclo!",
   "wizard.done.body": "Hai portato uno script fino a un episodio finito. Da qui: modifica liberamente l'episodio di prova, inizia uno vero dal menu, o apri Docs per il riferimento più approfondito. Puoi ripetere questa procedura guidata in qualsiasi momento dal menu.",
   "common.undo": "Annulla",
-  "timeline.removeClip": "Rimuovi dalla timeline"
+  "timeline.removeClip": "Rimuovi dalla timeline",
+  "tour.theme.title": "Rendilo tuo",
+  "tour.theme.body": "Impostazioni → Tema (in questo menu) ridisegna l'intero studio: il terminale ambra con cinque colori di accento, più temi completi — Starship, Wasteland, Slate Pro, Movie Palace, Dracula e Pretty Princess. Cambiare tema è istantaneo e rimane memorizzato.",
+  "wizard.theme.title": "Scegli il tuo stile",
+  "wizard.theme.body": "Prima di creare qualcosa, personalizza lo spazio. Apri il menu progetto (in alto a sinistra) → Impostazioni → Tema. Fai clic su un punto di colore nella riga Terminale per un cambio di accento rapido, oppure prova un tema completo come Starship o Movie Palace. Si applica istantaneamente e viene salvato in questo browser.",
+  "wizard.theme.goal": "Scegli qualsiasi tema — oppure mantieni il terminale ambra e continua."
 }

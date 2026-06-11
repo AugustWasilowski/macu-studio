@@ -986,5 +986,10 @@
   "wizard.done.title": "ይህ ሙሉ ሉፕ ነው!",
   "wizard.done.body": "ቅሪጦትን ከ ጀርባ ሙሉ ክፍል መወሰድ ወሰድክ። ከዚህ ወደ ላይ: የልምምድ ክፍል ራሳችሁ በሙሉ ደራሽ ወይም ምናሌ ነገር ላይ ጀንብ ወይም የ Docs ክፈት ለ ጥልቅ ማገናዛ። ምናሌ ውስጥ ከ ማንኛውም ጊዜ ይህ ጉብዝናውን ያስተናግዱ።",
   "common.undo": "ይመልሱ",
-  "timeline.removeClip": "ከታይምላይን ያስወግዱ"
+  "timeline.removeClip": "ከታይምላይን ያስወግዱ",
+  "tour.theme.title": "የራስህን ስሪት አድርገው",
+  "tour.theme.body": "ቅናሾች → ገጽታ (በዚህ ምናሌ ውስጥ) ሙሉውን ስቱዲዮ ይሰልቃል፦ amber terminal ከአምስት ድምጽ ቀለሞች ጋር፣ ምልክት ሙሉ ገጽታዎች — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, እና Pretty Princess። ዝግጅትቱ ወዲያውኑ ሆኖ ይታወሳል።",
+  "wizard.theme.title": "ገጽታችሁን ምረጡ",
+  "wizard.theme.body": "በመገንባት ፊት ክፍሉን ወደራስህ አድርገው። የፕሮጀክት ምናሌውን (በላይ-ግራ) ይክፈቱ → ቅናሾች → ገጽታ። በ Terminal ረድፍ ላይ ቀለም ነጥብ ለፍጥር ድምጽ ለውጥ ወይም Starship ወይም Movie Palace ያሉ ሙሉ ገጽታ ሞክሩ። ወዲያውኑ ተፈጸመ ከዚህ browser ውስጥ ተቀምጧል።",
+  "wizard.theme.goal": "ማንኛውንም ገጽታ ይምረጡ — ወይም amber terminal ይዘውት ይቀጥሉ።"
 }

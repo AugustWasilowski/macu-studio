@@ -994,5 +994,10 @@
   "wizard.publish.title": "8 · Publishing (a tour stop)",
   "wizard.publish.body": "When an episode is ready you can publish it to your MACU Web site and link a YouTube video here. We won't publish anything during the walkthrough — this is just so you know where it lives. Have a look around, then continue.",
   "wizard.done.title": "That's the whole loop!",
-  "wizard.done.body": "You took a script all the way to a finished episode. From here: edit the practice episode freely, start a real one from the menu, or open Docs for the deeper reference. You can replay this walkthrough any time from the menu."
+  "wizard.done.body": "You took a script all the way to a finished episode. From here: edit the practice episode freely, start a real one from the menu, or open Docs for the deeper reference. You can replay this walkthrough any time from the menu.",
+  "tour.theme.title": "Make it yours",
+  "tour.theme.body": "Settings → Theme (in this menu) restyles the whole studio: the amber terminal with five accent colors, plus full looks — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, and Pretty Princess. Switching is instant and remembered.",
+  "wizard.theme.title": "Pick your look",
+  "wizard.theme.body": "Before we build anything, make the room yours. Open the project menu (top-left) → Settings → Theme. Click a color dot on the Terminal row for a quick accent change, or try a full theme like Starship or Movie Palace. It applies instantly and is saved in this browser.",
+  "wizard.theme.goal": "Pick any theme — or keep the amber terminal and move on."
 }

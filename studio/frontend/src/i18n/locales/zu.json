@@ -986,5 +986,10 @@
   "wizard.done.title": "Lena indawo yonke! ",
   "wizard.done.body": "Wuthathe umbhalo ngabakho uze wafika ku-episode eyayigcina. Kusukela lapha: shintsha i-episode yokuqwashela ngokungokhonza, qala eyangempela emenyueni, noma vula idokhumenti yonobuhlakani. Ungayilalisela lomhlahlandlela noma nini kusukela kumenyui.",
   "common.undo": "Hlehlisa",
-  "timeline.removeClip": "Susa ku-timeline"
+  "timeline.removeClip": "Susa ku-timeline",
+  "tour.theme.title": "Yenza okwakho",
+  "tour.theme.body": "Ukwamukela → Imisebenzi Yezinto (kuleli menu) iyalungisa istilo se-studio yonke: terminal ye-amber enenombolo yamagagu amahlanu, kanye nokulandelana okugcwele — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, kanye nePretty Princess. Ukushintsha kwenzeka ngangu3 nokugcinwa.",
+  "wizard.theme.title": "Khetha umkhombandlela wakho",
+  "wizard.theme.body": "Ngaphambi kokwakha lutho, wenze ikamelelo lakho. Vula imenyu yekhethweni (ngaphakathi kwekheli) → Ukwamukela → Imisebenzi Yezinto. Uchofoza iphoyinti lenombolo kumsela weTerminal ukuze ushintshwe umkhombandlela ofulathele, noma zama itheme ephelele efana neStarship noma Movie Palace. Kusebenza ngokushesha futhi kugcinwa ku-browser yakho.",
+  "wizard.theme.goal": "Khetha noma iyiphi itheme — noma gcina i-terminal ye-amber uphume."
 }

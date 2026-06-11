@@ -986,5 +986,10 @@
   "wizard.done.title": "¡Ese es todo el ciclo!",
   "wizard.done.body": "Llevaste un guión hasta un episodio terminado. De aquí en adelante: edita el episodio de práctica libremente, comienza uno real desde el menú, o abre Docs para la referencia más profunda. Puedes repetir este recorrido cuando quieras desde el menú.",
   "common.undo": "Deshacer",
-  "timeline.removeClip": "Eliminar del cronograma"
+  "timeline.removeClip": "Eliminar del cronograma",
+  "tour.theme.title": "Hazlo tuyo",
+  "tour.theme.body": "Configuración → Tema (en este menú) reestiliza todo el estudio: la terminal ámbar con cinco colores de acento, más temas completos — Starship, Wasteland, Slate Pro, Movie Palace, Dracula y Pretty Princess. El cambio es instantáneo y se recuerda.",
+  "wizard.theme.title": "Elige tu estilo",
+  "wizard.theme.body": "Antes de crear nada, haz el espacio tuyo. Abre el menú de proyecto (arriba a la izquierda) → Configuración → Tema. Haz clic en un punto de color en la fila Terminal para cambiar el acento rápidamente, o prueba un tema completo como Starship o Movie Palace. Se aplica al instante y se guarda en este navegador.",
+  "wizard.theme.goal": "Elige cualquier tema — o mantén la terminal ámbar y continúa."
 }

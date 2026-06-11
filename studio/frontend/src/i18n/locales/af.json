@@ -983,5 +983,10 @@
   "wizard.done.title": "Dit is die hele lus!",
   "wizard.done.body": "U het ʼn skrip al die manier na ʼn voltooide episode geneem. Van hier af: wysig die oefepisode vry, begin ʼn regte een vanuit die menu, of open Dokumente vir die dieper verwysing. U kan hierdie oorsig enige tyd vanuit die menu herhaal.",
   "common.undo": "Ongedaan maak",
-  "timeline.removeClip": "Verwyder van tydlyn"
+  "timeline.removeClip": "Verwyder van tydlyn",
+  "tour.theme.title": "Maak dit joune",
+  "tour.theme.body": "Instellings → Tema (in hierdie menu) herstel die hele studio: die amber terminaal met vyf aksent-kleure, plus volledige uitsiene — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, en Pretty Princess. Omskakeling is oombliklik en word onthou.",
+  "wizard.theme.title": "Kies jou voorkoms",
+  "wizard.theme.body": "Voordat ons iets bou, maak die ruimte joune. Open die projektkieslys (linkerkant bo) → Instellings → Tema. Klik op 'n kleurstip op die Terminaal-ry vir 'n vinnige aksent-verandering, of probeer 'n volledige tema soos Starship of Movie Palace. Dit word onmiddellik toegepas en word in hierdie webblaaier gestoor.",
+  "wizard.theme.goal": "Kies enige tema — of hou die amber terminaal en gaan voort."
 }

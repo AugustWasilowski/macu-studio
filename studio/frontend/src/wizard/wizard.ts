@@ -39,6 +39,14 @@ export const WIZARD_STEPS: WizardStep[] = [
     action: "createEpisode",
   },
   {
+    // Cosmetic, ungated: point at the theme picker before the real work starts.
+    id: "theme",
+    titleKey: "wizard.theme.title",
+    bodyKey: "wizard.theme.body",
+    goalKey: "wizard.theme.goal",
+    optional: true,
+  },
+  {
     id: "script",
     stage: "script",
     titleKey: "wizard.script.title",

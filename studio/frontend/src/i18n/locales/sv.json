@@ -986,5 +986,10 @@
   "wizard.done.title": "Det är hela loopen!",
   "wizard.done.body": "Du tog ett manus hela vägen till ett avslutat avsnitt. Härifrån: redigera övningsavsnittet fritt, starta ett riktigt från menyn, eller öppna Docs för den djupare referensen. Du kan spela denna genomgång när som helst från menyn.",
   "common.undo": "Ångra",
-  "timeline.removeClip": "Ta bort från tidslinje"
+  "timeline.removeClip": "Ta bort från tidslinje",
+  "tour.theme.title": "Gör det ditt",
+  "tour.theme.body": "Inställningar → Tema (i denna meny) omformar hela studion: den orange terminalen med fem accentfärger, plus fullständiga teman — Starship, Wasteland, Slate Pro, Movie Palace, Dracula och Pretty Princess. Byte är omedelbar och sparas.",
+  "wizard.theme.title": "Välj ditt utseende",
+  "wizard.theme.body": "Innan vi bygger något, gör rummet ditt. Öppna projektmenyn (överst till vänster) → Inställningar → Tema. Klicka på en färgprick på Terminal-raden för en snabb accentförändring, eller prova ett fullständigt tema som Starship eller Movie Palace. Det tillämpas omedelbar och sparas i denna webbläsare.",
+  "wizard.theme.goal": "Välj vilket tema som helst — eller behåll den orange terminalen och fortsätt."
 }

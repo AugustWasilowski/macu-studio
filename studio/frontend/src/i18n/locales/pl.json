@@ -986,5 +986,10 @@
   "wizard.done.title": "To cała pętla!",
   "wizard.done.body": "Zabierałeś scenariusz aż do gotowego odcinka. Stąd: edytuj odcinek treningowy swobodnie, rozpocznij prawdziwy z menu, lub otwórz Docs, aby uzyskać głębszą referencję. Możesz powtórzyć ten przewodnik w dowolnym momencie z menu.",
   "common.undo": "Cofnij",
-  "timeline.removeClip": "Usuń z osi czasu"
+  "timeline.removeClip": "Usuń z osi czasu",
+  "tour.theme.title": "Zrób to swoim",
+  "tour.theme.body": "Ustawienia → Motyw (w tym menu) zmienia styl całego studia: bursztynowy terminal z pięcioma kolorami akcentu, plus pełne wyglądy — Starship, Wasteland, Slate Pro, Movie Palace, Dracula i Pretty Princess. Zmiana jest natychmiastowa i zapamiętana.",
+  "wizard.theme.title": "Wybierz swój wygląd",
+  "wizard.theme.body": "Zanim cokolwiek zbudujemy, dostosuj sobie pokój. Otwórz menu projektu (lewy górny róg) → Ustawienia → Motyw. Kliknij kolorową kropkę w wierszu Terminal, aby szybko zmienić kolor akcentu, lub spróbuj pełny motyw, taki jak Starship lub Movie Palace. Stosuje się natychmiast i jest zapisany w tej przeglądarce.",
+  "wizard.theme.goal": "Wybierz dowolny motyw — lub zatrzymaj bursztynowy terminal i przejdź dalej."
 }

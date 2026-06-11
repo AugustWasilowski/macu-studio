@@ -973,5 +973,10 @@
   "wizard.done.title": "Siinä koko silmukka!",
   "wizard.done.body": "Otit käsikirjoituksen valmiiseen jaksoon asti. Täältä: muokkaa harjoitusjaksoa vapaasti, aloita oikea sarjasta valikosta, tai avaa Dokumentit syvemmän viitteen saamiseksi. Voit toistaa tämän opastuksen milloin tahansa valikosta.",
   "common.undo": "Kumoa",
-  "timeline.removeClip": "Poista aikajanalta"
+  "timeline.removeClip": "Poista aikajanalta",
+  "tour.theme.title": "Tee siitä omasi",
+  "tour.theme.body": "Asetukset → Teema (tässä valikossa) muuttaa koko studion ulkoasun: keltaisen päätelaitteen viidellä aksenttivärin vaihtoehdolla, sekä kokonaisilla teemoilla — Starship, Wasteland, Slate Pro, Movie Palace, Dracula ja Pretty Princess. Vaihtaminen on välitöntä ja muutos säilyy muistissa.",
+  "wizard.theme.title": "Valitse ulkoasu",
+  "wizard.theme.body": "Ennen kuin aloitamme, tee huoneesta omasi. Avaa projektivalikko (vasemmassa yläkulmassa) → Asetukset → Teema. Napsauta väripistettä Terminal-rivillä nopeaksi aksentinvaihdoksi tai kokeile täyttä teemaa, kuten Starship tai Movie Palace. Muutos tulee voimaan välittömästi ja tallennetaan selaimessasi.",
+  "wizard.theme.goal": "Valitse mikä tahansa teema — tai pidä keltainen päätelaite ja jatka eteenpäin."
 }

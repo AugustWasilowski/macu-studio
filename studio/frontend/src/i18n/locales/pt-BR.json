@@ -980,5 +980,10 @@
   "wizard.done.title": "É todo o ciclo!",
   "wizard.done.body": "Você levou um script até um episódio finalizado. De aqui: edite livremente o episódio de prática, comece um real pelo menu, ou abra a Documentação para a referência completa. Você pode repetir este passo-a-passo quando quiser pelo menu.",
   "common.undo": "Desfazer",
-  "timeline.removeClip": "Remover do cronograma"
+  "timeline.removeClip": "Remover do cronograma",
+  "tour.theme.title": "Deixe seu jeito",
+  "tour.theme.body": "Configurações → Tema (neste menu) reformula todo o studio: o terminal âmbar com cinco cores de destaque, além de temas completos — Starship, Wasteland, Slate Pro, Movie Palace, Dracula e Pretty Princess. A mudança é instantânea e fica memorizada.",
+  "wizard.theme.title": "Escolha seu visual",
+  "wizard.theme.body": "Antes de criarmos algo, deixe a sala do seu jeito. Abra o menu do projeto (canto superior esquerdo) → Configurações → Tema. Clique em um ponto de cor na linha Terminal para mudar rapidamente a cor de destaque, ou experimente um tema completo como Starship ou Movie Palace. Aplica-se instantaneamente e é salvo neste navegador.",
+  "wizard.theme.goal": "Escolha qualquer tema — ou mantenha o terminal âmbar e continue."
 }

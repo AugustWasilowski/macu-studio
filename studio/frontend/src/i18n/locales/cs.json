@@ -986,5 +986,10 @@
   "wizard.done.title": "To je celá smyčka!",
   "wizard.done.body": "Vzali jste scénář až k hotové epizodě. Odtud: libovolně upravujte praktickou epizodu, začněte novou z menu nebo otevřete Docs pro hlubší reference. Tento průvodce si můžete přehrát kdykoli z menu.",
   "common.undo": "Zpět",
-  "timeline.removeClip": "Odebrat z časové osy"
+  "timeline.removeClip": "Odebrat z časové osy",
+  "tour.theme.title": "Udělej si to po svém",
+  "tour.theme.body": "Nastavení → Motiv (v tomto menu) přestylizuje celé studio: jantarový terminál s pěti barvami zvýraznění, plus kompletní motivy — Starship, Wasteland, Slate Pro, Movie Palace, Dracula a Pretty Princess. Přepínání je okamžité a zapamatované.",
+  "wizard.theme.title": "Vyber si svůj styl",
+  "wizard.theme.body": "Než cokoli vytvoříme, udělej si místnost po svém. Otevři nabídku projektu (vlevo nahoře) → Nastavení → Motiv. Klikni na barevný bod v řadě Terminal pro rychlou změnu zvýraznění, nebo vyzkoušej kompletní motiv jako Starship nebo Movie Palace. Použije se okamžitě a uloží se v tomto prohlížeči.",
+  "wizard.theme.goal": "Vyber si libovolný motiv — nebo ponech jantarový terminál a pokračuj dál."
 }

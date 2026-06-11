@@ -986,5 +986,10 @@
   "wizard.done.title": "Dat is de hele loop!",
   "wizard.done.body": "Je hebt een script helemaal naar een afgeronde episode genomen. Van hier af: bewerk de oefenepisode vrijelijk, start er een echte vanuit het menu, of open Docs voor de diepere referentie. Je kunt deze rondleiding op elk moment vanuit het menu opnieuw afspelen.",
   "common.undo": "Ongedaan maken",
-  "timeline.removeClip": "Uit timeline verwijderen"
+  "timeline.removeClip": "Uit timeline verwijderen",
+  "tour.theme.title": "Maak het van jezelf",
+  "tour.theme.body": "Instellingen → Thema (in dit menu) geeft de hele studio een nieuw uiterlijk: de amberachtige terminal met vijf accentkleuren, plus volledige thema's — Starship, Wasteland, Slate Pro, Movie Palace, Dracula en Pretty Princess. Wisselen gebeurt direct en wordt onthouden.",
+  "wizard.theme.title": "Kies je uiterlijk",
+  "wizard.theme.body": "Voordat we iets gaan maken, personaliseer je ruimte. Open het projectmenu (linksbovenin) → Instellingen → Thema. Klik op een kleurpunt in de Terminal-rij voor een snelle accentwijziging, of probeer een volledig thema zoals Starship of Movie Palace. Dit wordt direct toegepast en opgeslagen in deze browser.",
+  "wizard.theme.goal": "Kies een thema naar keuze — of houd de amberachtige terminal en ga door."
 }

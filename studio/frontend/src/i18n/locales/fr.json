@@ -986,5 +986,10 @@
   "wizard.done.title": "Et voilà !",
   "wizard.done.body": "Vous avez mené un scénario jusqu'à un épisode terminé. À partir d'ici : modifiez librement l'épisode d'entraînement, commencez un vrai projet via le menu, ou ouvrez la Documentation pour des références plus détaillées. Vous pouvez rejouer cette visite à tout moment via le menu.",
   "common.undo": "Annuler",
-  "timeline.removeClip": "Supprimer de la chronologie"
+  "timeline.removeClip": "Supprimer de la chronologie",
+  "tour.theme.title": "Faites-le vôtre",
+  "tour.theme.body": "Paramètres → Thème (dans ce menu) redessine tout le studio : le terminal ambre avec cinq couleurs d'accent, plus des thèmes complets — Starship, Wasteland, Slate Pro, Movie Palace, Dracula et Pretty Princess. Le changement est instantané et mémorisé.",
+  "wizard.theme.title": "Choisissez votre style",
+  "wizard.theme.body": "Avant de créer quelque chose, rendez la salle vôtre. Ouvrez le menu du projet (en haut à gauche) → Paramètres → Thème. Cliquez sur un point de couleur dans la ligne Terminal pour un changement d'accent rapide, ou essayez un thème complet comme Starship ou Movie Palace. Il s'applique instantanément et est enregistré dans ce navigateur.",
+  "wizard.theme.goal": "Choisissez n'importe quel thème — ou conservez le terminal ambre et continuez."
 }

@@ -986,5 +986,10 @@
   "wizard.done.title": "Tüm döngü bu kadar!",
   "wizard.done.body": "Bir senaryoyu baştan sonuna hazır bir bölüme dönüştürdünüz. Buradan: pratik bölümü serbestçe düzenleyin, menüden gerçek birini başlatın veya daha derin referans için Docs'u açın. Bu rehberli turu istediğiniz zaman menüden yeniden oynayabilirsiniz.",
   "common.undo": "Geri Al",
-  "timeline.removeClip": "Zaman Çizelgesinden Kaldır"
+  "timeline.removeClip": "Zaman Çizelgesinden Kaldır",
+  "tour.theme.title": "Kendi tarzını yarat",
+  "tour.theme.body": "Ayarlar → Tema (bu menüde), tüm stüdyoyu yeniden şekillendiriyor: amber terminali beş vurgu rengiyle, ayrıca tam temalar — Starship, Wasteland, Slate Pro, Movie Palace, Dracula ve Pretty Princess. Geçiş anında gerçekleşiyor ve hatırlanıyor.",
+  "wizard.theme.title": "Görünümünü seç",
+  "wizard.theme.body": "Herhangi bir şey oluşturmadan önce, odayı kendi tarzına çevir. Proje menüsünü (sol üst) aç → Ayarlar → Tema. Terminal satırında bir renk noktasını tıkla hızlı bir vurgu değişikliği için ya da Starship veya Movie Palace gibi tam bir temayı dene. Anında uygulanıyor ve bu tarayıcıda kaydediliyor.",
+  "wizard.theme.goal": "Herhangi bir temayı seç — ya da amber terminali olduğu gibi bırak ve devam et."
 }

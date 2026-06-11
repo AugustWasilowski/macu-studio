@@ -984,5 +984,10 @@
   "wizard.done.title": "Èyí ní gbogbo ìfipàdí!",
   "wizard.done.body": "Ẹ̀ mú ìkòwe lọ́wọ́lọ́wọ́ sí ẹ̀kọ òpẹ̀. Láti ibí: ẹ̀dìtì ẹ̀kọ-ìdánwò ni à ṣẹ̀ọ̀fẹ́, bẹrẹ ẹ̀kọ gidi kúrò inú àtẹ̀jáde, tàbí ṣí Docs fún àkójú jìjìnle. Ẹ̀ lè tún ìkọkọ àlàfo yìí àkòkò ká kúrò inú àtẹ̀jáde.",
   "common.undo": "Padilọ",
-  "timeline.removeClip": "Lọ kuro ninu ila akoko"
+  "timeline.removeClip": "Lọ kuro ninu ila akoko",
+  "tour.theme.title": "Jẹ́ ohun tìrẹ",
+  "tour.theme.body": "Àwọn ìpilẹ̀ → Àpẹẹrẹ (nínú àtòjọ yìí) yíó ṣe àkójọ ara ńlá ọ̀rọ̀ iṣẹ́-àwòșà: Terminal wòò-iyẹ̀ pẹ̀lú àwọ̀ ìyasẹ́ márùndinlógún, àti ìwà gbogbó — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, àti Pretty Princess. Ìpìlẹ̀ nìyẹn ní àsẹ́ lẹsẹkẹsẹ àti a fipamọ́.",
+  "wizard.theme.title": "Yan ohun tìrẹ",
+  "wizard.theme.body": "Ṣáájú kí à bá kọ̀ ohun kankan, jẹ́ ipò yìí ohun tìrẹ. Ṣí àtòjọ iṣẹ́ (inú ìsalẹ̀ ìpa) → Àwọn ìpilẹ̀ → Àpẹẹrẹ. Tẹ àwọ̀ ẹnìkan lórí rọ̀pò Terminal fun ìyipada àwọ̀ ìyasẹ́ ìmọ̀rán, tàbi gbìyànjú àpẹẹrẹ kìkì gidi bíi Starship tàbi Movie Palace. A yó ṣẹ́ lẹsẹkẹsẹ àti fipamọ́ nínú webù yìí.",
+  "wizard.theme.goal": "Yan àpẹẹrẹ kankan — tàbi pa Terminal wòò-iyẹ̀ dúró, kí à sì máa lọ síwájú."
 }

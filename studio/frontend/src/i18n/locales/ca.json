@@ -983,5 +983,10 @@
   "wizard.done.title": "És tot el cicle!",
   "wizard.done.body": "Has pres un script fins a un episodi acabat. D'aquí en avant: edita l'episodi de pràctica lliurement, comença un de real des del menú, o obrir Docs per a la referència més detallada. Pots repetir aquesta visita en qualsevol moment des del menú.",
   "common.undo": "Desfés",
-  "timeline.removeClip": "Elimina de la línia de temps"
+  "timeline.removeClip": "Elimina de la línia de temps",
+  "tour.theme.title": "Fes-ho teu",
+  "tour.theme.body": "Configuració → Tema (en aquest menú) redissenya tot l'estudi: la terminal ambre amb cinc colors d'accent, més temes complets — Starship, Wasteland, Slate Pro, Movie Palace, Dracula i Pretty Princess. El canvi és instantani i es recorda.",
+  "wizard.theme.title": "Tria el teu estil",
+  "wizard.theme.body": "Abans de construir res, fes que l'espai sigui teu. Obri el menú del projecte (esquerra superior) → Configuració → Tema. Feu clic en un punt de color a la fila Terminal per canviar ràpidament l'accent, o proveu un tema complet com Starship o Movie Palace. S'aplica instantàniament i es desa en aquest navegador.",
+  "wizard.theme.goal": "Tria qualsevol tema — o mantén la terminal ambre i continua."
 }

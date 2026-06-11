@@ -986,5 +986,10 @@
   "wizard.done.title": "這就是整個流程！",
   "wizard.done.body": "您已將一個劇本製作成一個完成的集數。從這裡開始：自由編輯練習集數、從選單開始真實集數，或打開「文件」查看更深入的參考。您隨時可以從選單重新播放此教學。",
   "common.undo": "復原",
-  "timeline.removeClip": "從時間軸移除"
+  "timeline.removeClip": "從時間軸移除",
+  "tour.theme.title": "讓它變成你的風格",
+  "tour.theme.body": "設定 → 主題（在此選單中）可重新設計整個 Studio：琥珀色終端機搭配五種強調色，加上完整主題 —— Starship、Wasteland、Slate Pro、Movie Palace、Dracula 和 Pretty Princess。切換即時生效且會被記住。",
+  "wizard.theme.title": "選擇你的外觀",
+  "wizard.theme.body": "在開始建製之前，讓這個工作室成為你的。開啟專案選單（左上方）→ 設定 → 主題。點按終端機列上的顏色圓點可快速更改強調色，或試試完整主題如 Starship 或 Movie Palace。它會立即套用並在此瀏覽器中儲存。",
+  "wizard.theme.goal": "選擇任何主題 —— 或保持琥珀色終端機並繼續。"
 }

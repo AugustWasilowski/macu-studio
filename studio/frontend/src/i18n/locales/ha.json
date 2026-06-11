@@ -986,5 +986,10 @@
   "wizard.done.title": "Shi ne dukan madawwaki!",
   "wizard.done.body": "Ka canza rubutu zuwa ɗan sari na gama. Daga nan: gyara ɗan sari na aiki da kyau, fara gaskiya daya daga menu, ko bugi Docs don bayani na zurfafa. Za ka iya sake jayayya nan daga menu a kowane lokaci.",
   "common.undo": "Soke",
-  "timeline.removeClip": "Cire daga layi na lokaci"
+  "timeline.removeClip": "Cire daga layi na lokaci",
+  "tour.theme.title": "Sai ka sa nasa ka",
+  "tour.theme.body": "Saɗi → Jiya (a cikin wannan menu) yana sake ƙayyada gida duka: terminal mai rauni tare da juna-juna rauni, suna kuma cikakke kallon - Starship, Wasteland, Slate Pro, Movie Palace, Dracula, da Pretty Princess. Sauya shi yawun taɗa kuma a tuna.",
+  "wizard.theme.title": "Zaɓi kallon ka",
+  "wizard.theme.body": "Kafin mun gina wani abu, sai ka sa gida ta naka. Buɗe menu aiki (bashi-hagu) → Saɗi → Jiya. Danna batu rauni akan Layin Terminal don jujjuyawar rauni mai sauri, ko jajaga jiya cikakke kamar Starship ko Movie Palace. Yana aiki nan kuma yana ajiye a wannan shamaki.",
+  "wizard.theme.goal": "Zaɓi jiya duk wai - ko ka ci gida terminal mai rauni da kuma gida."
 }

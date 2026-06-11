@@ -986,5 +986,10 @@
   "wizard.done.title": "Itulah seluruh prosesnya!",
   "wizard.done.body": "Anda membawa skenario hingga episode selesai. Dari sini: edit episode latihan dengan bebas, mulai yang baru dari menu, atau buka Docs untuk referensi yang lebih mendalam. Anda bisa memutar kembali panduan ini kapan saja dari menu.",
   "common.undo": "Batalkan",
-  "timeline.removeClip": "Hapus dari timeline"
+  "timeline.removeClip": "Hapus dari timeline",
+  "tour.theme.title": "Jadikan milikmu",
+  "tour.theme.body": "Pengaturan → Tema (di menu ini) mengubah gaya seluruh studio: terminal amber dengan lima warna aksen, plus tema lengkap — Starship, Wasteland, Slate Pro, Movie Palace, Dracula, dan Pretty Princess. Perubahan bersifat instan dan tersimpan.",
+  "wizard.theme.title": "Pilih tampilan Anda",
+  "wizard.theme.body": "Sebelum kita membuat apa pun, jadikan ruangan ini milikmu. Buka menu proyek (kiri atas) → Pengaturan → Tema. Klik titik warna di baris Terminal untuk perubahan aksen cepat, atau coba tema lengkap seperti Starship atau Movie Palace. Tema diterapkan langsung dan disimpan di browser ini.",
+  "wizard.theme.goal": "Pilih tema apa pun — atau pertahankan terminal amber dan lanjutkan."
 }

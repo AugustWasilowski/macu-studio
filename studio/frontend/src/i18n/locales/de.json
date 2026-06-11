@@ -986,5 +986,10 @@
   "wizard.done.title": "Das ist die ganze Schleife!",
   "wizard.done.body": "Du hast ein Script bis zu einer fertigen Episode genommen. Von hier aus: bearbeite die Übungsepisode frei, starte eine echte aus dem Menü, oder öffne Docs für die tiefere Referenz. Du kannst diese Führung jederzeit aus dem Menü erneut abspielen.",
   "common.undo": "Rückgängig",
-  "timeline.removeClip": "Aus Timeline entfernen"
+  "timeline.removeClip": "Aus Timeline entfernen",
+  "tour.theme.title": "Mach es zu deinem eigenen",
+  "tour.theme.body": "Einstellungen → Design (in diesem Menü) gestaltet das ganze Studio neu: das bernsteinfarbene Terminal mit fünf Akzentfarben plus vollständigen Designs — Starship, Wasteland, Slate Pro, Movie Palace, Dracula und Pretty Princess. Der Wechsel ist sofort und wird gespeichert.",
+  "wizard.theme.title": "Wähle dein Design",
+  "wizard.theme.body": "Bevor wir etwas bauen, mach den Raum zu deinem eigenen. Öffne das Projektmenü (oben links) → Einstellungen → Design. Klicke auf einen Farbpunkt in der Terminal-Zeile für einen schnellen Akzentwechsel, oder versuche ein vollständiges Design wie Starship oder Movie Palace. Es wird sofort angewendet und in diesem Browser gespeichert.",
+  "wizard.theme.goal": "Wähle ein beliebiges Design — oder behalte das bernsteinfarbene Terminal und fahre fort."
 }

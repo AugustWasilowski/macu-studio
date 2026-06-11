@@ -53,8 +53,12 @@ function Shell() {
   const activeSlug = useStore((s) => s.activeSlug);
   const setActiveSlug = useStore((s) => s.setActiveSlug);
   const activeShow = useStore((s) => s.activeShow);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [tourOpen, setTourOpen] = useState(() => !localStorage.getItem(TOUR_DONE_KEY));
+  // ?settings=1 deep-links straight into the Settings modal (default tab is
+  // Theme) and suppresses the first-run tour — used for sharing/screenshots.
+  const [settingsOpen, setSettingsOpen] = useState(() => new URLSearchParams(location.search).has("settings"));
+  const [tourOpen, setTourOpen] = useState(
+    () => !localStorage.getItem(TOUR_DONE_KEY) && !new URLSearchParams(location.search).has("settings")
+  );
   const startWizard = useStore((s) => s.startWizard);
   const wizardActive = useStore((s) => s.wizard?.status === "active");
   const episodes = useQuery({
