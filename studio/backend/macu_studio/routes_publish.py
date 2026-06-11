@@ -99,7 +99,8 @@ def macu_web_connect(body: dict = Body(...)):
 
 @router.post("/api/shows/{show}/publish")
 def post_publish(show: str, body: dict = Body(default={})):
-    res = publish_mod.publish(show, (body or {}).get("message"))
+    res = publish_mod.publish(show, (body or {}).get("message"),
+                              allow_new_public=(body or {}).get("allow_new_public"))
     # Explicitly trigger the macu-web reindex after a push. The bare repo's own post-receive
     # hook can be stale/misconfigured (esp. across hosts), so don't rely on it — call the
     # reindex endpoint with our PAT (owner-scoped). Never fail the publish if this errors.

@@ -538,11 +538,20 @@ async def set_episode_published(slug: str, published: bool) -> dict:
 
 
 @mcp.tool()
-async def publish_show(show: str, message: str = "") -> dict:
+async def publish_show(show: str, message: str = "", allow_new_public: list[str] | None = None) -> dict:
     """Push the show's episode bundle to the connected macu-web site (git push +
     reindex). Episodes appear publicly only if their published flag is set AND the
     show itself is public (an owner-only toggle on the site). Check
     studio_overview's macu_web.connected first — publishing needs a one-time
-    connect token from the site's Manage page."""
-    return await _api("POST", f"/api/shows/{show}/publish",
-                      body={"message": message} if message else {})
+    connect token from the site's Manage page.
+
+    Episodes the repo has never published whose manifest already says published:true
+    are HELD BACK (they would seed PUBLIC on the site's first index). Pass their slugs
+    in allow_new_public to ship them deliberately; check `skipped_new_episodes` and
+    `warnings` in the response."""
+    body: dict = {}
+    if message:
+        body["message"] = message
+    if allow_new_public:
+        body["allow_new_public"] = list(allow_new_public)
+    return await _api("POST", f"/api/shows/{show}/publish", body=body)

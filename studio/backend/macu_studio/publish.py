@@ -151,20 +151,68 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=repo, text=True, capture_output=True, env=_git_env())
 
 
-def publish(show: str, message: str | None = None) -> dict:
+def _previous_slugs(repo: Path) -> list[str] | None:
+    """Episode slugs in the repo's last-published bundle (HEAD's export.json), or None when
+    the repo has no history yet (first publish of the show — nothing to guard against)."""
+    head = _git(repo, "show", "HEAD:export.json")
+    if head.returncode != 0:
+        return None
+    try:
+        return list(json.loads(head.stdout).get("episodes") or [])
+    except Exception:
+        return None
+
+
+def publish(show: str, message: str | None = None,
+            allow_new_public: list[str] | None = None) -> dict:
     """Write the text bundle into the show's macu-web repo, commit, and push (if creds set)."""
     try:
         entries = text_bundle_entries(show)
     except KeyError as e:
         return {"ok": False, "log": f"unknown show: {e}"}
 
-    # Best-effort early feedback (macu-web is the authoritative gate; see validate.py).
-    warnings = validate_mod.bundle_warnings(entries)
-
     repo = PUBLISH_ROOT / show
     repo.mkdir(parents=True, exist_ok=True)
     if not (repo / ".git").exists():
         subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, text=True, capture_output=True)
+
+    # Guard: an episode dir the repo has NEVER published whose manifest already says
+    # published:true would seed PUBLIC on macu-web's first index of it (visibility is seeded
+    # once, on row creation, and the show page filters on it). Stray working dirs — legacy
+    # slug families, dub scratch dirs — must not go live just because they sit in episodes/
+    # with a stale flag; that is exactly how ep5..ep10 (+ -hi/-uk) tripled Season 1 on
+    # 2026-06-11. Hold such episodes back unless explicitly allowed. New DRAFTS (published
+    # unset) still travel: they seed PRIVATE, which is harmless.
+    prev = _previous_slugs(repo)
+    skipped_new: list[str] = []
+    if prev is not None:
+        allow = {str(s) for s in (allow_new_public or [])}
+        exp = json.loads(entries["export.json"].decode())
+        for slug in [s for s in exp["episodes"] if s not in prev and s not in allow]:
+            man = entries.get(f"episodes/{slug}/manifest.json")
+            try:
+                published = bool(json.loads(man.decode()).get("published")) if man else False
+            except Exception:
+                published = True  # unparseable manifest — hold it back rather than ship it
+            if not published:
+                continue
+            skipped_new.append(slug)
+            for arc in [a for a in entries if a.startswith(f"episodes/{slug}/")]:
+                del entries[arc]
+            exp["episodes"].remove(slug)
+        if skipped_new:
+            entries["export.json"] = json.dumps(exp, indent=2).encode()
+
+    # Best-effort early feedback (macu-web is the authoritative gate; see validate.py).
+    warnings = validate_mod.bundle_warnings(entries)
+    if skipped_new:
+        warnings.append(
+            "HELD BACK new published episode(s) never seen by this repo: "
+            + ", ".join(skipped_new)
+            + " — a first-time publish of an already-published episode goes straight to "
+            "PUBLIC on macu-web. Re-run with allow_new_public: [\"<slug>\", …] to ship them "
+            "deliberately, or clear their manifest `published` flag if they are strays."
+        )
 
     # Rewrite the working tree from scratch (handles adds/edits/deletes) — keep only .git.
     for child in repo.iterdir():
@@ -197,6 +245,7 @@ def publish(show: str, message: str | None = None) -> dict:
 
     return {"ok": (pushed if (base and token) else True), "committed": committed,
             "pushed": pushed, "files": len(entries), "repo": str(repo),
+            "skipped_new_episodes": skipped_new,
             "warnings": warnings, "log": "\n".join(log)}
 
 
