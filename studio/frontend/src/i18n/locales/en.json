@@ -1,4 +1,5 @@
 {
+  "common.undo": "Undo",
   "common.active": "active",
   "common.close": "Close",
   "common.cancel": "Cancel",
@@ -724,6 +725,7 @@
   "timeline.collapseTitle": "Collapse {label}",
   "timeline.expandTitle": "Expand {label}",
   "toast.removedFromTimeline": "removed from timeline",
+  "timeline.removeClip": "Remove from timeline",
   "toast.shotRemoved": "shot removed",
   "toast.shotMovedTo": "shot → {targetId}",
   "toast.shotsSaveFailed": "shots save failed: {msg}",

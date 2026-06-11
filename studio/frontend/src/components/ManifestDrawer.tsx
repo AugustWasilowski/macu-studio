@@ -84,11 +84,11 @@ export function ManifestDrawer({ slug, onJumpToStage }: { slug: string; onJumpTo
   return (
     <>
       <div
-        className={"fixed inset-0 z-[800] bg-black/40 transition-opacity " + (open ? "opacity-100" : "opacity-0 pointer-events-none")}
+        className={"fixed inset-0 z-[800] bg-black/40 transition-opacity duration-300 " + (open ? "opacity-100" : "opacity-0 pointer-events-none")}
         onClick={close}
       />
       <aside
-        className={"fixed top-0 right-0 h-full z-[900] panel flex flex-col transition-transform " + (open ? "translate-x-0" : "translate-x-full")}
+        className={"fixed top-0 right-0 h-full z-[900] panel flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] " + (open ? "translate-x-0" : "translate-x-full")}
         style={{ width: 520 }}
       >
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">

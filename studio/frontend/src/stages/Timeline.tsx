@@ -18,6 +18,7 @@ import type { Selection, TrackKind } from "./trackEditor";
 import { MetadataPanel } from "./MetadataPanel";
 import type { MetaCallbacks } from "./MetadataPanel";
 import { AssetDrawer } from "./AssetDrawer";
+import { Collapse } from "../components/Collapse";
 import type { Cue, Overlay } from "../types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -50,9 +51,11 @@ export function Timeline({ slug }: { slug: string }) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [working, setWorking] = useState<null | { track: TrackKind; items: any[] }>(null);
   const [overDrawer, setOverDrawer] = useState(false);
+  const [shotDragging, setShotDragging] = useState(false); // HTML5 shot-move in flight
   const dragRef = useRef<DragState | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
+  const trashRef = useRef<HTMLDivElement | null>(null);
 
   // ---- preview monitor ----
   const finalExists = !!finalQ.data?.exists;
@@ -141,16 +144,24 @@ export function Timeline({ slug }: { slug: string }) {
     }
     drawerDrag.clear();
   };
-  // Drop an existing shot bar onto the drawer to remove it.
+  // Remove a shot from its cue — used by the ✕ button, the drawer drop, and the
+  // trash zone. Undoable: the toast's UNDO restores the exact previous array.
+  const removeShot = (cueId: string, shotId: string) => {
+    const src = cueById(cueId);
+    if (!src) return;
+    const prev = ((src.shots ?? []) as any[]).map((s) => ({ ...s }));
+    const next = prev.filter((s) => s.id !== shotId);
+    putShots.mutate({ [cueId]: remintShots(cueId, next) });
+    push(t("toast.shotRemoved"), "ok", {
+      action: { label: t("common.undo"), fn: () => putShots.mutate({ [cueId]: prev }) },
+    });
+  };
+  // Drop an existing shot bar onto the drawer / trash zone to remove it.
   const onShotDropRemove = (e: React.DragEvent) => {
     const d = drawerDrag.get();
     if (d?.kind !== "shot-move") return;
     e.preventDefault();
-    const src = cueById(d.cueId);
-    if (!src) { drawerDrag.clear(); return; }
-    const next = (src.shots as any[]).filter((s: any) => s.id !== d.shotId);
-    putShots.mutate({ [d.cueId]: remintShots(d.cueId, next) });
-    push(t("toast.shotRemoved"), "ok");
+    removeShot(d.cueId, d.shotId);
     drawerDrag.clear();
   };
 
@@ -167,15 +178,45 @@ export function Timeline({ slug }: { slug: string }) {
   const shownBeds: MusicBed[] = working?.track === "music" ? working.items : beds;
   const shownSfx: SfxEntry[] = working?.track === "sfx" ? working.items : sfxList;
 
+  // Remove a clip from an array-backed track (graphics/music/sfx) with undo.
+  // Single chokepoint for the ✕ buttons, Delete key, metadata panel, and
+  // drag-to-remove so every path gets the same toast + UNDO behavior.
+  const removeFromTrack = (track: Exclude<TrackKind, "shots">, idx: number, prevOverride?: any[]) => {
+    const src = track === "graphics" ? overlays : track === "music" ? beds : sfxList;
+    const prev = prevOverride ?? src.map((x: any) => ({ ...x }));
+    if (idx < 0 || idx >= prev.length) return;
+    commitTrack(track, prev.filter((_: any, i: number) => i !== idx));
+    setSelection(null);
+    push(t("toast.removedFromTimeline"), "ok", {
+      action: { label: t("common.undo"), fn: () => commitTrack(track, prev) },
+    });
+  };
+
+  // Delete/Backspace removes the selected clip (unless focus is in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      if (!selection) return;
+      if (selection.t === "overlay") { e.preventDefault(); removeFromTrack("graphics", selection.idx); }
+      else if (selection.t === "bed") { e.preventDefault(); removeFromTrack("music", selection.idx); }
+      else if (selection.t === "sfx") { e.preventDefault(); removeFromTrack("sfx", selection.idx); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection, overlays, beds, sfxList]);
+
   // ---- metadata-panel edit callbacks ----
   const cb: MetaCallbacks = {
     slug,
     patchOverlay: (idx, p) => commitTrack("graphics", overlays.map((o, i) => i === idx ? { ...o, ...p } : o)),
-    removeOverlay: (idx) => { commitTrack("graphics", overlays.filter((_, i) => i !== idx)); setSelection(null); },
+    removeOverlay: (idx) => removeFromTrack("graphics", idx),
     patchSfx: (idx, p) => commitTrack("sfx", sfxList.map((e, i) => i === idx ? { ...e, ...p } : e)),
-    removeSfx: (idx) => { commitTrack("sfx", sfxList.filter((_, i) => i !== idx)); setSelection(null); },
+    removeSfx: (idx) => removeFromTrack("sfx", idx),
     patchBed: (idx, p) => commitTrack("music", beds.map((b, i) => i === idx ? { ...b, ...p } : b)),
-    removeBed: (idx) => { commitTrack("music", beds.filter((_, i) => i !== idx)); setSelection(null); },
+    removeBed: (idx) => removeFromTrack("music", idx),
   };
 
   // ---- snap to cue boundaries ----
@@ -196,9 +237,15 @@ export function Timeline({ slug }: { slug: string }) {
   const onMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
-    // drag-to-remove hover check
-    const dr = drawerRef.current;
-    setOverDrawer(!!dr && e.clientY >= dr.getBoundingClientRect().top);
+    // drag-to-remove hover check (move drags only — resizes can't delete):
+    // the floating trash zone always counts; the asset drawer area counts
+    // too when it's open.
+    if (d.kind === "move") {
+      const tz = trashRef.current?.getBoundingClientRect();
+      const dr = drawerRef.current?.getBoundingClientRect();
+      const overTrash = !!tz && e.clientY >= tz.top - 8 && e.clientY <= tz.bottom + 8 && e.clientX >= tz.left - 8 && e.clientX <= tz.right + 8;
+      setOverDrawer(overTrash || (!!dr && bottomOpen && e.clientY >= dr.top));
+    }
     const dxSec = (e.clientX - d.startX) / pps;
     setWorking((prev) => {
       if (!prev) return prev;
@@ -229,15 +276,13 @@ export function Timeline({ slug }: { slug: string }) {
   const endDrag = () => {
     const d = dragRef.current;
     if (!d || !working) { dragRef.current = null; return; }
-    const dr = drawerRef.current;
-    const removed = overDrawer && !!dr;
+    const removed = overDrawer;
     dragRef.current = null;
     setOverDrawer(false);
-    if (removed) {
-      const next = working.items.filter((_, i) => i !== d.idx);
-      commitTrack(d.track, next);
-      setSelection(null);
-      push(t("toast.removedFromTimeline"), "ok");
+    if (removed && d.track !== "shots") {
+      // Undo restores the pre-drag arrays (query data is still untouched here).
+      const srcOrig = d.track === "graphics" ? overlays : d.track === "music" ? beds : sfxList;
+      removeFromTrack(d.track, d.idx, srcOrig.map((x: any) => ({ ...x })));
     } else {
       commitTrack(d.track, working.items);
     }
@@ -306,7 +351,7 @@ export function Timeline({ slug }: { slug: string }) {
             <button className="btn p-1" title={t("timeline.zoomIn")} onClick={() => setPps((z) => Math.min(160, z + 12))}>+</button>
           </div>
         </header>
-        {timelineOpen && (
+        <Collapse open={timelineOpen}>
         <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
           <div style={{ width }} className="select-none relative">
             {/* ruler — the only scrub surface */}
@@ -361,13 +406,14 @@ export function Timeline({ slug }: { slug: string }) {
                   const key = s.who ?? s.asset ?? "?"; const thumb = (s.who || s.asset) ? mediaUrl.shotPreview(slug, s.who ?? s.asset) : null;
                   return (
                     <div key={s.id ?? `${c.id}_${idx}`} draggable
-                      onDragStart={() => drawerDrag.set({ kind: "shot-move", cueId: c.id, shotId: s.id })}
-                      onDragEnd={() => drawerDrag.clear()}
+                      onDragStart={() => { drawerDrag.set({ kind: "shot-move", cueId: c.id, shotId: s.id }); setShotDragging(true); }}
+                      onDragEnd={() => { drawerDrag.clear(); setShotDragging(false); setOverDrawer(false); }}
                       onClick={() => setSelection({ t: "cue", cue: c })}
-                      className="absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#1c2b1c]"
+                      className="group-clip absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#1c2b1c]"
                       style={{ left, width: w, outline: "1px solid var(--line-soft)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%" }}
                       title={`${key} (${c.id}) — ${t("timeline.shotMoveTip")}`}>
                       <span className="font-mono text-[9px] truncate pointer-events-none px-1 rounded" style={{ background: "rgba(0,0,0,0.6)" }}>{key}</span>
+                      <ClipX title={t("timeline.removeClip")} onRemove={() => removeShot(c.id, s.id)} />
                     </div>
                   );
                 });
@@ -383,12 +429,13 @@ export function Timeline({ slug }: { slug: string }) {
                 const active = selection?.t === "overlay" && selection.idx === idx;
                 return (
                   <div key={ov.id ?? idx} onPointerDown={(e) => beginDrag(e, "graphics", idx, "move", { start, end }, { t: "overlay", idx, ov })}
-                    className={"absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 " + (ov.mode === "overlay" ? "bg-[#0c3b44]" : "bg-[#3b2e0c]")}
+                    className={"group-clip absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 " + (ov.mode === "overlay" ? "bg-[#0c3b44]" : "bg-[#3b2e0c]")}
                     style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${ov.asset} · ${ov.mode}`}>
                     <span onPointerDown={(e) => beginDrag(e, "graphics", idx, "l", { start, end }, { t: "overlay", idx, ov })} className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
                     <video src={mediaUrl.titlePreview(slug, ov.asset)} muted loop autoPlay playsInline className="bg-black rounded pointer-events-none flex-none" style={{ width: 26, height: 26, objectFit: "contain" }} />
                     <span className="font-mono text-[10px] truncate pointer-events-none">{ov.asset}</span>
                     <span onPointerDown={(e) => beginDrag(e, "graphics", idx, "r", { start, end }, { t: "overlay", idx, ov })} className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                    <ClipX title={t("timeline.removeClip")} right={9} onRemove={() => removeFromTrack("graphics", idx)} />
                   </div>
                 );
               })}
@@ -403,11 +450,12 @@ export function Timeline({ slug }: { slug: string }) {
                 const active = selection?.t === "bed" && selection.idx === idx;
                 return (
                   <div key={idx} onPointerDown={(e) => beginDrag(e, "music", idx, "move", { start, end }, { t: "bed", idx, b })}
-                    className="absolute top-0.5 h-7 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 bg-[#2a1840]"
+                    className="group-clip absolute top-0.5 h-7 rounded-sm overflow-hidden cursor-grab flex items-center gap-1 px-1 bg-[#2a1840]"
                     style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${b.name || b.file} bed`}>
                     <span onPointerDown={(e) => beginDrag(e, "music", idx, "l", { start, end }, { t: "bed", idx, b })} className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
                     <span className="font-mono text-[10px] truncate pointer-events-none text-[#c7a3ff]">♫ {b.name || b.file}</span>
                     <span onPointerDown={(e) => beginDrag(e, "music", idx, "r", { start, end }, { t: "bed", idx, b })} className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize bg-[var(--amber)]/40" />
+                    <ClipX title={t("timeline.removeClip")} right={9} onRemove={() => removeFromTrack("music", idx)} />
                   </div>
                 );
               })}
@@ -422,9 +470,10 @@ export function Timeline({ slug }: { slug: string }) {
                 const active = selection?.t === "sfx" && selection.idx === idx;
                 return (
                   <div key={idx} onPointerDown={(ev) => beginDrag(ev, "sfx", idx, "move", { start, end }, { t: "sfx", idx, e: e2 })}
-                    className="absolute top-0.5 h-6 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#0c3a3a]"
+                    className="group-clip absolute top-0.5 h-6 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#0c3a3a]"
                     style={{ left, width: w, outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)", boxShadow: active ? "var(--glow-amber)" : undefined }} title={`${e2.file} @ ${e2.cue}`}>
                     <span className="font-mono text-[10px] truncate pointer-events-none text-[#6fe0e0]">♪ {e2.file}</span>
+                    <ClipX title={t("timeline.removeClip")} onRemove={() => removeFromTrack("sfx", idx)} />
                   </div>
                 );
               })}
@@ -435,25 +484,58 @@ export function Timeline({ slug }: { slug: string }) {
             {playT > 0 && <div className="absolute top-0 bottom-0 pointer-events-none z-20" style={{ left: playT * pps, width: 2, background: "var(--cyan)", boxShadow: "0 0 6px var(--cyan)" }} />}
           </div>
         </div>
-        )}
+        </Collapse>
       </section>
 
       {/* DRAWER + METADATA (collapse together) — definite height so the drawer scrolls
           internally (instead of bleeding off-page) and the preview's flex-1 gets correct
-          leftover space above it. */}
-      <div className="relative flex-none" style={{ height: bottomOpen ? 240 : 16 }}>
+          leftover space above it. Content stays mounted through a collapse (Collapse
+          animates height) so drawer tab/filter state and queries survive. */}
+      <div className="relative flex-none" style={{ minHeight: 16 }}>
         <CollapseTab open={bottomOpen} onToggle={toggleBottom} label={t("timeline.drawerLabel")} />
-        {bottomOpen && (
-          <div className="grid grid-cols-[1fr_320px] grid-rows-[minmax(0,1fr)] gap-3 h-full min-h-0">
+        <Collapse open={bottomOpen}>
+          <div className="grid grid-cols-[1fr_320px] grid-rows-[minmax(0,1fr)] gap-3 min-h-0" style={{ height: 240 }}>
             <div ref={drawerRef} className="min-h-0 min-w-0"
               onDragOver={(e) => { if (drawerDrag.get()?.kind === "shot-move") e.preventDefault(); }}
               onDrop={onShotDropRemove}><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
             <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
           </div>
-        )}
+        </Collapse>
       </div>
+      {/* Floating trash dock — appears during any clip drag so removal works even
+          with the bottom drawer collapsed. Pointer drags hit-test its rect in
+          onMove; HTML5 shot drags use the native dragover/drop handlers. */}
+      {((working !== null && dragRef.current?.kind === "move") || shotDragging) && (
+        <div
+          ref={trashRef}
+          className={"remove-zone" + (overDrawer ? " hot" : "")}
+          onDragOver={(e) => { if (drawerDrag.get()?.kind === "shot-move") { e.preventDefault(); setOverDrawer(true); } }}
+          onDragLeave={() => setOverDrawer(false)}
+          onDrop={(e) => { onShotDropRemove(e); setOverDrawer(false); setShotDragging(false); }}
+        >
+          ✕ {t("asset.dropToRemove")}
+        </div>
+      )}
       <audio ref={voAudioRef} hidden />
     </div>
+  );
+}
+
+/** Hover ✕ on a timeline clip. Stops pointer/mouse-down so it never starts a
+    drag on the clip underneath. `right` clears resize handles where present. */
+function ClipX({ onRemove, title, right = 2 }: { onRemove: () => void; title: string; right?: number }) {
+  return (
+    <button
+      className="clip-x"
+      style={{ right }}
+      title={title}
+      draggable={false}
+      onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+      onClick={(e) => { e.stopPropagation(); onRemove(); }}
+    >
+      ✕
+    </button>
   );
 }
 
@@ -470,7 +552,7 @@ function CollapseTab({ open, onToggle, label }: { open: boolean; onToggle: () =>
         fontSize: 11, fontWeight: 700, lineHeight: 1, boxShadow: "var(--glow-amber)",
       }}
     >
-      {open ? "▼" : "▲"}
+      <span style={{ display: "inline-block", transition: "transform 0.25s ease", transform: open ? "none" : "rotate(180deg)" }}>▼</span>
     </button>
   );
 }

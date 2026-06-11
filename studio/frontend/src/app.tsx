@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { api } from "./api";
 import { Topbar } from "./components/Topbar";
@@ -20,6 +20,7 @@ import { TerminalDrawer } from "./components/TerminalDrawer";
 import { UpdateModal } from "./components/UpdateModal";
 import { DiagnosticsModal } from "./components/DiagnosticsModal";
 import { useRoute, Page } from "./route";
+import { enterStage } from "./lib/motion";
 import { useServerEvents } from "./hooks";
 import { useStore } from "./store";
 import { versionApi } from "./api/version";
@@ -163,7 +164,13 @@ function PageView({
   go: (r: any) => void;
 }) {
   // Top-level pages — driven by the global activeSlug, not (slug, stage).
-  if (page === "docs") return <Docs />;
+  if (page === "docs") {
+    return (
+      <StageTransition id="docs">
+        <Docs />
+      </StageTransition>
+    );
+  }
 
   if (!slug) {
     return (
@@ -172,7 +179,27 @@ function PageView({
       </div>
     );
   }
-  return <StageView slug={slug} stage={stage} />;
+  return (
+    <StageTransition id={`${slug}:${stage}`}>
+      <StageView slug={slug} stage={stage} />
+    </StageTransition>
+  );
+}
+
+/** Animates each tab/stage mount. Stages still unmount instantly (their queries
+    and SSE hooks tear down as before); only the incoming view is choreographed. */
+function StageTransition({ id, children }: { id: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const tween = enterStage(ref.current);
+    return () => { tween?.kill(); };
+  }, [id]);
+  return (
+    <div ref={ref} className="h-full min-h-0">
+      {children}
+    </div>
+  );
 }
 
 function StageView({ slug, stage }: { slug: string; stage: UIStage }) {

@@ -181,8 +181,10 @@ body {
   border-radius: var(--radius-btn);
   font: inherit;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .btn:hover { background: var(--bg-3); }
+.btn:active:not([disabled]) { transform: translateY(1px); }
 .btn-amber {
   background: rgb(var(--amber-rgb) / 0.1);
   color: var(--amber);
@@ -219,6 +221,7 @@ body {
 }
 
 /* Tab bar */
+.tab { transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease; }
 .tab-num {
   display: inline-grid;
   place-items: center;
@@ -256,29 +259,135 @@ body {
 .logtail .warn { color: var(--amber); }
 .logtail .err { color: var(--red); }
 
-/* Toasts */
+/* Toasts — spacing is per-toast margin (not stack gap) so the exit animation
+   can collapse height+margin and the stack slides up smoothly. */
 .toast-stack {
   position: fixed;
   right: 16px;
   bottom: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   z-index: 10000;
 }
 .toast {
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
   background: var(--bg-2);
   border: 1px solid var(--line-soft);
-  padding: 8px 14px;
+  padding: 8px 12px 10px 14px;
   border-radius: var(--radius);
-  min-width: 220px;
+  min-width: 240px;
+  max-width: 420px;
   font-size: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+.toast-count {
+  margin-left: 8px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+.toast-action {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: currentColor;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  padding: 2px 8px;
+  cursor: pointer;
+  opacity: 0.9;
+}
+.toast-action:hover { opacity: 1; background: rgba(255, 255, 255, 0.06); }
+.toast-close {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  color: currentColor;
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0.45;
+}
+.toast-close:hover { opacity: 1; }
+.toast-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+}
+.toast-progress-bar {
+  height: 100%;
+  background: currentColor;
+  opacity: 0.35;
+  transform-origin: left;
 }
 .toast.ok { border-color: rgb(var(--green-rgb) / 0.45); color: var(--green); }
 .toast.run { border-color: rgb(var(--cyan-rgb) / 0.45); color: var(--cyan); }
 .toast.info { border-color: rgb(var(--amber-rgb) / 0.45); color: var(--amber); }
 .toast.err { border-color: rgb(var(--red-rgb) / 0.45); color: var(--red); }
+
+/* Timeline clip ✕ — fades in on clip hover */
+.clip-x {
+  position: absolute;
+  top: 2px;
+  z-index: 5;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  border-radius: 3px;
+  color: var(--red);
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgb(var(--red-rgb) / 0.5);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.group-clip:hover .clip-x { opacity: 1; }
+.clip-x:hover { background: rgb(var(--red-rgb) / 0.3); color: #fff; }
+
+/* Floating drag-to-remove dock (shown only while a clip drag is in flight) */
+.remove-zone {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--red);
+  background: rgba(0, 0, 0, 0.82);
+  border: 2px dashed rgb(var(--red-rgb) / 0.55);
+  border-radius: var(--radius);
+  pointer-events: auto;
+  animation: zone-in 0.18s ease;
+}
+.remove-zone.hot {
+  background: rgb(var(--red-rgb) / 0.18);
+  border-style: solid;
+  box-shadow: 0 0 14px rgb(var(--red-rgb) / 0.4);
+}
+@keyframes zone-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
 
 /* Themed scrollbars (override the browser default app-wide) */
 * {

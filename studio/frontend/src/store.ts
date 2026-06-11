@@ -2,11 +2,19 @@ import { create } from "zustand";
 import { applyLocale } from "./i18n";
 
 export type ToastKind = "info" | "ok" | "run" | "err";
+export interface ToastAction {
+  label: string;
+  fn: () => void;
+}
 export interface Toast {
   id: number;
   text: string;
   kind: ToastKind;
+  count: number;            // bumped instead of stacking identical toasts
+  action?: ToastAction;     // e.g. UNDO — rendered as a button
+  duration?: number;        // ms; default chosen by the Toasts component per kind
 }
+const TOAST_CAP = 5;        // visible at once; oldest is dropped beyond this
 export interface LogEntry {
   id: number;
   ts: number; // epoch ms
@@ -96,7 +104,7 @@ interface Actions {
   setActiveSlug: (slug: string | null) => void;
   setActiveShow: (show: string) => void;
   setLocale: (locale: string) => void;
-  pushToast: (text: string, kind?: ToastKind) => void;
+  pushToast: (text: string, kind?: ToastKind, opts?: { action?: ToastAction; duration?: number }) => void;
   dropToast: (id: number) => void;
   selectCue: (id: string | null) => void;
   selectShot: (key: string | null) => void;
@@ -157,14 +165,23 @@ export const useStore = create<State & Actions>((set) => ({
   // Persist immediately, load the catalog + flip <html> lang/dir, THEN update state so
   // the re-render reads a populated catalog (avoids a flash of raw keys).
   setLocale: (locale) => { localStorage.setItem("macu.locale", locale); applyLocale(locale).then(() => set({ locale })); },
-  pushToast: (text, kind = "info") => {
+  // Lifecycle (auto-dismiss, hover-pause, exit animation) lives in the Toasts
+  // component — the store only owns the queue. Identical visible toasts merge
+  // into one with a bumped count instead of stacking.
+  pushToast: (text, kind = "info", opts) => {
     const id = toastSeq++;
     const entry: LogEntry = { id, ts: Date.now(), text, kind };
-    set((s) => ({
-      toasts: [...s.toasts, { id, text, kind }],
-      log: [...s.log, entry].slice(-LOG_CAP),
-    }));
-    setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), 3200);
+    set((s) => {
+      const log = [...s.log, entry].slice(-LOG_CAP);
+      if (!opts?.action) {
+        const dup = s.toasts.find((t) => t.text === text && t.kind === kind && !t.action);
+        if (dup) {
+          return { toasts: s.toasts.map((t) => (t.id === dup.id ? { ...t, count: t.count + 1 } : t)), log };
+        }
+      }
+      const next = [...s.toasts, { id, text, kind, count: 1, action: opts?.action, duration: opts?.duration }];
+      return { toasts: next.slice(-TOAST_CAP), log };
+    });
   },
   dropToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   selectCue: (id) => set({ selectedCueId: id }),
