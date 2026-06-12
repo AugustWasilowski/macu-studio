@@ -6,6 +6,22 @@ All notable changes to MACU Studio. Format loosely follows
 ## [Unreleased]
 
 ### Added
+- **Higgsfield.ai integration** — cloud video generation alongside the local zeroscope path.
+  Connect your Higgsfield account once in **Settings → Higgsfield** (OAuth; plan + credits shown);
+  Studio is the only token holder and brokers all pipeline traffic.
+  - **Cloud shots:** new per-cue shot kinds `higgsfield` (text/image-to-video; pick the model per
+    shot or set an episode default) and `lipsync` (a character still animated to speak the cue's
+    VO; long VO is auto-chunked at silence boundaries and chained). Mix freely with local shots.
+  - **Character stills:** `still_prompt` on a character generates a reference still via Higgsfield
+    image models — feeds image-to-video and lipsync.
+  - **Timeline crop/trim:** cloud clips get per-shot pan/zoom crop, trim in/out, and a broadcast-
+    jank toggle, editable in the Assembly timeline's metadata panel. Applied at assembly — editing
+    never re-bills.
+  - **Price calculator:** the Video tab shows a ☁ estimate/balance chip and any render touching
+    stage 2 opens a cost dialog (per-shot credits, cached-free rows, balance check) before
+    spending. Hash-keyed caching means re-renders only bill shots whose inputs actually changed.
+  - MCP tools: `higgsfield_status`, `higgsfield_models`, `estimate_episode_cost`,
+    `set_shot_provider`, `generate_cloud_shot`, `generate_character_still`.
 - The first-run tutorial now covers the **Publish** stage (it previously skipped stage 6).
 - **Riff lineage:** importing a downloaded riff bundle into a new local show stamps each episode's
   manifest with `riffed_from` (the source show id), preserving the original origin through forks.

@@ -69,6 +69,13 @@ THINGS TO KNOW:
 - write_manifest replaces the whole manifest: read_manifest first, modify, write
   back. Prefer the purpose-built tools (set_episode_meta, set_speaker_voice...)
   over hand-editing manifest JSON.
+- CLOUD SHOTS (Higgsfield): shots with kind 'higgsfield' (cloud t2v/i2v) or
+  'lipsync' (still + cue VO -> talking head; must be the cue's ONLY shot) bill
+  the user's Higgsfield account per generation. ALWAYS call estimate_episode_cost
+  and surface the total to the user BEFORE run_pipeline / generate_cloud_shot on
+  an episode with cloud shots. Cached shots are free; crop/trim edits never
+  re-bill. higgsfield_status shows connection/plan/credits (connecting is a
+  Settings-UI action, not an MCP one).
 """
 
 mcp = FastMCP(
