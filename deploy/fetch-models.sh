@@ -202,18 +202,31 @@ if [ "$WITH_TALKING_HEAD" = "1" ]; then
     rm -rf "$WVW"
     retry git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git "$WVW"
   else echo "WanVideoWrapper node already present — skip"; fi
-  # fp8_scaled repacks live in Kijai's companion repo; loras/encoders in the main one.
+  # Exactly the model set pipeline/workflows/wan21_infinitetalk.json loads (the
+  # graph captured from the proven leo-render rig). fp8_scaled repacks live in
+  # Kijai's companion repo; the lora/VAE in his main one; the encoder + clip
+  # vision in the Comfy-Org Wan repack; wav2vec2 drives the lip embeds.
   hf_fetch "$(cat <<JSON
 [
  ["Kijai/WanVideo_comfy_fp8_scaled", "I2V/Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors"],
  ["Kijai/WanVideo_comfy_fp8_scaled", "InfiniteTalk/Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors"],
  ["Kijai/WanVideo_comfy", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors", "$MODELS/loras", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"],
- ["Kijai/WanVideo_comfy", "umt5-xxl-enc-fp8_e4m3fn.safetensors", "$MODELS/text_encoders", "umt5-xxl-enc-fp8_e4m3fn.safetensors"],
- ["Kijai/WanVideo_comfy", "open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors", "$MODELS/clip_vision", "open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors"],
- ["Kijai/WanVideo_comfy", "Wan2_1_VAE_bf16.safetensors", "$MODELS/vae", "Wan2_1_VAE_bf16.safetensors"]
+ ["Comfy-Org/Wan_2.1_ComfyUI_repackaged", "split_files/text_encoders/umt5_xxl_fp16.safetensors", "$MODELS/text_encoders", "umt5_xxl_fp16.safetensors"],
+ ["Comfy-Org/Wan_2.1_ComfyUI_repackaged", "split_files/clip_vision/clip_vision_h.safetensors", "$MODELS/clip_vision", "clip_vision_h.safetensors"],
+ ["Kijai/WanVideo_comfy", "Wan2_1_VAE_bf16.safetensors", "$MODELS/vae", "Wan2_1_VAE_bf16.safetensors"],
+ ["Kijai/wav2vec2_safetensors", "wav2vec2-chinese-base_fp16.safetensors", "$MODELS/wav2vec2", "wav2vec2-chinese-base_fp16.safetensors"]
 ]
 JSON
 )"
+  # The graph also needs VideoHelperSuite (VHS_VideoCombine) + KJNodes (image
+  # resize / constants) alongside WanVideoWrapper.
+  for NREPO in Kosinkadink/ComfyUI-VideoHelperSuite kijai/ComfyUI-KJNodes; do
+    NDIR="$COMFY/custom_nodes/$(basename "$NREPO")"
+    if [ ! -d "$NDIR/.git" ]; then
+      rm -rf "$NDIR"
+      retry git clone --depth 1 "https://github.com/$NREPO.git" "$NDIR"
+    else echo "$(basename "$NREPO") already present — skip"; fi
+  done
   echo "talking-head models installed — the local Wan/InfiniteTalk lipsync engine"
   echo "lights up in a future Studio update (pipeline/workflows/wan21_infinitetalk.json)."
 else
