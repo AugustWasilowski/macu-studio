@@ -10,6 +10,7 @@ import httpx
 
 from . import config
 from .config import RENDER_URL
+from . import engines
 from . import shows as shows_mod
 from .runtime_state import remember_job
 
@@ -35,6 +36,14 @@ async def submit(slug: str, *, from_stage: int | None = None, only: int | None =
         if ep_root != str(config.EPISODES):
             body["episodes_dir"] = ep_root
     except FileNotFoundError:
+        pass
+    # Engine routing: pass the configured ComfyUI endpoint ONLY when it differs
+    # from the default — the proven render path stays byte-identical otherwise.
+    try:
+        cu = engines.comfy_url()
+        if cu and cu != "http://127.0.0.1:8188":
+            body["comfy_url"] = cu
+    except Exception:
         pass
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.post(f"{RENDER_URL}/render", json=body)

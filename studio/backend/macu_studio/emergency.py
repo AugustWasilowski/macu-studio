@@ -16,8 +16,8 @@ import subprocess
 import urllib.request
 
 from .config import RENDER_URL
+from . import engines
 
-COMFY_URL = "http://127.0.0.1:8188"
 GPU_CONTAINERS = ("ollama", "omnivoice")
 
 
@@ -39,6 +39,7 @@ def stop_all() -> dict:
         report["render"] = f"err: {e}"
 
     # 2. stop ComfyUI work + free its VRAM (keep the service running)
+    COMFY_URL = engines.comfy_url()
     for path, payload, label in (
         ("/interrupt", {}, "comfy_interrupt"),
         ("/queue", {"clear": True}, "comfy_queue_clear"),

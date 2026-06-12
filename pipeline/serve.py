@@ -67,12 +67,13 @@ os.makedirs(JOBS_ROOT, exist_ok=True)
 
 class Job:
     def __init__(self, job_id, slug, from_stage=1, only=None, episodes_dir=None,
-                 dub_lang=None, dub_engine=None, subs_only=False):
+                 dub_lang=None, dub_engine=None, subs_only=False, comfy_url=None):
         self.id = job_id
         self.slug = slug
         self.from_stage = from_stage
         self.only = only
         self.episodes_dir = episodes_dir   # None → use the server default (MACU)
+        self.comfy_url = comfy_url         # None → lib.py's MACU_COMFY_URL default
         self.dub_lang = dub_lang           # set → run.py --dub (localize, not a render)
         self.dub_engine = dub_engine
         self.subs_only = subs_only
@@ -94,6 +95,7 @@ class Job:
             "id": self.id, "slug": self.slug,
             "from_stage": self.from_stage, "only": self.only,
             "episodes_dir": self.episodes_dir,
+            "comfy_url": getattr(self, "comfy_url", None),
             "dub_lang": self.dub_lang, "dub_engine": self.dub_engine,
             "subs_only": self.subs_only,
             "state": self.state,
@@ -167,6 +169,10 @@ def worker():
         env = os.environ.copy()
         if getattr(job, "episodes_dir", None):
             env["MACU_EPISODES"] = job.episodes_dir
+        # Per-job ComfyUI endpoint (engine routing in Studio). lib.py reads
+        # MACU_COMFY_URL, so every stage follows with zero stage changes.
+        if getattr(job, "comfy_url", None):
+            env["MACU_COMFY_URL"] = job.comfy_url
         try:
             with open(job.log_path, "wb") as log:
                 # start_new_session so the whole render tree (run.py + ffmpeg/rife children)
@@ -293,12 +299,20 @@ class Handler(BaseHTTPRequestHandler):
             if dub_engine not in ("qwen", "argos"):
                 return _json(self, 400, {"error": "dub.engine must be qwen or argos"})
             subs_only = bool(dub.get("subs_only"))
+        # Optional per-job ComfyUI endpoint (Studio engine routing). It lands in a
+        # child-process env var, so hold it to a plain http(s) URL shape.
+        comfy_url = body.get("comfy_url")
+        if comfy_url is not None:
+            comfy_url = str(comfy_url).rstrip("/")
+            if not re.match(r"^https?://[\w.\-]+(:\d+)?$", comfy_url):
+                return _json(self, 400, {"error": "invalid comfy_url"})
         job_id = uuid.uuid4().hex[:12]
         job = Job(job_id, slug,
                   from_stage=int(body.get("from_stage", 1)),
                   only=body.get("only"),
                   episodes_dir=(body.get("episodes_dir") or None),
-                  dub_lang=dub_lang, dub_engine=dub_engine, subs_only=subs_only)
+                  dub_lang=dub_lang, dub_engine=dub_engine, subs_only=subs_only,
+                  comfy_url=comfy_url)
         with JOBS_LOCK:
             JOBS[job_id] = job
         WORK_Q.put(job_id)

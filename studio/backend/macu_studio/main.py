@@ -35,7 +35,7 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
-from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish, routes_higgsfield
+from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish, routes_higgsfield, routes_engines
 from . import mcp_server
 from . import version as version_mod
 from . import shows as shows_mod
@@ -961,6 +961,7 @@ app.include_router(routes_diag.router)
 app.include_router(routes_localize.router)
 app.include_router(routes_publish.router)
 app.include_router(routes_higgsfield.router)
+app.include_router(routes_engines.router)
 
 
 # ---------- MCP server (Streamable HTTP at /mcp) ----------

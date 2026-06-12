@@ -5,18 +5,20 @@ import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi } from "../api/shows";
 import { higgsfieldApi } from "../api/higgsfield";
+import { enginesApi } from "../api/engines";
+import type { Capability, EngineId, EngineProbe, EnginesConfig } from "../api/engines";
 import { THEMES, currentTheme, setTheme } from "../theme";
 import { useT, LOCALES } from "../i18n";
 
-type Tab = "theme" | "show" | "archive" | "git" | "comfy" | "higgsfield" | "language";
+type Tab = "theme" | "show" | "archive" | "git" | "engines" | "higgsfield" | "language";
 
-const TAB_IDS: Tab[] = ["theme", "show", "archive", "git", "comfy", "higgsfield", "language"];
+const TAB_IDS: Tab[] = ["theme", "show", "archive", "git", "engines", "higgsfield", "language"];
 const TAB_KEY: Record<Tab, string> = {
   theme: "settings.tabs.theme",
   show: "settings.tabs.show",
   archive: "settings.tabs.archive",
   git: "settings.tabs.git",
-  comfy: "settings.tabs.comfy",
+  engines: "settings.tabs.engines",
   higgsfield: "settings.tabs.higgsfield",
   language: "settings.tabs.language",
 };
@@ -44,7 +46,7 @@ export function Settings({ show, onClose }: { show: string; onClose: () => void 
           {tab === "show" && <ShowPanel show={show} onClose={onClose} />}
           {tab === "archive" && <ArchivePanel />}
           {tab === "git" && <Stub title={t("settings.tabs.git")} body={t("settings.git.stub")} />}
-          {tab === "comfy" && <Stub title={t("settings.comfy.title")} body={t("settings.comfy.stub")} />}
+          {tab === "engines" && <EnginesPanel />}
           {tab === "higgsfield" && <HiggsfieldPanel />}
         </div>
       </div>
@@ -345,6 +347,217 @@ function ArchivePanel() {
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+const URL_RE = /^https?:\/\/[\w.-]+(:\d+)?$/;
+const CAPABILITY_ORDER: Capability[] = ["masters", "stills", "cloud_video", "lipsync"];
+
+function EnginesPanel() {
+  const t = useT();
+  const qc = useQueryClient();
+  const pushToast = useStore((s) => s.pushToast);
+  const cfg = useQuery({ queryKey: ["engines"], queryFn: enginesApi.get });
+  const probe = useQuery({
+    queryKey: ["engines-probe"],
+    queryFn: enginesApi.probe,
+    refetchInterval: 10_000, // panel unmounts on tab switch → polling stops with it
+  });
+
+  // Draft state (dirty until Save). Initialized from the server config.
+  const [draft, setDraft] = useState<{
+    comfyUrl: string; zimageUnet: string; remoteUrl: string; remoteOn: boolean;
+    routing: Record<Capability, EngineId>;
+  } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (cfg.data && draft === null) {
+      setDraft({
+        comfyUrl: cfg.data.endpoints.comfy_local.url,
+        zimageUnet: cfg.data.endpoints.comfy_local.zimage_unet ?? "",
+        remoteUrl: cfg.data.endpoints.remote_render.url,
+        remoteOn: cfg.data.endpoints.remote_render.enabled,
+        routing: { ...cfg.data.routing },
+      });
+    }
+  }, [cfg.data, draft]);
+
+  if (cfg.isLoading || !draft) return <div className="text-txt-dim p-4">{t("common.loading")}</div>;
+  if (cfg.isError) return <div className="text-red p-4">{String(cfg.error)}</div>;
+  const c = cfg.data!;
+
+  const dirty =
+    draft.comfyUrl !== c.endpoints.comfy_local.url ||
+    draft.zimageUnet !== (c.endpoints.comfy_local.zimage_unet ?? "") ||
+    draft.remoteUrl !== c.endpoints.remote_render.url ||
+    draft.remoteOn !== c.endpoints.remote_render.enabled ||
+    CAPABILITY_ORDER.some((cap) => draft.routing[cap] !== c.routing[cap]);
+  const comfyBad = !URL_RE.test(draft.comfyUrl.trim());
+  const remoteBad = draft.remoteOn && !URL_RE.test(draft.remoteUrl.trim());
+  const overridden = (path: string) => c.overridden.includes(path);
+
+  // The dot for whatever engine a row currently points at (live, pre-save).
+  const dotFor = (engine: EngineId): { color: string; title: string } => {
+    const p = probe.data;
+    const probing = probe.isFetching && !p;
+    if (probing) return { color: "var(--amber, #fa3)", title: t("engines.probing") };
+    const map: Record<string, keyof EngineProbe> = {
+      comfy_local: "comfy_local", comfy_zimage: "comfy_local",
+      higgsfield: "higgsfield", remote_render: "remote_render",
+    };
+    const res = p?.[map[engine]];
+    if (engine === "local_wan" || !res) return { color: "var(--line-soft)", title: t("engines.notConfigured") };
+    if ((res as any).disabled) return { color: "var(--line-soft)", title: t("engines.disabled") };
+    if (res.ok) {
+      const ms = (res as any).latency_ms;
+      const cr = (res as any).credits;
+      return { color: "var(--green, #0c6)", title: ms != null ? `${ms} ms` : cr != null ? t("engines.hfOk", { n: cr }) : "ok" };
+    }
+    return { color: "var(--red, #f44)", title: (res as any).error ?? t("engines.unreachable") };
+  };
+
+  const Dot = ({ engine }: { engine: EngineId }) => {
+    const d = dotFor(engine);
+    return <span className="rounded-full flex-none" title={d.title}
+                 style={{ width: 10, height: 10, background: d.color }} />;
+  };
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await enginesApi.put({
+        endpoints: {
+          comfy_local: { url: draft.comfyUrl.trim(), zimage_unet: draft.zimageUnet.trim() },
+          remote_render: { url: draft.remoteUrl.trim(), enabled: draft.remoteOn },
+        },
+        routing: draft.routing,
+      });
+      qc.invalidateQueries({ queryKey: ["engines"] });
+      qc.invalidateQueries({ queryKey: ["engines-probe"] });
+      setDraft(null); // re-seed from the fresh server config
+      pushToast(t("engines.saved"), "ok");
+    } catch (e) {
+      pushToast(t("toast.saveFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
+    } finally { setBusy(false); }
+  };
+
+  const OverrideBadge = ({ path }: { path: string }) =>
+    overridden(path) ? (
+      <span className="label-tiny text-amber flex-none" title={t("engines.envOverrideTip")}>env</span>
+    ) : null;
+
+  return (
+    <div className="flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1">
+      <div className="flex items-center justify-between">
+        <div className="label-tiny">{t("engines.title")}</div>
+        <button className="btn text-[11px] px-1.5 py-0.5" disabled={probe.isFetching}
+                onClick={() => probe.refetch()}>
+          {probe.isFetching ? t("engines.probing") : t("engines.probeNow")}
+        </button>
+      </div>
+      <p className="label-tiny leading-relaxed">{t("engines.help")}</p>
+
+      {/* ---- Endpoints card ---- */}
+      <div className="label-tiny pt-1 border-t hairline-soft">{t("engines.endpointsTitle")}</div>
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+        <Dot engine="comfy_local" />
+        <span className="w-[110px] flex-none">{t("engines.name.comfy_local")}</span>
+        <input
+          className={"input py-0.5 text-[11px] font-mono flex-1 " + (comfyBad ? "outline outline-1 outline-red-500" : "")}
+          value={draft.comfyUrl}
+          onChange={(e) => setDraft({ ...draft, comfyUrl: e.target.value })}
+        />
+        <OverrideBadge path="endpoints.comfy_local.url" />
+      </div>
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+        <span className="w-[10px] flex-none" />
+        <span className="w-[110px] flex-none label-tiny">{t("engines.zimageUnet")}</span>
+        <input
+          className="input py-0.5 text-[11px] font-mono flex-1"
+          value={draft.zimageUnet}
+          placeholder={t("engines.zimageUnetPh")}
+          onChange={(e) => setDraft({ ...draft, zimageUnet: e.target.value })}
+        />
+        <OverrideBadge path="endpoints.comfy_local.zimage_unet" />
+      </div>
+      <div className="flex flex-col gap-1 px-2 py-1.5 rounded hairline-soft text-[12px]">
+        <div className="flex items-center gap-2">
+          <Dot engine="remote_render" />
+          <span className="w-[110px] flex-none">{t("engines.name.remote_render")}</span>
+          <input
+            className={"input py-0.5 text-[11px] font-mono flex-1 " + (remoteBad ? "outline outline-1 outline-red-500" : "")}
+            value={draft.remoteUrl}
+            placeholder="http://10.0.0.139:8779"
+            disabled={!draft.remoteOn}
+            onChange={(e) => setDraft({ ...draft, remoteUrl: e.target.value })}
+          />
+          <label className="flex items-center gap-1 label-tiny flex-none">
+            <input type="checkbox" checked={draft.remoteOn}
+                   onChange={(e) => setDraft({ ...draft, remoteOn: e.target.checked })} />
+            {t("engines.enabled")}
+          </label>
+          <OverrideBadge path="endpoints.remote_render.url" />
+        </div>
+        {draft.remoteOn && <span className="label-tiny pl-5">{t("engines.remoteColdStart")}</span>}
+      </div>
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+        <Dot engine="higgsfield" />
+        <span className="w-[110px] flex-none">{t("engines.name.higgsfield")}</span>
+        <span className="label-tiny flex-1">
+          {probe.data?.higgsfield.connected
+            ? t("engines.hfConnected", { credits: probe.data.higgsfield.credits ?? "—", plan: probe.data.higgsfield.plan ?? "?" })
+            : t("engines.hfNotConnected")}
+        </span>
+        <span className="label-tiny text-cyan">{t("engines.hfSeeTab")}</span>
+      </div>
+
+      {/* ---- Routing card ---- */}
+      <div className="label-tiny pt-1 border-t hairline-soft">{t("engines.routingTitle")}</div>
+      {CAPABILITY_ORDER.map((cap) => {
+        const matrix = c.capabilities.find((x) => x.id === cap);
+        if (!matrix) return null;
+        const current = draft.routing[cap];
+        const onlyOne = matrix.engines.filter((e) => e.available).length <= 1 && matrix.engines.length <= 1;
+        return (
+          <div key={cap} className="flex flex-col gap-0.5 px-2 py-1.5 rounded hairline-soft text-[12px]">
+            <div className="flex items-center gap-2">
+              <Dot engine={current} />
+              <span className="flex-1">{t(`engines.cap.${cap}`)}</span>
+              <select
+                className="input text-[12px] py-0.5 w-[200px]"
+                value={current}
+                disabled={onlyOne || overridden(`routing.${cap}`)}
+                onChange={(e) => setDraft({ ...draft, routing: { ...draft.routing, [cap]: e.target.value as EngineId } })}
+              >
+                {matrix.engines.map((e) => (
+                  <option key={e.id} value={e.id} disabled={!e.available}>
+                    {t(`engines.name.${e.id}`)}{!e.available && e.reason ? ` — ${e.reason}` : ""}
+                  </option>
+                ))}
+              </select>
+              <OverrideBadge path={`routing.${cap}`} />
+            </div>
+            {cap === "lipsync" && (
+              <span className="label-tiny pl-5">
+                {matrix.engines.find((e) => e.id === "local_wan")?.reason ?? ""}
+              </span>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ---- Save bar ---- */}
+      <div className="flex justify-end gap-2 pt-2 border-t hairline-soft sticky bottom-0 bg-bg-1 py-2">
+        {dirty && (
+          <button className="btn" disabled={busy} onClick={() => setDraft(null)}>
+            {t("engines.revert")}
+          </button>
+        )}
+        <button className="btn btn-amber" disabled={!dirty || busy || comfyBad || remoteBad} onClick={save}>
+          {t("common.save")}
+        </button>
+      </div>
     </div>
   );
 }
