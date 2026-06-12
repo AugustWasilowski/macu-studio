@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import os
 import subprocess
 import tempfile
 import time
@@ -27,9 +28,26 @@ router = APIRouter()
 
 
 def _callback_uri(request: Request) -> str:
-    # The user's browser resolves this, so a LAN host header works fine.
+    """The redirect URI we register with Higgsfield's OAuth server.
+
+    Their authorize endpoint only accepts http for *localhost hosts (everything
+    else must be https), so:
+    1. MACU_HIGGSFIELD_REDIRECT_URI env wins — set it to an https URL that
+       reaches Studio (e.g. a Tailscale Serve port) for a zero-friction connect.
+    2. An https request base is used as-is.
+    3. Otherwise fall back to http://localhost:<port>/... — authorize accepts
+       it; if the browser isn't on the Studio box the redirect lands on a dead
+       localhost page, but the code+state are in its address bar and the
+       Settings panel's paste-the-redirect-URL fallback completes the connect.
+    """
+    override = os.environ.get("MACU_HIGGSFIELD_REDIRECT_URI", "").strip()
+    if override:
+        return override
     base = str(request.base_url).rstrip("/")
-    return f"{base}/api/higgsfield/oauth/callback"
+    if base.startswith("https://"):
+        return f"{base}/api/higgsfield/oauth/callback"
+    port = request.base_url.port or 8774
+    return f"http://localhost:{port}/api/higgsfield/oauth/callback"
 
 
 @router.get("/api/higgsfield/auth")
