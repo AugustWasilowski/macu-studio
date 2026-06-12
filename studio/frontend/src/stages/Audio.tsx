@@ -71,6 +71,19 @@ export function Audio({ slug }: { slug: string }) {
   });
   const { continuous, setContinuous, curCueId, sequentialPlaying, togglePlay, playAll } = playback;
 
+  // Download a cue's audio to the browser. Respects the version-preview override if one is showing.
+  const downloadCue = (cueId: string) => {
+    const c = cues.data?.cues.find((x) => x.id === cueId);
+    if (!c?.wav_exists && !overridesRef.current[cueId]) { push(t("audio.noWavYet"), "info"); return; }
+    const url = overridesRef.current[cueId] || mediaUrl.cueAudio(slug, cueId, c?.wav_mtime);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-${cueId}.wav`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   // ---- pre-cache all of this episode's audio into the in-browser blob cache ----
   // (manual, button-driven — sidesteps Cloudflare revalidation lag on playback)
   const [precaching, setPrecaching] = useState<{ done: number; total: number } | null>(null);
@@ -291,6 +304,7 @@ export function Audio({ slug }: { slug: string }) {
                             <PlayBtn playing={isPlaying} onClick={() => togglePlay(c.id)} title={c.wav_exists ? t("audio.play") : t("audio.noWavYet")} />
                             <button className="btn p-1" title={t("audio.regenerate")} disabled={isBusy} onClick={() => regen.mutate(c.id)}><IRegen /></button>
                             <RegenNotes onSubmit={(_) => regen.mutate(c.id)} />
+                            <button className="btn p-1" title={t("audio.download")} disabled={!c.wav_exists} onClick={() => downloadCue(c.id)}><IDL /></button>
                           </div>
                         </td>
                         <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
@@ -324,6 +338,7 @@ export function Audio({ slug }: { slug: string }) {
               slug={slug}
               onPlay={() => togglePlay(selCue.id)}
               onRegen={() => regen.mutate(selCue.id)}
+              onDownload={() => downloadCue(selCue.id)}
               onSaveText={(text) => saveCueText.mutate({ id: selCue.id, text })}
             />
           ) : (
@@ -339,7 +354,7 @@ export function Audio({ slug }: { slug: string }) {
 }
 
 function CueInspector({
-  cue, isPlaying, isBusy, speaker, slug, onPlay, onRegen, onSaveText,
+  cue, isPlaying, isBusy, speaker, slug, onPlay, onRegen, onDownload, onSaveText,
 }: {
   cue: Cue;
   isPlaying: boolean;
@@ -348,6 +363,7 @@ function CueInspector({
   slug: string;
   onPlay: () => void;
   onRegen: () => void;
+  onDownload: () => void;
   onSaveText: (text: string) => void;
 }) {
   const t = useT();
@@ -372,6 +388,7 @@ function CueInspector({
         <PlayBtn playing={isPlaying} onClick={onPlay} />
         <button className="btn" onClick={onRegen} disabled={isBusy}><IRegen /> {t("audio.regen")}</button>
         <RegenNotes onSubmit={() => onRegen()} />
+        <button className="btn" onClick={onDownload} disabled={!cue.wav_exists} title={t("audio.download")}><IDL /> {t("audio.download")}</button>
       </div>
       <div className="flex flex-col gap-1">
         <span className="label-tiny">cue.text <span className="text-txt-faint">{t("audio.cueTextHint")}</span></span>

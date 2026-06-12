@@ -190,6 +190,7 @@
   "audio.play": "Play",
   "audio.noWavYet": "No wav yet",
   "audio.regenerate": "Regenerate",
+  "audio.download": "Download",
   "audio.noCues": "No cues in manifest yet.",
   "audio.manifestPreview": "MANIFEST PREVIEW",
   "audio.selectCueHint": "Select a cue on the left to see its full metadata.",
