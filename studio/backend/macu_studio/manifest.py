@@ -6,6 +6,7 @@ from typing import Any
 
 from .episodes import episode_dir, manifest_path, final_video_path, final_srt_path, final_thumb_path
 from .config import SHARES
+from . import hfcache
 from . import models
 from . import version
 
@@ -183,7 +184,7 @@ def derive_cues(slug: str, manifest: dict | None = None) -> list[dict]:
 
 
 def derive_shots(slug: str, manifest: dict | None = None) -> list[dict]:
-    """All character + b-roll keys, plus per-cue title slots, with status."""
+    """All character + b-roll keys, plus per-shot cloud (Higgsfield) rows, with status."""
     m = manifest or load(slug)
     ep = episode_dir(slug)
     clips_dir = ep / "clips"
@@ -197,6 +198,30 @@ def derive_shots(slug: str, manifest: dict | None = None) -> list[dict]:
         rows.append(_shot_row(slug, key, "character", val, clips_dir, manifest_mtime))
     for key, val in broll.items():
         rows.append(_shot_row(slug, key, "broll", val, clips_dir, manifest_mtime))
+
+    # Cloud shots are per-SHOT-ID rows (each is a unique billed generation, unlike
+    # local masters which are keyed by who and reused across cues). Status here IS
+    # hash-accurate — we own clips/.hf_cache.json from day one, so the deferred-
+    # staleness caveat on local shots doesn't apply.
+    cached = hfcache.load_sidecar(hfcache.clips_sidecar_path(ep), "shots")
+    for cue, shot in hfcache.cloud_shots(m):
+        st = hfcache.shot_state(shot, cue, m, ep, cached)
+        sid = shot.get("id") or ""
+        clip = hfcache.clip_path(ep, sid)
+        rows.append({
+            "key": sid,
+            "kind": shot.get("kind"),
+            "cue": cue.get("id"),
+            "seed": shot.get("seed"),
+            "prompt": hfcache.resolve_prompt(shot, m) if shot.get("kind") == "higgsfield" else "",
+            "model": hfcache.shot_params(shot, m)["model"],
+            "source_still": shot.get("source_still"),
+            "status": "rendered" if st["fresh"] else ("stale" if st["exists"] else "missing"),
+            "webp_exists": False,
+            "webp_mtime": None,
+            "clip_exists": clip.exists(),
+            "clip_mtime": clip.stat().st_mtime if clip.exists() else None,
+        })
     return rows
 
 

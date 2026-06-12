@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 _CFG = ConfigDict(extra="allow")
 
@@ -61,6 +61,38 @@ class CharacterDef(BaseModel):
     model_config = _CFG
     seed: Optional[int] = None
     core: Optional[str] = None
+    # Higgsfield character stills (feed image-to-video + lipsync shots):
+    still: Optional[str] = None          # path relative to episode dir (default stills/<key>.png)
+    still_prompt: Optional[str] = None   # prompt for cloud image generation
+    still_model: Optional[str] = None    # Higgsfield image model id (default from higgsfield block)
+
+
+class Crop(BaseModel):
+    """Normalized center-point pan/zoom applied to a cloud clip at assembly.
+    x/y ∈ [0,1] (crop-window center), zoom ∈ [1,2]. Never re-bills."""
+    model_config = _CFG
+    x: Optional[float] = None
+    y: Optional[float] = None
+    zoom: Optional[float] = None
+
+
+class Trim(BaseModel):
+    """In/out points (seconds into the cached clip) applied at assembly."""
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+    in_: Optional[float] = Field(default=None, alias="in")
+    out: Optional[float] = None
+
+
+class HiggsfieldBlock(BaseModel):
+    """Episode-level defaults for cloud shots (NOT locked — lenient like Style)."""
+    model_config = _CFG
+    model: Optional[str] = None          # default video model id (e.g. seedance_2_0)
+    image_model: Optional[str] = None    # default image model for character stills
+    resolution: Optional[str] = None     # 480p|720p|1080p (model-dependent)
+    aspect_ratio: Optional[str] = None   # default 1:1 to match the MACU frame
+    duration: Optional[int] = None       # default clip seconds for higgsfield shots
+    jank: Optional[bool] = None          # run cloud clips through jank_filter() (default true)
+    style_suffix: Optional[str] = None   # appended to cloud prompts (style.suffix is zeroscope-tuned)
 
 
 class Shot(BaseModel):
@@ -71,6 +103,14 @@ class Shot(BaseModel):
     asset: Optional[str] = None
     seed: Optional[int] = None
     fill: Optional[str] = None
+    # Cloud kinds ("higgsfield" t2v/i2v, "lipsync" audio-driven):
+    prompt: Optional[str] = None         # explicit prompt (falls back to who's core + style_suffix)
+    model: Optional[str] = None          # per-shot model override
+    duration: Optional[int] = None       # higgsfield only; lipsync duration = cue VO duration
+    source_still: Optional[str] = None   # character key or episode-relative path → image-to-video
+    crop: Optional[Crop] = None
+    trim: Optional[Trim] = None
+    jank: Optional[bool] = None          # per-shot override of higgsfield.jank
 
 
 class Cue(BaseModel):
@@ -133,6 +173,7 @@ class Manifest(BaseModel):
     episode_num: Optional[int] = None  # 1..5 within the season
     voice: Optional[Voice] = None
     comfyui: Optional[Comfyui] = None
+    higgsfield: Optional[HiggsfieldBlock] = None
     style: Optional[Style] = None
     render_rule: Optional[str] = None
     title_assets: dict[str, Union[TitleAssetObj, str]] = {}
@@ -160,6 +201,38 @@ def parse(data: dict[str, Any]) -> Manifest:
 def validate(data: dict[str, Any]) -> None:
     """Structural gate used by manifest.save(); raises ValueError if malformed."""
     parse(data)
+    _validate_cloud_shots(data)
+
+
+def _validate_cloud_shots(data: dict[str, Any]) -> None:
+    """Cloud-shot invariants beyond pydantic's structural pass:
+    - a lipsync shot must be the ONLY shot in its cue (its clip spans the whole
+      cue — the VO dictates its duration, so siblings can't share the slot)
+    - crop/zoom/trim sanity (cheap to catch here; stage 4 would only fail later)
+    """
+    bad_solo: list[str] = []
+    for cue in data.get("cues") or []:
+        shots = cue.get("shots") or []
+        if any((s or {}).get("kind") == "lipsync" for s in shots) and len(shots) > 1:
+            bad_solo.append(str(cue.get("id")))
+        for s in shots:
+            crop = (s or {}).get("crop") or {}
+            z = crop.get("zoom")
+            if z is not None and not (1.0 <= float(z) <= 2.0):
+                raise ValueError(f"shot {s.get('id')}: crop.zoom must be in [1, 2], got {z}")
+            for ax in ("x", "y"):
+                v = crop.get(ax)
+                if v is not None and not (0.0 <= float(v) <= 1.0):
+                    raise ValueError(f"shot {s.get('id')}: crop.{ax} must be in [0, 1], got {v}")
+            trim = (s or {}).get("trim") or {}
+            t_in, t_out = trim.get("in"), trim.get("out")
+            if t_in is not None and t_out is not None and float(t_out) <= float(t_in):
+                raise ValueError(f"shot {s.get('id')}: trim.out must be > trim.in")
+    if bad_solo:
+        raise ValueError(
+            "a lipsync shot must be the only shot in its cue (its length is the cue's "
+            f"VO length); offending cue(s): {', '.join(bad_solo)}"
+        )
 
 
 # --------------------------------------------------------------------------- #

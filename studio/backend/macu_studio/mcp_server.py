@@ -555,3 +555,72 @@ async def publish_show(show: str, message: str = "", allow_new_public: list[str]
     if allow_new_public:
         body["allow_new_public"] = list(allow_new_public)
     return await _api("POST", f"/api/shows/{show}/publish", body=body)
+
+
+# ---- Higgsfield (cloud video generation) ------------------------------------
+
+@mcp.tool()
+async def higgsfield_status() -> dict:
+    """Higgsfield.ai connection state, subscription plan, and remaining credits.
+    Cloud shots (kind 'higgsfield'/'lipsync') need this connected — the user
+    connects once in Settings -> Higgsfield (OAuth; cannot be done over MCP)."""
+    return await _api("GET", "/api/higgsfield/auth")
+
+
+@mcp.tool()
+async def higgsfield_models(refresh: bool = False) -> dict:
+    """The Higgsfield model catalog (video + image + audio) with per-model
+    parameters, durations, and aspect ratios. Disk-cached 24h; refresh=true
+    forces a refetch. Video shots default to seedance_2_0; lipsync shots need a
+    model whose medias accept an 'audio' role (seedance_2_0, wan2_7)."""
+    return await _api("GET", "/api/higgsfield/models", params={"refresh": str(refresh).lower()})
+
+
+@mcp.tool()
+async def estimate_episode_cost(slug: str) -> dict:
+    """Credit cost of rendering the episode's NON-CACHED Higgsfield shots, plus
+    current balance and a tri-state `sufficient` verdict (null = some costs or
+    the balance are unknown). Cached shots are free; crop/trim edits never
+    re-bill. ALWAYS show this to the user before run_pipeline on an episode
+    with cloud shots."""
+    return await _api("GET", f"/api/episodes/{slug}/higgsfield/estimate")
+
+
+@mcp.tool()
+async def set_shot_provider(slug: str, cue_id: str, shot_id: str, kind: str,
+                            model: str = "", prompt: str = "", who: str = "",
+                            source_still: str = "", duration: int = 0) -> dict:
+    """Convert (or create) one shot in a cue to a given provider kind:
+    'character'/'broll' (local zeroscope), 'higgsfield' (cloud t2v/i2v), or
+    'lipsync' (cloud, audio-driven by the cue's VO; must be the cue's ONLY
+    shot). Optional fields apply to cloud kinds: model (default from the
+    manifest's higgsfield block), prompt (default: who's core prompt +
+    style_suffix), source_still (character key or episode-relative path ->
+    image-to-video), duration (seconds, higgsfield kind only)."""
+    mres = await _api("GET", f"/api/episodes/{slug}/manifest")
+    if _is_err(mres):
+        return mres
+    m = mres.get("manifest") or mres
+    cue = next((c for c in (m.get("cues") or []) if c.get("id") == cue_id), None)
+    if cue is None:
+        return {"error": True, "detail": f"unknown cue {cue_id}",
+                "hint": "read_manifest and check cues[].id"}
+    shots = cue.get("shots") or []
+    shot = next((s for s in shots if s.get("id") == shot_id), None)
+    if shot is None:
+        shot = {"id": shot_id}
+        shots.append(shot)
+    shot["kind"] = kind
+    for k, v in (("model", model), ("prompt", prompt), ("who", who),
+                 ("source_still", source_still)):
+        if v:
+            shot[k] = v
+    if duration:
+        shot["duration"] = duration
+    if kind == "lipsync":
+        # the validator rejects siblings; make the intent explicit instead of 400ing
+        cue["shots"] = [shot]
+    else:
+        cue["shots"] = shots
+    return await _api("PUT", f"/api/episodes/{slug}/cue-shots",
+                      body={"cues": {cue_id: cue["shots"]}})
