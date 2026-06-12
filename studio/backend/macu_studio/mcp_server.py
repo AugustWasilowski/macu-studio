@@ -648,3 +648,96 @@ async def generate_character_still(slug: str, who: str) -> dict:
     characters[who].still_prompt; async — poll with still_status which is part of
     this tool's response loop). Stills feed image-to-video and lipsync shots."""
     return await _api("POST", f"/api/episodes/{slug}/characters/{who}/still/regen")
+
+
+# ---- Character library + engines ---------------------------------------------
+
+@mcp.tool()
+async def list_characters(show: str) -> dict:
+    """The show's character library roster (key, name, tags, take count). The
+    library is show-level — episodes pull characters in via
+    use_character_in_episode."""
+    return await _api("GET", f"/api/shows/{show}/characters")
+
+
+@mcp.tool()
+async def get_character(show: str, key: str) -> dict:
+    """Full character record: prompts, takes (with engine/model/seed provenance),
+    default take, and any running generation job."""
+    return await _api("GET", f"/api/shows/{show}/characters/{key}")
+
+
+@mcp.tool()
+async def upsert_character(show: str, key: str, name: str = "", core: str = "",
+                           still_prompt: str = "", voice_hint: str = "",
+                           seed: int = 0) -> dict:
+    """Create or update a library character. core = the video prompt base;
+    still_prompt = the reference-image prompt (used by generate_character_takes)."""
+    fields = {k: v for k, v in (("name", name), ("core", core),
+              ("still_prompt", still_prompt), ("voice_hint", voice_hint)) if v}
+    if seed:
+        fields["seed"] = seed
+    r = await _api("POST", f"/api/shows/{show}/characters", body={"key": key, **fields})
+    if isinstance(r, dict) and r.get("status") == 409:
+        r = await _api("PUT", f"/api/shows/{show}/characters/{key}", body=fields)
+    return r
+
+
+@mcp.tool()
+async def generate_character_takes(show: str, key: str, engine: str = "",
+                                   count: int = 1, prompt: str = "",
+                                   seed: int = 0) -> dict:
+    """Generate 1-4 reference-still takes for a library character. engine:
+    comfy_zimage (local, free) | higgsfield (SPENDS CREDITS) | remote_render;
+    empty = the routed default (Settings → Engines). Async — poll
+    character_take_status."""
+    body: dict = {"count": count}
+    if engine:
+        body["engine"] = engine
+    if prompt:
+        body["prompt"] = prompt
+    if seed:
+        body["seed"] = seed
+    return await _api("POST", f"/api/shows/{show}/characters/{key}/generate", body=body)
+
+
+@mcp.tool()
+async def character_take_status(show: str, key: str) -> dict:
+    """Generation job state + the character's takes list."""
+    return await _api("GET", f"/api/shows/{show}/characters/{key}/generate/status")
+
+
+@mcp.tool()
+async def set_default_take(show: str, key: str, take: str) -> dict:
+    """Pick which take is the character's default reference still."""
+    return await _api("POST", f"/api/shows/{show}/characters/{key}/takes/{take}/default")
+
+
+@mcp.tool()
+async def use_character_in_episode(show: str, key: str, slug: str, take: str = "",
+                                   overwrite_still: bool = False) -> dict:
+    """Copy a library take into an episode (stills/<key>.png + manifest entry +
+    freshness stamp, so nothing re-bills). Returns needs_confirm when a
+    different episode still exists (pass overwrite_still=true to replace) and
+    `invalidates` listing cached PAID cloud shots the replacement would mark
+    stale — surface that to the user before confirming."""
+    body: dict = {"slug": slug, "overwrite_still": overwrite_still}
+    if take:
+        body["take"] = take
+    return await _api("POST", f"/api/shows/{show}/characters/{key}/use", body=body)
+
+
+@mcp.tool()
+async def engines_status() -> dict:
+    """Engine routing config (which service handles masters / stills / cloud
+    video / lipsync) + live reachability probes."""
+    cfg = await _api("GET", "/api/engines")
+    probe = await _api("GET", "/api/engines/probe")
+    return {"config": cfg, "probe": probe}
+
+
+@mcp.tool()
+async def set_engine_route(capability: str, engine: str) -> dict:
+    """Route a capability (masters|stills|cloud_video|lipsync) to an engine.
+    Allowed engines per capability come from engines_status capabilities."""
+    return await _api("PUT", "/api/engines", body={"routing": {capability: engine}})
