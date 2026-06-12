@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
-import { Page, TopPage, TOP_PAGES } from "../route";
+import { Page, TopPage, STRIP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
 import { versionApi } from "../api/version";
 import { VERSION_KEY } from "./UpdateModal";
@@ -236,7 +236,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           );
         })}
         <span className="w-px self-stretch my-1 bg-[var(--line-soft)] mx-1" />
-        {TOP_PAGES.map((p) => {
+        {STRIP_PAGES.map((p) => {
           const active = page === p;
           return (
             <button

@@ -14,6 +14,7 @@ export interface FieldProps {
   placeholder?: string;
   monospace?: boolean;
   rows?: number;
+  onBlur?: () => void;
 }
 
 export function Field(p: FieldProps) {
@@ -39,6 +40,7 @@ export function Field(p: FieldProps) {
             value={String(p.value)}
             placeholder={p.placeholder}
             onChange={(e) => p.onChange?.(e.target.value)}
+            onBlur={p.onBlur}
           />
         ) : (
           <input
@@ -50,6 +52,7 @@ export function Field(p: FieldProps) {
             onChange={(e) =>
               p.onChange?.(p.type === "checkbox" ? String((e.target as HTMLInputElement).checked) : e.target.value)
             }
+            onBlur={p.onBlur}
           />
         )}
         {p.suffix && <span className="label-tiny pl-1">{p.suffix}</span>}

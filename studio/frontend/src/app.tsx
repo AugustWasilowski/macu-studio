@@ -12,6 +12,7 @@ import { Video } from "./stages/Video";
 import { Graphics } from "./stages/Graphics";
 import { Publish } from "./stages/Publish";
 import { Docs } from "./stages/Docs";
+import { Characters } from "./stages/Characters";
 import { Placeholder } from "./stages/Placeholder";
 import { ManifestDrawer } from "./components/ManifestDrawer";
 import { WizardPanel } from "./components/WizardPanel";
@@ -172,6 +173,13 @@ function PageView({
     return (
       <StageTransition id="docs">
         <Docs />
+      </StageTransition>
+    );
+  }
+  if (page === "characters") {
+    return (
+      <StageTransition id="characters">
+        <Characters />
       </StageTransition>
     );
   }

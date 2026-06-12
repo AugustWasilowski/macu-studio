@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { UI_STAGES, UIStage } from "./types";
 
 // Top-level pages that aren't tied to a (slug, stage) pair. They use the
-// global activeSlug from the store for "which episode" context.
-export type TopPage = "docs";
-export const TOP_PAGES: TopPage[] = ["docs"];
+// global activeShow/activeSlug from the store for context. TOP_PAGES = valid
+// hash targets; STRIP_PAGES = the subset shown as topbar tabs (docs moved into
+// the file menu, but #docs deep links keep working).
+export type TopPage = "docs" | "characters";
+export const TOP_PAGES: TopPage[] = ["docs", "characters"];
+export const STRIP_PAGES: TopPage[] = ["characters"];
 export type Page = "stage" | TopPage;
 
 export interface Route {

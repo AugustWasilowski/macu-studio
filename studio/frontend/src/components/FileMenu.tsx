@@ -203,6 +203,7 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
 
             <Section label={t("filemenu.sectionMore")} />
             <Item label={t("filemenu.settings")} onClick={onOpenSettings} />
+            <Item label={t("filemenu.docs")} onClick={() => go({ page: "docs" })} />
             <Item label={t("filemenu.checkUpdates")} onClick={openUpdate} />
             <Item label={t("filemenu.runDiagnostics")} onClick={openDiagnostics} />
             <Item label={t("filemenu.goToAssembly")} onClick={onGoAssembly} />

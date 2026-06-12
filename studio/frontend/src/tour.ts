@@ -60,10 +60,16 @@ export const TOUR_STEPS: TourStep[] = [
     stage: "publish",
   },
   {
-    target: '[data-tour="tab-docs"]',
+    target: '[data-tour="tab-characters"]',
+    titleKey: "tour.characters.title",
+    bodyKey: "tour.characters.body",
+    topPage: "characters",
+  },
+  {
+    // Docs moved into the file menu (below Settings) — point at the menu.
+    target: '[data-tour="file-menu"]',
     titleKey: "tour.docs.title",
     bodyKey: "tour.docs.body",
-    topPage: "docs",
   },
   {
     target: '[data-tour="git-sync"]',
