@@ -6,16 +6,21 @@ pipeline stage 2b) live here too once the cloud stage lands.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import math
+import subprocess
+import tempfile
 import time
+from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from . import higgsfield as hf
 from . import hfcache as hfc
 from . import manifest as manifest_mod
+from .config import SHARES
 from .episodes import episode_dir
 
 router = APIRouter()
@@ -232,3 +237,176 @@ async def get_estimate(slug: str):
         "plan": (bal or {}).get("subscription_plan_type"),
         "sufficient": sufficient,
     }
+
+
+# ---- character stills (cloud image gen) -----------------------------------------
+
+# In-memory still jobs, keyed "<slug>:<who>" (mirrors hyperframes.py's JOBS).
+STILL_JOBS: dict[str, dict] = {}
+
+
+def _png_normalize(src: Path, dest: Path) -> None:
+    """Whatever format the model returned → PNG at dest (ffmpeg, atomic)."""
+    with tempfile.NamedTemporaryFile(suffix=".png", dir=dest.parent, delete=False) as t:
+        tmp = Path(t.name)
+    try:
+        subprocess.run(["ffmpeg", "-y", "-i", str(src), "-frames:v", "1", str(tmp)],
+                       check=True, capture_output=True, timeout=60)
+        tmp.replace(dest)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+async def _gen_still(slug: str, who: str, key: str) -> None:
+    job = STILL_JOBS[key]
+    try:
+        m = manifest_mod.load(slug)
+        ep = episode_dir(slug)
+        chars = m.get("characters") or {}
+        char = chars.get(who) if isinstance(chars.get(who), dict) else {}
+        prompt = (char.get("still_prompt") or "").strip()
+        if not prompt:
+            raise RuntimeError(f"character '{who}' has no still_prompt — set one first")
+        blk = hfc.hf_block(m)
+        model = char.get("still_model") or blk["image_model"]
+        job["state"] = "generating"
+        g = await hf.generate("generate_image", {
+            "model": model, "prompt": prompt, "aspect_ratio": "1:1", "count": 1,
+        })
+        job["job_id"] = g["job_id"]
+        res = await hf.wait_job(g["job_id"], timeout=600)
+        urls = hf.find_media_urls(res, exts=(".png", ".jpg", ".jpeg", ".webp"))
+        if not urls:
+            urls = hf.find_media_urls(res)
+        if not urls:
+            raise RuntimeError(f"job finished but no image URL found: {str(res)[:300]}")
+        job["state"] = "downloading"
+        dest = hfc.still_path(ep, who)
+        with tempfile.NamedTemporaryFile(suffix=".img", dir="/tmp", delete=False) as t:
+            raw = Path(t.name)
+        try:
+            await hf.download(urls[0], raw)
+            await asyncio.to_thread(_png_normalize, raw, dest)
+        finally:
+            raw.unlink(missing_ok=True)
+        # Stamp the sidecar so derive/estimate can prove freshness.
+        sc_path = hfc.stills_sidecar_path(ep)
+        entries = hfc.load_sidecar(sc_path, "stills")
+        entries[who] = hfc.still_hash(char, m)
+        hfc.save_sidecar(sc_path, "stills", entries)
+        job["state"] = "done"
+    except Exception as e:
+        job["state"] = "error"
+        job["error"] = str(e)
+
+
+@router.post("/api/episodes/{slug}/characters/{who}/still/regen")
+async def post_still_regen(slug: str, who: str):
+    """(Re)generate a character's still via Higgsfield image gen. Async — poll
+    the matching /still/status. Drops the cache entry first so a re-run after
+    a prompt edit regenerates."""
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    chars = m.get("characters") or {}
+    if who not in chars:
+        raise HTTPException(404, f"unknown character {who}")
+    if not hf.status()["connected"]:
+        raise HTTPException(409, "Higgsfield not connected — connect in Settings → Higgsfield")
+    key = f"{slug}:{who}"
+    if STILL_JOBS.get(key, {}).get("state") in ("generating", "downloading", "queued"):
+        raise HTTPException(409, f"a still generation for {who} is already running")
+    ep = episode_dir(slug)
+    sc_path = hfc.stills_sidecar_path(ep)
+    entries = hfc.load_sidecar(sc_path, "stills")
+    if who in entries:
+        entries.pop(who)
+        hfc.save_sidecar(sc_path, "stills", entries)
+    STILL_JOBS[key] = {"state": "queued", "error": None, "started": time.time(), "job_id": None}
+    asyncio.get_running_loop().create_task(_gen_still(slug, who, key))
+    return {"ok": True, "key": key}
+
+
+@router.get("/api/episodes/{slug}/characters/{who}/still/status")
+async def get_still_status(slug: str, who: str):
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    ep = episode_dir(slug)
+    chars = m.get("characters") or {}
+    char = chars.get(who) if isinstance(chars.get(who), dict) else {}
+    p = hfc.still_path(ep, who)
+    entries = hfc.load_sidecar(hfc.stills_sidecar_path(ep), "stills")
+    fresh = p.exists() and (entries.get(who) is None or entries.get(who) == hfc.still_hash(char, m))
+    job = STILL_JOBS.get(f"{slug}:{who}") or {}
+    return {"exists": p.exists(), "fresh": fresh,
+            "mtime": p.stat().st_mtime if p.exists() else None,
+            "has_prompt": bool(char.get("still_prompt")),
+            "job": {"state": job.get("state"), "error": job.get("error")} if job else None}
+
+
+@router.get("/api/episodes/{slug}/still/{who}")
+async def get_still(slug: str, who: str):
+    p = hfc.still_path(episode_dir(slug), who)
+    if not p.exists():
+        raise HTTPException(404, "no still")
+    return FileResponse(str(p), media_type="image/png")
+
+
+# ---- generation broker (used by pipeline stage 2b) -------------------------------
+
+def _confine(path_str: str) -> Path:
+    """Reject paths outside the shares root (same rule as serve.py episodes_dir)."""
+    p = Path(path_str).resolve()
+    if not str(p).startswith(str(Path(SHARES).resolve()) + "/"):
+        raise HTTPException(400, f"path must live under {SHARES}")
+    if not p.exists():
+        raise HTTPException(404, f"no such file: {p}")
+    return p
+
+
+@router.post("/api/higgsfield/media/upload")
+async def post_media_upload(body: dict = Body(...)):
+    """Local file (under the shares root) → confirmed Higgsfield media_id."""
+    p = _confine(str(body.get("path") or ""))
+    try:
+        return {"media_id": await hf.upload_media(p)}
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"upload failed: {e}")
+
+
+@router.post("/api/higgsfield/generate")
+async def post_generate(body: dict = Body(...)):
+    """Submit a generation. body: {tool: generate_video|generate_image, params: {...}}."""
+    tool = body.get("tool") or "generate_video"
+    if tool not in ("generate_video", "generate_image"):
+        raise HTTPException(400, "tool must be generate_video or generate_image")
+    params = body.get("params")
+    if not isinstance(params, dict) or not params.get("model"):
+        raise HTTPException(400, "params object with a model is required")
+    try:
+        return await hf.generate(tool, params)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"generate failed: {e}")
+
+
+@router.get("/api/higgsfield/jobs/{job_id}")
+async def get_job(job_id: str, sync: bool = False):
+    """job_status passthrough. Result-media URLs are surfaced as `urls` so the
+    pipeline can download without knowing the payload shape."""
+    try:
+        res = await hf.call("job_status", {"jobId": job_id, "sync": bool(sync)}, timeout=90)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"job_status failed: {e}")
+    out = res if isinstance(res, dict) else {"raw": res}
+    out.setdefault("urls", hf.find_media_urls(res))
+    return out

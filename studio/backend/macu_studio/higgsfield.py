@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import mimetypes
 import os
 import secrets
 import time
@@ -31,6 +32,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+import httpx
 from mcp import ClientSession
 from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.client.streamable_http import streamablehttp_client
@@ -369,3 +371,123 @@ async def models(refresh: bool = False) -> dict:
 async def get_cost(params: dict) -> Any:
     """Preflight a generate_video call's credit cost without submitting."""
     return await call("generate_video", {"params": {**params, "get_cost": True}}, timeout=60)
+
+
+# ---- generation helpers ---------------------------------------------------------
+
+async def upload_media(path: Path) -> str:
+    """Local file → confirmed media_id (media_upload → PUT bytes → media_confirm)."""
+    ct = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    res = await call("media_upload", {"filename": path.name, "content_type": ct}, timeout=60)
+    up = res
+    if isinstance(res, dict):
+        for k in ("uploads", "files", "results"):
+            if isinstance(res.get(k), list) and res[k]:
+                up = res[k][0]
+                break
+    media_id = (up or {}).get("media_id") or (up or {}).get("id")
+    upload_url = (up or {}).get("upload_url") or (up or {}).get("url")
+    if not (media_id and upload_url):
+        raise RuntimeError(f"unexpected media_upload payload: {res!r}")
+    async with httpx.AsyncClient(timeout=600) as c:
+        r = await c.put(upload_url, content=path.read_bytes(), headers={"Content-Type": ct})
+        r.raise_for_status()
+    mtype = ct.split("/")[0]
+    if mtype not in ("image", "video", "audio"):
+        mtype = "file"
+    await call("media_confirm", {"media_id": media_id, "type": mtype}, timeout=60)
+    return str(media_id)
+
+
+def _find_job_id(obj: Any) -> str | None:
+    if isinstance(obj, dict):
+        for k in ("job_id", "jobId", "id"):
+            v = obj.get(k)
+            if isinstance(v, str) and len(v) >= 32 and "-" in v:
+                return v
+        for v in obj.values():
+            found = _find_job_id(v)
+            if found:
+                return found
+    elif isinstance(obj, list):
+        for v in obj:
+            found = _find_job_id(v)
+            if found:
+                return found
+    return None
+
+
+def find_media_urls(obj: Any, exts: tuple[str, ...] = (".mp4", ".webm", ".mov", ".png",
+                                                       ".jpg", ".jpeg", ".webp", ".gif")) -> list[str]:
+    """Recursively collect result-media URLs from a job payload (shape-tolerant)."""
+    out: list[str] = []
+
+    def walk(o: Any, key: str = "") -> None:
+        if isinstance(o, str):
+            if o.startswith("http") and (
+                any(o.split("?")[0].lower().endswith(e) for e in exts)
+                or key in ("url", "video_url", "image_url", "media_url", "download_url")
+            ):
+                out.append(o)
+        elif isinstance(o, dict):
+            for k, v in o.items():
+                walk(v, k)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v, key)
+
+    walk(obj)
+    # de-dupe, keep order
+    seen: set[str] = set()
+    return [u for u in out if not (u in seen or seen.add(u))]
+
+
+async def generate(tool: str, params: dict) -> dict:
+    """Submit a generation; returns {job_id, raw}. tool ∈ generate_video|generate_image."""
+    res = await call(tool, {"params": params}, timeout=300)
+    job_id = _find_job_id(res)
+    if not job_id:
+        raise RuntimeError(f"no job id in {tool} response: {str(res)[:400]}")
+    return {"job_id": job_id, "raw": res}
+
+
+_TERMINAL_OK = ("completed", "succeeded", "success", "done")
+_TERMINAL_BAD = ("failed", "error", "nsfw", "canceled", "cancelled", "rejected")
+
+
+async def wait_job(job_id: str, timeout: float = 900.0) -> dict:
+    """Poll job_status until terminal; honors the server's poll_after_seconds hint."""
+    deadline = time.time() + timeout
+    while True:
+        res = await call("job_status", {"jobId": job_id, "sync": True}, timeout=90)
+        st = str((res or {}).get("status") or (res or {}).get("state") or "").lower()
+        if any(s in st for s in _TERMINAL_OK):
+            return res
+        if any(s in st for s in _TERMINAL_BAD):
+            detail = (res or {}).get("error") or (res or {}).get("detail") or st
+            raise RuntimeError(f"Higgsfield job {job_id} {st}: {detail}")
+        if time.time() > deadline:
+            raise TimeoutError(f"Higgsfield job {job_id} still {st or 'pending'} after {int(timeout)}s")
+        hint = (res or {}).get("poll_after_seconds")
+        try:
+            delay = min(max(float(hint), 2.0), 30.0) if hint else 5.0
+        except (TypeError, ValueError):
+            delay = 5.0
+        await asyncio.sleep(delay)
+
+
+async def download(url: str, dest: Path) -> Path:
+    """Streaming download to dest via a .part tmp + atomic replace."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    try:
+        async with httpx.AsyncClient(timeout=600, follow_redirects=True) as c:
+            async with c.stream("GET", url) as r:
+                r.raise_for_status()
+                with open(tmp, "wb") as f:
+                    async for chunk in r.aiter_bytes(1 << 20):
+                        f.write(chunk)
+        os.replace(tmp, dest)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return dest
