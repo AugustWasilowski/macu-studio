@@ -4,18 +4,20 @@ import { Modal } from "./Modal";
 import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi } from "../api/shows";
+import { higgsfieldApi } from "../api/higgsfield";
 import { THEMES, currentTheme, setTheme } from "../theme";
 import { useT, LOCALES } from "../i18n";
 
-type Tab = "theme" | "show" | "archive" | "git" | "comfy" | "language";
+type Tab = "theme" | "show" | "archive" | "git" | "comfy" | "higgsfield" | "language";
 
-const TAB_IDS: Tab[] = ["theme", "show", "archive", "git", "comfy", "language"];
+const TAB_IDS: Tab[] = ["theme", "show", "archive", "git", "comfy", "higgsfield", "language"];
 const TAB_KEY: Record<Tab, string> = {
   theme: "settings.tabs.theme",
   show: "settings.tabs.show",
   archive: "settings.tabs.archive",
   git: "settings.tabs.git",
   comfy: "settings.tabs.comfy",
+  higgsfield: "settings.tabs.higgsfield",
   language: "settings.tabs.language",
 };
 
@@ -43,6 +45,7 @@ export function Settings({ show, onClose }: { show: string; onClose: () => void 
           {tab === "archive" && <ArchivePanel />}
           {tab === "git" && <Stub title={t("settings.tabs.git")} body={t("settings.git.stub")} />}
           {tab === "comfy" && <Stub title={t("settings.comfy.title")} body={t("settings.comfy.stub")} />}
+          {tab === "higgsfield" && <HiggsfieldPanel />}
         </div>
       </div>
     </Modal>
@@ -342,6 +345,160 @@ function ArchivePanel() {
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function HiggsfieldPanel() {
+  const t = useT();
+  const qc = useQueryClient();
+  const pushToast = useStore((s) => s.pushToast);
+  const auth = useQuery({ queryKey: ["hf-auth"], queryFn: higgsfieldApi.auth });
+
+  const [handle, setHandle] = useState<string | null>(null);
+  const [authUrl, setAuthUrl] = useState<string | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteUrl, setPasteUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // While a connect flow is pending, poll its status every 2s.
+  useEffect(() => {
+    if (!handle) return;
+    const iv = setInterval(async () => {
+      try {
+        const p = await higgsfieldApi.authPoll(handle);
+        if (p.status === "connected") {
+          setHandle(null); setAuthUrl(null); setPasteOpen(false); setPasteUrl("");
+          pushToast(t("settings.hf.connectedToast"), "ok");
+          qc.invalidateQueries({ queryKey: ["hf-auth"] });
+        } else if (p.status === "error") {
+          setHandle(null); setAuthUrl(null);
+          pushToast(t("settings.hf.connectFailed", { msg: p.error ?? "?" }), "err");
+        }
+      } catch { /* studio restarting etc — keep polling */ }
+    }, 2000);
+    return () => clearInterval(iv);
+  }, [handle, qc, pushToast, t]);
+
+  async function connect() {
+    setBusy(true);
+    try {
+      const r = await higgsfieldApi.authStart();
+      if (r.connected) {
+        pushToast(t("settings.hf.connectedToast"), "ok");
+        qc.invalidateQueries({ queryKey: ["hf-auth"] });
+      } else if (r.auth_url) {
+        setHandle(r.handle);
+        setAuthUrl(r.auth_url);
+        window.open(r.auth_url, "_blank", "noopener");
+      }
+    } catch (e) {
+      pushToast(t("settings.hf.connectFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
+    } finally { setBusy(false); }
+  }
+
+  async function submitPaste() {
+    try {
+      await higgsfieldApi.authManual(pasteUrl.trim());
+      // poll loop picks up the resulting state change
+    } catch (e) {
+      pushToast(t("settings.hf.connectFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
+    }
+  }
+
+  async function doDisconnect() {
+    setBusy(true);
+    try {
+      await higgsfieldApi.disconnect();
+      qc.invalidateQueries({ queryKey: ["hf-auth"] });
+      pushToast(t("settings.hf.disconnected"), "ok");
+    } catch (e) {
+      pushToast(String(e), "err");
+    } finally { setBusy(false); }
+  }
+
+  async function refreshModels() {
+    setBusy(true);
+    try {
+      const m = await higgsfieldApi.models(true);
+      qc.invalidateQueries({ queryKey: ["hf-models"] });
+      pushToast(t("settings.hf.modelsRefreshed", { n: m.items.length }), "ok");
+    } catch (e) {
+      pushToast(String(e), "err");
+    } finally { setBusy(false); }
+  }
+
+  if (auth.isLoading) return <div className="text-txt-dim p-4">{t("common.loading")}</div>;
+
+  const a = auth.data;
+  return (
+    <div className="flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1">
+      <div className="label-tiny">{t("settings.hf.title")}</div>
+      <p className="label-tiny leading-relaxed">{t("settings.hf.help")}</p>
+
+      {!a?.connected && (
+        <>
+          <button className="btn btn-amber justify-center" disabled={busy || !!handle} onClick={connect}>
+            {handle ? t("settings.hf.waiting") : t("settings.hf.connect")}
+          </button>
+          {handle && authUrl && (
+            <p className="label-tiny leading-relaxed">
+              {t("settings.hf.openedTab")}{" "}
+              <a className="underline" href={authUrl} target="_blank" rel="noopener noreferrer">
+                {t("settings.hf.reopenLink")}
+              </a>
+            </p>
+          )}
+          {handle && (
+            <>
+              <button className="btn justify-center" onClick={() => setPasteOpen((o) => !o)}>
+                {t("settings.hf.pasteToggle")}
+              </button>
+              {pasteOpen && (
+                <div className="flex flex-col gap-2">
+                  <p className="label-tiny leading-relaxed">{t("settings.hf.pasteHelp")}</p>
+                  <input
+                    className="input py-1 text-[11px] font-mono"
+                    value={pasteUrl}
+                    placeholder={t("settings.hf.pastePh")}
+                    onChange={(e) => setPasteUrl(e.target.value)}
+                  />
+                  <button className="btn btn-amber justify-center" disabled={!pasteUrl.trim()} onClick={submitPaste}>
+                    {t("settings.hf.pasteSubmit")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {a?.connected && (
+        <>
+          <div className="flex items-center gap-2 px-3 py-2 rounded hairline-soft text-[12px]">
+            <span className="rounded-full" style={{ width: 10, height: 10, background: "var(--green, #0c6)" }} />
+            <span>{t("settings.hf.connected")}</span>
+            {a.plan && <span className="label-tiny ml-auto uppercase">{t("settings.hf.plan", { plan: a.plan })}</span>}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2 rounded hairline-soft text-[12px]">
+            <span>{t("settings.hf.credits")}</span>
+            <span className="font-mono ml-auto">{a.credits ?? "—"}</span>
+          </div>
+          {a.balance_error && <span className="label-tiny text-red">{a.balance_error}</span>}
+          <div className="flex gap-2">
+            <button className="btn flex-1 justify-center" disabled={busy}
+                    onClick={() => qc.invalidateQueries({ queryKey: ["hf-auth"] })}>
+              {t("settings.hf.refreshBalance")}
+            </button>
+            <button className="btn flex-1 justify-center" disabled={busy} onClick={refreshModels}>
+              {t("settings.hf.refreshModels")}
+            </button>
+          </div>
+          <div className="flex justify-end pt-2 border-t hairline-soft">
+            <button className="btn" disabled={busy} onClick={doDisconnect}>{t("settings.hf.disconnect")}</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
