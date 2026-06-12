@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api, jobStreamUrl, mediaUrl } from "../api";
+import { higgsfieldApi } from "../api/higgsfield";
+import type { HfEstimate } from "../api/higgsfield";
 import { useStore, DEFAULT_RUN } from "../store";
 import { Badge, Dot } from "../components/Badge";
 import { Collapsible } from "../components/Collapsible";
+import { Modal } from "../components/Modal";
 import { IDL, IFolder, IRegen } from "../components/Icons";
 import { DopeSheet } from "./DopeSheet";
 import { Timeline } from "./Timeline";
 import { LocalizeModal } from "./LocalizeModal";
 import { useT } from "../i18n";
+import { isCloudKind } from "../types";
 import type { FinalInfo, PipelineEvent, PipelineStage, SrtEntry, StageKey } from "../types";
 
 const STAGE_KEYS: StageKey[] = ["vo", "masters", "rife", "assemble", "music", "whisper", "srt", "burn"];
@@ -123,7 +127,37 @@ export function Assembly({ slug }: { slug: string }) {
     });
   }, [pipeline.data, live]);
 
-  const onRun = (body: { from_stage?: number; only?: number }) => run.mutate(body);
+  // ---- Higgsfield cost gate ----
+  // A run that includes stage 2 on an episode with cloud shots may bill credits;
+  // show the per-shot estimate first. Cached shots are free → dialog auto-skips
+  // when the total is 0 with no unknowns.
+  const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
+  const hasCloud = useMemo(() => {
+    const cs = (manifest.data as any)?.cues ?? [];
+    return cs.some((c: any) => (c.shots ?? []).some((s: any) => isCloudKind(s.kind)));
+  }, [manifest.data]);
+  const [costGate, setCostGate] = useState<null | {
+    body: { from_stage?: number; only?: number };
+    estimate: HfEstimate | null;
+    error: string | null;
+    loading: boolean;
+  }>(null);
+
+  const onRun = (body: { from_stage?: number; only?: number }) => {
+    const touchesStage2 = body.only != null ? body.only === 2 : (body.from_stage ?? 1) <= 2;
+    if (!hasCloud || !touchesStage2) { run.mutate(body); return; }
+    setCostGate({ body, estimate: null, error: null, loading: true });
+    higgsfieldApi.estimate(slug).then((est) => {
+      if (est.total_credits === 0 && est.unknown_costs === 0) {
+        setCostGate(null);
+        run.mutate(body); // everything cached — nothing to bill
+      } else {
+        setCostGate({ body, estimate: est, error: null, loading: false });
+      }
+    }).catch((e) => {
+      setCostGate({ body, estimate: null, error: e instanceof Error ? e.message : String(e), loading: false });
+    });
+  };
 
   return (
     <div className="grid grid-cols-[640px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] gap-3 h-full min-h-0">
@@ -149,7 +183,79 @@ export function Assembly({ slug }: { slug: string }) {
         </Collapsible>
       </aside>
       <LocalizeModal slug={slug} open={localizeOpen} onClose={() => setLocalizeOpen(false)} />
+      <CostGateDialog
+        gate={costGate}
+        onCancel={() => setCostGate(null)}
+        onConfirm={() => { const b = costGate?.body; setCostGate(null); if (b) run.mutate(b); }}
+      />
     </div>
+  );
+}
+
+function CostGateDialog({ gate, onCancel, onConfirm }: {
+  gate: null | { body: { from_stage?: number; only?: number }; estimate: HfEstimate | null; error: string | null; loading: boolean };
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const t = useT();
+  if (!gate) return null;
+  const est = gate.estimate;
+  return (
+    <Modal
+      open
+      onClose={onCancel}
+      title={t("assembly.costTitle")}
+      width={520}
+      footer={
+        <>
+          <button className="btn" onClick={onCancel}>{t("common.cancel")}</button>
+          <button className="btn btn-amber" disabled={gate.loading} onClick={onConfirm}>
+            {t("assembly.costRenderAnyway")}
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-2 text-[12px]">
+        {gate.loading && <div className="text-txt-dim">{t("assembly.costLoading")}</div>}
+        {gate.error && (
+          <div className="text-red">{t("assembly.costError", { msg: gate.error })}</div>
+        )}
+        {est && (
+          <>
+            <div className="max-h-[260px] overflow-y-auto hairline-soft rounded">
+              {est.shots.map((s) => (
+                <div key={s.id} className={"flex items-center gap-2 px-2 py-1 border-b border-[var(--line-soft)] " + (s.cached ? "opacity-50" : "")}>
+                  <span>{s.kind === "lipsync" ? "👄" : "☁"}</span>
+                  <span className="font-mono flex-1 truncate">{s.id}</span>
+                  {s.segments > 1 && <span className="label-tiny">{t("assembly.costSegments", { n: s.segments })}</span>}
+                  <span className="font-mono">
+                    {s.cached ? t("assembly.costCachedFree")
+                      : s.credits == null ? (s.note ?? "?")
+                      : t("assembly.costCredits", { n: s.credits })}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              <span className="label-tiny">{t("assembly.costTotal")}</span>
+              <span className="font-mono text-[14px]">{t("assembly.costCredits", { n: est.total_credits })}</span>
+            </div>
+            {est.balance != null && (
+              <div className="flex items-center justify-between">
+                <span className="label-tiny">{t("assembly.costBalance", { plan: est.plan ?? "?" })}</span>
+                <span className={"font-mono " + (est.sufficient === false ? "text-red" : "")}>{est.balance}</span>
+              </div>
+            )}
+            {est.sufficient === false && (
+              <div className="text-red">{t("assembly.costInsufficient")}</div>
+            )}
+            {est.unknown_costs > 0 && (
+              <div className="text-txt-faint">{t("assembly.costUnknowns", { n: est.unknown_costs })}</div>
+            )}
+          </>
+        )}
+      </div>
+    </Modal>
   );
 }
 

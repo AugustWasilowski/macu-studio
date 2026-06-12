@@ -6,6 +6,7 @@ import type { AssetItem, MusicBed, SfxEntry } from "../api/library";
 // array so edits/deletes can target it.
 export type Selection =
   | { t: "cue"; cue: Cue }
+  | { t: "shot"; cueId: string; shot: Cue["shots"][number] }  // cloud shots: crop/trim/jank editing
   | { t: "overlay"; idx: number; ov: Overlay }
   | { t: "sfx"; idx: number; e: SfxEntry }
   | { t: "bed"; idx: number; b: MusicBed }

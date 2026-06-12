@@ -118,7 +118,14 @@ export interface Cue {
   profile_id?: string | null;
   voice_name?: string | null;
   segment?: string | null;
-  shots: { id: string; kind: string; who?: string; asset?: string; seed?: number | null }[];
+  shots: {
+    id: string; kind: string; who?: string; asset?: string; seed?: number | null;
+    // cloud (higgsfield/lipsync) shot fields — round-tripped through putCueShots:
+    model?: string; prompt?: string; duration?: number; source_still?: string;
+    crop?: { x?: number; y?: number; zoom?: number } | null;
+    trim?: { in?: number; out?: number } | null;
+    jank?: boolean;
+  }[];
   wav_exists: boolean;
   wav_mtime: number | null;
 }

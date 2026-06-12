@@ -107,6 +107,21 @@ export function Timeline({ slug }: { slug: string }) {
     const tcue = targetId ? cueById(targetId) : null;
     if (!targetId || !tcue) return;
     const tshots = (tcue.shots ?? []) as any[];
+    // A lipsync shot owns its whole cue (its clip is sample-aligned with the cue
+    // VO) — block drops that would give it siblings.
+    if (tshots.some((s: any) => s.kind === "lipsync")) {
+      push(t("timeline.lipsyncSolo", { cue: targetId }), "err");
+      drawerDrag.clear();
+      return;
+    }
+    if (d.kind === "shot-move") {
+      const movingShot = (cueById(d.cueId)?.shots ?? []).find((s: any) => s.id === d.shotId) as any;
+      if (movingShot?.kind === "lipsync" && d.cueId !== targetId && tshots.length > 0) {
+        push(t("timeline.lipsyncSolo", { cue: targetId }), "err");
+        drawerDrag.clear();
+        return;
+      }
+    }
     if (d.kind === "shot") {
       try {
         if (d.version != null && d.slug) {
@@ -217,6 +232,17 @@ export function Timeline({ slug }: { slug: string }) {
     removeSfx: (idx) => removeFromTrack("sfx", idx),
     patchBed: (idx, p) => commitTrack("music", beds.map((b, i) => i === idx ? { ...b, ...p } : b)),
     removeBed: (idx) => removeFromTrack("music", idx),
+    // Cloud-shot crop/trim/jank edits: merge into the one shot, keep ids (no
+    // membership change → no remint). Persisted via the same cue-shots route;
+    // these fields are excluded from the generation cache hash, so this only
+    // triggers a cheap re-assemble — never a re-bill.
+    patchShot: (cueId, shotId, p) => {
+      const c = cueById(cueId);
+      if (!c) return;
+      const next = ((c.shots ?? []) as any[]).map((s) => s.id === shotId ? { ...s, ...p } : s);
+      putShots.mutate({ [cueId]: next });
+    },
+    removeShot: (cueId, shotId) => { removeShot(cueId, shotId); setSelection(null); },
   };
 
   // ---- snap to cue boundaries ----
@@ -403,15 +429,21 @@ export function Timeline({ slug }: { slug: string }) {
                 const n = shots.length;
                 return shots.map((s, idx) => {
                   const { start, end } = shotWindow(c, idx, n, cum); const left = start * pps; const w = Math.max(8, (end - start) * pps);
-                  const key = s.who ?? s.asset ?? "?"; const thumb = (s.who || s.asset) ? mediaUrl.shotPreview(slug, s.who ?? s.asset) : null;
+                  const cloud = s.kind === "higgsfield" || s.kind === "lipsync";
+                  const key = cloud ? (s.kind === "lipsync" ? `👄 ${s.source_still ?? s.who ?? s.id}` : `☁ ${s.model ?? s.id}`) : (s.who ?? s.asset ?? "?");
+                  const thumb = !cloud && (s.who || s.asset) ? mediaUrl.shotPreview(slug, s.who ?? s.asset) : null;
+                  const active = selection?.t === "shot" && selection.shot.id === s.id && selection.cueId === c.id;
                   return (
                     <div key={s.id ?? `${c.id}_${idx}`} draggable
                       onDragStart={() => { drawerDrag.set({ kind: "shot-move", cueId: c.id, shotId: s.id }); setShotDragging(true); }}
                       onDragEnd={() => { drawerDrag.clear(); setShotDragging(false); setOverDrawer(false); }}
-                      onClick={() => setSelection({ t: "cue", cue: c })}
-                      className="group-clip absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 bg-[#1c2b1c]"
-                      style={{ left, width: w, outline: "1px solid var(--line-soft)", backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%" }}
-                      title={`${key} (${c.id}) — ${t("timeline.shotMoveTip")}`}>
+                      onClick={() => setSelection(cloud ? { t: "shot", cueId: c.id, shot: s } : { t: "cue", cue: c })}
+                      className={"group-clip absolute top-1 h-10 rounded-sm overflow-hidden cursor-grab flex items-center px-1 " + (cloud ? "bg-[#1a2440]" : "bg-[#1c2b1c]")}
+                      style={{ left, width: w,
+                               outline: active ? "1px solid var(--amber)" : "1px solid var(--line-soft)",
+                               boxShadow: active ? "var(--glow-amber)" : undefined,
+                               backgroundImage: thumb ? `url(${thumb})` : undefined, backgroundRepeat: "repeat-x", backgroundSize: "auto 100%" }}
+                      title={`${key} (${c.id}) — ${cloud ? t("timeline.shotCloudTip") : t("timeline.shotMoveTip")}`}>
                       <span className="font-mono text-[9px] truncate pointer-events-none px-1 rounded" style={{ background: "rgba(0,0,0,0.6)" }}>{key}</span>
                       <ClipX title={t("timeline.removeClip")} onRemove={() => removeShot(c.id, s.id)} />
                     </div>
@@ -498,7 +530,7 @@ export function Timeline({ slug }: { slug: string }) {
             <div ref={drawerRef} className="min-h-0 min-w-0"
               onDragOver={(e) => { if (drawerDrag.get()?.kind === "shot-move") e.preventDefault(); }}
               onDrop={onShotDropRemove}><AssetDrawer slug={slug} onSelect={setSelection} removeActive={overDrawer} /></div>
-            <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} />
+            <MetadataPanel sel={selection} cb={cb} overlays={overlays} beds={beds} sfx={sfxList} cues={cueList} />
           </div>
         </Collapse>
       </div>

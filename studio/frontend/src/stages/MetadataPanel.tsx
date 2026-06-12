@@ -2,10 +2,12 @@ import { useT } from "../i18n";
 import { mediaUrl } from "../api";
 import type { MusicBed, SfxEntry } from "../api/library";
 import { IX } from "../components/Icons";
-import type { Overlay, OverlayMode, OverlayPosition } from "../types";
+import type { Cue, Overlay, OverlayMode, OverlayPosition } from "../types";
 import type { Selection } from "./trackEditor";
 
 const POSITIONS: OverlayPosition[] = ["lower_third", "bug_tl", "bug_tr", "center", "full"];
+
+type CueShot = Cue["shots"][number];
 
 export interface MetaCallbacks {
   slug: string;
@@ -15,14 +17,17 @@ export interface MetaCallbacks {
   removeSfx: (idx: number) => void;
   patchBed: (idx: number, p: Partial<MusicBed>) => void;
   removeBed: (idx: number) => void;
+  patchShot: (cueId: string, shotId: string, p: Partial<CueShot>) => void;
+  removeShot: (cueId: string, shotId: string) => void;
 }
 
-export function MetadataPanel({ sel, cb, overlays, beds, sfx }: {
+export function MetadataPanel({ sel, cb, overlays, beds, sfx, cues = [] }: {
   sel: Selection | null;
   cb: MetaCallbacks;
   overlays: Overlay[];
   beds: MusicBed[];
   sfx: SfxEntry[];
+  cues?: Cue[];
 }) {
   const t = useT();
   // Read the live item by index so edit inputs reflect the current manifest, not
@@ -30,6 +35,11 @@ export function MetadataPanel({ sel, cb, overlays, beds, sfx }: {
   if (sel?.t === "overlay") sel = { ...sel, ov: overlays[sel.idx] ?? sel.ov };
   if (sel?.t === "bed") sel = { ...sel, b: beds[sel.idx] ?? sel.b };
   if (sel?.t === "sfx") sel = { ...sel, e: sfx[sel.idx] ?? sel.e };
+  if (sel?.t === "shot") {
+    const liveCue = cues.find((c) => c.id === (sel as any).cueId);
+    const live = liveCue?.shots.find((s) => s.id === (sel as any).shot.id);
+    if (live) sel = { ...sel, shot: live };
+  }
   return (
     <section className="panel p-3 flex flex-col gap-2 overflow-y-auto">
       <div className="panel-title">{t("metadata.title")}</div>
@@ -44,6 +54,50 @@ export function MetadataPanel({ sel, cb, overlays, beds, sfx }: {
         [t("metadata.rowShots"), String(sel.cue.shots?.length ?? 0)],
         [t("metadata.rowFile"), `vo/${sel.cue.id}.wav`],
       ]} note={sel.cue.text} />}
+
+      {sel?.t === "shot" && (() => {
+        const s = sel.shot;
+        const cueId = sel.cueId;
+        const lipsync = s.kind === "lipsync";
+        const crop = s.crop ?? {};
+        const trim = s.trim ?? {};
+        const patchCrop = (p: Partial<NonNullable<CueShot["crop"]>>) =>
+          cb.patchShot(cueId, s.id, { crop: { x: 0.5, y: 0.5, zoom: 1, ...crop, ...p } });
+        return (
+          <>
+            <div className="flex items-center gap-2">
+              <span>{lipsync ? "👄" : "☁"}</span>
+              <span className="font-mono text-[12px] flex-1 truncate">{s.id}</span>
+              <button className="btn p-1" title={t("metadata.removeFromTimeline")} onClick={() => cb.removeShot(cueId, s.id)}><IX /></button>
+            </div>
+            <div className="label-tiny">{t("metadata.shotCropTitle")}</div>
+            <SliderRow label={t("metadata.rowCropX")} value={crop.x ?? 0.5} min={0} max={1} step={0.01} onChange={(v) => patchCrop({ x: v })} />
+            <SliderRow label={t("metadata.rowCropY")} value={crop.y ?? 0.5} min={0} max={1} step={0.01} onChange={(v) => patchCrop({ y: v })} />
+            <SliderRow label={t("metadata.rowZoom")} value={crop.zoom ?? 1} min={1} max={2} step={0.01} onChange={(v) => patchCrop({ zoom: v })} />
+            {!lipsync && (
+              <>
+                <div className="label-tiny">{t("metadata.shotTrimTitle")}</div>
+                <NumRow label={t("metadata.rowTrimIn")} value={trim.in ?? 0} step={0.1}
+                  onChange={(v) => cb.patchShot(cueId, s.id, { trim: { ...trim, in: Math.max(0, v) } })} />
+                <NumRow label={t("metadata.rowTrimOut")} value={trim.out ?? 0} step={0.1}
+                  onChange={(v) => cb.patchShot(cueId, s.id, { trim: v > 0 ? { ...trim, out: v } : { ...trim, out: undefined } })} />
+              </>
+            )}
+            <label className="flex items-center justify-between text-[12px]">
+              <span className="label-tiny">{t("metadata.rowJank")}</span>
+              <input type="checkbox" checked={s.jank !== false}
+                onChange={(e) => cb.patchShot(cueId, s.id, { jank: e.target.checked })} />
+            </label>
+            <Rows rows={[
+              [t("metadata.rowKind"), s.kind],
+              [t("metadata.rowCue"), cueId],
+              [t("metadata.rowModel"), s.model ?? t("metadata.episodeDefault")],
+              [t("metadata.rowFile"), `clips/hf_${s.id}.mp4`],
+            ]} dim note={s.prompt} />
+            <div className="text-txt-faint text-[11px]">{t("metadata.shotEditHint")}</div>
+          </>
+        );
+      })()}
 
       {sel?.t === "overlay" && (
         <>
@@ -160,6 +214,19 @@ function Rows({ rows, note, dim }: { rows: [string, string][]; note?: string; di
       </div>
       {note && <div className="text-txt-dim text-[12px] whitespace-pre-wrap mt-1">{note}</div>}
     </>
+  );
+}
+
+function SliderRow({ label, value, min, max, step, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-2 text-[12px]">
+      <span className="label-tiny w-16 flex-none">{label}</span>
+      <input className="flex-1" type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Math.round(parseFloat(e.target.value) * 100) / 100)} />
+      <span className="font-mono w-10 text-right">{value.toFixed(2)}</span>
+    </label>
   );
 }
 
