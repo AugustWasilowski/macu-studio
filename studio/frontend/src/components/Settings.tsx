@@ -494,11 +494,89 @@ function HiggsfieldPanel() {
               {t("settings.hf.refreshModels")}
             </button>
           </div>
+          <HfModelBrowser />
           <div className="flex justify-end pt-2 border-t hairline-soft">
             <button className="btn" disabled={busy} onClick={doDisconnect}>{t("settings.hf.disconnect")}</button>
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function HfModelBrowser() {
+  const t = useT();
+  const models = useQuery({ queryKey: ["hf-models"], queryFn: () => higgsfieldApi.models(), staleTime: 3600_000, retry: false });
+  // model id -> "12 cr / 5s" | "…" | "error"
+  const [costs, setCosts] = useState<Record<string, string>>({});
+
+  if (models.isLoading) return <div className="label-tiny text-txt-dim">{t("common.loading")}</div>;
+  if (models.isError) return <div className="label-tiny text-red">{t("settings.hf.modelsFailed")}</div>;
+  const items = models.data?.items ?? [];
+  const groups: Array<["video" | "image" | "audio", string]> = [
+    ["video", t("settings.hf.groupVideo")],
+    ["image", t("settings.hf.groupImage")],
+    ["audio", t("settings.hf.groupAudio")],
+  ];
+
+  const priceOf = async (id: string, dur?: number) => {
+    setCosts((c) => ({ ...c, [id]: "…" }));
+    try {
+      const r = await higgsfieldApi.cost({ model: id, ...(dur ? { duration: dur } : {}) });
+      setCosts((c) => ({
+        ...c,
+        [id]: r.credits == null
+          ? t("settings.hf.costUnknown")
+          : dur ? t("settings.hf.costPerClip", { n: r.credits, s: dur }) : t("settings.hf.costPerImage", { n: r.credits }),
+      }));
+    } catch {
+      setCosts((c) => ({ ...c, [id]: t("settings.hf.costUnknown") }));
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 pt-2 border-t hairline-soft">
+      <div className="label-tiny">{t("settings.hf.modelsTitle")}</div>
+      <p className="label-tiny leading-relaxed">{t("settings.hf.modelsHelp")}</p>
+      {groups.map(([type, label]) => {
+        const list = items.filter((m) => m.output_type === type);
+        if (!list.length) return null;
+        return (
+          <div key={type} className="flex flex-col gap-1">
+            <div className="label-tiny pt-1">{label}</div>
+            {list.map((m) => {
+              const durs = m.durations?.length
+                ? m.durations.join("/") + "s"
+                : m.duration_range ? `${m.duration_range.min}–${m.duration_range.max}s` : null;
+              const defDur = m.output_type === "video"
+                ? (m.durations?.[0] ?? m.duration_range?.min ?? 5) : undefined;
+              const lipsync = (m.medias ?? []).some((md) => (md.roles ?? []).includes("audio"));
+              return (
+                <div key={m.id} className="flex items-start gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{m.name}</span>
+                      <span className="label-tiny text-txt-faint">{m.provider_name}</span>
+                      {lipsync && m.output_type === "video" && <span title={t("settings.hf.lipsyncCapable")}>👄</span>}
+                    </div>
+                    <div className="label-tiny font-mono truncate" title={m.description}>{m.id}</div>
+                    <div className="label-tiny text-txt-faint">
+                      {[durs, m.aspect_ratios?.length ? m.aspect_ratios.join(" ") : null].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-none">
+                    {costs[m.id]
+                      ? <span className="font-mono text-[11px]">{costs[m.id]}</span>
+                      : <button className="btn text-[10px] px-1.5 py-0.5" onClick={() => priceOf(m.id, defDur)}>
+                          {t("settings.hf.checkCost")}
+                        </button>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }

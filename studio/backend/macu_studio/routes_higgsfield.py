@@ -174,6 +174,27 @@ async def _shape_cost(shape: dict) -> float | None:
     return credits
 
 
+@router.post("/api/higgsfield/cost")
+async def post_cost(body: dict = Body(...)):
+    """One get_cost preflight for an arbitrary generation shape (the Settings
+    model browser's per-model price check). Never submits a job. body:
+    {model, duration?, resolution?, aspect_ratio?}."""
+    model = (body.get("model") or "").strip()
+    if not model:
+        raise HTTPException(400, "model required")
+    shape = {"model": model}
+    for k in ("duration", "resolution", "aspect_ratio"):
+        if body.get(k):
+            shape[k] = body[k]
+    try:
+        credits = await _shape_cost(shape)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"cost preflight failed: {e}")
+    return {"model": model, "shape": shape, "credits": credits}
+
+
 @router.get("/api/episodes/{slug}/higgsfield/estimate")
 async def get_estimate(slug: str):
     """Credit cost of rendering this episode's NON-CACHED cloud shots.

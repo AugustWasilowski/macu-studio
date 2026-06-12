@@ -58,6 +58,8 @@ export interface HfStillStatus {
 }
 
 export const higgsfieldApi = {
+  cost: (params: { model: string; duration?: number; resolution?: string; aspect_ratio?: string }) =>
+    post<{ model: string; credits: number | null }>("/api/higgsfield/cost", params),
   estimate: (slug: string) =>
     fetch(`/api/episodes/${slug}/higgsfield/estimate`).then((r) => J<HfEstimate>(r)),
   regenShot: (slug: string, shotId: string) =>

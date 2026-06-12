@@ -207,6 +207,16 @@ function ShotsView({ slug }: { slug: string }) {
     staleTime: 60_000,
     retry: false,
   });
+  // With zero cloud shots the chip still shows (connection + balance) so the
+  // Higgsfield entry point is discoverable — data comes from the cheap auth
+  // route instead of an estimate walk.
+  const hfAuth = useQuery({
+    queryKey: ["hf-auth"],
+    queryFn: higgsfieldApi.auth,
+    enabled: cloudCount === 0,
+    staleTime: 60_000,
+    retry: false,
+  });
 
   // Auto-select first shot once we have data
   useEffect(() => {
@@ -221,7 +231,7 @@ function ShotsView({ slug }: { slug: string }) {
           <div className="panel-title">{t("video.shotListTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {t("video.shotListSub")}</span></div>
           <div className="flex items-center gap-2">
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> {t("video.rendered")}</span>
-            {cloudCount > 0 && (
+            {cloudCount > 0 ? (
               <span
                 className="seg-readout"
                 title={estimate.isError ? String(estimate.error) : t("video.cloudChipTitle")}
@@ -235,6 +245,18 @@ function ShotsView({ slug }: { slug: string }) {
                   </>
                 )}
                 {estimate.isError && <span className="text-red"> {t("video.estUnavailable")}</span>}
+              </span>
+            ) : (
+              <span
+                className="seg-readout"
+                style={{ opacity: 0.75 }}
+                title={hfAuth.data?.connected ? t("video.cloudChipIdleTitle") : t("video.cloudChipDisconnectedTitle")}
+              >
+                ☁ {hfAuth.data?.connected
+                  ? (hfAuth.data.credits != null
+                      ? t("video.balCredits", { n: hfAuth.data.credits })
+                      : t("video.cloudReady"))
+                  : t("video.cloudNotConnected")}
               </span>
             )}
             <button className="btn btn-cyan" onClick={() => setGenOpen(true)} title={t("video.generateShotListTitle")}>
