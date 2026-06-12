@@ -21,17 +21,17 @@
       "height": 1024,
       "steps": 8,
       "cfg": 1.0,
-      "unet": "z_image_turbo_fp8_e4m3fn.safetensors"
+      "unet": "z_image_turbo_nvfp4.safetensors"
     },
     "models": [
-      {"dir": "diffusion_models", "file": "z_image_turbo_fp8_e4m3fn.safetensors", "hf": "Comfy-Org/z_image_turbo"},
-      {"dir": "text_encoders",    "file": "qwen_3_4b_fp8_mixed.safetensors",      "hf": "Comfy-Org/z_image_turbo"},
-      {"dir": "vae",              "file": "ae.safetensors",                        "hf": "Comfy-Org/z_image_turbo"}
+      {"dir": "diffusion_models", "file": "z_image_turbo_nvfp4.safetensors", "hf": "Comfy-Org/z_image_turbo", "bytes": 4509509600},
+      {"dir": "text_encoders",    "file": "qwen_3_4b_fp8_mixed.safetensors", "hf": "Comfy-Org/z_image_turbo", "bytes": 5631994051},
+      {"dir": "vae",              "file": "ae.safetensors",                  "hf": "Comfy-Org/z_image_turbo", "bytes": 335304388}
     ]
   },
   "graph": {
     "1": {"class_type": "UNETLoader",
-          "inputs": {"unet_name": "z_image_turbo_fp8_e4m3fn.safetensors", "weight_dtype": "default"}},
+          "inputs": {"unet_name": "z_image_turbo_nvfp4.safetensors", "weight_dtype": "default"}},
     "2": {"class_type": "CLIPLoader",
           "inputs": {"clip_name": "qwen_3_4b_fp8_mixed.safetensors", "type": "qwen_image"}},
     "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},

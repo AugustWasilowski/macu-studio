@@ -6,6 +6,29 @@ All notable changes to MACU Studio. Format loosely follows
 ## [Unreleased]
 
 ### Added
+- **Characters page** — a new top-level tab for the show's reusable cast. Each character
+  carries prompts (video core + still prompt), a voice hint, and a gallery of reference-still
+  **takes** with full provenance (engine, model, seed). Generate takes in-app via the local
+  ComfyUI **Z-Image-Turbo** workflow (~5–15 s, free), Higgsfield image models (credits), or a
+  remote MACU render service; pick a default take; pull characters into episodes with one
+  click (the still lands pre-stamped so cloud-shot estimates stay free, and you're warned when
+  replacing a still would re-bill already-paid cloud clips). Bootstrap the roster with
+  "Import from episode".
+- **Settings → Engines** — route each pipeline capability (zeroscope masters, character
+  stills, cloud video, lipsync) to the service that should run it, with live reachability
+  dots, endpoint config (local ComfyUI, opt-in remote render service), and env-override
+  badges.
+- **Workflow registry** — ComfyUI graphs now ship in-repo (`pipeline/workflows/*.json`);
+  the installer downloads the Z-Image still models by default and the full Wan 2.1 +
+  InfiniteTalk talking-head stack with `--with-talking-head` (~28 GB; powers a future local
+  lipsync engine).
+- **Video tab still picker** — cloud shots pick their source still visually from the
+  episode's stills or the character library (syncing the take in automatically) instead of
+  typing a path.
+
+### Changed
+- **Docs moved out of the top bar** into the main menu (directly below Settings) to make
+  room for Characters; `#docs` links still work.
 - **Higgsfield.ai integration** — cloud video generation alongside the local zeroscope path.
   Connect your Higgsfield account once in **Settings → Higgsfield** (OAuth; plan + credits shown);
   Studio is the only token holder and brokers all pipeline traffic.

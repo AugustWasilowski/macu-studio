@@ -48,6 +48,16 @@ TYPICAL WORKFLOW — new episode, start to published:
 10. set_episode_meta / set_episode_youtube / set_episode_published, then
     publish_show(show)              -> push to the connected macu-web site
 
+CHARACTERS (show-level cast, feeds Higgsfield i2v/lipsync shots):
+ - list_characters / upsert_character(show, key, still_prompt=...) build the roster.
+ - generate_character_takes makes reference stills (engine comfy_zimage = local +
+   free; higgsfield = credits; empty = the routed default). Poll
+   character_take_status; set_default_take picks the keeper.
+ - use_character_in_episode copies the still into an episode (pre-stamped, free).
+   It returns `invalidates` when replacing a still would re-bill paid cloud
+   shots — STOP and confirm with the user before passing overwrite_still=true.
+ - engines_status / set_engine_route control which service runs each capability.
+
 SCRIPT FORMAT (script.md):
   ## SEGMENT HEADER                 -> starts a segment
   **SPEAKER:** dialogue...          -> one voice cue (may wrap multiple lines)

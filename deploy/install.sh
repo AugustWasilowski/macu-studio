@@ -2,12 +2,19 @@
 # Top-level MACU installer. Runs the mechanical stages in order on a fresh machine;
 # each stage skips work already done. The un-scriptable parts (systemd units, the
 # Claude Code channel) are printed at the end for you to finish by hand.
-# Usage: ./deploy/install.sh [-y|--yes]   (-y skips the confirm prompt)
+# Usage: ./deploy/install.sh [-y|--yes] [--with-talking-head]
+#   -y                  skip the confirm prompt
+#   --with-talking-head also pull the ~28 GB Wan 2.1 + InfiniteTalk stack
+#                       (local talking-head/lipsync models; optional)
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 
 AUTO=0
-for a in "$@"; do case "$a" in -y|--yes) AUTO=1 ;; esac; done
+WITH_TALKING_HEAD="${MACU_INSTALL_TALKING_HEAD:-0}"
+for a in "$@"; do case "$a" in
+  -y|--yes) AUTO=1 ;;
+  --with-talking-head) WITH_TALKING_HEAD=1 ;;
+esac; done
 
 # Retry a flaky network command up to 3 times with a growing backoff, so one WiFi
 # hiccup during a multi-GB pull doesn't abort the whole install.
@@ -113,7 +120,7 @@ docker compose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null |
 docker compose -f deploy/services/omnivoice/docker-compose.yml create 2>/dev/null || true
 
 echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
-./deploy/fetch-models.sh
+MACU_INSTALL_TALKING_HEAD="$WITH_TALKING_HEAD" ./deploy/fetch-models.sh
 
 echo; echo ">>> [5/6] build + start long-lived services (ComfyUI + Piper HAL)"
 docker compose -f deploy/services/comfyui/docker-compose.yml build

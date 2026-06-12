@@ -14,9 +14,13 @@ git clone <repo-url> macu-studio
 cd macu-studio
 
 ./deploy/install.sh          # one shot: preflight (offers to install missing prereqs) →
-                             # models (~8 GB) → build → app. No editing needed.
+                             # models (~18 GB) → build → app. No editing needed.
 ./deploy/start-studio.sh     # start Studio, then open http://localhost:8774/
 ```
+
+Add `--with-talking-head` to also pull the ~28 GB Wan 2.1 + InfiniteTalk stack
+(local talking-head/lipsync models — optional, can be added later by re-running
+`./deploy/fetch-models.sh --with-talking-head`).
 
 Storage defaults to a repo-local **`./data/`** dir, so it works out of the box.
 To put the data elsewhere (e.g. a faster disk), set `MACU_SHARES` in `.env` and
@@ -54,8 +58,13 @@ Run `./deploy/doctor.sh` any time to see what's missing, or
 3. **Service images** — pulls the on-demand OmniVoice + Ollama images.
 4. **Models + assets** — `fetch-models.sh`: clones ComfyUI + the ModelScopeT2V
    node, downloads the ~8 GB text2video weights (zeroscope + DAMO/VQGAN from
-   public sources), pulls `qwen2.5:7b-instruct-q4_K_M`, installs the bundled
-   subtitle font. **Public sources only — no personal data.**
+   public sources) and the ~10.5 GB Z-Image-Turbo still set (powers the
+   Characters page's local reference-still generator), pulls
+   `qwen2.5:7b-instruct-q4_K_M`, installs the bundled subtitle font. With
+   `--with-talking-head` it additionally pulls the ~28 GB Wan 2.1 I2V +
+   InfiniteTalk stack and the WanVideoWrapper ComfyUI node (local
+   talking-head/lipsync — the engine wiring ships in a future update).
+   **Public sources only — no personal data.**
 5. **Long-lived services** — builds + starts ComfyUI and **Piper** (the default
    synthetic voice on `:5050`; a permissive voice is baked into its image — the
    HAL-9000 voice is opt-in via `PIPER_VOICE=hal`).

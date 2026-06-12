@@ -31,8 +31,10 @@ from .config import REPO_ROOT
 
 _CFG_PATH = Path.home() / ".config" / "macu-studio" / "engines.json"
 
-# The unet the public installer fetches; Max overrides to nvfp4 via config/env.
-DEFAULT_ZIMAGE_UNET = "z_image_turbo_fp8_e4m3fn.safetensors"
+# The unet the public installer fetches (Comfy-Org repack ships bf16 + nvfp4
+# only; nvfp4 is 4.5 GB and proven on a 2080 Ti). Override via the Engines tab
+# or MACU_ZIMAGE_UNET, e.g. to z_image_turbo_bf16.safetensors.
+DEFAULT_ZIMAGE_UNET = "z_image_turbo_nvfp4.safetensors"
 
 DEFAULTS: dict = {
     "version": 1,

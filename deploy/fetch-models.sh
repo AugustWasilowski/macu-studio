@@ -10,12 +10,24 @@
 #       text2video/text2video_pytorch_model.pth = zeroscope_v2_576w (un-watermarked unet)
 #       text2video/VQGAN_autoencoder.pth, text2video/configuration.json (DAMO VAE + config)
 #       clip/open_clip_pytorch_model.bin (text encoder; config's ckpt_clip)
+#   - Z-Image still models (~10.5 GB) -> for the Characters page's local still
+#       engine (pipeline/workflows/z_image_turbo.json): z_image_turbo_nvfp4 unet
+#       + qwen_3_4b_fp8_mixed text encoder + ae.safetensors VAE (Comfy-Org repack)
 #   - Ollama shot-gen model     -> qwen2.5:7b-instruct-q4_K_M (into the ollama volume)
 #   - Subtitle font             -> $MACU_ASSETS/fonts/BetterVCR.ttf (bundled in repo)
+#
+# OPT-IN (--with-talking-head / MACU_INSTALL_TALKING_HEAD=1, ~28 GB extra):
+#   - Wan 2.1 I2V 14B + InfiniteTalk talking-head stack (Kijai repacks) + the
+#     ComfyUI-WanVideoWrapper custom node. Powers the future local-lipsync
+#     engine; today it makes the models available so the wan21_infinitetalk
+#     workflow can light up without another big download.
 #
 # Personal data (cloned VOICES + music/sfx kits) is NOT fetched here — clone your
 # own voices in the app's Create Voice panel.
 set -euo pipefail
+
+WITH_TALKING_HEAD="${MACU_INSTALL_TALKING_HEAD:-0}"
+for a in "$@"; do case "$a" in --with-talking-head) WITH_TALKING_HEAD=1;; esac; done
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"
@@ -51,6 +63,51 @@ retry(){
     echo "  network hiccup — retry $n/3 in $((n*5))s ..." >&2
     sleep $((n*5))
   done
+}
+
+# Idempotent HuggingFace fetch of a JSON manifest: [[repo, file, dest_dir, final_name], ...]
+# Verifies sizes against HF metadata (a truncated download re-fetches), stages to
+# .part, atomically swaps in.
+hf_fetch(){
+  HF_MANIFEST="$1" "$PYHF" - <<'PY'
+import json, os, shutil
+from huggingface_hub import hf_hub_download, hf_hub_url, get_hf_file_metadata
+
+WANT = json.loads(os.environ["HF_MANIFEST"])
+
+def human(n):
+    return f"{n/1e9:.2f} GB" if n and n >= 1e9 else (f"{n/1e6:.0f} MB" if n else "?")
+
+def expected_size(repo, fname):
+    try:
+        return get_hf_file_metadata(hf_hub_url(repo_id=repo, filename=fname)).size
+    except Exception:
+        return None
+
+for repo, fname, dst, final in WANT:
+    os.makedirs(dst, exist_ok=True)
+    out = os.path.join(dst, final)
+    want = expected_size(repo, fname)
+    if os.path.exists(out):
+        have = os.path.getsize(out)
+        if (want and have == want) or (not want and have > 1000):
+            print(f"  have {final} ({human(have)}) — skip"); continue
+        print(f"  {final} is {human(have)} but expected {human(want)} — re-fetching")
+        os.remove(out)
+    print(f"  downloading {final} ({human(want)})  <-  {repo}/{fname}")
+    try:
+        p = hf_hub_download(repo_id=repo, filename=fname, local_dir=dst)
+        if os.path.abspath(p) != os.path.abspath(out):
+            tmp = out + ".part"
+            shutil.move(p, tmp)
+            os.replace(tmp, out)
+    except BaseException:
+        for stray in (out, out + ".part"):
+            try: os.remove(stray)
+            except OSError: pass
+        raise
+print("manifest complete")
+PY
 }
 
 # --- ComfyUI source + custom node --------------------------------------------
@@ -125,6 +182,44 @@ for repo, fname, dst, final in WANT:
         raise
 print("text2video + clip weights ready")
 PY
+
+# --- Z-Image still models (Characters page local engine) ----------------------
+say "Z-Image-Turbo still models (~10.5 GB; skips files already present)"
+hf_fetch "$(cat <<JSON
+[
+ ["Comfy-Org/z_image_turbo", "split_files/diffusion_models/z_image_turbo_nvfp4.safetensors", "$MODELS/diffusion_models", "z_image_turbo_nvfp4.safetensors"],
+ ["Comfy-Org/z_image_turbo", "split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors", "$MODELS/text_encoders", "qwen_3_4b_fp8_mixed.safetensors"],
+ ["Comfy-Org/z_image_turbo", "split_files/vae/ae.safetensors", "$MODELS/vae", "ae.safetensors"]
+]
+JSON
+)"
+
+# --- Talking-head stack (OPT-IN: ~28 GB) ---------------------------------------
+if [ "$WITH_TALKING_HEAD" = "1" ]; then
+  say "Talking-head stack (Wan 2.1 I2V + InfiniteTalk, ~28 GB — this takes a while)"
+  WVW="$COMFY/custom_nodes/ComfyUI-WanVideoWrapper"
+  if [ ! -d "$WVW/.git" ]; then
+    rm -rf "$WVW"
+    retry git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git "$WVW"
+  else echo "WanVideoWrapper node already present — skip"; fi
+  # fp8_scaled repacks live in Kijai's companion repo; loras/encoders in the main one.
+  hf_fetch "$(cat <<JSON
+[
+ ["Kijai/WanVideo_comfy_fp8_scaled", "I2V/Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors"],
+ ["Kijai/WanVideo_comfy_fp8_scaled", "InfiniteTalk/Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors"],
+ ["Kijai/WanVideo_comfy", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors", "$MODELS/loras", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"],
+ ["Kijai/WanVideo_comfy", "umt5-xxl-enc-fp8_e4m3fn.safetensors", "$MODELS/text_encoders", "umt5-xxl-enc-fp8_e4m3fn.safetensors"],
+ ["Kijai/WanVideo_comfy", "open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors", "$MODELS/clip_vision", "open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors"],
+ ["Kijai/WanVideo_comfy", "Wan2_1_VAE_bf16.safetensors", "$MODELS/vae", "Wan2_1_VAE_bf16.safetensors"]
+]
+JSON
+)"
+  echo "talking-head models installed — the local Wan/InfiniteTalk lipsync engine"
+  echo "lights up in a future Studio update (pipeline/workflows/wan21_infinitetalk.json)."
+else
+  echo ""
+  echo "(skipping the ~28 GB talking-head stack — rerun with --with-talking-head to add it)"
+fi
 
 # --- Ollama shot-gen model ----------------------------------------------------
 say "Ollama model (qwen2.5:7b-instruct-q4_K_M)"
