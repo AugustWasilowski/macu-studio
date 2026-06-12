@@ -125,13 +125,21 @@ export interface Cue {
 
 export interface Shot {
   key: string;
-  kind: "character" | "broll";
+  kind: "character" | "broll" | "higgsfield" | "lipsync";
   seed: number | null;
   prompt: string;
   status: AssetStatus;
   webp_exists: boolean;
   webp_mtime: number | null;
+  // Cloud (Higgsfield) rows only — per-shot-id, hash-accurate status:
+  cue?: string;
+  model?: string;
+  source_still?: string | null;
+  clip_exists?: boolean;
+  clip_mtime?: number | null;
 }
+
+export const isCloudKind = (k: string): boolean => k === "higgsfield" || k === "lipsync";
 
 export interface TitleAsset {
   key: string;

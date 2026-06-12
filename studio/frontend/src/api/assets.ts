@@ -11,10 +11,15 @@ type Kind = "cue" | "shot" | "ythumb";
 
 export interface AddShotBody {
   key: string;
-  kind: "character" | "broll";
+  kind: "character" | "broll" | "higgsfield" | "lipsync";
   prompt: string;
   seed?: number | null;
   attach_to_cue?: string | null;
+  // cloud kinds only:
+  model?: string;
+  duration?: number;
+  source_still?: string;
+  who?: string;
 }
 
 export const versionsApi = {

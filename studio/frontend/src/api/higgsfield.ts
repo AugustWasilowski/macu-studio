@@ -39,7 +39,35 @@ export interface HfModel {
 const post = <T,>(url: string, body?: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined }).then((r) => J<T>(r));
 
+export interface HfEstimateShot {
+  id: string; cue: string; kind: string; cached: boolean;
+  credits: number | null; segments: number; note: string | null;
+}
+export interface HfEstimate {
+  shots: HfEstimateShot[];
+  stills: { who: string; cached: boolean; has_prompt: boolean }[];
+  total_credits: number;
+  unknown_costs: number;
+  balance: number | null;
+  plan: string | null;
+  sufficient: boolean | null;
+}
+export interface HfStillStatus {
+  exists: boolean; fresh: boolean; mtime: number | null; has_prompt: boolean;
+  job: { state: string | null; error: string | null } | null;
+}
+
 export const higgsfieldApi = {
+  estimate: (slug: string) =>
+    fetch(`/api/episodes/${slug}/higgsfield/estimate`).then((r) => J<HfEstimate>(r)),
+  regenShot: (slug: string, shotId: string) =>
+    post<{ job_id: string }>(`/api/episodes/${slug}/shot/${shotId}/higgsfield/regen`),
+  stillRegen: (slug: string, who: string) =>
+    post<{ ok: boolean }>(`/api/episodes/${slug}/characters/${who}/still/regen`),
+  stillStatus: (slug: string, who: string) =>
+    fetch(`/api/episodes/${slug}/characters/${who}/still/status`).then((r) => J<HfStillStatus>(r)),
+  stillUrl: (slug: string, who: string, v?: number | null) =>
+    `/api/episodes/${slug}/still/${who}${v != null ? `?v=${Math.floor(v)}` : ""}`,
   auth: () => fetch("/api/higgsfield/auth").then((r) => J<HfAuth>(r)),
   authStart: () => post<HfAuthStart>("/api/higgsfield/auth/start"),
   authPoll: (handle: string) => post<HfPoll>("/api/higgsfield/auth/poll", { handle }),

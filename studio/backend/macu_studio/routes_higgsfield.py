@@ -410,3 +410,39 @@ async def get_job(job_id: str, sync: bool = False):
     out = res if isinstance(res, dict) else {"raw": res}
     out.setdefault("urls", hf.find_media_urls(res))
     return out
+
+
+# ---- per-shot regeneration -----------------------------------------------------------
+
+@router.post("/api/episodes/{slug}/shot/{shot_id}/higgsfield/regen")
+async def post_cloud_shot_regen(slug: str, shot_id: str):
+    """Force-regenerate ONE cloud shot: drop its cache entry + clip, then queue
+    stage 2 (which skips everything still cached, so only this clip re-bills).
+    Explicit user action — estimate the cost first (estimate endpoint/tool)."""
+    from . import pipeline as pipeline_mod  # late import (pipeline pulls config/shows)
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    target = next(((c, s) for c, s in hfc.cloud_shots(m) if s.get("id") == shot_id), None)
+    if target is None:
+        raise HTTPException(404, f"no cloud shot '{shot_id}' in {slug} "
+                                 f"(only kind higgsfield/lipsync shots can be regenerated here)")
+    if not hf.status()["connected"]:
+        raise HTTPException(409, "Higgsfield not connected — connect in Settings → Higgsfield")
+    ep = episode_dir(slug)
+    sc_path = hfc.clips_sidecar_path(ep)
+    entries = hfc.load_sidecar(sc_path, "shots")
+    if shot_id in entries:
+        entries.pop(shot_id)
+        hfc.save_sidecar(sc_path, "shots", entries)
+    clip = hfc.clip_path(ep, shot_id)
+    if clip.exists():
+        clip.unlink()
+    # Lipsync chain intermediates are fingerprint-guarded, but a forced regen
+    # means "give me a different take" — clear them so the chain restarts.
+    work = ep / ".work" / f"hf_{shot_id}"
+    if work.exists():
+        import shutil
+        shutil.rmtree(work, ignore_errors=True)
+    return await pipeline_mod.submit(slug, only=2)

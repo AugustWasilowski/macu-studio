@@ -4,7 +4,7 @@
 Idempotent: looks for the staged .zs.webp in clips/; if present, skips that key.
 Usage: python3 stage_2_masters.py <slug>
 """
-import sys, os, json, time, urllib.request, random, glob, shutil
+import sys, os, json, time, threading, urllib.request, random, glob, shutil
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs, COMFY_URL,
                  COMFY_OUT, COMFY_OUTPUT_ROOT, staged_master_webp, progress_tick)
@@ -47,6 +47,39 @@ def get(path):
         return json.loads(r.read())
 
 def main(slug):
+    """Local zeroscope masters + (concurrently) Higgsfield cloud shots.
+
+    Cloud shots (kind higgsfield/lipsync) run in a thread via stage_2b_cloud —
+    they're network-bound while ComfyUI is GPU-bound, so the wall-clock is
+    max(local, cloud), not the sum. Zero cloud shots in the manifest ⇒ behavior
+    is byte-identical to the local-only stage. A cloud failure fails the stage,
+    but only AFTER the local loop and every other in-flight cloud job finish
+    (each success is cached in clips/.hf_cache.json, so a re-run resumes)."""
+    import hf_cache
+    import stage_2b_cloud
+    cloud_box: dict = {}
+    cloud_err: list = []
+    cloud_thread = None
+    if any(True for _ in hf_cache.cloud_shots(load_manifest(slug))):
+        def _cloud():
+            try:
+                cloud_box.update(stage_2b_cloud.main(slug))
+            except Exception as e:
+                cloud_err.append(e)
+        cloud_thread = threading.Thread(target=_cloud, name=f"stage2b-{slug}", daemon=True)
+        cloud_thread.start()
+    try:
+        out = _local_main(slug)
+    finally:
+        if cloud_thread:
+            cloud_thread.join()
+    if cloud_err:
+        raise cloud_err[0]
+    out.update(cloud_box)
+    return out
+
+
+def _local_main(slug):
     ensure_dirs(slug)
     p = episode_paths(slug)
     m = load_manifest(slug)

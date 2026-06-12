@@ -296,6 +296,10 @@ def get_shot_preview(slug: str, key: str, request: Request):
     except ValueError:
         raise HTTPException(400, "bad shot key")
     ep = ep_mod.episode_dir(slug)
+    # Cloud (Higgsfield) shots are per-shot-id mp4 clips, not webp masters.
+    hf_clip = ep / "clips" / f"hf_{key}.mp4"
+    if hf_clip.exists():
+        return media_mod.stream_file(request, hf_clip, content_type="video/mp4")
     candidates = [
         ep / "clips" / f"{key}_master.zs.webp",
         ep / "clips" / f"broll_{key}.zs.webp",

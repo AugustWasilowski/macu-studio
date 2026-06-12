@@ -11,8 +11,10 @@ import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlus, IDL } from "../components/Icons";
 import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
+import { higgsfieldApi } from "../api/higgsfield";
 import { ShotGenModal } from "./ShotGenModal";
 import { useT } from "../i18n";
+import { isCloudKind } from "../types";
 import type { PipelineEvent, Shot } from "../types";
 
 // The Video tab is the shot list. (The timeline moved to the Assembly tab.)
@@ -93,8 +95,15 @@ function ShotsView({ slug }: { slug: string }) {
     pumpWatch();
   };
 
+  // Cloud shots regenerate through the Higgsfield route (drops the billed-clip
+  // cache + queues stage 2); local masters keep the seed-shuffling regen.
   const regen = useMutation({
-    mutationFn: (key: string) => api.regenShot(slug, key),
+    mutationFn: (key: string) => {
+      const s = (shots.data?.shots ?? []).find((x) => x.key === key);
+      return s && isCloudKind(s.kind)
+        ? higgsfieldApi.regenShot(slug, key)
+        : api.regenShot(slug, key);
+    },
     onMutate: (key) => {
       setBusy(`shot:${key}`, true);
       setShotOverride(key, null);
@@ -187,6 +196,17 @@ function ShotsView({ slug }: { slug: string }) {
   const list = shots.data?.shots ?? [];
   const renderedCount = list.filter((s) => s.status === "rendered").length;
   const cur = useMemo(() => list.find((s) => s.key === selectedKey) ?? list[0], [list, selectedKey]);
+  const cloudCount = list.filter((s) => isCloudKind(s.kind)).length;
+
+  // Episode cost estimate — only when cloud shots exist; manual-refresh-ish
+  // (each uncached estimate makes remote get_cost calls, so no polling).
+  const estimate = useQuery({
+    queryKey: ["hf-estimate", slug],
+    queryFn: () => higgsfieldApi.estimate(slug),
+    enabled: cloudCount > 0,
+    staleTime: 60_000,
+    retry: false,
+  });
 
   // Auto-select first shot once we have data
   useEffect(() => {
@@ -201,6 +221,22 @@ function ShotsView({ slug }: { slug: string }) {
           <div className="panel-title">{t("video.shotListTitle")} <span className="text-txt-faint normal-case tracking-normal text-[11px]">/ {t("video.shotListSub")}</span></div>
           <div className="flex items-center gap-2">
             <span className="seg-readout">{renderedCount}<span className="text-txt-faint">/{list.length}</span> {t("video.rendered")}</span>
+            {cloudCount > 0 && (
+              <span
+                className="seg-readout"
+                title={estimate.isError ? String(estimate.error) : t("video.cloudChipTitle")}
+              >
+                ☁ {cloudCount}
+                {estimate.data && (
+                  <>
+                    {" · "}{t("video.estCredits", { n: estimate.data.total_credits })}
+                    {estimate.data.balance != null && <> · {t("video.balCredits", { n: estimate.data.balance })}</>}
+                    {estimate.data.sufficient === false && <span className="text-red"> ⚠</span>}
+                  </>
+                )}
+                {estimate.isError && <span className="text-red"> {t("video.estUnavailable")}</span>}
+              </span>
+            )}
             <button className="btn btn-cyan" onClick={() => setGenOpen(true)} title={t("video.generateShotListTitle")}>
               <IRegen /> {t("video.generateShotList")}
             </button>
@@ -252,15 +288,27 @@ function ShotsView({ slug }: { slug: string }) {
                       <span className="font-mono inline-flex items-center gap-1.5">
                         {s.kind === "character" ? (
                           <span className="led-dot" style={{ "--led-c": "#f5a623" } as React.CSSProperties} />
-                        ) : (
+                        ) : s.kind === "broll" ? (
                           <span className="text-cyan font-bold border border-cyan/40 px-1 rounded text-[10px]">B</span>
+                        ) : s.kind === "lipsync" ? (
+                          <span title={t("video.kindLipsync")}>👄</span>
+                        ) : (
+                          <span title={t("video.kindCloud")}>☁</span>
                         )}
                         {s.key}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-txt-faint">{s.kind}</td>
+                    <td className="px-2 py-1.5 text-txt-faint">
+                      {s.kind}
+                      {isCloudKind(s.kind) && s.model && (
+                        <span className="block text-[10px] text-txt-faint truncate max-w-[110px]" title={s.model}>{s.model}</span>
+                      )}
+                    </td>
                     <td className="px-2 py-1.5 max-w-[440px] truncate" title={s.prompt}>{s.prompt}</td>
                     <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      {isCloudKind(s.kind) ? (
+                        <span className="text-txt-faint text-[11px]" title={t("video.cloudNoSeed")}>—</span>
+                      ) : (
                       <input
                         className="input font-mono w-full"
                         style={{ height: 24, padding: "0 4px", ...(viewingVersion ? { opacity: 0.6 } : {}) }}
@@ -274,9 +322,10 @@ function ShotsView({ slug }: { slug: string }) {
                           setDraftSeed((d) => ({ ...d, [s.key]: v }));
                         }}
                         onBlur={() => {
-                          if (!viewingVersion && dirty) saveSeed.mutate({ key: s.key, kind: s.kind, seed });
+                          if (!viewingVersion && dirty) saveSeed.mutate({ key: s.key, kind: s.kind as "character" | "broll", seed });
                         }}
                       />
+                      )}
                     </td>
                     <td className="px-2 py-1.5">
                       <Badge status={isBusy ? "running" : (dirty ? "stale" : s.status)} />
@@ -293,6 +342,7 @@ function ShotsView({ slug }: { slug: string }) {
                       </div>
                     </td>
                     <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      {!isCloudKind(s.kind) && (
                       <VersionArrows
                         slug={slug}
                         kind="shot"
@@ -306,6 +356,7 @@ function ShotsView({ slug }: { slug: string }) {
                           qc.invalidateQueries({ queryKey: ["shots", slug] });
                         }}
                       />
+                      )}
                     </td>
                   </tr>
                 );
@@ -323,7 +374,22 @@ function ShotsView({ slug }: { slug: string }) {
         </div>
         {cur ? (
           <>
-            {(shotOverrides[cur.key] || cur.webp_exists) ? (
+            {isCloudKind(cur.kind) ? (
+              cur.clip_exists ? (
+                <video
+                  key={mediaUrl.shotPreview(slug, cur.key) + (cur.clip_mtime ?? "")}
+                  src={mediaUrl.shotPreview(slug, cur.key, cur.clip_mtime)}
+                  className="w-full hairline-soft bg-black"
+                  style={{ aspectRatio: "1/1", objectFit: "contain" }}
+                  controls
+                  loop
+                  muted
+                  playsInline
+                />
+              ) : (
+                <MediaPlaceholder label={`clips/hf_${cur.key}.mp4`} status={cur.status} />
+              )
+            ) : (shotOverrides[cur.key] || cur.webp_exists) ? (
               <img
                 key={(shotOverrides[cur.key] || mediaUrl.shotPreview(slug, cur.key)) + (cur.webp_mtime ?? "")}
                 src={shotOverrides[cur.key] || resolveMedia(mediaUrl.shotPreview(slug, cur.key, cur.webp_mtime))}
@@ -343,19 +409,33 @@ function ShotsView({ slug }: { slug: string }) {
             </div>
             <div className="grid grid-cols-2 gap-1 text-[12px]">
               <span className="label-tiny">{t("video.detailKey")}</span><span className="font-mono">{cur.key}</span>
-              <span className="label-tiny">{t("video.detailKind")}</span><span>{cur.kind}</span>
-              <span className="label-tiny">{t("video.detailSeed")}</span><span className="text-cyan">{viewSeeds[cur.key] !== undefined ? (viewSeeds[cur.key] ?? "—") : (cur.seed ?? "—")}</span>
-              <span className="label-tiny">{t("video.detailFile")}</span><span className="break-all">clips/{cur.key}_master.zs.webp</span>
+              <span className="label-tiny">{t("video.detailKind")}</span><span>{cur.kind}{cur.model ? ` · ${cur.model}` : ""}</span>
+              {isCloudKind(cur.kind) ? (
+                <>
+                  <span className="label-tiny">{t("video.detailCue")}</span><span className="font-mono">{cur.cue ?? "—"}</span>
+                  <span className="label-tiny">{t("video.detailFile")}</span><span className="break-all">clips/hf_{cur.key}.mp4</span>
+                  {cur.source_still && (
+                    <><span className="label-tiny">{t("video.detailStill")}</span><span className="font-mono break-all">{cur.source_still}</span></>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="label-tiny">{t("video.detailSeed")}</span><span className="text-cyan">{viewSeeds[cur.key] !== undefined ? (viewSeeds[cur.key] ?? "—") : (cur.seed ?? "—")}</span>
+                  <span className="label-tiny">{t("video.detailFile")}</span><span className="break-all">clips/{cur.key}_master.zs.webp</span>
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-baseline justify-between">
                 <span className="label-tiny">{t("video.promptCore")}</span>
+                {!isCloudKind(cur.kind) && (
                 <button
                   className="text-cyan text-[11px]"
                   onClick={() => setDraftPrompt(draftPrompt === null ? (cur.prompt ?? "") : null)}
                 >{draftPrompt === null ? t("video.editPrompt") : t("common.cancel")}</button>
+                )}
               </div>
-              {draftPrompt === null ? (
+              {draftPrompt === null || isCloudKind(cur.kind) ? (
                 <p className="whitespace-pre-wrap">{cur.prompt}</p>
               ) : (
                 <>
@@ -367,7 +447,7 @@ function ShotsView({ slug }: { slug: string }) {
                   />
                   <button
                     className="btn btn-amber mt-1"
-                    onClick={() => savePrompt.mutate({ key: cur.key, kind: cur.kind, prompt: draftPrompt })}
+                    onClick={() => savePrompt.mutate({ key: cur.key, kind: cur.kind as "character" | "broll", prompt: draftPrompt })}
                   >{t("video.saveToManifest")}</button>
                 </>
               )}
@@ -409,31 +489,57 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
   const cueIds = cues.data?.cues.map((c) => c.id) ?? [];
 
   const [key, setKey] = useState("");
-  const [kind, setKind] = useState<"character" | "broll">("character");
+  const [kind, setKind] = useState<"character" | "broll" | "higgsfield" | "lipsync">("character");
   const [prompt, setPrompt] = useState("");
   const [seed, setSeed] = useState("");
   const [attach, setAttach] = useState("");
+  const [model, setModel] = useState("");
+  const [duration, setDuration] = useState("");
+  const [sourceStill, setSourceStill] = useState("");
   const [busy, setBusy] = useState(false);
+  const cloud = isCloudKind(kind);
+
+  // Higgsfield model catalog (only fetched while the dialog shows a cloud kind).
+  // Lipsync needs a model whose media inputs accept an "audio" role.
+  const hfModels = useQuery({
+    queryKey: ["hf-models"],
+    queryFn: () => higgsfieldApi.models(),
+    enabled: open && cloud,
+    staleTime: 24 * 3600_000,
+    retry: false,
+  });
+  const modelOptions = (hfModels.data?.items ?? [])
+    .filter((mo) => mo.output_type === "video")
+    .filter((mo) => kind !== "lipsync"
+      || (mo.medias ?? []).some((md) => (md.roles ?? []).includes("audio")))
+    .map((mo) => mo.id);
 
   useEffect(() => {
     if (!open) {
-      setKey(""); setKind("character"); setPrompt(""); setSeed(""); setAttach(""); setBusy(false);
+      setKey(""); setKind("character"); setPrompt(""); setSeed(""); setAttach("");
+      setModel(""); setDuration(""); setSourceStill(""); setBusy(false);
     }
   }, [open]);
 
   const submit = async () => {
-    if (!key.trim()) { push(t("video.keyRequired"), "err"); return; }
+    if (!cloud && !key.trim()) { push(t("video.keyRequired"), "err"); return; }
+    if (cloud && !attach) { push(t("video.cloudNeedsCue"), "err"); return; }
     setBusy(true);
     try {
       const seedNum = seed.trim() ? parseInt(seed.replace(/\D/g, ""), 10) : null;
-      await versionsApi.addShot(slug, {
+      const r = await versionsApi.addShot(slug, {
         key: key.trim(),
         kind,
         prompt,
         seed: Number.isNaN(seedNum as number) ? null : seedNum,
         attach_to_cue: attach || null,
+        ...(cloud ? {
+          model: model || undefined,
+          duration: kind === "higgsfield" && duration.trim() ? parseInt(duration, 10) : undefined,
+          source_still: sourceStill.trim() || undefined,
+        } : {}),
       });
-      push(t("toast.shotAdded", { key: key.trim() }), "ok");
+      push(t("toast.shotAdded", { key: r.key }), "ok");
       onAdded();
       onClose();
     } catch (e: any) {
@@ -459,12 +565,35 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
     >
       <div className="flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
-          <Field label={t("video.fieldKey")} value={key} onChange={setKey} placeholder={t("video.fieldKeyPlaceholder")} />
-          <Field label={t("video.fieldKind")} value={kind} onChange={(v) => setKind(v as "character" | "broll")} options={["character", "broll"]} />
+          {!cloud && <Field label={t("video.fieldKey")} value={key} onChange={setKey} placeholder={t("video.fieldKeyPlaceholder")} />}
+          <Field label={t("video.fieldKind")} value={kind} onChange={(v) => setKind(v as typeof kind)} options={["character", "broll", "higgsfield", "lipsync"]} />
+          {cloud && (
+            <Field
+              label={t("video.fieldModel")}
+              value={model}
+              onChange={setModel}
+              options={["", ...modelOptions]}
+            />
+          )}
         </div>
-        <Field label={t("video.fieldPrompt")} value={prompt} onChange={setPrompt} rows={4} placeholder={t("video.fieldPromptPlaceholder")} />
+        {kind !== "lipsync" && (
+          <Field label={t("video.fieldPrompt")} value={prompt} onChange={setPrompt} rows={4} placeholder={t("video.fieldPromptPlaceholder")} />
+        )}
+        {cloud && (
+          <div className="grid grid-cols-2 gap-2">
+            <Field
+              label={t("video.fieldSourceStill")}
+              value={sourceStill}
+              onChange={setSourceStill}
+              placeholder={t("video.fieldSourceStillPh")}
+            />
+            {kind === "higgsfield" && (
+              <Field label={t("video.fieldDuration")} value={duration} onChange={setDuration} type="number" placeholder="8" />
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
-          <Field label={t("video.fieldSeed")} value={seed} onChange={setSeed} type="number" />
+          {!cloud && <Field label={t("video.fieldSeed")} value={seed} onChange={setSeed} type="number" />}
           <Field
             label={t("video.fieldAttachToCue")}
             value={attach}
@@ -473,7 +602,11 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
           />
         </div>
         <div className="text-[11px] text-txt-faint">
-          {attach
+          {kind === "lipsync"
+            ? t("video.addShotHelpLipsync")
+            : kind === "higgsfield"
+            ? t("video.addShotHelpCloud")
+            : attach
             ? t("video.addShotHelpWithCue", { kind, cue: attach })
             : t("video.addShotHelp", { kind })}
         </div>

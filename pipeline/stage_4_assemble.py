@@ -49,6 +49,63 @@ def freeze_shot(rife_dir, sid, dur, work):
          "-movflags","+faststart","-pix_fmt","yuv420p", out])
     return out
 
+def probe_dims(path):
+    r = run(["ffprobe","-v","error","-select_streams","v:0",
+             "-show_entries","stream=width,height","-of","csv=p=0", path])
+    w, h = r.stdout.strip().split("\n")[0].split(",")[:2]
+    return int(w), int(h)
+
+
+def cloud_shot(slug, sh, dur, work, m):
+    """Higgsfield/lipsync shot: the cached cloud clip (clips/hf_<id>.mp4), with the
+    shot's crop/pan/zoom + trim applied, optionally janked, fitted to its slot.
+    Crop/trim live ONLY here (excluded from the generation cache hash), so editing
+    them in the timeline re-assembles without re-billing."""
+    p = episode_paths(slug)
+    src = f"{p['clips']}/hf_{sh['id']}.mp4"
+    if not os.path.exists(src):
+        raise FileNotFoundError(
+            f"cloud shot {sh['id']}: {src} missing — run stage 2 first (it generates "
+            f"Higgsfield clips), or check clips/.hf_cache.json for a failed generation")
+    out = f"{work}/{sh['id']}.mp4"
+    blk = (m.get("higgsfield") or {})
+    jank = sh.get("jank", blk.get("jank", True))
+
+    # Trim (in/out points into the cached clip). Lipsync clips are sample-aligned
+    # with the cue VO — trimming one would desync the mouth, so it's ignored.
+    pre = []
+    trim = sh.get("trim") or {}
+    if sh.get("kind") != "lipsync":
+        t_in = float(trim.get("in") or 0.0)
+        t_out = trim.get("out")
+        if t_in > 0:
+            pre += ["-ss", f"{t_in:.4f}"]
+        if t_out is not None and float(t_out) > t_in:
+            pre += ["-t", f"{float(t_out) - t_in:.4f}"]
+
+    # Crop window: largest centered-on-(x,y) square over the source, shrunk by
+    # zoom — handles non-1:1 sources (center-crop) and pan/zoom in one filter.
+    w0, h0 = probe_dims(src)
+    crop = sh.get("crop") or {}
+    zoom = min(2.0, max(1.0, float(crop.get("zoom") or 1.0)))
+    cx_n = min(1.0, max(0.0, float(crop.get("x")) if crop.get("x") is not None else 0.5))
+    cy_n = min(1.0, max(0.0, float(crop.get("y")) if crop.get("y") is not None else 0.5))
+    side = min(w0, h0) / zoom
+    cx = min(max(cx_n * w0, side / 2), w0 - side / 2)
+    cy = min(max(cy_n * h0, side / 2), h0 - side / 2)
+    vf = f"crop={side:.0f}:{side:.0f}:{cx - side/2:.0f}:{cy - side/2:.0f},"
+    # jank_filter starts with its own 256→1024 neighbor-scale chain (the broadcast
+    # look needs the down-up sample); the non-jank path scales directly.
+    vf += jank_filter() if jank else "scale=1024:1024,format=yuv420p"
+    # Fit the slot: clone-pad if shorter (also covers cue pad_seconds), cut at dur.
+    vf += f",tpad=stop_mode=clone:stop_duration={dur:.4f}"
+    run(["ffmpeg","-y", *pre, "-i", src,
+         "-vf", vf, "-an", "-r","24","-t", f"{dur:.4f}",
+         "-c:v","libx264","-preset","medium","-crf","22",
+         "-movflags","+faststart","-pix_fmt","yuv420p", out])
+    return out
+
+
 def title_shot(mp4, sid, dur, work, loop=False):
     out = f"{work}/{sid}.mp4"
     if loop:
@@ -97,6 +154,15 @@ def main(slug):
             f"[stage 4 assemble] {len(shotless)} cue(s) have no shots assigned: "
             f"{', '.join(shotless)}. Assign shots to each (Studio → Video → "
             f"Generate shot list, or edit the manifest) before assembling.")
+    # A lipsync shot's clip is sample-aligned with the whole cue VO, so it must be
+    # the cue's ONLY shot (the per-shot equal-split below would desync the mouth).
+    bad_solo = [c["id"] for c in m["cues"]
+                if any(s.get("kind") == "lipsync" for s in c.get("shots") or [])
+                and len(c["shots"]) > 1]
+    if bad_solo:
+        raise RuntimeError(
+            f"[stage 4 assemble] lipsync shots must be the only shot in their cue; "
+            f"offending cue(s): {', '.join(bad_solo)}")
     for cue in m["cues"]:
         vo = f"{p['vo']}/{cue['id']}.wav"
         vo_dur = probe_dur(vo)
@@ -122,6 +188,8 @@ def main(slug):
                     shot_mp4s.append(freeze_shot(rife, sh["id"], sdur, p["work"]))
                 else:
                     shot_mp4s.append(rife_shot(rife, sh["id"], sdur, p["work"]))
+            elif sh["kind"] in ("higgsfield", "lipsync"):
+                shot_mp4s.append(cloud_shot(slug, sh, sdur, p["work"], m))
             elif sh["kind"] == "title":
                 # Per-episode titles dir wins; fall back to shared assets/titles/
                 tm = f"{p['titles']}/{sh['asset']}.mp4"

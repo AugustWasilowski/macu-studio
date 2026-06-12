@@ -624,3 +624,20 @@ async def set_shot_provider(slug: str, cue_id: str, shot_id: str, kind: str,
         cue["shots"] = shots
     return await _api("PUT", f"/api/episodes/{slug}/cue-shots",
                       body={"cues": {cue_id: cue["shots"]}})
+
+
+@mcp.tool()
+async def generate_cloud_shot(slug: str, shot_id: str) -> dict:
+    """Force-regenerate ONE Higgsfield cloud shot (drops its cache + clip, queues
+    stage 2 — only this clip re-bills; everything cached is skipped). This SPENDS
+    CREDITS: call estimate_episode_cost first and confirm with the user. Returns
+    the render job; poll render_status(job_id)."""
+    return await _api("POST", f"/api/episodes/{slug}/shot/{shot_id}/higgsfield/regen")
+
+
+@mcp.tool()
+async def generate_character_still(slug: str, who: str) -> dict:
+    """(Re)generate a character's still image via Higgsfield image gen (uses
+    characters[who].still_prompt; async — poll with still_status which is part of
+    this tool's response loop). Stills feed image-to-video and lipsync shots."""
+    return await _api("POST", f"/api/episodes/{slug}/characters/{who}/still/regen")
