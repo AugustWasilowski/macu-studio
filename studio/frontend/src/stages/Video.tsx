@@ -11,6 +11,7 @@ import { VersionArrows } from "../components/VersionArrows";
 import { IRegen, IPlus, IDL } from "../components/Icons";
 import { precacheMedia, resolveMedia, isCached } from "../mediaCache";
 import { versionsApi } from "../api/assets";
+import { charactersApi } from "../api/characters";
 import { higgsfieldApi } from "../api/higgsfield";
 import { ShotGenModal } from "./ShotGenModal";
 import { useT } from "../i18n";
@@ -437,7 +438,15 @@ function ShotsView({ slug }: { slug: string }) {
                   <span className="label-tiny">{t("video.detailCue")}</span><span className="font-mono">{cur.cue ?? "—"}</span>
                   <span className="label-tiny">{t("video.detailFile")}</span><span className="break-all">clips/hf_{cur.key}.mp4</span>
                   {cur.source_still && (
-                    <><span className="label-tiny">{t("video.detailStill")}</span><span className="font-mono break-all">{cur.source_still}</span></>
+                    <>
+                      <span className="label-tiny">{t("video.detailStill")}</span>
+                      <span className="flex items-center gap-1.5 font-mono break-all">
+                        <img src={higgsfieldApi.stillUrl(slug, cur.source_still)} alt=""
+                             className="rounded bg-black flex-none" style={{ width: 28, height: 28, objectFit: "cover" }}
+                             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        {cur.source_still}
+                      </span>
+                    </>
                   )}
                 </>
               ) : (
@@ -602,17 +611,15 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
           <Field label={t("video.fieldPrompt")} value={prompt} onChange={setPrompt} rows={4} placeholder={t("video.fieldPromptPlaceholder")} />
         )}
         {cloud && (
-          <div className="grid grid-cols-2 gap-2">
-            <Field
-              label={t("video.fieldSourceStill")}
-              value={sourceStill}
-              onChange={setSourceStill}
-              placeholder={t("video.fieldSourceStillPh")}
-            />
+          <>
+            <StillPicker slug={slug} value={sourceStill} onChange={setSourceStill}
+                         required={kind === "lipsync"} />
             {kind === "higgsfield" && (
-              <Field label={t("video.fieldDuration")} value={duration} onChange={setDuration} type="number" placeholder="8" />
+              <div className="grid grid-cols-2 gap-2">
+                <Field label={t("video.fieldDuration")} value={duration} onChange={setDuration} type="number" placeholder="8" />
+              </div>
             )}
-          </div>
+          </>
         )}
         <div className="grid grid-cols-2 gap-2">
           {!cloud && <Field label={t("video.fieldSeed")} value={seed} onChange={setSeed} type="number" />}
@@ -634,6 +641,105 @@ function AddShotDialog({ open, onClose, slug, onAdded }: {
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Visual source_still picker: the episode's existing stills + the show-level
+// character library. Picking a library character that isn't in the episode yet
+// syncs its default take in first (with the re-bill warning when that replaces
+// a different still).
+function StillPicker({ slug, value, onChange, required }: {
+  slug: string; value: string; onChange: (v: string) => void; required?: boolean;
+}) {
+  const t = useT();
+  const qc = useQueryClient();
+  const push = useStore((s) => s.pushToast);
+  const show = useStore((s) => s.activeShow);
+  const manifest = useQuery({ queryKey: ["manifest", slug], queryFn: () => api.manifest(slug) });
+  const roster = useQuery({ queryKey: ["characters", show], queryFn: () => charactersApi.roster(show) });
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const epChars: string[] = Object.keys(((manifest.data as any)?.characters ?? {}) as Record<string, unknown>);
+  const libOnly = (roster.data?.characters ?? []).filter((c) => c.take_count > 0);
+
+  const pickLibrary = async (key: string, hasEpisodeEntry: boolean) => {
+    if (hasEpisodeEntry) { onChange(key); return; }
+    setBusyKey(key);
+    try {
+      let r = await charactersApi.use(show, key, { slug });
+      if (r.needs_confirm) {
+        const warn = r.invalidates.length
+          ? "\n" + t("characters.useInvalidates", { n: r.invalidates.length, shots: r.invalidates.join(", ") })
+          : "";
+        if (!window.confirm(t("characters.useConfirm") + warn)) { setBusyKey(null); return; }
+        r = await charactersApi.use(show, key, { slug, overwrite_still: true });
+      }
+      push(t("characters.usedIn", { key, slug }), "ok");
+      qc.invalidateQueries({ queryKey: ["manifest", slug] });
+      qc.invalidateQueries({ queryKey: ["shots", slug] });
+      onChange(key);
+    } catch (e) {
+      push(String(e), "err");
+    }
+    setBusyKey(null);
+  };
+
+  const Thumb = ({ src, label, selected, busy: thumbBusy, onClick }: {
+    src: string; label: string; selected: boolean; busy?: boolean; onClick: () => void;
+  }) => (
+    <button type="button" onClick={onClick} disabled={thumbBusy}
+      className="relative rounded overflow-hidden hairline-soft flex-none"
+      style={{ width: 64, opacity: thumbBusy ? 0.5 : 1,
+               outline: selected ? "2px solid var(--amber)" : undefined,
+               boxShadow: selected ? "var(--glow-amber)" : undefined }}
+      title={label}>
+      <img src={src} alt={label} className="bg-black w-full"
+           style={{ height: 64, objectFit: "cover" }}
+           onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.15"; }} />
+      <span className="block font-mono text-[9px] truncate px-1 bg-bg-2">{label}</span>
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="label-tiny">
+        {t("video.fieldSourceStill")}{required ? " *" : ""}
+        {value && <span className="font-mono text-cyan"> · {value}</span>}
+        {value && !required && (
+          <button type="button" className="text-[10px] text-txt-faint pl-1 underline" onClick={() => onChange("")}>
+            {t("video.stillClear")}
+          </button>
+        )}
+      </span>
+      {epChars.length > 0 && (
+        <>
+          <span className="label-tiny text-txt-faint">{t("video.stillGroupEpisode")}</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {epChars.map((k) => (
+              <Thumb key={k} src={higgsfieldApi.stillUrl(slug, k)} label={k}
+                     selected={value === k} onClick={() => onChange(k)} />
+            ))}
+          </div>
+        </>
+      )}
+      {libOnly.length > 0 && (
+        <>
+          <span className="label-tiny text-txt-faint">{t("video.stillGroupLibrary")}</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {libOnly.map((c) => (
+              <Thumb key={c.key}
+                     src={charactersApi.takeUrl(show, c.key, c.default_take ?? "", true)}
+                     label={c.key} selected={value === c.key} busy={busyKey === c.key}
+                     onClick={() => pickLibrary(c.key, epChars.includes(c.key))} />
+            ))}
+          </div>
+        </>
+      )}
+      {epChars.length === 0 && libOnly.length === 0 && (
+        <span className="label-tiny text-txt-faint">{t("video.stillNone")}</span>
+      )}
+      <a className="label-tiny text-cyan cursor-pointer" href="#characters">{t("video.manageCharacters")}</a>
+    </div>
   );
 }
 

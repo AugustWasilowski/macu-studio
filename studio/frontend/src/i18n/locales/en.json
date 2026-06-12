@@ -1182,5 +1182,10 @@
   "characters.importTitle": "Import characters from an episode",
   "characters.importHelp": "Seeds the library from an episode's manifest characters (prompts + existing stills become take-001). Characters already in the library are skipped.",
   "characters.importBtn": "Import",
-  "characters.imported": "Imported {n} character(s), skipped {skipped}"
+  "characters.imported": "Imported {n} character(s), skipped {skipped}",
+  "video.stillGroupEpisode": "Episode stills",
+  "video.stillGroupLibrary": "Character library",
+  "video.stillClear": "clear",
+  "video.stillNone": "No stills yet — create characters and generate takes on the Characters tab.",
+  "video.manageCharacters": "manage characters →"
 }
