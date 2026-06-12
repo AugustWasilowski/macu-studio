@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "id": "z_image_turbo",
+    "title": "Z-Image-Turbo still",
+    "capability": "stills",
+    "description": "Single 1024x1024 still via Z-Image-Turbo (Alibaba Tongyi). 8 steps, cfg 1.0 (CFG-distilled - do not tune). ~5-15s warm on a 2080 Ti; first run after a ComfyUI start cold-loads the unet.",
+    "output_node": "9",
+    "inputs": {
+      "prompt":   ["4", "inputs", "text"],
+      "negative": ["5", "inputs", "text"],
+      "seed":     ["7", "inputs", "seed"],
+      "width":    ["6", "inputs", "width"],
+      "height":   ["6", "inputs", "height"],
+      "steps":    ["7", "inputs", "steps"],
+      "cfg":      ["7", "inputs", "cfg"],
+      "unet":     ["1", "inputs", "unet_name"]
+    },
+    "defaults": {
+      "negative": "",
+      "width": 1024,
+      "height": 1024,
+      "steps": 8,
+      "cfg": 1.0,
+      "unet": "z_image_turbo_fp8_e4m3fn.safetensors"
+    },
+    "models": [
+      {"dir": "diffusion_models", "file": "z_image_turbo_fp8_e4m3fn.safetensors", "hf": "Comfy-Org/z_image_turbo"},
+      {"dir": "text_encoders",    "file": "qwen_3_4b_fp8_mixed.safetensors",      "hf": "Comfy-Org/z_image_turbo"},
+      {"dir": "vae",              "file": "ae.safetensors",                        "hf": "Comfy-Org/z_image_turbo"}
+    ]
+  },
+  "graph": {
+    "1": {"class_type": "UNETLoader",
+          "inputs": {"unet_name": "z_image_turbo_fp8_e4m3fn.safetensors", "weight_dtype": "default"}},
+    "2": {"class_type": "CLIPLoader",
+          "inputs": {"clip_name": "qwen_3_4b_fp8_mixed.safetensors", "type": "qwen_image"}},
+    "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+    "4": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["2", 0]}},
+    "5": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["2", 0]}},
+    "6": {"class_type": "EmptySD3LatentImage",
+          "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
+    "7": {"class_type": "KSampler",
+          "inputs": {"seed": 0, "steps": 8, "cfg": 1.0,
+                     "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0,
+                     "model": ["1", 0], "positive": ["4", 0], "negative": ["5", 0],
+                     "latent_image": ["6", 0]}},
+    "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+    "9": {"class_type": "SaveImage",
+          "inputs": {"images": ["8", 0], "filename_prefix": "macu_still"}}
+  }
+}

@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from . import higgsfield as hf
 from . import hfcache as hfc
 from . import manifest as manifest_mod
+from . import stilljobs
 from .config import SHARES
 from .episodes import episode_dir
 
@@ -280,21 +281,10 @@ async def get_estimate(slug: str):
 
 # ---- character stills (cloud image gen) -----------------------------------------
 
-# In-memory still jobs, keyed "<slug>:<who>" (mirrors hyperframes.py's JOBS).
-STILL_JOBS: dict[str, dict] = {}
-
-
-def _png_normalize(src: Path, dest: Path) -> None:
-    """Whatever format the model returned → PNG at dest (ffmpeg, atomic)."""
-    with tempfile.NamedTemporaryFile(suffix=".png", dir=dest.parent, delete=False) as t:
-        tmp = Path(t.name)
-    try:
-        subprocess.run(["ffmpeg", "-y", "-i", str(src), "-frames:v", "1", str(tmp)],
-                       check=True, capture_output=True, timeout=60)
-        tmp.replace(dest)
-    except Exception:
-        tmp.unlink(missing_ok=True)
-        raise
+# Still jobs live in the shared registry (stilljobs.py) — same keys as before
+# ("<slug>:<who>"), so the status route's responses are unchanged.
+STILL_JOBS = stilljobs.JOBS
+_png_normalize = stilljobs.png_normalize
 
 
 async def _gen_still(slug: str, who: str, key: str) -> None:
@@ -355,7 +345,7 @@ async def post_still_regen(slug: str, who: str):
     if not hf.status()["connected"]:
         raise HTTPException(409, "Higgsfield not connected — connect in Settings → Higgsfield")
     key = f"{slug}:{who}"
-    if STILL_JOBS.get(key, {}).get("state") in ("generating", "downloading", "queued"):
+    if stilljobs.is_active(key):
         raise HTTPException(409, f"a still generation for {who} is already running")
     ep = episode_dir(slug)
     sc_path = hfc.stills_sidecar_path(ep)
@@ -363,8 +353,7 @@ async def post_still_regen(slug: str, who: str):
     if who in entries:
         entries.pop(who)
         hfc.save_sidecar(sc_path, "stills", entries)
-    STILL_JOBS[key] = {"state": "queued", "error": None, "started": time.time(), "job_id": None}
-    asyncio.get_running_loop().create_task(_gen_still(slug, who, key))
+    stilljobs.start(key, "higgsfield", 1, lambda job: _gen_still(slug, who, key))
     return {"ok": True, "key": key}
 
 
