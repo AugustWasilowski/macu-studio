@@ -1,4 +1,4 @@
-import type { ShowSummary, ShowConfig, ImportResult } from "../types";
+import type { ShowSummary, ShowConfig, ImportResult, ArchiveList } from "../types";
 
 async function J<T>(r: Response): Promise<T> {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${await r.text().catch(() => "")}`);
@@ -36,6 +36,25 @@ export const showsApi = {
   openFolder: (show: string) =>
     fetch(`/api/shows/${show}/open-folder`, { method: "POST" }).then((r) =>
       J<{ ok: boolean; opened: boolean; path: string; windows_path: string | null; reason: string | null }>(r)),
+
+  // ---- Archive: physically move episodes/shows out of (and back into) the active tree.
+  listArchive: () => fetch("/api/archive").then((r) => J<ArchiveList>(r)),
+  archiveEpisode: (show: string, slug: string) =>
+    fetch(`/api/shows/${show}/episodes/${slug}/archive`, { method: "POST" }).then((r) =>
+      J<{ ok: boolean; show: string; slug: string; path: string }>(r)),
+  // `name` is the archived container's id (from listArchive); newSlug restores under a
+  // different slug when the original is taken (the 409 path).
+  unarchiveEpisode: (show: string, name: string, newSlug?: string) =>
+    fetch(`/api/shows/${show}/episodes/${name}/unarchive`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newSlug ? { new_slug: newSlug } : {}),
+    }).then((r) => J<{ ok: boolean; show: string; slug: string }>(r)),
+  archiveShow: (show: string) =>
+    fetch(`/api/shows/${show}/archive`, { method: "POST" }).then((r) =>
+      J<{ ok: boolean; show: string; path: string; episode_count: number }>(r)),
+  unarchiveShow: (name: string) =>
+    fetch(`/api/shows/${name}/unarchive`, { method: "POST" }).then((r) =>
+      J<{ ok: boolean; show: string; path: string }>(r)),
 };
 
 // Browser-download URLs (Content-Disposition: attachment served by the backend).

@@ -73,6 +73,37 @@ _ARCHIVE_MP4_RE = _re.compile(r"\.\d{8}-\d{6}\.mp4$")  # archived final, e.g. <s
 _CANON_RE = _re.compile(r"^ep-0*(\d+)$")               # canonical ep-009 -> short alias ep9
 
 
+def episode_variants(ep_root: Path, slug: str) -> tuple[list[Path], list[Path]]:
+    """For a canonical episode slug, find its localization family in ``ep_root``:
+    ``(variant_dirs, alias_symlinks)``.
+
+    A localized episode ``ep-009`` is shadowed by per-language variant dirs
+    ``ep9-uk`` / ``ep9-hi`` (which symlink their manifest/vo back to the English
+    source) plus a bare alias symlink ``ep9 -> ep-009``. Archiving the parent has
+    to take the whole family or the variants' symlinks dangle. Returns empty lists
+    for a slug with no localized variants (the common case) or a non-canonical slug.
+    """
+    variants: list[Path] = []
+    aliases: list[Path] = []
+    m = _CANON_RE.match(slug)
+    if not m:
+        return variants, aliases  # not a canonical ep-### slug → no family
+    short = "ep" + m.group(1)  # ep-009 -> ep9
+    try:
+        entries = sorted(ep_root.iterdir(), key=lambda p: p.name)
+    except OSError:
+        return variants, aliases
+    for entry in entries:
+        name = entry.name
+        if name == short and entry.is_symlink() and _ALIAS_RE.match(name):
+            aliases.append(entry)
+            continue
+        vm = _VARIANT_RE.match(name)
+        if vm and vm.group(1) == short:
+            variants.append(entry)
+    return variants, aliases
+
+
 def _base_names(slug: str) -> list[str]:
     """Candidate final-file basenames for an episode's MAIN render. Episode finals
     were historically named inconsistently — both `ep-009.mp4` and the short

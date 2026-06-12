@@ -24,12 +24,20 @@ import shutil
 import tempfile
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from . import config
 
 REGISTRY = config.STUDIO_ROOT / "shows.json"
+
+# Where a whole archived show's tree is parked (sibling of SHARES/shows). Archived
+# episodes live per-show under show_archive_dir() — see archive_episode().
+ARCHIVED_SHOWS_ROOT = config.SHARES / "_archived-shows"
+# Sidecar written into each archived container (episode-family or show). Dot-prefixed
+# so it is never picked up by TEXT_FILES exports or git-sync.
+ARCHIVE_SIDECAR = ".archive.json"
 
 # Per-show canon docs seeded into docs/shows/<id>/ on show creation, copied from
 # docs/_templates/show/ with {{SHOW_NAME}}/{{SHOW_ID}}/{{DATE}} substituted. See
@@ -521,3 +529,362 @@ def create_episode(show_id: str, slug: str, title: str = "") -> dict[str, Any]:
         f"on the Script page to turn it into cues._\n"
     )
     return {"ok": True, "show": show_id, "slug": slug, "dir": str(ep_dir), "title": full_title}
+
+
+# --------------------------------------------------------------------------- #
+# Archive / unarchive — physically move episodes & shows out of (and back into)
+# the active tree. The move is the source of truth; a .archive.json sidecar in
+# each container carries the metadata the Settings → Archive UI lists, and (for
+# shows) the registry entry needed to restore the show to shows.json.
+# --------------------------------------------------------------------------- #
+
+class SlugInUse(Exception):
+    """Restore target (episode slug or show id) is taken by a live item → HTTP 409."""
+
+    def __init__(self, name: str, owner: str):
+        self.name = name
+        self.owner = owner
+        super().__init__(f"already in use by '{owner}': {name}")
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _ts() -> str:
+    return time.strftime("%Y%m%d-%H%M%S")
+
+
+def show_archive_dir(show_id: str) -> Path:
+    """Where archived episode-families for a show live: ``SHARES/shows/<id>/archived/``.
+
+    A sibling of the show's ``episodes_dir`` for registry shows; namespaced under
+    ``shows/<id>/`` for the legacy flat default show (whose episodes_dir is the bare
+    ``SHARES/episodes``). Crucially NEVER inside ``episodes_dir`` — otherwise
+    ``list_episodes`` would re-discover archived items.
+    """
+    ep_dir = show_episodes_dir(show_id)  # live (rebased) path
+    if ep_dir.name == "episodes" and ep_dir.parent.name == show_id:
+        return ep_dir.parent / "archived"
+    return config.SHARES / "shows" / show_id / "archived"
+
+
+def _read_sidecar(container: Path) -> dict[str, Any]:
+    f = container / ARCHIVE_SIDECAR
+    if not f.exists():
+        return {}
+    try:
+        return json.loads(f.read_text())
+    except Exception:
+        return {}
+
+
+def _episode_title(ep_dir: Path) -> str:
+    try:
+        data = json.loads((ep_dir / "manifest.json").read_text())
+        return str(data.get("title") or ep_dir.name)
+    except Exception:
+        return ep_dir.name
+
+
+def _relativize_family_symlinks(item_dir: Path, old_parent: Path, new_parent: Path) -> None:
+    """After moving a localized variant, repoint any top-level symlink that pointed at
+    the (now-moved) parent episode dir via an ABSOLUTE path so the family stays
+    self-contained. Relative links between siblings survive the move untouched."""
+    try:
+        children = list(item_dir.iterdir())
+    except OSError:
+        return
+    for child in children:
+        if not child.is_symlink():
+            continue
+        target = os.readlink(child)
+        if not os.path.isabs(target):
+            continue
+        try:
+            rel_inside = Path(target).relative_to(old_parent)
+        except ValueError:
+            continue  # absolute, but not into the old parent — leave it
+        new_target = os.path.relpath(new_parent / rel_inside, item_dir)
+        child.unlink()
+        os.symlink(new_target, child)
+
+
+def archive_episode(slug: str) -> dict[str, Any]:
+    """Physically move an episode — and its localization family — out of the show's
+    episodes_dir into ``SHARES/shows/<show>/archived/<slug>/`` (a container holding
+    the episode dir, any variant dirs, and recreated alias symlinks, plus the
+    sidecar). Frees the slug for reuse.
+
+    Raises FileNotFoundError (unknown slug → 404), ValueError (variant/alias slug → 400).
+    """
+    from . import episodes as ep_mod  # lazy: episodes imports shows
+
+    if ep_mod._VARIANT_RE.match(slug):
+        raise ValueError(
+            f"{slug} is a localized variant — archive its parent episode instead")
+    show_id, ep_dir = resolve_episode(slug)  # FileNotFoundError → 404
+    if ep_dir.is_symlink():
+        raise ValueError(f"{slug} is an alias — archive the canonical episode instead")
+    ep_root = ep_dir.parent
+    variants, aliases = ep_mod.episode_variants(ep_root, slug)
+
+    arch_root = show_archive_dir(show_id)
+    arch_root.mkdir(parents=True, exist_ok=True)
+    container = arch_root / slug
+    if container.exists():
+        container = container.with_name(f"{slug}.archived-{_ts()}")
+    container.mkdir(parents=True)
+
+    moved = [slug]
+    shutil.move(str(ep_dir), str(container / slug))  # same-fs rename, keeps symlinks
+    variant_names: list[str] = []
+    for v in variants:
+        shutil.move(str(v), str(container / v.name))
+        variant_names.append(v.name)
+        moved.append(v.name)
+    alias_names: list[str] = []
+    for a in aliases:
+        target = os.readlink(a)
+        a.unlink()
+        os.symlink(Path(target).name, container / a.name)  # relative, inside container
+        alias_names.append(a.name)
+    for vn in variant_names:
+        _relativize_family_symlinks(container / vn, ep_dir, container / slug)
+
+    sidecar = {
+        "kind": "episode",
+        "slug": slug,
+        "show": show_id,
+        "title": _episode_title(container / slug),
+        "original_path": str(ep_dir),
+        "archived_at": time.time(),
+        "archived_at_iso": _now_iso(),
+        "variants": variant_names,
+        "aliases": alias_names,
+    }
+    (container / ARCHIVE_SIDECAR).write_text(json.dumps(sidecar, indent=2, ensure_ascii=False))
+    return {"ok": True, "show": show_id, "slug": slug, "archived": moved, "path": str(container)}
+
+
+def unarchive_episode(show_id: str, name: str, new_slug: str | None = None) -> dict[str, Any]:
+    """Restore an archived episode-family (``name`` = its container dir name) back into
+    its show's episodes_dir. ``new_slug`` restores under a different slug when the
+    original is taken.
+
+    Raises FileNotFoundError (404), ValueError (bad slug → 400), SlugInUse (409).
+    """
+    safe_segment(name, "archive name")
+    container = show_archive_dir(show_id) / name
+    if not container.is_dir():
+        raise FileNotFoundError(f"archived episode not found: {name}")
+    sidecar = _read_sidecar(container)
+    orig_slug = sidecar.get("slug") or name
+    dest_slug = (new_slug or orig_slug).strip().lower()
+    if not _SLUG_RE.match(dest_slug):
+        raise ValueError("slug must be lowercase letters/digits/dashes (2-49 chars)")
+
+    try:
+        owner, _ = resolve_episode(dest_slug)
+        raise SlugInUse(dest_slug, owner)
+    except FileNotFoundError:
+        pass
+
+    target_show = sidecar.get("show") or show_id
+    try:
+        ep_root = show_episodes_dir(target_show)
+    except KeyError:
+        target_show = show_id
+        ep_root = show_episodes_dir(show_id)
+    ep_root.mkdir(parents=True, exist_ok=True)
+
+    parent_src = container / orig_slug
+    if not parent_src.is_dir():
+        # Sidecar lost/corrupt — fall back to the lone real (non-symlink, non-variant) dir.
+        from . import episodes as ep_mod
+        cands = [p for p in container.iterdir()
+                 if p.is_dir() and not p.is_symlink() and not ep_mod._VARIANT_RE.match(p.name)]
+        if len(cands) != 1:
+            raise FileNotFoundError(f"cannot locate the episode dir inside {name}")
+        parent_src = cands[0]
+        orig_slug = parent_src.name
+
+    shutil.move(str(parent_src), str(ep_root / dest_slug))
+    restored = [dest_slug]
+    # Move variants + aliases back as siblings; repoint them if the slug changed.
+    for entry in sorted(container.iterdir(), key=lambda p: p.name):
+        if entry.name == ARCHIVE_SIDECAR:
+            continue
+        dst = ep_root / entry.name
+        if entry.is_symlink():  # alias: recreate pointing at the restored slug
+            entry.unlink()
+            if not dst.exists():
+                os.symlink(dest_slug, dst)
+            restored.append(entry.name)
+            continue
+        shutil.move(str(entry), str(dst))
+        restored.append(entry.name)
+        if dest_slug != orig_slug:
+            _repoint_variant(dst, orig_slug, dest_slug)
+    shutil.rmtree(container, ignore_errors=True)
+    return {"ok": True, "show": target_show, "slug": dest_slug, "restored": restored}
+
+
+def _repoint_variant(variant_dir: Path, old_base: str, new_base: str) -> None:
+    """Rewrite a restored variant's top-level symlinks that referenced the parent's
+    OLD slug dir (``../<old_base>/...``) to the new slug — for the rare restore-under-
+    a-new-slug case."""
+    try:
+        children = list(variant_dir.iterdir())
+    except OSError:
+        return
+    for child in children:
+        if not child.is_symlink():
+            continue
+        target = os.readlink(child)
+        parts = target.split("/")
+        if old_base in parts:
+            new_target = "/".join(new_base if p == old_base else p for p in parts)
+            child.unlink()
+            os.symlink(new_target, child)
+
+
+def archive_show(show_id: str) -> dict[str, Any]:
+    """Physically move a whole show's tree (``SHARES/shows/<id>/``) into
+    ``SHARES/_archived-shows/<id>/`` and drop it from shows.json. The raw registry
+    entry is preserved in the sidecar so unarchive restores episode_defaults verbatim.
+
+    Raises KeyError (unknown → 404), ValueError (guarded show → 400).
+    """
+    reg = load_registry(raw=True)
+    entry = next((s for s in reg if s.get("id") == show_id), None)
+    if entry is None:
+        raise KeyError(f"unknown show: {show_id}")
+    eff_default = (DEFAULT_SHOW if any(s.get("id") == DEFAULT_SHOW for s in reg)
+                   else (reg[0]["id"] if reg else DEFAULT_SHOW))
+    if show_id == DEFAULT_SHOW or show_id == eff_default:
+        raise ValueError("cannot archive the default show")
+    if len(reg) <= 1:
+        raise ValueError("cannot archive the only remaining show")
+
+    live_ep_dir = show_episodes_dir(show_id)
+    if live_ep_dir.name == "episodes" and live_ep_dir.parent.name == show_id:
+        base = live_ep_dir.parent
+    else:
+        base = config.SHARES / "shows" / show_id
+    if not base.is_dir():
+        raise FileNotFoundError(f"show directory not found: {base}")
+
+    try:
+        count = sum(1 for p in live_ep_dir.iterdir()
+                    if p.is_dir() and (p / "manifest.json").exists())
+    except OSError:
+        count = 0
+
+    ARCHIVED_SHOWS_ROOT.mkdir(parents=True, exist_ok=True)
+    dest = ARCHIVED_SHOWS_ROOT / show_id
+    if dest.exists():
+        dest = dest.with_name(f"{show_id}.archived-{_ts()}")
+    shutil.move(str(base), str(dest))
+
+    sidecar = {
+        "kind": "show",
+        "show": show_id,
+        "name": entry.get("name") or show_id,
+        "original_path": str(base),
+        "archived_at": time.time(),
+        "archived_at_iso": _now_iso(),
+        "episode_count": count,
+        "registry_entry": entry,  # raw/canonical — restores episode_defaults byte-for-byte
+    }
+    (dest / ARCHIVE_SIDECAR).write_text(json.dumps(sidecar, indent=2, ensure_ascii=False))
+    _write_registry([s for s in reg if s.get("id") != show_id])
+    return {"ok": True, "show": show_id, "path": str(dest), "episode_count": count}
+
+
+def unarchive_show(name: str) -> dict[str, Any]:
+    """Restore an archived show (``name`` = its container dir name in _archived-shows)
+    back to ``SHARES/shows/<id>/`` and re-append its entry to shows.json.
+
+    Raises FileNotFoundError (404), ValueError (400), SlugInUse (409).
+    """
+    safe_segment(name, "archive name")
+    container = ARCHIVED_SHOWS_ROOT / name
+    if not container.is_dir():
+        raise FileNotFoundError(f"archived show not found: {name}")
+    sidecar = _read_sidecar(container)
+    entry = sidecar.get("registry_entry") if isinstance(sidecar.get("registry_entry"), dict) else None
+    show_id = (entry or {}).get("id") or sidecar.get("show") or name
+
+    reg = load_registry(raw=True)
+    if any(s.get("id") == show_id for s in reg):
+        raise SlugInUse(show_id, show_id)
+
+    dest = config.SHARES / "shows" / show_id
+    if dest.exists():
+        raise ValueError(f"destination already exists: {dest}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(container), str(dest))
+    sc = dest / ARCHIVE_SIDECAR
+    if sc.exists():
+        sc.unlink()
+
+    if not entry:  # sidecar lost the registry entry — reconstruct a minimal one
+        entry = {
+            "id": show_id,
+            "name": sidecar.get("name") or show_id,
+            "episodes_dir": str(dest / "episodes"),
+            "assets_dir": str(config.SHARES / "assets"),
+            "title_prefix": f"{sidecar.get('name') or show_id} — ",
+            "episode_defaults": {},
+        }
+    reg.append(entry)
+    _write_registry(reg)
+    return {"ok": True, "show": show_id, "path": str(dest)}
+
+
+def list_archived() -> dict[str, Any]:
+    """Everything archived: episode-families grouped by their (still-registered) show,
+    plus whole archived shows. Drives the Settings → Archive panel."""
+    episodes: dict[str, list[dict[str, Any]]] = {}
+    for show in load_registry():
+        sid = show.get("id")
+        if not sid:
+            continue
+        arch = show_archive_dir(sid)
+        if not arch.is_dir():
+            continue
+        items: list[dict[str, Any]] = []
+        for c in sorted(arch.iterdir(), key=lambda p: p.name):
+            if not c.is_dir():
+                continue
+            sc = _read_sidecar(c)
+            if not sc:
+                continue
+            items.append({
+                "name": c.name,
+                "slug": sc.get("slug") or c.name,
+                "title": sc.get("title") or sc.get("slug") or c.name,
+                "show": sid,
+                "archived_at_iso": sc.get("archived_at_iso"),
+                "variants": sc.get("variants") or [],
+            })
+        if items:
+            episodes[sid] = items
+
+    shows_out: list[dict[str, Any]] = []
+    if ARCHIVED_SHOWS_ROOT.is_dir():
+        for c in sorted(ARCHIVED_SHOWS_ROOT.iterdir(), key=lambda p: p.name):
+            if not c.is_dir():
+                continue
+            sc = _read_sidecar(c)
+            if not sc:
+                continue
+            shows_out.append({
+                "name": c.name,
+                "show": sc.get("show") or c.name,
+                "display_name": sc.get("name") or sc.get("show") or c.name,
+                "archived_at_iso": sc.get("archived_at_iso"),
+                "episode_count": sc.get("episode_count", 0),
+            })
+    return {"episodes": episodes, "shows": shows_out}

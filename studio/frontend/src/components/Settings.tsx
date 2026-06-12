@@ -7,12 +7,13 @@ import { showsApi } from "../api/shows";
 import { THEMES, currentTheme, setTheme } from "../theme";
 import { useT, LOCALES } from "../i18n";
 
-type Tab = "theme" | "show" | "git" | "comfy" | "language";
+type Tab = "theme" | "show" | "archive" | "git" | "comfy" | "language";
 
-const TAB_IDS: Tab[] = ["theme", "show", "git", "comfy", "language"];
+const TAB_IDS: Tab[] = ["theme", "show", "archive", "git", "comfy", "language"];
 const TAB_KEY: Record<Tab, string> = {
   theme: "settings.tabs.theme",
   show: "settings.tabs.show",
+  archive: "settings.tabs.archive",
   git: "settings.tabs.git",
   comfy: "settings.tabs.comfy",
   language: "settings.tabs.language",
@@ -39,6 +40,7 @@ export function Settings({ show, onClose }: { show: string; onClose: () => void 
           {tab === "theme" && <ThemePanel />}
           {tab === "language" && <LanguagePanel />}
           {tab === "show" && <ShowPanel show={show} onClose={onClose} />}
+          {tab === "archive" && <ArchivePanel />}
           {tab === "git" && <Stub title={t("settings.tabs.git")} body={t("settings.git.stub")} />}
           {tab === "comfy" && <Stub title={t("settings.comfy.title")} body={t("settings.comfy.stub")} />}
         </div>
@@ -228,6 +230,118 @@ function ShowPanel({ show, onClose }: { show: string; onClose: () => void }) {
         <button className="btn" onClick={onClose}>{t("common.close")}</button>
         <button className="btn btn-amber" disabled={busy || !!advErr} onClick={save}>{t("common.save")}</button>
       </div>
+    </div>
+  );
+}
+
+function ArchivePanel() {
+  const t = useT();
+  const qc = useQueryClient();
+  const pushToast = useStore((s) => s.pushToast);
+  const arch = useQuery({ queryKey: ["archive"], queryFn: showsApi.listArchive });
+  const [busy, setBusy] = useState<string | null>(null);          // id currently restoring
+  const [renaming, setRenaming] = useState<Record<string, string>>({}); // id → new slug input
+
+  function refresh() {
+    qc.invalidateQueries({ queryKey: ["archive"] });
+    qc.invalidateQueries({ queryKey: ["episodes"] });
+    qc.invalidateQueries({ queryKey: ["shows"] });
+  }
+
+  async function restoreEpisode(show: string, name: string, slug: string, newSlug?: string) {
+    setBusy(name);
+    try {
+      const r = await showsApi.unarchiveEpisode(show, name, newSlug);
+      pushToast(t("toast.episodeRestored", { slug: r.slug }), "ok");
+      setRenaming((m) => { const n = { ...m }; delete n[name]; return n; });
+      refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // 409 → the slug is taken by a live episode; reveal a rename field and retry.
+      if (msg.startsWith("409")) {
+        setRenaming((m) => ({ ...m, [name]: m[name] ?? `${slug}-restored` }));
+        pushToast(t("settings.archive.slugTaken", { slug }), "err");
+      } else {
+        pushToast(`restore failed: ${msg}`, "err");
+      }
+    } finally { setBusy(null); }
+  }
+
+  async function restoreShow(name: string, label: string) {
+    setBusy(name);
+    try {
+      await showsApi.unarchiveShow(name);
+      pushToast(t("toast.showRestored", { show: label }), "ok");
+      refresh();
+    } catch (e) {
+      pushToast(`restore failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+    } finally { setBusy(null); }
+  }
+
+  if (arch.isLoading) return <div className="text-txt-dim p-4">{t("common.loading")}</div>;
+  if (arch.isError) return <div className="text-red p-4">{t("settings.archive.loadFail")}</div>;
+
+  const epShows = Object.keys(arch.data?.episodes ?? {});
+  const shows = arch.data?.shows ?? [];
+  const empty = epShows.length === 0 && shows.length === 0;
+
+  return (
+    <div className="flex flex-col gap-3 max-h-[440px] overflow-y-auto pr-1">
+      <div className="label-tiny">{t("settings.archive.title")}</div>
+      <p className="label-tiny leading-relaxed">{t("settings.archive.help")}</p>
+
+      {empty && <div className="label-tiny text-txt-dim py-2">{t("settings.archive.empty")}</div>}
+
+      {shows.length > 0 && (
+        <>
+          <div className="label-tiny pt-1 border-t hairline-soft">{t("settings.archive.shows")}</div>
+          {shows.map((s) => (
+            <div key={s.name} className="flex items-center gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+              <span className="truncate flex-1">{s.display_name}</span>
+              <span className="label-tiny">{t("settings.archive.epCount", { n: s.episode_count })}</span>
+              <button className="btn" disabled={busy === s.name}
+                      onClick={() => restoreShow(s.name, s.display_name)}>
+                {busy === s.name ? t("settings.archive.restoring") : t("settings.archive.restore")}
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+
+      {epShows.map((sid) => (
+        <div key={sid} className="flex flex-col gap-1">
+          <div className="label-tiny pt-1 border-t hairline-soft">{t("settings.archive.episodesIn", { show: sid })}</div>
+          {(arch.data?.episodes[sid] ?? []).map((ep) => (
+            <div key={ep.name} className="flex flex-col gap-1 px-2 py-1.5 rounded hairline-soft">
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="font-mono">{ep.slug}</span>
+                <span className="truncate flex-1 opacity-80">{ep.title}</span>
+                {ep.variants.length > 0 && (
+                  <span className="label-tiny">{t("settings.archive.variants", { n: ep.variants.length })}</span>
+                )}
+                <button className="btn" disabled={busy === ep.name}
+                        onClick={() => restoreEpisode(ep.show, ep.name, ep.slug, renaming[ep.name])}>
+                  {busy === ep.name ? t("settings.archive.restoring") : t("settings.archive.restore")}
+                </button>
+              </div>
+              {renaming[ep.name] !== undefined && (
+                <div className="flex items-center gap-2">
+                  <input
+                    className="input py-1 text-[11px] font-mono flex-1"
+                    value={renaming[ep.name]}
+                    placeholder={t("settings.archive.newSlugPh")}
+                    onChange={(e) => setRenaming((m) => ({ ...m, [ep.name]: e.target.value }))}
+                  />
+                  <button className="btn btn-amber" disabled={busy === ep.name || !renaming[ep.name].trim()}
+                          onClick={() => restoreEpisode(ep.show, ep.name, ep.slug, renaming[ep.name].trim())}>
+                    {t("settings.archive.restoreAs")}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

@@ -22,7 +22,8 @@ interface Props {
   onGoAssembly: () => void;
 }
 
-type Dialog = null | "new-show" | "new-episode" | "export" | "macu-web" | "shutdown";
+type Dialog = null | "new-show" | "new-episode" | "export" | "macu-web" | "shutdown"
+  | "archive-episode" | "archive-show";
 
 // navigator.clipboard needs a secure context (https / localhost) — over plain
 // LAN http it's undefined, so fall back to the legacy execCommand path.
@@ -177,9 +178,15 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
             )}
             <Item label={t("filemenu.newShow")} onClick={() => setDialog("new-show")} />
             <Item label={t("filemenu.openFolder")} onClick={onOpenFolder} />
+            {(shows.data?.shows.length ?? 0) > 1 && !curShow?.is_default && (
+              <Item label={t("filemenu.archiveShow")} onClick={() => setDialog("archive-show")} />
+            )}
 
             <Section label={t("filemenu.sectionEpisode")} />
             <Item label={t("filemenu.newEpisode")} onClick={() => setDialog("new-episode")} />
+            {slug && (
+              <Item label={t("filemenu.archiveEpisode")} onClick={() => setDialog("archive-episode")} />
+            )}
 
             <Section label={t("filemenu.sectionProject")} />
             <Item label={t("filemenu.import")} onClick={() => fileRef.current?.click()} hint=".zip" />
@@ -226,6 +233,33 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         <MacuWebDialog show={activeShow} onClose={() => setDialog(null)} />
       )}
       {dialog === "shutdown" && <ShutdownDialog onClose={() => setDialog(null)} />}
+      {dialog === "archive-episode" && (
+        <ArchiveEpisodeDialog
+          show={activeShow}
+          slug={slug}
+          onClose={() => setDialog(null)}
+          onArchived={() => {
+            setDialog(null);
+            qc.invalidateQueries({ queryKey: ["episodes"] });
+            qc.invalidateQueries({ queryKey: ["archive"] });
+            go({ page: "stage", slug: "", stage: "assembly" }); // empty slug → default-pick
+          }}
+        />
+      )}
+      {dialog === "archive-show" && (
+        <ArchiveShowDialog
+          show={activeShow}
+          name={curShow?.name ?? activeShow}
+          onClose={() => setDialog(null)}
+          onArchived={() => {
+            setDialog(null);
+            const remaining = shows.data?.shows.find((s) => s.id !== activeShow)?.id;
+            qc.invalidateQueries({ queryKey: ["shows"] });
+            qc.invalidateQueries({ queryKey: ["archive"] });
+            if (remaining) openShow(remaining);
+          }}
+        />
+      )}
       {cloneVoices && (
         <CloneVoicesModal show={cloneVoices.show} names={cloneVoices.names} onClose={() => setCloneVoices(null)} />
       )}
@@ -532,6 +566,82 @@ function ShutdownDialog({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       )}
+    </Modal>
+  );
+}
+
+// Archive an episode: physically moves its folder (and any localized family) out of
+// the show's episodes dir into archived/. Recoverable from Settings → Archive.
+function ArchiveEpisodeDialog({ show, slug, onClose, onArchived }:
+  { show: string; slug: string; onClose: () => void; onArchived: () => void }) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const pushToast = useStore((s) => s.pushToast);
+
+  async function go() {
+    setBusy(true);
+    try {
+      await showsApi.archiveEpisode(show, slug);
+      pushToast(t("toast.episodeArchived", { slug }), "ok");
+      onArchived();
+    } catch (e) {
+      pushToast(`archive failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open onClose={onClose} title={t("filemenu.archiveEpisodeTitle")} width={440}
+      footer={busy ? undefined : (
+        <>
+          <button className="btn" onClick={onClose}>{t("common.cancel")}</button>
+          <button className="btn btn-amber" onClick={go}>{t("filemenu.archiveBtn")}</button>
+        </>
+      )}
+    >
+      <p className="label-tiny leading-relaxed">
+        <Trans k="filemenu.archiveEpisodeBody" vars={{ slug }}
+               tags={[(c) => <span className="font-mono">{c}</span>]} />
+      </p>
+    </Modal>
+  );
+}
+
+// Archive a whole show: moves its entire tree out of shows/ and drops it from the
+// active show list. Recoverable from Settings → Archive.
+function ArchiveShowDialog({ show, name, onClose, onArchived }:
+  { show: string; name: string; onClose: () => void; onArchived: () => void }) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const pushToast = useStore((s) => s.pushToast);
+
+  async function go() {
+    setBusy(true);
+    try {
+      const r = await showsApi.archiveShow(show);
+      pushToast(t("toast.showArchived", { show: name, n: r.episode_count }), "ok");
+      onArchived();
+    } catch (e) {
+      pushToast(`archive failed: ${e instanceof Error ? e.message : String(e)}`, "err");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open onClose={onClose} title={t("filemenu.archiveShowTitle")} width={440}
+      footer={busy ? undefined : (
+        <>
+          <button className="btn" onClick={onClose}>{t("common.cancel")}</button>
+          <button className="btn btn-amber" onClick={go}>{t("filemenu.archiveBtn")}</button>
+        </>
+      )}
+    >
+      <p className="label-tiny leading-relaxed">
+        <Trans k="filemenu.archiveShowBody" vars={{ show: name }}
+               tags={[(c) => <span className="font-mono">{c}</span>]} />
+      </p>
     </Modal>
   );
 }

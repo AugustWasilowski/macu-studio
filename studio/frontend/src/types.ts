@@ -69,6 +69,29 @@ export interface ShowConfig {
   [k: string]: unknown;
 }
 
+// ---- Archive ----
+export interface ArchivedEpisode {
+  name: string; // container dir name = stable id for unarchive
+  slug: string; // original episode slug
+  title: string;
+  show: string;
+  archived_at_iso?: string | null;
+  variants: string[];
+}
+
+export interface ArchivedShow {
+  name: string; // container dir name = stable id for unarchive
+  show: string; // show id
+  display_name: string;
+  archived_at_iso?: string | null;
+  episode_count: number;
+}
+
+export interface ArchiveList {
+  episodes: Record<string, ArchivedEpisode[]>; // keyed by show id
+  shows: ArchivedShow[];
+}
+
 export interface ImportResult {
   ok: boolean;
   show?: string; // "" / absent for voices-only imports

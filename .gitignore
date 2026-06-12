@@ -74,3 +74,9 @@ skills/macu-report/
 skills/comedy-writers-room/
 skills/comedy-punch-up-pass/
 .macu-web-repos/
+
+# Local model cache (HuggingFace etc.) — multi-GB, machine-local, never shipped
+models/
+
+# Transient upload-retry queue/cron scratch (logs, payloads, locks, __pycache__)
+.upload_retry/

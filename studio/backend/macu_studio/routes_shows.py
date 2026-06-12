@@ -6,6 +6,11 @@ Routes:
   GET    /api/shows/{show}/config        full show object (incl. episode_defaults)
   PUT    /api/shows/{show}/config        update editable show fields
   POST   /api/shows/{show}/episodes      scaffold a new episode {slug, title}
+  GET    /api/archive                    list archived episodes (by show) + shows
+  POST   .../episodes/{slug}/archive     move an episode (+ family) into archived/
+  POST   .../episodes/{name}/unarchive   restore an archived episode {new_slug?}
+  POST   /api/shows/{show}/archive       move a whole show into _archived-shows/
+  POST   /api/shows/{name}/unarchive     restore an archived show
   GET    /api/episodes/{slug}/export     download a single-episode .zip (text files)
   GET    /api/shows/{show}/export        download a whole-show .zip
   POST   /api/import                     upload a .zip → merge/create (auto-detect)
@@ -27,6 +32,7 @@ import zipfile
 from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 from . import shows as shows_mod
@@ -296,6 +302,65 @@ def post_open_show_folder(show: str):
     opened, reason = _open_in_file_manager(folder, win_path)
     return {"ok": True, "opened": opened, "path": str(folder),
             "windows_path": win_path, "reason": reason}
+
+
+# --------------------------------------------------------------------------- #
+# Archive / unarchive — physically move episodes & shows out of (and back into)
+# the active tree. The move is the source of truth; restore/browse is the
+# Settings → Archive panel (GET /api/archive). Moves are same-filesystem renames
+# but run in a threadpool to stay off the event loop on the rare cross-fs fallback.
+# --------------------------------------------------------------------------- #
+
+@router.get("/api/archive")
+def get_archive():
+    return shows_mod.list_archived()
+
+
+@router.post("/api/shows/{show}/episodes/{slug}/archive")
+async def post_archive_episode(show: str, slug: str):
+    try:
+        return await run_in_threadpool(shows_mod.archive_episode, slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.post("/api/shows/{show}/episodes/{name}/unarchive")
+async def post_unarchive_episode(show: str, name: str, body: dict = Body(default={})):
+    new_slug = (body or {}).get("new_slug") or None
+    try:
+        return await run_in_threadpool(shows_mod.unarchive_episode, show, name, new_slug)
+    except shows_mod.SlugInUse as e:
+        raise HTTPException(409, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.post("/api/shows/{show}/archive")
+async def post_archive_show(show: str):
+    try:
+        return await run_in_threadpool(shows_mod.archive_show, show)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.post("/api/shows/{name}/unarchive")
+async def post_unarchive_show(name: str):
+    try:
+        return await run_in_threadpool(shows_mod.unarchive_show, name)
+    except shows_mod.SlugInUse as e:
+        raise HTTPException(409, str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 # --------------------------------------------------------------------------- #
