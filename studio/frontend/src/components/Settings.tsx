@@ -366,20 +366,22 @@ function EnginesPanel() {
   });
 
   // Draft state (dirty until Save). Initialized from the server config.
-  const [draft, setDraft] = useState<{
+  type Draft = {
     comfyUrl: string; zimageUnet: string; remoteUrl: string; remoteOn: boolean;
     routing: Record<Capability, EngineId>;
-  } | null>(null);
+  };
+  const seedFrom = (c: EnginesConfig): Draft => ({
+    comfyUrl: c.endpoints.comfy_local.url,
+    zimageUnet: c.endpoints.comfy_local.zimage_unet ?? "",
+    remoteUrl: c.endpoints.remote_render.url,
+    remoteOn: c.endpoints.remote_render.enabled,
+    routing: { ...c.routing },
+  });
+  const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (cfg.data && draft === null) {
-      setDraft({
-        comfyUrl: cfg.data.endpoints.comfy_local.url,
-        zimageUnet: cfg.data.endpoints.comfy_local.zimage_unet ?? "",
-        remoteUrl: cfg.data.endpoints.remote_render.url,
-        remoteOn: cfg.data.endpoints.remote_render.enabled,
-        routing: { ...cfg.data.routing },
-      });
+      setDraft(seedFrom(cfg.data));
     }
   }, [cfg.data, draft]);
 
@@ -426,16 +428,19 @@ function EnginesPanel() {
   const save = async () => {
     setBusy(true);
     try {
-      await enginesApi.put({
+      // PUT returns the fresh effective config — seed the draft from it
+      // directly. (Clearing the draft and waiting on a refetch re-seeded from
+      // the STALE cached config first, visually reverting the selects.)
+      const fresh = await enginesApi.put({
         endpoints: {
           comfy_local: { url: draft.comfyUrl.trim(), zimage_unet: draft.zimageUnet.trim() },
           remote_render: { url: draft.remoteUrl.trim(), enabled: draft.remoteOn },
         },
         routing: draft.routing,
       });
-      qc.invalidateQueries({ queryKey: ["engines"] });
+      qc.setQueryData(["engines"], fresh);
+      setDraft(seedFrom(fresh));
       qc.invalidateQueries({ queryKey: ["engines-probe"] });
-      setDraft(null); // re-seed from the fresh server config
       pushToast(t("engines.saved"), "ok");
     } catch (e) {
       pushToast(t("toast.saveFailed", { msg: e instanceof Error ? e.message : String(e) }), "err");
