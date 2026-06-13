@@ -225,7 +225,7 @@ if [ "$WITH_TALKING_HEAD" = "1" ]; then
 [
  ["Kijai/WanVideo_comfy_fp8_scaled", "I2V/Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-I2V-14B-480p_fp8_e4m3fn_scaled_KJ.safetensors"],
  ["Kijai/WanVideo_comfy_fp8_scaled", "InfiniteTalk/Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors", "$MODELS/diffusion_models", "Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors"],
- ["Kijai/WanVideo_comfy", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors", "$MODELS/loras", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"],
+ ["Kijai/WanVideo_comfy", "Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors", "$MODELS/loras", "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"],
  ["Comfy-Org/Wan_2.1_ComfyUI_repackaged", "split_files/text_encoders/umt5_xxl_fp16.safetensors", "$MODELS/text_encoders", "umt5_xxl_fp16.safetensors"],
  ["Comfy-Org/Wan_2.1_ComfyUI_repackaged", "split_files/clip_vision/clip_vision_h.safetensors", "$MODELS/clip_vision", "clip_vision_h.safetensors"],
  ["Kijai/WanVideo_comfy", "Wan2_1_VAE_bf16.safetensors", "$MODELS/vae", "Wan2_1_VAE_bf16.safetensors"],

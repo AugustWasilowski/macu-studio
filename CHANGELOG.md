@@ -7,6 +7,15 @@ All notable changes to MACU Studio. Format loosely follows
 
 _Nothing yet._
 
+## [0.4.1] — 2026-06-12
+
+### Fixed
+- **Talking-head install 404.** Kijai moved the lightx2v distill LoRA into a
+  `Lightx2v/` subfolder on Hugging Face, so `--with-talking-head` failed with a 404
+  on `lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors`. Fixed the
+  fetch path (the local filename is unchanged, so the workflows are unaffected).
+  Re-run `./deploy/fetch-models.sh --with-talking-head` — it's idempotent and resumes.
+
 ## [0.4.0] — 2026-06-12
 
 ### Added
