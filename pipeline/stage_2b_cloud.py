@@ -328,6 +328,52 @@ def _gen_lipsync_local(slug, m, ep, cue, shot):
 
 # ---- lipsync: remote render service (leo-render :8779 API) --------------------------------
 
+# The remote box OOMs on long single passes (observed: 258 frames / 10.3s died,
+# 220 frames survived on Leo's GPU). Chunk anything longer than this and chain
+# via last-frame → next start image, exactly like the Higgsfield path.
+REMOTE_MAX_S = 7.0
+
+
+def _remote_one(base_url, name, image_path, audio_path, dur, preset, raw_dest):
+    """One remote render: submit, poll, land the raw mp4 at raw_dest."""
+    body = {"name": name,
+            "image_path": str(image_path), "audio_path": str(audio_path),
+            "params": {"frames": int(dur * LIPSYNC_FPS) + 1, **preset}}
+    req = urllib.request.Request(f"{base_url}/render", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            job_id = json.loads(r.read())["job_id"]
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"{name}: remote render service unreachable at "
+                           f"{base_url} ({getattr(e, 'reason', e)}) — start it, or "
+                           f"reroute lipsync in Settings → Engines")
+    deadline = time.time() + max(1800.0, dur * 240)   # cold start + queue headroom
+    while True:
+        time.sleep(20)
+        with urllib.request.urlopen(f"{base_url}/status/{job_id}", timeout=30) as r:
+            st = json.loads(r.read())
+        if st.get("status") == "done":
+            output = st.get("output")
+            break
+        if st.get("status") == "error":
+            raise RuntimeError(f"{name}: remote render failed — {st.get('error')}")
+        if st.get("status") is None:
+            # service restarted and lost the queue — the job is gone, not slow
+            raise RuntimeError(f"{name}: remote render lost job {job_id} "
+                               f"(service restart?) — re-run to retry")
+        if time.time() > deadline:
+            raise RuntimeError(f"{name}: remote render still "
+                               f"'{st.get('status')}' after {int(deadline)}s")
+    src = Path(output) if output else None
+    if src and src.exists():
+        import shutil
+        shutil.copyfile(src, raw_dest)
+    else:
+        _download(f"{base_url}/result/{job_id}", raw_dest)
+    return raw_dest
+
+
 def _gen_lipsync_remote(slug, m, ep, cue, shot, base_url):
     sid, cid = shot["id"], cue["id"]
     vo = ep / "vo" / f"{cid}.wav"
@@ -337,48 +383,75 @@ def _gen_lipsync_remote(slug, m, ep, cue, shot, base_url):
     if not still or not still.exists():
         raise RuntimeError(f"lipsync shot {sid}: source_still required")
     vo_dur = probe_dur(str(vo))
-
     pname, preset = _lipsync_preset(m)
-    body = {"name": f"{slug}-{sid}",
-            "image_path": str(still), "audio_path": str(vo),
-            "params": {"frames": int(vo_dur * LIPSYNC_FPS) + 1, **preset}}
-    req = urllib.request.Request(f"{base_url}/render", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            job_id = json.loads(r.read())["job_id"]
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"lipsync {sid}: remote render service unreachable at "
-                           f"{base_url} ({getattr(e, 'reason', e)}) — start it, or "
-                           f"reroute lipsync in Settings → Engines")
-
-    deadline = time.time() + max(1800.0, vo_dur * 240)   # cold start + queue headroom
     start = time.time()
-    output = None
-    while True:
-        time.sleep(20)
-        with urllib.request.urlopen(f"{base_url}/status/{job_id}", timeout=30) as r:
-            st = json.loads(r.read())
-        if st.get("status") == "done":
-            output = st.get("output")
-            break
-        if st.get("status") == "error":
-            raise RuntimeError(f"lipsync {sid}: remote render failed — {st.get('error')}")
-        if time.time() > deadline:
-            raise RuntimeError(f"lipsync {sid}: remote render still "
-                               f"'{st.get('status')}' after {int(time.time()-start)}s")
-
     work = ep / ".work" / f"hf_{sid}"
     work.mkdir(parents=True, exist_ok=True)
-    raw = work / "remote_raw.mp4"
-    src = Path(output) if output else None
-    if src and src.exists():
-        import shutil
-        shutil.copyfile(src, raw)
-    else:
-        _download(f"{base_url}/result/{job_id}", raw)
-    _conform_to_vo(raw, hfc.clip_path(ep, sid), vo_dur, f"lipsync {sid} conform")
-    print(f"  lipsync {sid}: remote render done ({vo_dur:.1f}s VO, "
+
+    if vo_dur <= REMOTE_MAX_S:
+        raw = work / "remote_raw.mp4"
+        _remote_one(base_url, f"{slug}-{sid}", still, vo, vo_dur, preset, raw)
+        _conform_to_vo(raw, hfc.clip_path(ep, sid), vo_dur, f"lipsync {sid} conform")
+        print(f"  lipsync {sid}: remote render done ({vo_dur:.1f}s VO, "
+              f"{round(time.time()-start)}s wall)")
+        return sid
+
+    # Long VO: chunk at silence boundaries + chain last frame → next start image.
+    # Resume guard mirrors the Higgsfield chain (segments only reusable for the
+    # same VO/still/preset/cap fingerprint).
+    state_p = work / "chain_state.json"
+    fingerprint = {"vo_sha": hfc.file_sha(vo), "still_sha": hfc.file_sha(still),
+                   "engine": "remote_render", "preset": pname, "cap": REMOTE_MAX_S}
+    try:
+        old_fp = json.loads(state_p.read_text())
+    except Exception:
+        old_fp = None
+    if old_fp != fingerprint:
+        for f in work.iterdir():
+            f.unlink()
+        state_p.write_text(json.dumps(fingerprint, indent=2))
+
+    chunks = _chunk_bounds(vo_dur, vo, cap=REMOTE_MAX_S)
+    print(f"  lipsync {sid}: {vo_dur:.1f}s VO -> {len(chunks)} remote segment(s)")
+    prev_image = still
+    segs = []
+    for i, (a, b) in enumerate(chunks):
+        cdur = b - a
+        seg = work / f"seg{i:02d}.mp4"
+        segs.append(seg)
+        if seg.exists():
+            last = work / f"last{i:02d}.png"
+            if not last.exists():
+                _ff(["-sseof", "-0.05", "-i", str(seg), "-frames:v", "1", str(last)],
+                    f"lipsync {sid} lastframe {i}")
+            prev_image = last
+            print(f"    seg{i:02d} cached")
+            continue
+        chunk_wav = work / f"chunk{i:02d}.wav"
+        _ff(["-i", str(vo), "-ss", f"{a:.4f}", "-t", f"{cdur:.4f}",
+             "-c:a", "pcm_s16le", str(chunk_wav)], f"lipsync {sid} chunk {i}")
+        raw = work / f"raw{i:02d}.mp4"
+        _remote_one(base_url, f"{slug}-{sid}-seg{i}", prev_image, chunk_wav,
+                    cdur, preset, raw)
+        _ff(["-i", str(raw), "-an", "-r", "24",
+             "-vf", f"tpad=stop_mode=clone:stop_duration={cdur:.4f}",
+             "-t", f"{cdur:.4f}",
+             "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+             "-pix_fmt", "yuv420p", str(seg)], f"lipsync {sid} conform {i}")
+        last = work / f"last{i:02d}.png"
+        _ff(["-sseof", "-0.05", "-i", str(seg), "-frames:v", "1", str(last)],
+            f"lipsync {sid} lastframe {i}")
+        prev_image = last
+        print(f"    seg{i:02d} done ({cdur:.1f}s)")
+
+    clist = work / "concat.txt"
+    clist.write_text("".join(f"file '{x}'\n" for x in segs))
+    raw_full = work / "chained.mp4"
+    _ff(["-f", "concat", "-safe", "0", "-i", str(clist),
+         "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+         "-pix_fmt", "yuv420p", "-r", "24", str(raw_full)], f"lipsync {sid} concat")
+    _conform_to_vo(raw_full, hfc.clip_path(ep, sid), vo_dur, f"lipsync {sid} conform")
+    print(f"  lipsync {sid}: remote chain done ({vo_dur:.1f}s VO, {len(chunks)} segs, "
           f"{round(time.time()-start)}s wall)")
     return sid
 
@@ -395,25 +468,27 @@ def _silence_midpoints(wav):
     return [(s + e) / 2 for s, e in zip(starts, ends)]
 
 
-def _chunk_bounds(dur, wav):
-    """Split [0,dur] into ≤CHUNK_MAX_S chunks, snapping each boundary to the
-    nearest silence midpoint within ±2.5s so seams land in pauses."""
-    if dur <= hfc.CHUNK_MAX_S:
+def _chunk_bounds(dur, wav, cap=None):
+    """Split [0,dur] into ≤cap chunks, snapping each boundary to the nearest
+    silence midpoint (tolerance scales with the cap) so seams land in pauses."""
+    cap = cap or hfc.CHUNK_MAX_S
+    if dur <= cap:
         return [(0.0, dur)]
-    n = math.ceil(dur / hfc.CHUNK_MAX_S)
+    n = math.ceil(dur / cap)
     targets = [dur * i / n for i in range(1, n)]
+    tol = min(2.5, cap * 0.15)
     silences = _silence_midpoints(wav)
     bounds = [0.0]
     for t in targets:
-        near = [s for s in silences if abs(s - t) <= 2.5 and s > bounds[-1] + 1.0]
+        near = [s for s in silences if abs(s - t) <= tol and s > bounds[-1] + 1.0]
         pick = min(near, key=lambda s: abs(s - t)) if near else t
         bounds.append(min(pick, dur - 1.0))
     bounds.append(dur)
-    # Re-validate the cap (a snapped boundary can stretch a chunk past 15s).
+    # Re-validate (a snapped boundary can stretch a chunk past the cap).
     out = []
     for a, b in zip(bounds, bounds[1:]):
         seg = b - a
-        if seg > 15.0:
+        if seg > cap + tol:
             mid = a + seg / 2
             out += [(a, mid), (mid, b)]
         else:
