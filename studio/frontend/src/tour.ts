@@ -66,15 +66,22 @@ export const TOUR_STEPS: TourStep[] = [
     topPage: "characters",
   },
   {
+    // Cloud generation lives in the project menu → Settings → Higgsfield / Engines.
+    target: '[data-tour="file-menu"]',
+    titleKey: "tour.cloud.title",
+    bodyKey: "tour.cloud.body",
+  },
+  {
     // Docs moved into the file menu (below Settings) — point at the menu.
     target: '[data-tour="file-menu"]',
     titleKey: "tour.docs.title",
     bodyKey: "tour.docs.body",
   },
   {
+    // The button keeps its data-tour="git-sync" hook; the feature is now one-click Sync.
     target: '[data-tour="git-sync"]',
-    titleKey: "tour.gitSync.title",
-    bodyKey: "tour.gitSync.body",
+    titleKey: "tour.sync.title",
+    bodyKey: "tour.sync.body",
   },
   {
     // Theme picker lives in the project menu → Settings (default tab).

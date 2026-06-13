@@ -91,6 +91,15 @@ export const WIZARD_STEPS: WizardStep[] = [
     optional: true,
   },
   {
+    // Ungated info step (Characters is a top page, not a stage — the body sends
+    // the user to the top-bar tab). Optional: a nicety for recurring casts.
+    id: "characters",
+    titleKey: "wizard.characters.title",
+    bodyKey: "wizard.characters.body",
+    goalKey: "wizard.characters.goal",
+    optional: true,
+  },
+  {
     id: "shots",
     stage: "video",
     titleKey: "wizard.shots.title",
