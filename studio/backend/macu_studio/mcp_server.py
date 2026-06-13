@@ -757,3 +757,22 @@ async def set_engine_route(capability: str, engine: str) -> dict:
     """Route a capability (masters|stills|cloud_video|lipsync) to an engine.
     Allowed engines per capability come from engines_status capabilities."""
     return await _api("PUT", "/api/engines", body={"routing": {capability: engine}})
+
+
+@mcp.tool()
+async def studio_sync_plan(show: str) -> dict:
+    """What a Studio↔Studio sync would do for this show: per-file push / pull /
+    conflict lists (working text only — scripts, manifests, docs, character
+    records — travelling through the show's macu-web repo, which both Studios
+    must be connected to). Read-only."""
+    return await _api("GET", f"/api/shows/{show}/sync/plan")
+
+
+@mcp.tool()
+async def studio_sync_apply(show: str, message: str = "") -> dict:
+    """Execute the sync plan: pull remote-changed text into this Studio (locally
+    overwritten files get timestamped .bak backups), push locally-changed text,
+    conflicts resolve newest-wins. Show the user studio_sync_plan first when the
+    direction of changes matters."""
+    body = {"message": message} if message else {}
+    return await _api("POST", f"/api/shows/{show}/sync/apply", body=body)

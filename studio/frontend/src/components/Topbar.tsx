@@ -5,6 +5,7 @@ import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, STRIP_PAGES } from "../route";
 import { gitsyncApi } from "../api/gitsync";
+import { SyncModal } from "./SyncModal";
 import { versionApi } from "../api/version";
 import { VERSION_KEY } from "./UpdateModal";
 import { api } from "../api";
@@ -39,7 +40,6 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   const [clock, setClock] = useState(nowClock);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [syncing, setSyncing] = useState(false);
   const [stopping, setStopping] = useState(false);
   const qc = useQueryClient();
   const toggleDrawer = useStore((s) => s.toggleDrawer);
@@ -53,21 +53,13 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   const version = useQuery({ queryKey: VERSION_KEY, queryFn: versionApi.get, refetchInterval: 5 * 60_000 });
   const updateAvailable = !!version.data?.check?.update_available;
 
-  async function onSync() {
-    if (!slug || syncing) return;
-    setSyncing(true);
-    try {
-      const r = await gitsyncApi.sync(slug);
-      if (!r.ok) pushToast(t("toast.gitSyncFailed", { msg: r.log.split("\n").pop() || "" }), "err");
-      else if (r.committed) pushToast(t("toast.gitSynced", { slug, commit: r.commit }), "ok");
-      else pushToast(t("toast.gitSyncAlready", { slug }), "info");
-      // refresh the picker's sync dots
-      qc.invalidateQueries({ queryKey: ["episodes"] });
-    } catch (e) {
-      pushToast(t("toast.gitSyncError", { msg: e instanceof Error ? e.message : String(e) }), "err");
-    } finally {
-      setSyncing(false);
-    }
+  // SYNC button: opens the Studio↔Studio sync modal (show-level, through the
+  // macu-web repo). It also quietly records the current episode's text into the
+  // local episode_meta history first, preserving the old button's behavior.
+  const [syncOpen, setSyncOpen] = useState(false);
+  function onSync() {
+    if (slug) gitsyncApi.sync(slug).catch(() => {});  // best-effort local history
+    setSyncOpen(true);
   }
 
   async function onStop() {
@@ -268,11 +260,11 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           className="btn"
           data-tour="git-sync"
           onClick={onSync}
-          disabled={syncing || !slug}
+          disabled={!activeShow}
           title={t("topbar.gitSyncTitle")}
         >
           <span className="font-semibold tracking-wider uppercase text-[11px]">
-            {syncing ? t("topbar.syncing") : t("topbar.gitSync")}
+            {t("topbar.gitSync")}
           </span>
         </button>
         {updateAvailable && (
@@ -287,6 +279,7 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           </button>
         )}
         <span className="seg-readout cyan">{clock}</span>
+      <SyncModal show={activeShow} open={syncOpen} onClose={() => setSyncOpen(false)} />
         <button className="btn" data-tour="drawers" onClick={toggleTerminal} title={t("topbar.terminalTitle")}>
           <ITerminal />
         </button>

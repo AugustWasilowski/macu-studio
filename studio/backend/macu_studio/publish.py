@@ -176,6 +176,17 @@ def publish(show: str, message: str | None = None,
     if not (repo / ".git").exists():
         subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, text=True, capture_output=True)
 
+    # Sync (studiosync.py) commits from OTHER Studios may have advanced the
+    # remote; integrate them first or this publish would push non-fast-forward
+    # (and the rewrite below would clobber the synced sync/ subtree).
+    base0, token0 = _creds()
+    if base0 and (token0 or base0.startswith("file://")):
+        url0 = (f"{base0}/{show}.git" if base0.startswith("file://")
+                else f"{base0.replace('://', f'://macu:{token0}@', 1)}/{show}.git")
+        f = _git(repo, "fetch", url0, "main")
+        if f.returncode == 0:
+            _git(repo, "reset", "--hard", "FETCH_HEAD")
+
     # Guard: an episode dir the repo has NEVER published whose manifest already says
     # published:true would seed PUBLIC on macu-web's first index of it (visibility is seeded
     # once, on row creation, and the show page filters on it). Stray working dirs — legacy
@@ -214,9 +225,11 @@ def publish(show: str, message: str | None = None,
             "deliberately, or clear their manifest `published` flag if they are strays."
         )
 
-    # Rewrite the working tree from scratch (handles adds/edits/deletes) — keep only .git.
+    # Rewrite the working tree from scratch (handles adds/edits/deletes) — keep
+    # .git AND the sync/ subtree (Studio↔Studio working text; owned by
+    # studiosync.py, riff-excluded on macu-web, never part of the publish bundle).
     for child in repo.iterdir():
-        if child.name == ".git":
+        if child.name in (".git", "sync"):
             continue
         shutil.rmtree(child) if child.is_dir() else child.unlink()
     for arc, data in entries.items():
