@@ -179,6 +179,30 @@ def still_hash(char: dict, manifest: dict) -> str:
     })
 
 
+def broll_still_prompt(manifest: dict, key: str) -> str:
+    """The z-image seed-still prompt for a b-roll key under the wan_i2v masters
+    backend: the b-roll's scene prompt + the show's style.suffix (which carries
+    the B&W look), so the still matches the episode aesthetic before WAN animates
+    it. b-roll has no separate still_prompt the way characters do — the scene
+    prompt IS the still prompt."""
+    b = (manifest.get("broll") or {}).get(key)
+    core = ""
+    if isinstance(b, dict):
+        core = (b.get("prompt") or "").strip()
+    elif isinstance(b, str):
+        core = b.strip()
+    suffix = (manifest.get("style") or {}).get("suffix", "")
+    return (core + suffix) if core else core
+
+
+def broll_still_hash(manifest: dict, key: str) -> str:
+    blk = hf_block(manifest)
+    return _h({
+        "broll_still_prompt": broll_still_prompt(manifest, key),
+        "still_model": blk["image_model"],
+    })
+
+
 # ---- manifest walks ----------------------------------------------------------------
 
 def cloud_shots(manifest: dict) -> Iterator[tuple[dict, dict]]:

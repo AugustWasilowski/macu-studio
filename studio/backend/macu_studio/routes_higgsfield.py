@@ -359,30 +359,56 @@ async def post_still_regen(slug: str, who: str):
 
 @router.post("/api/episodes/{slug}/stills/render")
 async def post_stills_render(slug: str, body: dict = Body(default={})):
-    """Discrete 'stills before video' step: render the seed reference stills for the
-    episode's CHARACTER shots via the routed stills engine (z-image local by default) —
-    the WAN i2v masters backend animates each character from stills/<key>.png. Runs
-    independently of the video stage. body: {only_missing? (default true), who?}.
-    Sequential (the GPU/ComfyUI serializes anyway); stamps stills/.cache.json so the
-    masters stage / estimate see them as fresh. Returns {rendered, skipped, failed}."""
+    """Discrete 'stills before video' step: render the seed reference stills via the
+    routed stills engine (z-image local by default) — the WAN i2v masters backend
+    animates each shot from stills/<key>.png. Renders stills for every CHARACTER key;
+    under the wan_i2v backend it ALSO renders a still per B-ROLL key (b-roll then
+    animates from its still instead of zeroscope t2v, so a clean WAN+z-image install
+    has no zeroscope dependency). Runs independently of the video stage. body:
+    {only_missing? (default true), who?}. Sequential (the GPU/ComfyUI serializes
+    anyway); stamps stills/.cache.json so the masters stage / estimate see them as
+    fresh. Returns {rendered, skipped, failed, characters_seen, broll_seen}."""
     try:
         m = manifest_mod.load(slug)
     except FileNotFoundError:
         raise HTTPException(404, f"unknown episode {slug}")
     only_missing = bool(body.get("only_missing", True))
     who_filter = (body.get("who") or "").strip() or None
+    chars = m.get("characters") or {}
+    blk = hfc.hf_block(m)
+    # Under the wan_i2v masters backend, b-roll also animates from a z-image seed
+    # still (no zeroscope), so b-roll keys need stills too. Under zeroscope, b-roll
+    # is text-to-video and needs no still — so only enumerate b-roll when wan_i2v.
+    wan = (m.get("comfyui") or {}).get("workflow") == "wan21_i2v"
 
-    # Character keys the episode's CHARACTER shots reference (what masters i2v needs).
-    keys: list[str] = []
-    seen: set[str] = set()
+    # Build the still work list: (key, prompt, hash, no_prompt_error). Characters
+    # always (their CHARACTER shots animate from stills/<key>.png under wan_i2v);
+    # b-roll only under wan_i2v.
+    char_keys: list[str] = []
+    broll_keys: list[str] = []
+    seen_c: set[str] = set()
+    seen_b: set[str] = set()
     for cue in (m.get("cues") or []):
         for shot in (cue.get("shots") or []):
-            if shot.get("kind") == "character" and shot.get("who"):
-                w = shot["who"]
-                if w not in seen:
-                    seen.add(w); keys.append(w)
+            w = shot.get("who")
+            if not w:
+                continue
+            if shot.get("kind") == "character" and w not in seen_c:
+                seen_c.add(w); char_keys.append(w)
+            elif shot.get("kind") == "broll" and wan and w not in seen_b:
+                seen_b.add(w); broll_keys.append(w)
     if who_filter:
-        keys = [who_filter] if (who_filter in seen or who_filter in (m.get("characters") or {})) else []
+        char_keys = [who_filter] if (who_filter in seen_c or who_filter in chars) else []
+        broll_keys = [who_filter] if (who_filter in seen_b) else []
+
+    work: list[tuple[str, str, str, str]] = []
+    for who in char_keys:
+        char = chars.get(who) if isinstance(chars.get(who), dict) else {}
+        work.append((who, (char.get("still_prompt") or "").strip(), hfc.still_hash(char, m),
+                     "no still_prompt set — give the character one first"))
+    for key in broll_keys:
+        work.append((key, hfc.broll_still_prompt(m, key), hfc.broll_still_hash(m, key),
+                     "b-roll has no prompt to build a seed still from"))
 
     not_ready = still_engines.check_ready(still_engines.resolve_engine())
     if not_ready:
@@ -390,41 +416,38 @@ async def post_stills_render(slug: str, body: dict = Body(default={})):
 
     ep = episode_dir(slug)
     sc_path = hfc.stills_sidecar_path(ep)
-    chars = m.get("characters") or {}
-    blk = hfc.hf_block(m)
     rendered: list[str] = []
     skipped: list[str] = []
     failed: list[dict] = []
-    for who in keys:
-        char = chars.get(who) if isinstance(chars.get(who), dict) else {}
-        dest = hfc.still_path(ep, who)
+    for key, prompt, want_hash, no_prompt_err in work:
+        dest = hfc.still_path(ep, key)
         entries = hfc.load_sidecar(sc_path, "stills")
-        fresh = dest.exists() and entries.get(who) == hfc.still_hash(char, m)
+        fresh = dest.exists() and entries.get(key) == want_hash
         if only_missing and fresh:
-            skipped.append(who)
+            skipped.append(key)
             continue
-        prompt = (char.get("still_prompt") or "").strip()
         if not prompt:
-            failed.append({"who": who, "error": "no still_prompt set — give the character one first"})
+            failed.append({"who": key, "error": no_prompt_err})
             continue
         try:
             engine = still_engines.resolve_engine()
+            char = chars.get(key) if isinstance(chars.get(key), dict) else {}
             params = {"model": char.get("still_model") or blk["image_model"]} \
                 if engine == "higgsfield" else {}
-            await still_engines.generate_one(engine, prompt, None, params, dest, name=f"{slug}-{who}")
+            await still_engines.generate_one(engine, prompt, None, params, dest, name=f"{slug}-{key}")
             if engine == "comfy_zimage":
                 from . import comfy_stills
                 await comfy_stills.free_vram()
             entries = hfc.load_sidecar(sc_path, "stills")
-            entries[who] = hfc.still_hash(char, m)
+            entries[key] = want_hash
             hfc.save_sidecar(sc_path, "stills", entries)
-            rendered.append(who)
+            rendered.append(key)
         except Exception as e:  # noqa: BLE001
-            failed.append({"who": who, "error": str(e)[:300]})
+            failed.append({"who": key, "error": str(e)[:300]})
 
     return {"slug": slug, "engine": still_engines.resolve_engine(),
             "rendered": rendered, "skipped": skipped, "failed": failed,
-            "characters_seen": keys}
+            "characters_seen": char_keys, "broll_seen": broll_keys}
 
 
 @router.get("/api/episodes/{slug}/characters/{who}/still/status")

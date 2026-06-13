@@ -150,8 +150,10 @@ def _local_main(slug):
     seed_updates = {}  # broll key -> {prompt, seed} for seeds we assign here (persist for determinism)
     for kind, key in unique:
         target = staged_master_webp(slug, key, kind)
-        # Only CHARACTER shots go i2v under the WAN backend; b-roll stays zeroscope t2v.
-        use_i2v = (kind == "character" and backend == "wan_i2v")
+        # Under the WAN backend BOTH character and b-roll shots animate from a z-image
+        # seed still — no zeroscope anywhere, so a clean WAN+z-image install (no
+        # ModelScope/zeroscope custom node) renders the whole episode self-contained.
+        use_i2v = (backend == "wan_i2v" and kind in ("character", "broll"))
         # Zeroscope: existence is the cache (skip BEFORE building prompt so a cached
         # b-roll never mints/persists a fresh seed). i2v hashes inputs, so it builds
         # the prompt first (characters carry a fixed seed — no minting side effect).
@@ -187,8 +189,9 @@ def _local_main(slug):
                 continue
             if not os.path.exists(still):
                 raise RuntimeError(
-                    f"[stage 2 masters] WAN i2v character '{key}' needs a seed still at "
-                    f"stills/{key}.png — run generate_stills (or use a character take) first.")
+                    f"[stage 2 masters] WAN i2v {kind} '{key}' needs a seed still at "
+                    f"stills/{key}.png — run generate_stills first (it renders z-image "
+                    f"stills for every character AND b-roll key under the wan_i2v backend).")
             jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
                          "prefix": comfy_prefix, "target": target,
                          "i2v": True, "still": still, "hash": h})

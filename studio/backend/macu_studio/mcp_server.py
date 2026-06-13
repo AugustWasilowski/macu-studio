@@ -493,12 +493,15 @@ async def render_title_cards(slug: str, key: str = "", only_missing: bool = Fals
 
 @mcp.tool()
 async def generate_stills(slug: str, only_missing: bool = True, who: str = "") -> dict:
-    """Render the seed reference STILLS for an episode's character shots — the discrete
-    'stills before video' step. Each still (z-image / the routed stills engine) is what
-    the WAN i2v masters backend animates, so the cast stays on-model; runs independently
-    of the video stage. only_missing skips stills already fresh; `who` limits to one
-    character. A character needs a still_prompt (set via upsert_character). Returns
-    {rendered, skipped, failed}. Pair with set_masters_backend(slug,'wan_i2v')."""
+    """Render the seed reference STILLS for an episode — the discrete 'stills before
+    video' step. Each still (z-image / the routed stills engine) is what the WAN i2v
+    masters backend animates, so shots stay on-model; runs independently of the video
+    stage. Renders a still per character; under the wan_i2v backend it ALSO renders one
+    per b-roll key (b-roll then animates from its still — no zeroscope). only_missing
+    skips stills already fresh; `who` limits to one key. A character needs a still_prompt
+    (set via upsert_character); b-roll uses its own scene prompt. Returns {rendered,
+    skipped, failed, characters_seen, broll_seen}. Pair with set_masters_backend(slug,
+    'wan_i2v')."""
     body: dict[str, Any] = {"only_missing": only_missing}
     if who:
         body["who"] = who
@@ -508,10 +511,11 @@ async def generate_stills(slug: str, only_missing: bool = True, who: str = "") -
 @mcp.tool()
 async def set_masters_backend(slug: str, backend: str) -> dict:
     """Choose how this episode renders its video masters: 'zeroscope' (text-to-video,
-    the default — no seed still) or 'wan_i2v' (WAN image-to-video; character shots
-    animate from their stills/<key>.png, b-roll stays zeroscope). Writes
-    comfyui.workflow. For wan_i2v, run generate_stills first and note the WAN render
-    needs the --with-talking-head pack on the render box."""
+    the default — no seed still) or 'wan_i2v' (WAN image-to-video; BOTH character and
+    b-roll shots animate from their stills/<key>.png — no zeroscope anywhere, so a
+    clean WAN+z-image install renders the whole episode). Writes comfyui.workflow. For
+    wan_i2v, run generate_stills first (it renders stills for every character AND b-roll
+    key) and note the WAN render needs the --with-talking-head pack on the render box."""
     return await _api("POST", f"/api/episodes/{slug}/masters-backend",
                       body={"backend": backend})
 
