@@ -51,8 +51,10 @@ TYPICAL WORKFLOW — new episode, start to published:
 CHARACTERS (show-level cast, feeds Higgsfield i2v/lipsync shots):
  - list_characters / upsert_character(show, key, still_prompt=...) build the roster.
  - generate_character_takes makes reference stills (engine comfy_zimage = local +
-   free; higgsfield = credits; empty = the routed default). Poll
-   character_take_status; set_default_take picks the keeper.
+   free; higgsfield = credits; remote_render = a remote GPU box; empty = the
+   routed default). Poll character_take_status; set_default_take picks the keeper.
+ - Cast stubs are auto-seeded when manifest_from_script / apply_shots run — new
+   speakers appear in list_characters with empty prompts to fill in.
  - use_character_in_episode copies the still into an episode (pre-stamped, free).
    It returns `invalidates` when replacing a still would re-bill paid cloud
    shots — STOP and confirm with the user before passing overwrite_still=true.
@@ -79,13 +81,15 @@ THINGS TO KNOW:
 - write_manifest replaces the whole manifest: read_manifest first, modify, write
   back. Prefer the purpose-built tools (set_episode_meta, set_speaker_voice...)
   over hand-editing manifest JSON.
-- CLOUD SHOTS (Higgsfield): shots with kind 'higgsfield' (cloud t2v/i2v) or
-  'lipsync' (still + cue VO -> talking head; must be the cue's ONLY shot) bill
-  the user's Higgsfield account per generation. ALWAYS call estimate_episode_cost
-  and surface the total to the user BEFORE run_pipeline / generate_cloud_shot on
-  an episode with cloud shots. Cached shots are free; crop/trim edits never
-  re-bill. higgsfield_status shows connection/plan/credits (connecting is a
-  Settings-UI action, not an MCP one).
+- CLOUD SHOTS: kind 'higgsfield' (cloud t2v/i2v) bills the user's Higgsfield
+  account per generation. kind 'lipsync' (still + cue VO -> talking head; must
+  be the cue's ONLY shot) follows the lipsync engine route (engines_status):
+  higgsfield = billed chunk+chain; local_wan / remote_render = free (local or
+  remote GPU, no chunking). ALWAYS call estimate_episode_cost and surface the
+  total to the user BEFORE run_pipeline / generate_cloud_shot on an episode
+  with cloud shots — it prices by the current routing. Cached shots are free;
+  crop/trim edits never re-bill. higgsfield_status shows connection/plan/
+  credits (connecting is a Settings-UI action, not an MCP one).
 """
 
 mcp = FastMCP(
@@ -654,9 +658,11 @@ async def generate_cloud_shot(slug: str, shot_id: str) -> dict:
 
 @mcp.tool()
 async def generate_character_still(slug: str, who: str) -> dict:
-    """(Re)generate a character's still image via Higgsfield image gen (uses
-    characters[who].still_prompt; async — poll with still_status which is part of
-    this tool's response loop). Stills feed image-to-video and lipsync shots."""
+    """(Re)generate an EPISODE character's still via the routed stills engine
+    (local Z-Image / Higgsfield / remote — see engines_status; uses
+    characters[who].still_prompt; async). Prefer the show-level library
+    (generate_character_takes + use_character_in_episode) for reusable cast —
+    this regenerates one episode's still in place."""
     return await _api("POST", f"/api/episodes/{slug}/characters/{who}/still/regen")
 
 
