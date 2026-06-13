@@ -33,19 +33,31 @@ docker compose --env-file ../.env -f omnivoice/docker-compose.yml up -d
   model/asset fetch step for importing the existing MACU voices.
 
   > **The image is PINNED by digest, not `:latest`** (and `watchtower.enable=false`).
-  > OmniVoice ships no DB migrations, so a floating `:latest` can silently outrun an
-  > existing `omnivoice.db` and break NEW voice clones with
-  > `voice_profiles has no column named kind` / `vd_states` (SSA-122).
-  > **To intentionally upgrade:** bump the digest in `omnivoice/docker-compose.yml`,
-  > then migrate `omnivoice.db` rather than letting the new image fail. Derive the
-  > exact new columns/types from a fresh DB the *target* image creates (rename the old
-  > DB aside, start the new image once, `PRAGMA table_info(voice_profiles)`), then
-  > `ALTER TABLE voice_profiles ADD COLUMN …` the missing ones onto a copy of the real
-  > DB. The columns the SSA-122 drift added were `kind`, `vd_states`,
-  > `verified_own_voice`, `consent_text`, `consent_audio_path`, `consent_recorded_at`.
-  > Then re-`validate_cast`. **Prefer migrating over a fresh DB rebuild** — a rebuild
-  > reassigns every `profile_id`, which the shows' `speaker_map`s reference by id.
-  > (Back up `omnivoice.db` first either way.)
+  > OmniVoice has **no working migration for an existing DB**: `_BASE_SCHEMA` is
+  > `CREATE TABLE IF NOT EXISTS` (helps only fresh installs), the inline `_migrate`
+  > stops at `user_version 4`, and the alembic chain never runs (no `alembic.ini` in the
+  > image). So a floating `:latest` silently outruns an existing `omnivoice.db` and
+  > breaks NEW clones with `voice_profiles has no column named kind` / `vd_states`
+  > (SSA-122).
+  >
+  > **To intentionally upgrade — SCHEMA-SYNC, don't fresh-rebuild** (a rebuild reassigns
+  > every `profile_id`, which the shows' `speaker_map`s reference by id). Recipe (the one
+  > used to move max onto the 2026-06-13 image):
+  > 1. `cp omnivoice.db omnivoice.db.bak` (back up; stop the container first).
+  > 2. Get the canonical target schema — run the **new** image's own initializer against
+  >    an empty dir (no GPU/server):
+  >    `docker run --rm -e OMNIVOICE_DATA_DIR=/work -v /tmp/ref:/work --workdir /app/backend
+  >    --entrypoint python <new-image> -c "from core.db import init_db; init_db()"`
+  >    → `/tmp/ref/omnivoice.db` now holds the fresh schema.
+  > 3. On a copy of the real DB, create any tables present in ref but missing locally and
+  >    `ALTER TABLE … ADD COLUMN` any columns ref has that yours lacks (use ref's
+  >    `PRAGMA table_info` for exact type/default; set `PRAGMA user_version` to match ref).
+  >    The 2026-06-13 bump added tables `settings`, `mcp_client_bindings` and 8
+  >    `voice_profiles` cols (`description, is_demo, verified_own_voice, consent_text,
+  >    consent_audio_path, consent_recorded_at, kind, vd_states`).
+  > 4. Verify the copy's schema matches ref table-for-table + data counts/ids are intact,
+  >    swap it in, start the new image, confirm `GET :3900/profiles` lists your voices,
+  >    then re-`validate_cast`.
 - **comfyui:** needs its source + models first (see below), then
   `docker compose -f comfyui/docker-compose.yml build && … up -d`.
 - **piper:** `docker compose -f piper/docker-compose.yml up -d --build`. A
