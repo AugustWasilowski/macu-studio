@@ -20,6 +20,7 @@ Design notes:
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import httpx
@@ -42,7 +43,8 @@ TYPICAL WORKFLOW — new episode, start to published:
  5. generate_shots(slug)            -> LLM shot-list proposal; review, then rerun
                                        with apply=true (or pass the edited proposal)
  6. generate_sfx(slug) [optional]   -> same dry-run/apply pattern
- 7. generate_card_text(slug, card_type) [optional] -> title cards / YouTube thumb
+ 7. generate_card_text(slug, card_type) [optional] -> title cards / YouTube thumb;
+    render_title_cards(slug) renders just the cards (no video-masters stage)
  8. run_pipeline(slug)              -> queues the render; poll render_status(job_id)
  9. git_sync(slug)                  -> commit the episode's text files
 10. set_episode_meta / set_episode_youtube / set_episode_published, then
@@ -414,6 +416,59 @@ async def generate_card_text(slug: str, card_type: str, key: str = "",
                          body={"card_type": card_type, "key": key,
                                "fields": prop.get("fields") or {}})
     return {"proposal": prop, "applied": applied}
+
+
+@mcp.tool()
+async def render_title_cards(slug: str, key: str = "", only_missing: bool = False,
+                             wait: bool = True) -> dict:
+    """Render the episode's TITLE CARDS on their own — the HyperFrames-composited
+    intro / bumper / lower-third cards — WITHOUT running the expensive video-masters
+    stage they're normally rendered alongside. `key` renders a single title_assets
+    entry; omit it to render every HyperFrames-rendered title. only_missing=true
+    skips titles already rendered. Title-card TEXT is authored separately with
+    generate_card_text — this just (re)renders the picture. Renders run one at a
+    time and are quick; with wait=true (default) this blocks until they finish and
+    returns each card's final state, with wait=false it returns the queued job ids
+    immediately (poll get_episode to watch titles flip to 'rendered')."""
+    body: dict[str, Any] = {}
+    if key:
+        body["key"] = key
+    if only_missing:
+        body["only_missing"] = True
+    res = await _api("POST", f"/api/episodes/{slug}/titles/render", body=body)
+    if _is_err(res):
+        return res
+    queued = res.get("queued") or []
+    if not queued:
+        return {"slug": slug, "rendered": [], "queued": [],
+                "skipped": res.get("skipped") or [],
+                "note": "no HyperFrames-rendered title cards"
+                        + (" were missing" if only_missing else " to render")}
+    if not wait:
+        res["hint"] = "Renders queued. Poll each status_url, or call get_episode(slug) to watch titles flip to 'rendered'."
+        return res
+    # Serialized HF worker, fast renders — poll to completion with a safety cap.
+    import asyncio
+    rendered, failed, pending = [], [], []
+    deadline = time.monotonic() + 25.0 * max(1, len(queued)) + 30.0
+    remaining = {j["job_id"]: j["key"] for j in queued}
+    while remaining and time.monotonic() < deadline:
+        await asyncio.sleep(1.5)
+        for jid in list(remaining):
+            st = await _api("GET", f"/api/hf/jobs/{jid}")
+            state = (st or {}).get("state")
+            if state == "done":
+                rendered.append(remaining.pop(jid))
+            elif state == "error":
+                tail = "; ".join(str(e) for e in (st.get("last_events") or [])[-3:])
+                failed.append({"key": remaining.pop(jid), "detail": tail[:300]})
+    pending = list(remaining.values())
+    out = {"slug": slug, "rendered": sorted(rendered),
+           "failed": failed, "skipped": res.get("skipped") or []}
+    if pending:
+        out["still_rendering"] = pending
+        out["hint"] = "Some renders were still going past the wait window; call get_episode(slug) to confirm they finished."
+    return out
 
 
 # --------------------------------------------------------------------------- #

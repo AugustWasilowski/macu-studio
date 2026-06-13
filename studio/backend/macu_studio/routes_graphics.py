@@ -8,10 +8,45 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request, Body, HTTPException
 
-from . import hyperframes, media, versions
+from . import hyperframes, media, versions, manifest
 from .episodes import episode_dir
 
 router = APIRouter()
+
+
+@router.post("/api/episodes/{slug}/titles/render")
+async def post_titles_render(slug: str, body: dict = Body(default={})):
+    """Render TITLE CARDS only, via HyperFrames — independent of the video-masters
+    stage they're otherwise rendered alongside. Body: {key?, only_missing?}. With
+    `key`, renders just that title_assets entry; otherwise every HyperFrames-rendered
+    title (with only_missing=true, just the ones not yet rendered). Shared/prebuilt
+    titles aren't regennable and are reported under skipped. Returns the queued HF
+    jobs; poll /api/hf/jobs/{job_id} (the same shape as a single title regen)."""
+    try:
+        rows = manifest.derive_titles(slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    key = (body.get("key") or "").strip()
+    only_missing = bool(body.get("only_missing"))
+    by_key = {r["key"]: r for r in rows}
+    if key:
+        r = by_key.get(key)
+        if not r:
+            raise HTTPException(404, f"no title '{key}' in {slug}")
+        if not r.get("configured"):
+            raise HTTPException(400, f"title '{key}' is not a HyperFrames-rendered card")
+        targets = [key]
+    else:
+        targets = [r["key"] for r in rows if r.get("configured")
+                   and (not only_missing or r.get("status") != "rendered")]
+    queued = []
+    for k in targets:
+        job_id = await hyperframes.submit(slug, k)
+        queued.append({"key": k, "job_id": job_id,
+                       "status_url": f"/api/hf/jobs/{job_id}"})
+    skipped = [{"key": r["key"], "reason": "not a HyperFrames-rendered title"}
+               for r in rows if not r.get("configured")]
+    return {"slug": slug, "queued": queued, "count": len(queued), "skipped": skipped}
 
 
 @router.get("/api/hf/templates")
