@@ -242,8 +242,9 @@ JSON
       retry git clone --depth 1 "https://github.com/$NREPO.git" "$NDIR"
     else echo "$(basename "$NREPO") already present — skip"; fi
   done
-  echo "talking-head models installed — the local Wan/InfiniteTalk lipsync engine"
-  echo "lights up in a future Studio update (pipeline/workflows/wan21_infinitetalk.json)."
+  echo "talking-head models installed — these also power the WAN i2v masters backend"
+  echo "(pipeline/workflows/wan21_i2v.json, character shots seeded from stills) and the"
+  echo "local Wan/InfiniteTalk lipsync engine (pipeline/workflows/wan21_infinitetalk.json)."
 else
   echo ""
   echo "(skipping the ~28 GB talking-head stack — rerun with --with-talking-head to add it)"

@@ -263,6 +263,27 @@ def get_final_info(slug: str):
     return manifest_mod.final_info(slug)
 
 
+# Masters video backend selector — `comfyui.workflow` chooses how character shots
+# render: zeroscope text-to-video (default) or WAN image-to-video (seeded from
+# stills/<key>.png; b-roll stays t2v). See stage_2_masters._masters_backend.
+_MASTERS_BACKENDS = {"zeroscope": "will-smith-modelscope-t2v", "wan_i2v": "wan21_i2v"}
+
+
+@app.post("/api/episodes/{slug}/masters-backend")
+def post_masters_backend(slug: str, body: dict = Body(...)):
+    backend = (body.get("backend") or "").strip()
+    if backend not in _MASTERS_BACKENDS:
+        raise HTTPException(400, f"backend must be one of {sorted(_MASTERS_BACKENDS)}")
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    m.setdefault("comfyui", {})["workflow"] = _MASTERS_BACKENDS[backend]
+    manifest_mod.save(slug, m)
+    return {"ok": True, "slug": slug, "backend": backend,
+            "workflow": _MASTERS_BACKENDS[backend]}
+
+
 @app.get("/api/episodes/{slug}/srt")
 def get_srt(slug: str):
     return srt_mod.read(slug)

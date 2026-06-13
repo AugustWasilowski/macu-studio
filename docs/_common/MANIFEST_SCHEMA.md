@@ -21,13 +21,19 @@ typing pass it has a **strongly-typed but lenient** model in
 4. **Manifest shape vs derived rows.** The models above describe the on-disk manifest. The API
    endpoints `/cues`, `/shots`, `/titles` return *derived rows* (manifest + filesystem status) —
    a different, flatter shape (`Cue`/`Shot`/`TitleAsset` in `types.ts`). Don't confuse the two.
+5. **Masters backend (`comfyui.workflow`).** Selects how stage 2 renders video masters:
+   `will-smith-modelscope-t2v` (or absent) = **zeroscope text-to-video** — every shot is prompt→clip,
+   no seed image (the default; all current episodes). `wan21_i2v` = **WAN image-to-video for character
+   shots** — each character animates from `stills/<key>.png` (run `generate_stills` first; b-roll stays
+   zeroscope t2v). WAN needs the `--with-talking-head` pack on the render box; on a non-WAN ComfyUI the
+   stage fails loud. Set it with the `set_masters_backend` MCP tool or `POST /api/episodes/{slug}/masters-backend`.
 
 ## Top-level shape
 
 ```
 episode, title, version, authored_by?, notes?      — metadata
 voice          { default, endpoints, format, out_pattern, speaker_map{<SPEAKER>: VoiceProfile} }
-comfyui        — LOCKED, opaque
+comfyui        — LOCKED, opaque (incl. `workflow` = masters backend; see below)
 higgsfield?    { model, image_model, resolution, aspect_ratio, duration, jank, style_suffix }
 style          { suffix, negative }
 render_rule    — prose contract the assembler follows

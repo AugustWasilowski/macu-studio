@@ -357,6 +357,76 @@ async def post_still_regen(slug: str, who: str):
     return {"ok": True, "key": key}
 
 
+@router.post("/api/episodes/{slug}/stills/render")
+async def post_stills_render(slug: str, body: dict = Body(default={})):
+    """Discrete 'stills before video' step: render the seed reference stills for the
+    episode's CHARACTER shots via the routed stills engine (z-image local by default) —
+    the WAN i2v masters backend animates each character from stills/<key>.png. Runs
+    independently of the video stage. body: {only_missing? (default true), who?}.
+    Sequential (the GPU/ComfyUI serializes anyway); stamps stills/.cache.json so the
+    masters stage / estimate see them as fresh. Returns {rendered, skipped, failed}."""
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    only_missing = bool(body.get("only_missing", True))
+    who_filter = (body.get("who") or "").strip() or None
+
+    # Character keys the episode's CHARACTER shots reference (what masters i2v needs).
+    keys: list[str] = []
+    seen: set[str] = set()
+    for cue in (m.get("cues") or []):
+        for shot in (cue.get("shots") or []):
+            if shot.get("kind") == "character" and shot.get("who"):
+                w = shot["who"]
+                if w not in seen:
+                    seen.add(w); keys.append(w)
+    if who_filter:
+        keys = [who_filter] if (who_filter in seen or who_filter in (m.get("characters") or {})) else []
+
+    not_ready = still_engines.check_ready(still_engines.resolve_engine())
+    if not_ready:
+        raise HTTPException(409, not_ready)
+
+    ep = episode_dir(slug)
+    sc_path = hfc.stills_sidecar_path(ep)
+    chars = m.get("characters") or {}
+    blk = hfc.hf_block(m)
+    rendered: list[str] = []
+    skipped: list[str] = []
+    failed: list[dict] = []
+    for who in keys:
+        char = chars.get(who) if isinstance(chars.get(who), dict) else {}
+        dest = hfc.still_path(ep, who)
+        entries = hfc.load_sidecar(sc_path, "stills")
+        fresh = dest.exists() and entries.get(who) == hfc.still_hash(char, m)
+        if only_missing and fresh:
+            skipped.append(who)
+            continue
+        prompt = (char.get("still_prompt") or "").strip()
+        if not prompt:
+            failed.append({"who": who, "error": "no still_prompt set — give the character one first"})
+            continue
+        try:
+            engine = still_engines.resolve_engine()
+            params = {"model": char.get("still_model") or blk["image_model"]} \
+                if engine == "higgsfield" else {}
+            await still_engines.generate_one(engine, prompt, None, params, dest, name=f"{slug}-{who}")
+            if engine == "comfy_zimage":
+                from . import comfy_stills
+                await comfy_stills.free_vram()
+            entries = hfc.load_sidecar(sc_path, "stills")
+            entries[who] = hfc.still_hash(char, m)
+            hfc.save_sidecar(sc_path, "stills", entries)
+            rendered.append(who)
+        except Exception as e:  # noqa: BLE001
+            failed.append({"who": who, "error": str(e)[:300]})
+
+    return {"slug": slug, "engine": still_engines.resolve_engine(),
+            "rendered": rendered, "skipped": skipped, "failed": failed,
+            "characters_seen": keys}
+
+
 @router.get("/api/episodes/{slug}/characters/{who}/still/status")
 async def get_still_status(slug: str, who: str):
     try:

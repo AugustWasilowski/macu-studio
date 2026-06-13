@@ -62,6 +62,10 @@ CHARACTERS (show-level cast, feeds Higgsfield i2v/lipsync shots):
    It returns `invalidates` when replacing a still would re-bill paid cloud
    shots — STOP and confirm with the user before passing overwrite_still=true.
  - engines_status / set_engine_route control which service runs each capability.
+ - MASTERS BACKEND: set_masters_backend(slug, 'zeroscope'|'wan_i2v'). zeroscope =
+   text-to-video (default). wan_i2v = character shots animate from a seed still
+   (generate_stills renders those z-image stills first); b-roll stays zeroscope.
+   WAN needs the --with-talking-head pack on the render box.
 
 VOICES & CASTING (OmniVoice TTS — consumer-lifecycle, started on demand):
  - list_voices shows the cloned roster; set_speaker_voice casts a SPEAKER to one.
@@ -292,9 +296,11 @@ async def get_episode(slug: str) -> dict:
                          "chars": len(script.get("text") or "")}
     if _is_err(man):
         return {**man, **out}
+    _wf = (man.get("comfyui") or {}).get("workflow")
     out["manifest_summary"] = {
         "title": man.get("title"), "show": man.get("show"),
         "cues": len(man.get("cues") or []),
+        "masters_backend": "wan_i2v" if _wf == "wan21_i2v" else "zeroscope",
         "characters": sorted((man.get("characters") or {}).keys()),
         "title_assets": sorted((man.get("title_assets") or {}).keys()),
         "sfx": len(man.get("sfx") or []),
@@ -482,6 +488,31 @@ async def render_title_cards(slug: str, key: str = "", only_missing: bool = Fals
         out["still_rendering"] = pending
         out["hint"] = "Some renders were still going past the wait window; call get_episode(slug) to confirm they finished."
     return out
+
+
+@mcp.tool()
+async def generate_stills(slug: str, only_missing: bool = True, who: str = "") -> dict:
+    """Render the seed reference STILLS for an episode's character shots — the discrete
+    'stills before video' step. Each still (z-image / the routed stills engine) is what
+    the WAN i2v masters backend animates, so the cast stays on-model; runs independently
+    of the video stage. only_missing skips stills already fresh; `who` limits to one
+    character. A character needs a still_prompt (set via upsert_character). Returns
+    {rendered, skipped, failed}. Pair with set_masters_backend(slug,'wan_i2v')."""
+    body: dict[str, Any] = {"only_missing": only_missing}
+    if who:
+        body["who"] = who
+    return await _api("POST", f"/api/episodes/{slug}/stills/render", body=body)
+
+
+@mcp.tool()
+async def set_masters_backend(slug: str, backend: str) -> dict:
+    """Choose how this episode renders its video masters: 'zeroscope' (text-to-video,
+    the default — no seed still) or 'wan_i2v' (WAN image-to-video; character shots
+    animate from their stills/<key>.png, b-roll stays zeroscope). Writes
+    comfyui.workflow. For wan_i2v, run generate_stills first and note the WAN render
+    needs the --with-talking-head pack on the render box."""
+    return await _api("POST", f"/api/episodes/{slug}/masters-backend",
+                      body={"backend": backend})
 
 
 # --------------------------------------------------------------------------- #

@@ -4,10 +4,53 @@
 Idempotent: looks for the staged .zs.webp in clips/; if present, skips that key.
 Usage: python3 stage_2_masters.py <slug>
 """
-import sys, os, json, time, threading, urllib.request, random, glob, shutil
+import sys, os, json, time, threading, urllib.request, urllib.error, random, glob, shutil, hashlib
 sys.path.insert(0, os.path.dirname(__file__))
+from pathlib import Path
 from lib import (episode_paths, load_manifest, ensure_dirs, COMFY_URL,
                  COMFY_OUT, COMFY_OUTPUT_ROOT, staged_master_webp, progress_tick)
+
+# Masters backend selector. Episodes default to zeroscope text-to-video; an episode
+# whose comfyui.workflow names a WAN i2v graph renders its CHARACTER shots image-to-
+# video, seeded from stills/<key>.png (b-roll stays t2v). See plan: WAN i2v masters.
+WAN_I2V_WORKFLOW = "wan21_i2v"
+
+
+def _masters_backend(m):
+    return "wan_i2v" if (m.get("comfyui") or {}).get("workflow") == WAN_I2V_WORKFLOW else "zeroscope"
+
+
+# WAN i2v master clips are cached by a sidecar hash (not just file existence) so a
+# changed seed still / prompt / seed re-renders — mirrors vo/.cache.json + .hf_cache.json.
+MASTERS_CACHE = ".masters_cache.json"
+
+
+def _masters_cache_path(clips_dir):
+    return os.path.join(clips_dir, MASTERS_CACHE)
+
+
+def _load_masters_cache(clips_dir):
+    try:
+        d = json.loads(Path(_masters_cache_path(clips_dir)).read_text())
+        return dict(d.get("masters") or {}) if d.get("version") == 1 else {}
+    except Exception:
+        return {}
+
+
+def _save_masters_cache(clips_dir, entries):
+    p = _masters_cache_path(clips_dir)
+    Path(p + ".tmp").write_text(json.dumps({"version": 1, "masters": entries},
+                                           indent=2, sort_keys=True))
+    os.replace(p + ".tmp", p)
+
+
+def _i2v_hash(prompt, seed, still_path, w, h, frames, steps):
+    import hf_cache
+    sha = hf_cache.file_sha(Path(still_path)) if os.path.exists(still_path) else None
+    payload = {"prompt": prompt, "seed": seed, "still": sha, "workflow": WAN_I2V_WORKFLOW,
+               "w": w, "h": h, "frames": frames, "steps": steps}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False)
+                          .encode("utf-8")).hexdigest()[:16]
 
 STYLE_NEG_FALLBACK = (
     "shutterstock, watermark, text, caption, logo, color, colour, modern, "
@@ -88,6 +131,9 @@ def _local_main(slug):
     cfg = m["comfyui"]
     W, H, FRAMES = cfg["width"], cfg["height"], cfg["frames"]
     STEPS, CFG = cfg["steps"], cfg["cfg"]
+    backend = _masters_backend(m)
+    ep_base = p["base"]
+    mcache = _load_masters_cache(p["clips"])
 
     # Discover unique (kind, key) from cues' shots
     unique = []
@@ -104,7 +150,12 @@ def _local_main(slug):
     seed_updates = {}  # broll key -> {prompt, seed} for seeds we assign here (persist for determinism)
     for kind, key in unique:
         target = staged_master_webp(slug, key, kind)
-        if os.path.exists(target):
+        # Only CHARACTER shots go i2v under the WAN backend; b-roll stays zeroscope t2v.
+        use_i2v = (kind == "character" and backend == "wan_i2v")
+        # Zeroscope: existence is the cache (skip BEFORE building prompt so a cached
+        # b-roll never mints/persists a fresh seed). i2v hashes inputs, so it builds
+        # the prompt first (characters carry a fixed seed — no minting side effect).
+        if not use_i2v and os.path.exists(target):
             skipped += 1
             continue
         # Build prompt + seed
@@ -128,8 +179,22 @@ def _local_main(slug):
                 # Promote the plain-string broll to {prompt, seed} so this render is reproducible.
                 seed_updates[key] = {"prompt": bro, "seed": seed}
             comfy_prefix = f"macu/{slug}/broll_{key}"
-        jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
-                     "prefix": comfy_prefix, "target": target})
+        if use_i2v:
+            still = f"{ep_base}/stills/{key}.png"
+            h = _i2v_hash(prompt, seed, still, W, H, FRAMES, STEPS)
+            if os.path.exists(target) and mcache.get(key) == h:
+                skipped += 1
+                continue
+            if not os.path.exists(still):
+                raise RuntimeError(
+                    f"[stage 2 masters] WAN i2v character '{key}' needs a seed still at "
+                    f"stills/{key}.png — run generate_stills (or use a character take) first.")
+            jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
+                         "prefix": comfy_prefix, "target": target,
+                         "i2v": True, "still": still, "hash": h})
+        else:
+            jobs.append({"kind": kind, "key": key, "prompt": prompt, "seed": seed,
+                         "prefix": comfy_prefix, "target": target})
 
     # Persist any seeds we just minted so re-renders (and cross-episode pulls) are
     # deterministic. We never back-populate old data — only seeds assigned this run.
@@ -148,15 +213,40 @@ def _local_main(slug):
         return {"rendered": 0, "skipped": skipped}
 
     start = time.time()
+    import stage_2b_cloud  # reuse _comfy_upload / _bind_workflow for the i2v path
     for j in jobs:
-        g = build_graph(j["prompt"], negative, j["seed"], j["prefix"], W, H, FRAMES, STEPS, CFG)
-        try:
-            resp = post("/prompt", {"prompt": g, "client_id": f"macu-{slug}"})
-            j["pid"] = resp["prompt_id"]
-        except Exception as e:
-            # First gen may cold-load + time out the request but keep running.
-            print(f"  WARN submit {j['key']}: {e}")
-            j["pid"] = None
+        if j.get("i2v"):
+            # WAN image-to-video: upload the seed still, bind wan21_i2v (its own tuned
+            # negative stays — don't pass the zeroscope negative), submit. SaveAnimatedWEBP
+            # output → same fetch path as zeroscope. Fails loud on a non-WAN ComfyUI.
+            j["out_node"] = "400"
+            try:
+                img_name = stage_2b_cloud._comfy_upload(Path(j["still"]))
+                graph, out_node = stage_2b_cloud._bind_workflow(
+                    "wan21_i2v", prompt=j["prompt"], image=img_name, seed=j["seed"],
+                    num_frames=FRAMES, width=W, height=H, steps=STEPS,
+                    filename_prefix=j["prefix"])
+                j["out_node"] = out_node
+                resp = post("/prompt", {"prompt": graph, "client_id": f"macu-i2v-{slug}"})
+                j["pid"] = resp["prompt_id"]
+            except urllib.error.HTTPError as e:
+                raise RuntimeError(
+                    f"[stage 2 masters] WAN i2v '{j['key']}': ComfyUI rejected the workflow "
+                    f"({e.code}): {e.read().decode()[:300]} — are the talking-head models + "
+                    f"WanVideoWrapper/VHS/KJNodes installed (--with-talking-head)?")
+            except Exception as e:
+                print(f"  WARN submit {j['key']}: {e}")
+                j["pid"] = None
+        else:
+            j["out_node"] = "9"
+            g = build_graph(j["prompt"], negative, j["seed"], j["prefix"], W, H, FRAMES, STEPS, CFG)
+            try:
+                resp = post("/prompt", {"prompt": g, "client_id": f"macu-{slug}"})
+                j["pid"] = resp["prompt_id"]
+            except Exception as e:
+                # First gen may cold-load + time out the request but keep running.
+                print(f"  WARN submit {j['key']}: {e}")
+                j["pid"] = None
         print(f"  queued {j['key']:24} (kind={j['kind']}, seed={j['seed']}) pid={j.get('pid')}")
 
     # Watchdog: a crashed/restarted ComfyUI drops our queued prompts (queue goes empty)
@@ -190,8 +280,9 @@ def _local_main(slug):
                     continue
                 e = hist.get(j["pid"])
                 if e and e.get("status", {}).get("completed"):
-                    files = (e.get("outputs", {}).get("9", {}).get("images")
-                             or e.get("outputs", {}).get("9", {}).get("gifs") or [])
+                    on = j.get("out_node", "9")
+                    files = (e.get("outputs", {}).get(on, {}).get("images")
+                             or e.get("outputs", {}).get(on, {}).get("gifs") or [])
                     if files:
                         src = os.path.join(COMFY_OUT, slug, files[0]["filename"])
                         if not os.path.exists(src):
@@ -200,6 +291,8 @@ def _local_main(slug):
                                                 files[0]["subfolder"], files[0]["filename"])
                         shutil.copy2(src, j["target"])
                         done.add(j["key"])
+                        if j.get("i2v"):
+                            mcache[j["key"]] = j["hash"]; _save_masters_cache(p["clips"], mcache)
                         print(f"  done {j['key']:24} +{round(time.time()-start,1)}s -> {j['target']}")
                         progress_tick(2, "masters", len(done) / len(jobs))
             else:
@@ -209,6 +302,8 @@ def _local_main(slug):
                 if matches:
                     shutil.copy2(matches[-1], j["target"])
                     done.add(j["key"])
+                    if j.get("i2v"):
+                        mcache[j["key"]] = j["hash"]; _save_masters_cache(p["clips"], mcache)
                     print(f"  done {j['key']:24} (recovered cold-load) -> {j['target']}")
                     progress_tick(2, "masters", len(done) / len(jobs))
 
