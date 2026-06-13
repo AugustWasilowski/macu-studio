@@ -165,6 +165,9 @@ def lipsync_hash(shot: dict, manifest: dict, ep_dir: Path, cue_id: str,
         # InfiniteTalk graph is fixed, so they'd only cause spurious staleness.
         payload.update({"model": p["model"], "resolution": p["resolution"],
                         "aspect_ratio": p["aspect_ratio"], "chunk_max_s": CHUNK_MAX_S})
+    else:
+        # Sampler preset shapes local/remote output (fast vs quality).
+        payload["preset"] = hf_block(manifest).get("lipsync_preset") or "quality"
     return _h(payload)
 
 

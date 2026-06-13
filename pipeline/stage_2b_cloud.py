@@ -31,6 +31,17 @@ STILL_TIMEOUT = 600
 WORKFLOWS_DIR = Path(__file__).resolve().parent / "workflows"
 LIPSYNC_FPS = 25          # the InfiniteTalk graph renders 25fps; stage 4 conforms to 24
 
+# Sampler presets for the local/remote InfiniteTalk engines (manifest knob:
+# higgsfield.lipsync_preset). quality = stronger lip lock, ~2x slower.
+LIPSYNC_PRESETS = {
+    "quality": {"steps": 10, "audio_cfg_scale": 3.0},
+    "fast":    {"steps": 6,  "audio_cfg_scale": 1.0},
+}
+
+def _lipsync_preset(m):
+    name = (m.get("higgsfield") or {}).get("lipsync_preset") or "quality"
+    return name, LIPSYNC_PRESETS.get(name, LIPSYNC_PRESETS["quality"])
+
 # Models whose media schema accepts a plain "image" reference role; everything
 # else gets "start_image". Server-side auto-coercion covers the gray area.
 _IMAGE_ROLE_MODELS = {"seedance_2_0", "video_standard", "cinematic_studio_3_0",
@@ -237,12 +248,15 @@ def _gen_lipsync_local(slug, m, ep, cue, shot):
 
     img_name = _comfy_upload(still)
     wav_name = _comfy_upload(vo)
+    pname, preset = _lipsync_preset(m)
     graph, out_node = _bind_workflow(
         "wan21_infinitetalk",
         prompt=hfc.resolve_prompt(shot, m) or None,
         image=img_name, audio=wav_name,
         seed=shot.get("seed"),
         max_frames=int(vo_dur * LIPSYNC_FPS) + 1,
+        steps=preset["steps"],
+        audio_cfg_scale=preset["audio_cfg_scale"],
         filename_prefix=f"macu_lipsync_{slug}_{sid}",
     )
     req = urllib.request.Request(
@@ -324,10 +338,10 @@ def _gen_lipsync_remote(slug, m, ep, cue, shot, base_url):
         raise RuntimeError(f"lipsync shot {sid}: source_still required")
     vo_dur = probe_dur(str(vo))
 
+    pname, preset = _lipsync_preset(m)
     body = {"name": f"{slug}-{sid}",
             "image_path": str(still), "audio_path": str(vo),
-            "params": {"frames": int(vo_dur * LIPSYNC_FPS) + 1,
-                       "steps": 10, "audio_cfg_scale": 3.0}}
+            "params": {"frames": int(vo_dur * LIPSYNC_FPS) + 1, **preset}}
     req = urllib.request.Request(f"{base_url}/render", data=json.dumps(body).encode(),
                                  headers={"Content-Type": "application/json"})
     try:
