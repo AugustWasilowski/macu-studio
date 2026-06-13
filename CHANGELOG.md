@@ -5,7 +5,27 @@ All notable changes to MACU Studio. Format loosely follows
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.3.2] — 2026-06-12
+
 ### Added
+- **Higgsfield.ai integration** — cloud video generation alongside the local zeroscope path.
+  Connect your Higgsfield account once in **Settings → Higgsfield** (OAuth; plan + credits shown);
+  Studio is the only token holder and brokers all pipeline traffic.
+  - **Cloud shots:** new per-cue shot kinds `higgsfield` (text/image-to-video; pick the model per
+    shot or set an episode default) and `lipsync` (a character still animated to speak the cue's
+    VO; long VO is auto-chunked at silence boundaries and chained). Mix freely with local shots.
+  - **Character stills:** `still_prompt` on a character generates a reference still via Higgsfield
+    image models — feeds image-to-video and lipsync.
+  - **Timeline crop/trim:** cloud clips get per-shot pan/zoom crop, trim in/out, and a broadcast-
+    jank toggle, editable in the Assembly timeline's metadata panel. Applied at assembly — editing
+    never re-bills.
+  - **Price calculator:** the Video tab shows a ☁ estimate/balance chip and any render touching
+    stage 2 opens a cost dialog (per-shot credits, cached-free rows, balance check) before
+    spending. Hash-keyed caching means re-renders only bill shots whose inputs actually changed.
+  - MCP tools: `higgsfield_status`, `higgsfield_models`, `estimate_episode_cost`,
+    `set_shot_provider`, `generate_cloud_shot`, `generate_character_still`.
 - **Characters page** — a new top-level tab for the show's reusable cast. Each character
   carries prompts (video core + still prompt), a voice hint, and a gallery of reference-still
   **takes** with full provenance (engine, model, seed). Generate takes in-app via the local
@@ -25,29 +45,26 @@ All notable changes to MACU Studio. Format loosely follows
 - **Video tab still picker** — cloud shots pick their source still visually from the
   episode's stills or the character library (syncing the take in automatically) instead of
   typing a path.
+- **Lipsync engines** — lipsync shots follow Settings → Engines routing: **Higgsfield**
+  (billed, chunk-and-chain), **local Wan 2.1 + InfiniteTalk** (the shipped workflow on your
+  ComfyUI — whole clip in one pass, any length, free), or a **remote MACU render service**
+  (e.g. a second GPU box). A `lipsync_preset` manifest knob picks fast vs quality sampling;
+  the cost estimate prices by the active routing.
+- **Cast builds itself** — generating a manifest from the script (and applying a shot plan)
+  auto-creates library character stubs for every new speaker, ready to fill in on the
+  Characters page.
+- **Theme color variants** — every full theme's swatch dots are clickable: the picked color
+  becomes that theme's primary and the displaced color rotates into its slot (Pretty
+  Princess in blue, Slate Pro in steel mono, Dracula in ghost violet, …). Three looks per
+  theme, defaults untouched.
+
+- The first-run tutorial now covers the **Publish** stage (it previously skipped stage 6).
+- **Riff lineage:** importing a downloaded riff bundle into a new local show stamps each episode's
+  manifest with `riffed_from` (the source show id), preserving the original origin through forks.
 
 ### Changed
 - **Docs moved out of the top bar** into the main menu (directly below Settings) to make
   room for Characters; `#docs` links still work.
-- **Higgsfield.ai integration** — cloud video generation alongside the local zeroscope path.
-  Connect your Higgsfield account once in **Settings → Higgsfield** (OAuth; plan + credits shown);
-  Studio is the only token holder and brokers all pipeline traffic.
-  - **Cloud shots:** new per-cue shot kinds `higgsfield` (text/image-to-video; pick the model per
-    shot or set an episode default) and `lipsync` (a character still animated to speak the cue's
-    VO; long VO is auto-chunked at silence boundaries and chained). Mix freely with local shots.
-  - **Character stills:** `still_prompt` on a character generates a reference still via Higgsfield
-    image models — feeds image-to-video and lipsync.
-  - **Timeline crop/trim:** cloud clips get per-shot pan/zoom crop, trim in/out, and a broadcast-
-    jank toggle, editable in the Assembly timeline's metadata panel. Applied at assembly — editing
-    never re-bills.
-  - **Price calculator:** the Video tab shows a ☁ estimate/balance chip and any render touching
-    stage 2 opens a cost dialog (per-shot credits, cached-free rows, balance check) before
-    spending. Hash-keyed caching means re-renders only bill shots whose inputs actually changed.
-  - MCP tools: `higgsfield_status`, `higgsfield_models`, `estimate_episode_cost`,
-    `set_shot_provider`, `generate_cloud_shot`, `generate_character_still`.
-- The first-run tutorial now covers the **Publish** stage (it previously skipped stage 6).
-- **Riff lineage:** importing a downloaded riff bundle into a new local show stamps each episode's
-  manifest with `riffed_from` (the source show id), preserving the original origin through forks.
 
 ## [0.2.1] — 2026-06-08
 
