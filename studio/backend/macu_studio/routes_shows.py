@@ -15,9 +15,15 @@ Routes:
   GET    /api/shows/{show}/export        download a whole-show .zip
   POST   /api/import                     upload a .zip → merge/create (auto-detect)
 
-Exports bundle TEXT files only (script.md / manifest.json / youtube.txt) plus an
-export.json marker — the same portable-text philosophy as git-sync. Generated
-media (vo/clips/final) is never bundled.
+Exports bundle the portable WORKING TEXT (script.md / manifest.json) plus an
+export.json marker, and — when assets=True (default) — the binaries a recipient
+needs but can't trivially recreate: OmniVoice reference clips, referenced SFX /
+music, hyperframes title templates, the show's character library (character.json
++ takes), each episode's reference stills, and the PAID Higgsfield cloud clips.
+Stills and HF clips ride with their cache sidecars (stills/.cache.json,
+clips/.hf_cache.json) so a re-import is a guaranteed cache hit and never re-bills.
+Cheap-to-regenerate local renders (zeroscope .webp clips, vo/, final/) are never
+bundled. The text-only one-click Sync (studiosync.py) is a separate path.
 """
 from __future__ import annotations
 
@@ -39,6 +45,7 @@ from . import shows as shows_mod
 from . import episodes as ep_mod
 from . import voices as voices_mod
 from . import manifest as manifest_mod
+from . import characters as chars_mod
 from . import config
 
 router = APIRouter()
@@ -190,6 +197,88 @@ def _add_templates(zf: zipfile.ZipFile, names: set[str], seen: set[str]) -> None
             if f.is_file():
                 rel = f.relative_to(HYPERFRAMES_TEMPLATES)
                 zf.write(f, f"{TEMPLATE_ARC_PREFIX}{rel.as_posix()}")
+
+
+# Character library (show-level): SHARES/shows/<show>/characters/<key>/ holds
+# character.json + takes/take-NNN.png. Bundled so the receiving Studio inherits
+# the reference-still roster and its provenance. takes/.thumbs/ are regenerable —
+# never bundled.
+CHARACTERS_ARC_PREFIX = "characters/"
+
+# Episode generated binaries worth carrying: the reference stills (+ their cache
+# sidecar) and the PAID Higgsfield cloud clips (+ their sidecar). Local zeroscope
+# renders (.webp / non-hf .mp4), vo/, and final/ are cheap to regenerate and stay
+# out. Sidecars travel with the binaries so stage 2 sees a cache hit on import and
+# never re-bills (hf_cache.py: matching hash + existing artifact ⇒ skip).
+STILLS_CACHE = ".cache.json"
+HF_CACHE = ".hf_cache.json"
+
+
+def _manifest_character_keys(ep_dir: Path) -> set[str]:
+    """Character library keys an episode's manifest references."""
+    mf = ep_dir / "manifest.json"
+    if not mf.exists():
+        return set()
+    try:
+        d = json.loads(mf.read_text())
+    except Exception:
+        return set()
+    c = d.get("characters")
+    return set(c.keys()) if isinstance(c, dict) else set()
+
+
+def _add_characters(zf: zipfile.ZipFile, show_id: str, keys: set[str], seen: set[str]) -> list[str]:
+    """Bundle each character's character.json + takes/*.png under
+    characters/<key>/ (skipping .thumbs). `seen` dedupes. Returns keys added."""
+    added: list[str] = []
+    for key in sorted(keys):
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            cdir = chars_mod.char_dir(show_id, key)
+        except ValueError:
+            continue
+        cj = cdir / "character.json"
+        if not cj.is_file():
+            continue
+        zf.write(cj, f"{CHARACTERS_ARC_PREFIX}{key}/character.json")
+        takes = cdir / "takes"
+        if takes.is_dir():
+            for f in sorted(takes.iterdir()):
+                if f.is_file() and f.suffix.lower() == ".png":
+                    zf.write(f, f"{CHARACTERS_ARC_PREFIX}{key}/takes/{f.name}")
+        added.append(key)
+    return added
+
+
+def _add_episode_stills(zf: zipfile.ZipFile, ep_dir: Path, arc_prefix: str) -> int:
+    """Bundle stills/*.png + stills/.cache.json (the billing sidecar)."""
+    sdir = ep_dir / "stills"
+    if not sdir.is_dir():
+        return 0
+    n = 0
+    for f in sorted(sdir.iterdir()):
+        if f.is_file() and (f.suffix.lower() == ".png" or f.name == STILLS_CACHE):
+            zf.write(f, f"{arc_prefix}stills/{f.name}")
+            n += 1
+    return n
+
+
+def _add_episode_hf_clips(zf: zipfile.ZipFile, ep_dir: Path, arc_prefix: str) -> int:
+    """Bundle the paid Higgsfield clips (clips/hf_*.mp4) + clips/.hf_cache.json.
+    Local zeroscope renders are intentionally excluded."""
+    cdir = ep_dir / "clips"
+    if not cdir.is_dir():
+        return 0
+    n = 0
+    for f in sorted(cdir.iterdir()):
+        if not f.is_file():
+            continue
+        if (f.name.startswith("hf_") and f.suffix.lower() == ".mp4") or f.name == HF_CACHE:
+            zf.write(f, f"{arc_prefix}clips/{f.name}")
+            n += 1
+    return n
 
 
 # --------------------------------------------------------------------------- #
@@ -401,7 +490,12 @@ def export_episode(slug: str, assets: bool = True):
         }, indent=2))
         _add_episode_text(zf, ep_dir, f"episodes/{slug}/")
         _add_templates(zf, _manifest_template_names(ep_dir), set())
-        vnames = _bundle_assets(zf, [ep_dir]) if assets else []
+        vnames: list[str] = []
+        if assets:
+            vnames = _bundle_assets(zf, [ep_dir])
+            _add_episode_stills(zf, ep_dir, f"episodes/{slug}/")
+            _add_episode_hf_clips(zf, ep_dir, f"episodes/{slug}/")
+            _add_characters(zf, show_id, _manifest_character_keys(ep_dir), set())
         if vnames:
             zf.writestr("voices.json", json.dumps(
                 {"voices": [{"name": n, "language": "English"} for n in vnames]}, indent=2))
@@ -426,9 +520,16 @@ def export_show(show: str, assets: bool = True):
                 if entry.is_dir() and (entry / "manifest.json").exists():
                     _add_episode_text(zf, entry, f"episodes/{entry.name}/")
                     _add_templates(zf, _manifest_template_names(entry), seen_templates)
+                    if assets:
+                        _add_episode_stills(zf, entry, f"episodes/{entry.name}/")
+                        _add_episode_hf_clips(zf, entry, f"episodes/{entry.name}/")
                     ep_dirs.append(entry)
                     slugs.append(entry.name)
         added_voices = _bundle_assets(zf, ep_dirs) if assets else []
+        if assets:
+            # The whole show's character library (roster reuse across episodes).
+            lib_keys = {c["key"] for c in chars_mod.list_chars(show)}
+            _add_characters(zf, show, lib_keys, set())
         if added_voices:
             zf.writestr("voices.json", json.dumps(
                 {"voices": [{"name": n, "language": "English"} for n in added_voices]}, indent=2))
@@ -520,6 +621,107 @@ def _extract_docs(zf: zipfile.ZipFile, names) -> list[str]:
     return sorted(out)
 
 
+def _merge_cache_sidecar(dest: Path, raw: bytes) -> None:
+    """Merge an incoming stills/.cache.json or clips/.hf_cache.json into the local
+    one (incoming entries win) rather than clobbering local cache state. Preserves
+    cache hits for stills/shots that exist locally but aren't in the bundle."""
+    try:
+        inc = json.loads(raw)
+    except Exception:
+        return
+    inner = "stills" if isinstance(inc.get("stills"), dict) else (
+        "shots" if isinstance(inc.get("shots"), dict) else None)
+    if not inner:
+        return
+    merged: dict = {}
+    if dest.exists():
+        try:
+            merged = dict((json.loads(dest.read_text()).get(inner)) or {})
+        except Exception:
+            merged = {}
+    merged.update(inc.get(inner) or {})
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps({"version": 1, inner: merged}, indent=2, sort_keys=True))
+
+
+def _extract_characters(zf: zipfile.ZipFile, names, show_id: str) -> list[str]:
+    """Unpack the bundled character library (character.json + takes/*.png) into
+    SHARES/shows/<show>/characters/<key>/. Backs up an existing character.json;
+    validates it parses. Path/segment guarded. Returns the keys touched."""
+    touched: list[str] = []
+    for n in names:
+        if not n.startswith(CHARACTERS_ARC_PREFIX) or n.endswith("/"):
+            continue
+        parts = n[len(CHARACTERS_ARC_PREFIX):].split("/")
+        try:
+            key = shows_mod.safe_segment(parts[0], "character key")
+            cdir = chars_mod.char_dir(show_id, key)
+        except (ValueError, IndexError):
+            continue
+        if len(parts) == 2 and parts[1] == "character.json":
+            raw = zf.read(n)
+            try:
+                json.loads(raw.decode("utf-8"))
+            except Exception:
+                continue
+            cdir.mkdir(parents=True, exist_ok=True)
+            cj = cdir / "character.json"
+            if cj.exists():
+                ts = time.strftime("%Y%m%d-%H%M%S")
+                (cdir / f"character.json.bak.{ts}").write_bytes(cj.read_bytes())
+            cj.write_bytes(raw)
+            if key not in touched:
+                touched.append(key)
+        elif len(parts) == 3 and parts[1] == "takes":
+            try:
+                fn = shows_mod.safe_segment(parts[2], "take file")
+            except ValueError:
+                continue
+            if not fn.lower().endswith(".png"):
+                continue
+            tdir = cdir / "takes"
+            tdir.mkdir(parents=True, exist_ok=True)
+            (tdir / fn).write_bytes(zf.read(n))
+            if key not in touched:
+                touched.append(key)
+    return sorted(touched)
+
+
+def _extract_episode_binaries(zf: zipfile.ZipFile, names, ep_root: Path,
+                              allowed: set[str]) -> dict[str, int]:
+    """Unpack bundled episode stills + paid HF clips into the local episode dirs,
+    merging their cache sidecars (so nothing re-bills). Only for episodes we just
+    wrote/own (`allowed`). Path/slug guarded. Returns {'stills': n, 'clips': n}."""
+    counts = {"stills": 0, "clips": 0}
+    for n in names:
+        parts = n.split("/")
+        if len(parts) != 4 or parts[0] != "episodes" or n.endswith("/"):
+            continue
+        sub = parts[2]
+        if sub not in ("stills", "clips"):
+            continue
+        slug = _safe_slug(parts[1])
+        if not slug or slug not in allowed:
+            continue
+        fn = parts[3]
+        if "/" in fn or "\\" in fn or ".." in fn:
+            continue
+        if sub == "stills" and not (fn.lower().endswith(".png") or fn == STILLS_CACHE):
+            continue
+        if sub == "clips" and not ((fn.startswith("hf_") and fn.lower().endswith(".mp4"))
+                                   or fn == HF_CACHE):
+            continue
+        dest_dir = ep_root / slug / sub
+        raw = zf.read(n)
+        if fn in (STILLS_CACHE, HF_CACHE):
+            _merge_cache_sidecar(dest_dir / fn, raw)
+        else:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            (dest_dir / fn).write_bytes(raw)
+            counts[sub] += 1
+    return counts
+
+
 @router.post("/api/import")
 async def import_zip(file: UploadFile = File(...)):
     raw = await file.read()
@@ -553,6 +755,9 @@ async def import_zip(file: UploadFile = File(...)):
             "sfx": [],
             "music": [],
             "docs": [],
+            "characters": [],
+            "stills": 0,
+            "clips": 0,
             "errors": [],
         }
     show_id = _safe_slug(meta.get("show") or "")
@@ -642,6 +847,11 @@ async def import_zip(file: UploadFile = File(...)):
     music_imported = _extract_audio(zf, names, MUSIC_ARC_PREFIX, MUSIC_DIR)
     docs_imported = _extract_docs(zf, names)
 
+    # Character library + episode binaries (reference stills, paid HF clips) with
+    # their cache sidecars merged so a re-import is a cache hit and never re-bills.
+    chars_imported = _extract_characters(zf, names, show_id)
+    ep_bins = _extract_episode_binaries(zf, names, ep_root, set(created) | set(updated))
+
     return {
         "ok": not errors or bool(created or updated),
         "show": show_id,
@@ -654,5 +864,8 @@ async def import_zip(file: UploadFile = File(...)):
         "sfx": sfx_imported,
         "music": music_imported,
         "docs": docs_imported,
+        "characters": chars_imported,
+        "stills": ep_bins["stills"],
+        "clips": ep_bins["clips"],
         "errors": errors,
     }

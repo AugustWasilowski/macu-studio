@@ -103,6 +103,10 @@ export interface ImportResult {
   voices?: string[];
   sfx?: string[];
   music?: string[];
+  docs?: string[];
+  characters?: string[];
+  stills?: number;
+  clips?: number;
   errors?: string[];
 }
 

@@ -109,12 +109,16 @@ export function FileMenu({ activeShow, slug, go, onOpenSettings, onStartTutorial
         r.voices?.length ? t("filemenu.importBitVoices", { count: r.voices.length }) : "",
         r.sfx?.length ? t("filemenu.importBitSfx", { n: r.sfx.length }) : "",
         r.music?.length ? t("filemenu.importBitMusic", { n: r.music.length }) : "",
+        r.characters?.length ? t("filemenu.importBitCharacters", { n: r.characters.length }) : "",
+        r.stills ? t("filemenu.importBitStills", { n: r.stills }) : "",
+        r.clips ? t("filemenu.importBitClips", { n: r.clips }) : "",
         r.created_show ? t("filemenu.importBitShowCreated", { show: importShow }) : "",
       ].filter(Boolean).join(", ");
       pushToast(t("toast.importDone", { show: importShow, bits: bits || t("filemenu.importNoEpisodes") }), errors.length ? "info" : "ok");
       errors.forEach((err) => pushToast(`import: ${err}`, "err"));
       qc.invalidateQueries({ queryKey: ["episodes"] });
       qc.invalidateQueries({ queryKey: ["shows"] });
+      qc.invalidateQueries({ queryKey: ["characters"] });
       // Jump to the script page of the first imported episode (sorted → ep-001 of
       // a season, or the lone episode of a single-episode import).
       const imported = [...created, ...updated].sort();
