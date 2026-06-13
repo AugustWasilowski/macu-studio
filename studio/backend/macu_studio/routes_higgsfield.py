@@ -315,6 +315,9 @@ async def _gen_still(slug: str, who: str, key: str) -> None:
             if engine == "higgsfield" else {}
         await still_engines.generate_one(engine, prompt, None, params, dest,
                                          name=f"{slug}-{who}")
+        if engine == "comfy_zimage":
+            from . import comfy_stills
+            await comfy_stills.free_vram()
         # Stamp the sidecar so derive/estimate can prove freshness.
         sc_path = hfc.stills_sidecar_path(ep)
         entries = hfc.load_sidecar(sc_path, "stills")

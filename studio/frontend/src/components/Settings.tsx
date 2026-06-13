@@ -7,7 +7,7 @@ import { showsApi } from "../api/shows";
 import { higgsfieldApi } from "../api/higgsfield";
 import { enginesApi } from "../api/engines";
 import type { Capability, EngineId, EngineProbe, EnginesConfig } from "../api/engines";
-import { THEMES, currentTheme, setTheme } from "../theme";
+import { THEMES, currentTheme, parseThemeId, setTheme } from "../theme";
 import { useT, LOCALES } from "../i18n";
 
 type Tab = "theme" | "show" | "archive" | "git" | "engines" | "higgsfield" | "language";
@@ -91,21 +91,55 @@ function ThemePanel() {
           <span className="text-[12px]">Terminal</span>
           {activeAccent && <span className="label-tiny ml-auto">{t("common.active")} · {activeAccent.label}</span>}
         </div>
-        {fulls.map((th) => (
-          <button
-            key={th.id}
-            className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left " + (sel === th.id ? "btn-amber" : "hover:bg-bg-3")}
-            onClick={() => pick(th.id)}
-          >
-            <span className="flex items-center gap-1">
-              {(th.swatch ?? [th.accent]).map((c, i) => (
-                <span key={i} className="rounded-full" style={{ width: 16, height: 16, background: c, boxShadow: i === 0 ? `0 0 7px ${c}` : undefined }} />
-              ))}
-            </span>
-            <span className="text-[12px]">{th.label}</span>
-            {sel === th.id && <span className="label-tiny ml-auto">{t("common.active")}</span>}
-          </button>
-        ))}
+        {fulls.map((th) => {
+          // Dot list: native primary + variants (or legacy display-only swatch).
+          const dots = th.variants ? [th.accent, ...th.variants.map((v) => v.hex)] : (th.swatch ?? [th.accent]);
+          const { base: selBase, variant: selVar } = parseThemeId(sel);
+          const rowActive = selBase === th.id;
+          return (
+            <div
+              key={th.id}
+              role="button"
+              tabIndex={0}
+              className={"flex items-center gap-3 px-3 py-2 rounded hairline-soft text-left cursor-pointer " + (rowActive ? "btn-amber" : "hover:bg-bg-3")}
+              onClick={() => pick(th.id)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") pick(th.id); }}
+            >
+              <span className="flex items-center gap-1.5">
+                {dots.map((c, i) => {
+                  const clickable = !!th.variants;
+                  const dotActive = rowActive && selVar === i;
+                  const id = i === 0 ? th.id : `${th.id}@${i}`;
+                  return clickable ? (
+                    <button
+                      key={i}
+                      title={`${th.label} · ${c}`}
+                      aria-label={`${th.label} variant ${i + 1}`}
+                      onClick={(e) => { e.stopPropagation(); pick(id); }}
+                      className="rounded-full"
+                      style={{
+                        width: 16, height: 16, background: c, flexShrink: 0,
+                        transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                        transform: dotActive ? "scale(1.2)" : undefined,
+                        boxShadow: dotActive
+                          ? `0 0 0 2px var(--bg-1), 0 0 0 3.5px ${c}, 0 0 8px ${c}`
+                          : i === 0 ? `0 0 7px ${c}` : undefined,
+                      }}
+                    />
+                  ) : (
+                    <span key={i} className="rounded-full" style={{ width: 16, height: 16, background: c, boxShadow: i === 0 ? `0 0 7px ${c}` : undefined }} />
+                  );
+                })}
+              </span>
+              <span className="text-[12px]">{th.label}</span>
+              {rowActive && (
+                <span className="label-tiny ml-auto">
+                  {t("common.active")}{selVar > 0 ? ` · ${dots[selVar]}` : ""}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

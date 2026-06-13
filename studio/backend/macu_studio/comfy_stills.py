@@ -97,3 +97,15 @@ async def generate_one(prompt: str, seed: int | None, params: dict, dest: Path,
     return {"seed": applied.get("seed"), "params": {k: applied[k] for k in
             ("width", "height", "steps", "cfg") if k in applied},
             "workflow": workflow_id, "model": applied.get("unet")}
+
+
+async def free_vram() -> None:
+    """Ask ComfyUI to unload models + free VRAM (service stays up). Called after
+    a still batch so the parked Z-Image weights (~6 GB) don't starve the next
+    GPU consumer (OmniVoice stage 1 OOMed exactly this way). Best-effort."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            await c.post(f"{engines.comfy_url()}/free",
+                         json={"unload_models": True, "free_memory": True})
+    except Exception:
+        pass

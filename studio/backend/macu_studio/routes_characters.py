@@ -143,6 +143,9 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
                            prompt=prompt, seed=info.get("seed"),
                            params=info.get("params"))
             job["progress"]["done"] = i + 1
+        if engine == "comfy_zimage":
+            from . import comfy_stills
+            await comfy_stills.free_vram()
 
     try:
         stilljobs.start(jkey, engine, count, runner)
