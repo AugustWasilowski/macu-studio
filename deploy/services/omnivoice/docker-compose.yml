@@ -7,10 +7,21 @@
 # .env beside this file (see deploy/services/.env.example). The two patch files
 # ship in-repo and are bind-mounted read-only over the image's buggy originals
 # (gallery + the _gpu_pool model_manager fix).
+#
+# IMAGE IS PINNED BY DIGEST (not :latest). OmniVoice ships no DB migrations, so a
+# floating :latest can silently outrun an existing omnivoice.db and break NEW voice
+# clones (the voice_profiles "no column named kind/vd_states" failure, SSA-122).
+# watchtower.enable=false stops the daily auto-bump. To intentionally upgrade: bump the
+# digest, then ALTER-TABLE migrate voice_profiles to add the new columns (kind, vd_states,
+# verified_own_voice, consent_text, consent_audio_path, consent_recorded_at) and
+# re-validate the cast — a fresh DB rebuild would reassign profile_ids that speaker_maps
+# reference. See deploy/services/README.md.
 services:
   omnivoice:
-    image: ghcr.io/debpalash/omnivoice-studio:latest
+    image: ghcr.io/debpalash/omnivoice-studio@sha256:dc1c73167dde606fdd16e11c02639e8450dcec4663afb66927c631753f2be7e7
     container_name: omnivoice
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
     restart: "no"
     ports:
       - 127.0.0.1:3900:3900

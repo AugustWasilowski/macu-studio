@@ -29,8 +29,23 @@ docker compose --env-file ../.env -f omnivoice/docker-compose.yml up -d
   between jobs; the backend starts it on demand.)
 - **omnivoice:** `docker compose -f omnivoice/docker-compose.yml up -d`. Base model
   downloads into the `hf-cache` volume on first inference. (On-demand; backend
-  starts it.) Voice profiles live in the `data` volume — see the model/asset
-  fetch step for importing the existing MACU voices.
+  starts it.) Voice profiles live in the `state` volume (`omnivoice.db`) — see the
+  model/asset fetch step for importing the existing MACU voices.
+
+  > **The image is PINNED by digest, not `:latest`** (and `watchtower.enable=false`).
+  > OmniVoice ships no DB migrations, so a floating `:latest` can silently outrun an
+  > existing `omnivoice.db` and break NEW voice clones with
+  > `voice_profiles has no column named kind` / `vd_states` (SSA-122).
+  > **To intentionally upgrade:** bump the digest in `omnivoice/docker-compose.yml`,
+  > then migrate `omnivoice.db` rather than letting the new image fail. Derive the
+  > exact new columns/types from a fresh DB the *target* image creates (rename the old
+  > DB aside, start the new image once, `PRAGMA table_info(voice_profiles)`), then
+  > `ALTER TABLE voice_profiles ADD COLUMN …` the missing ones onto a copy of the real
+  > DB. The columns the SSA-122 drift added were `kind`, `vd_states`,
+  > `verified_own_voice`, `consent_text`, `consent_audio_path`, `consent_recorded_at`.
+  > Then re-`validate_cast`. **Prefer migrating over a fresh DB rebuild** — a rebuild
+  > reassigns every `profile_id`, which the shows' `speaker_map`s reference by id.
+  > (Back up `omnivoice.db` first either way.)
 - **comfyui:** needs its source + models first (see below), then
   `docker compose -f comfyui/docker-compose.yml build && … up -d`.
 - **piper:** `docker compose -f piper/docker-compose.yml up -d --build`. A
