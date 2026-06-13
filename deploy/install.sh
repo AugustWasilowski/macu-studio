@@ -81,6 +81,24 @@ fi
 [ "$WITH_MODELS" = 0 ] && echo "   → light install: skipping model downloads."
 echo
 
+# Optional: the WAN 2.1 + InfiniteTalk talking-head stack (~28 GB on top of the
+# base packs). Powers the LOCAL WAN image-to-video masters backend and the local
+# lipsync engine. Off by default — most installs route those to a remote render
+# box or Higgsfield. Only offered when the base model packs are being installed;
+# --with-talking-head (or MACU_INSTALL_TALKING_HEAD=1) skips the prompt.
+if [ "$WITH_TALKING_HEAD" != 1 ] && [ "$WITH_MODELS" = 1 ]; then
+  if [ "$AUTO" = 0 ] && [ -t 0 ]; then
+    echo "   Talking-head / WAN stack — a BIG optional download (~28 GB: Wan 2.1 I2V 14B +"
+    echo "   InfiniteTalk + custom nodes). Needed only for LOCAL WAN image-to-video + lipsync;"
+    echo "   skip it and those run remotely. Add it later with:"
+    echo "     ./deploy/fetch-models.sh --with-talking-head"
+    read -r -p "   Also download the ~28 GB talking-head stack now? [y/N] " thans
+    case "$thans" in [yY]|[yY][eE][sS]) WITH_TALKING_HEAD=1 ;; *) WITH_TALKING_HEAD=0 ;; esac
+  fi
+fi
+[ "$WITH_TALKING_HEAD" = 1 ] && echo "   → including the ~28 GB talking-head / WAN stack."
+echo
+
 echo; echo ">>> [1/6] preflight"
 if ! ./deploy/doctor.sh; then
   echo

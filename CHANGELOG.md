@@ -7,6 +7,48 @@ All notable changes to MACU Studio. Format loosely follows
 
 _Nothing yet._
 
+## [0.4.0] — 2026-06-12
+
+### Added
+- **One-click Sync.** The old "Git sync" topbar button is now a real peer-sync: two
+  Studio installs sharing the same macu-web connection reconcile a show's working
+  **text** (scripts, manifests, docs, character records) both ways — it figures out
+  what to push and pull on its own, shows the plan before writing, resolves conflicts
+  newest-wins with `.bak` backups, and validates pulled JSON. Text-only by design;
+  nothing heavy is hosted on the web.
+- **Import / Export carries the binaries.** Export bundles (with assets on) now also
+  carry the **character library** (records + takes), each episode's **reference stills**,
+  and the **paid Higgsfield cloud clips** — alongside the existing voice clips, SFX,
+  music, and title templates. Stills and cloud clips travel with their cache sidecars,
+  so importing a show onto another machine is a guaranteed cache hit and **never
+  re-bills**. Local renders stay out to keep bundles small.
+- **WAN image-to-video masters backend (opt-in).** An episode can render its **character
+  shots** as WAN i2v, seeded from a crafted still so the cast stays on-model (b-roll
+  stays zeroscope text-to-video). Select it per episode via `comfyui.workflow` /
+  `set_masters_backend`; render seed stills independently with the new discrete
+  **stills step** (`generate_stills`). Needs the `--with-talking-head` pack on the
+  render box; the installer now **prompts** for that stack (default no — it's ~28 GB).
+- **Cast doctor + portable voices.** `validate_cast` flags any speaker whose voice won't
+  resolve **before** a multi-minute render; `import_voices` (re)clones a voices export
+  into the local OmniVoice and rebinds manifests by name; `preview_vo` auditions one
+  line; `start_voice_engine` brings OmniVoice up; `engines_status` now shows the TTS
+  engines (OmniVoice profile count + piper).
+- **Render title cards on their own** (`render_title_cards`) — without running the
+  video-masters stage they were bundled with.
+- **Fully localized UI.** All the new Characters, Engines, Higgsfield, Sync, and
+  Import/Export strings are translated into all 48 languages; the in-app tour and
+  guided walkthrough gained Sync, cloud, and "build your cast" steps.
+- **Installer prompt for the talking-head / WAN stack** (default **no**, with a clear
+  ~28 GB size warning). `--with-talking-head` / `MACU_INSTALL_TALKING_HEAD=1` still
+  skip the prompt; the pack now powers both WAN i2v masters and local lipsync.
+
+### Fixed
+- **Voices no longer silently fall back across machines.** Manifests cast voices by a
+  machine-specific `profile_id`; moving a show to another box left those ids unresolved
+  and VO quietly rendered a generic voice. The render now resolves by the portable
+  `voice_name` when the id is stale, and **fails loud** (no silent fallback) when a cue
+  resolves by neither.
+
 ## [0.3.3] — 2026-06-12
 
 ### Added
