@@ -31,6 +31,8 @@ async def generate_one(prompt: str, seed: int | None, params: dict, dest: Path,
         prompt=prompt,
         seed=seed,
         unet=engines.zimage_unet(),
+        clip=engines.zimage_clip(),
+        vae=engines.zimage_vae(),
         **{k: v for k, v in (params or {}).items()
            if k in ("negative", "width", "height", "steps", "cfg")},
     )

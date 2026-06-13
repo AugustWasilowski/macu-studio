@@ -13,7 +13,9 @@
       "height":   ["6", "inputs", "height"],
       "steps":    ["7", "inputs", "steps"],
       "cfg":      ["7", "inputs", "cfg"],
-      "unet":     ["1", "inputs", "unet_name"]
+      "unet":     ["1", "inputs", "unet_name"],
+      "clip":     ["2", "inputs", "clip_name"],
+      "vae":      ["3", "inputs", "vae_name"]
     },
     "defaults": {
       "negative": "",
@@ -21,7 +23,9 @@
       "height": 1024,
       "steps": 8,
       "cfg": 1.0,
-      "unet": "z_image_turbo_nvfp4.safetensors"
+      "unet": "z_image_turbo_nvfp4.safetensors",
+      "clip": "qwen_3_4b_fp8_mixed.safetensors",
+      "vae": "ae.safetensors"
     },
     "models": [
       {"dir": "diffusion_models", "file": "z_image_turbo_nvfp4.safetensors", "hf": "Comfy-Org/z_image_turbo", "bytes": 4509509600},

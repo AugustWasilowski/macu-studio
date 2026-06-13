@@ -12,7 +12,7 @@ over the file and are surfaced to the UI as `overridden` so the Settings tab can
 badge pinned fields:
   MACU_ENGINE_COMFY_URL   (falls back to MACU_COMFY_URL for pipeline parity)
   MACU_ENGINE_REMOTE_URL
-  MACU_ZIMAGE_UNET
+  MACU_ZIMAGE_UNET / MACU_ZIMAGE_CLIP / MACU_ZIMAGE_VAE
   MACU_ROUTE_MASTERS / _STILLS / _CLOUD_VIDEO / _LIPSYNC
 """
 from __future__ import annotations
@@ -32,15 +32,20 @@ from .config import REPO_ROOT
 
 _CFG_PATH = Path.home() / ".config" / "macu-studio" / "engines.json"
 
-# The unet the public installer fetches (Comfy-Org repack ships bf16 + nvfp4
-# only; nvfp4 is 4.5 GB and proven on a 2080 Ti). Override via the Engines tab
-# or MACU_ZIMAGE_UNET, e.g. to z_image_turbo_bf16.safetensors.
+# The z-image model filenames the public installer fetches (Comfy-Org repack
+# ships bf16 + nvfp4 unets; nvfp4 is 4.5 GB and proven on a 2080 Ti). Each is
+# overridable per-box via the Engines tab or MACU_ZIMAGE_{UNET,CLIP,VAE} — a box
+# whose ComfyUI carries differently-named z-image quants (e.g. Leo's native
+# venv) points at its own files without re-naming or symlinking.
 DEFAULT_ZIMAGE_UNET = "z_image_turbo_nvfp4.safetensors"
+DEFAULT_ZIMAGE_CLIP = "qwen_3_4b_fp8_mixed.safetensors"
+DEFAULT_ZIMAGE_VAE = "ae.safetensors"
 
 DEFAULTS: dict = {
     "version": 1,
     "endpoints": {
-        "comfy_local": {"url": "http://127.0.0.1:8188", "zimage_unet": ""},
+        "comfy_local": {"url": "http://127.0.0.1:8188",
+                        "zimage_unet": "", "zimage_clip": "", "zimage_vae": ""},
         "remote_render": {"url": "", "enabled": False},
     },
     "routing": {
@@ -150,10 +155,13 @@ def _env_overrides() -> tuple[dict, list[str]]:
     if comfy:
         patch["endpoints"]["comfy_local"]["url"] = comfy.rstrip("/")
         over.append("endpoints.comfy_local.url")
-    unet = os.environ.get("MACU_ZIMAGE_UNET", "").strip()
-    if unet:
-        patch["endpoints"]["comfy_local"]["zimage_unet"] = unet
-        over.append("endpoints.comfy_local.zimage_unet")
+    for fld, env in (("zimage_unet", "MACU_ZIMAGE_UNET"),
+                     ("zimage_clip", "MACU_ZIMAGE_CLIP"),
+                     ("zimage_vae", "MACU_ZIMAGE_VAE")):
+        val = os.environ.get(env, "").strip()
+        if val:
+            patch["endpoints"]["comfy_local"][fld] = val
+            over.append(f"endpoints.comfy_local.{fld}")
     remote = os.environ.get("MACU_ENGINE_REMOTE_URL", "").strip()
     if remote:
         patch["endpoints"]["remote_render"]["url"] = remote.rstrip("/")
@@ -227,6 +235,14 @@ def remote_url() -> str:
 
 def zimage_unet() -> str:
     return _effective()["endpoints"]["comfy_local"].get("zimage_unet") or DEFAULT_ZIMAGE_UNET
+
+
+def zimage_clip() -> str:
+    return _effective()["endpoints"]["comfy_local"].get("zimage_clip") or DEFAULT_ZIMAGE_CLIP
+
+
+def zimage_vae() -> str:
+    return _effective()["endpoints"]["comfy_local"].get("zimage_vae") or DEFAULT_ZIMAGE_VAE
 
 
 # ---- probes ------------------------------------------------------------------------
