@@ -102,7 +102,8 @@ THINGS TO KNOW:
   over hand-editing manifest JSON.
 - CLOUD SHOTS: kind 'higgsfield' (cloud t2v/i2v) bills the user's Higgsfield
   account per generation. kind 'lipsync' (still + cue VO -> talking head; must
-  be the cue's ONLY shot) follows the lipsync engine route (engines_status):
+  be the FIRST shot in its cue, max one per cue — b-roll/character cutaways may
+  follow it over the continuing VO) follows the lipsync engine route (engines_status):
   higgsfield = billed chunk+chain; local_wan / remote_render = free (local or
   remote GPU, no chunking). ALWAYS call estimate_episode_cost and surface the
   total to the user BEFORE run_pipeline / generate_cloud_shot on an episode
@@ -783,8 +784,9 @@ async def set_shot_provider(slug: str, cue_id: str, shot_id: str, kind: str,
                             source_still: str = "", duration: int = 0) -> dict:
     """Convert (or create) one shot in a cue to a given provider kind:
     'character'/'broll' (local zeroscope), 'higgsfield' (cloud t2v/i2v), or
-    'lipsync' (cloud, audio-driven by the cue's VO; must be the cue's ONLY
-    shot). Optional fields apply to cloud kinds: model (default from the
+    'lipsync' (cloud, audio-driven by the cue's VO; must be the FIRST shot in
+    its cue, max one per cue — cutaways may follow it). Optional fields apply to
+    cloud kinds: model (default from the
     manifest's higgsfield block), prompt (default: who's core prompt +
     style_suffix), source_still (character key or episode-relative path ->
     image-to-video), duration (seconds, higgsfield kind only)."""

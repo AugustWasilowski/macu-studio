@@ -206,15 +206,22 @@ def validate(data: dict[str, Any]) -> None:
 
 def _validate_cloud_shots(data: dict[str, Any]) -> None:
     """Cloud-shot invariants beyond pydantic's structural pass:
-    - a lipsync shot must be the ONLY shot in its cue (its clip spans the whole
-      cue — the VO dictates its duration, so siblings can't share the slot)
+    - a lipsync shot must LEAD its cue (be the first shot) and be the only lipsync
+      shot in it. Its clip is sample-aligned with the cue VO from t=0, so it has to
+      play from the start of the cue to keep the mouth in sync; b-roll/character
+      cutaways may follow over the continuing VO. Two lipsync shots can't share one
+      cue (both would want the t=0 audio slot).
     - crop/zoom/trim sanity (cheap to catch here; stage 4 would only fail later)
     """
-    bad_solo: list[str] = []
+    bad_lead: list[str] = []   # lipsync present but not the first shot
+    bad_multi: list[str] = []  # more than one lipsync shot in a cue
     for cue in data.get("cues") or []:
         shots = cue.get("shots") or []
-        if any((s or {}).get("kind") == "lipsync" for s in shots) and len(shots) > 1:
-            bad_solo.append(str(cue.get("id")))
+        ls_idx = [i for i, s in enumerate(shots) if (s or {}).get("kind") == "lipsync"]
+        if len(ls_idx) > 1:
+            bad_multi.append(str(cue.get("id")))
+        elif ls_idx and ls_idx[0] != 0:
+            bad_lead.append(str(cue.get("id")))
         for s in shots:
             crop = (s or {}).get("crop") or {}
             z = crop.get("zoom")
@@ -228,10 +235,16 @@ def _validate_cloud_shots(data: dict[str, Any]) -> None:
             t_in, t_out = trim.get("in"), trim.get("out")
             if t_in is not None and t_out is not None and float(t_out) <= float(t_in):
                 raise ValueError(f"shot {s.get('id')}: trim.out must be > trim.in")
-    if bad_solo:
+    if bad_multi:
         raise ValueError(
-            "a lipsync shot must be the only shot in its cue (its length is the cue's "
-            f"VO length); offending cue(s): {', '.join(bad_solo)}"
+            "a cue may contain at most one lipsync shot (both would want the cue's "
+            f"opening audio slot); offending cue(s): {', '.join(bad_multi)}"
+        )
+    if bad_lead:
+        raise ValueError(
+            "a lipsync shot must be the FIRST shot in its cue so its mouth stays "
+            "aligned with the cue VO from t=0 (put b-roll/character cutaways after "
+            f"it); offending cue(s): {', '.join(bad_lead)}"
         )
 
 

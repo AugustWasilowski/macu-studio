@@ -154,15 +154,27 @@ def main(slug):
             f"[stage 4 assemble] {len(shotless)} cue(s) have no shots assigned: "
             f"{', '.join(shotless)}. Assign shots to each (Studio → Video → "
             f"Generate shot list, or edit the manifest) before assembling.")
-    # A lipsync shot's clip is sample-aligned with the whole cue VO, so it must be
-    # the cue's ONLY shot (the per-shot equal-split below would desync the mouth).
-    bad_solo = [c["id"] for c in m["cues"]
-                if any(s.get("kind") == "lipsync" for s in c.get("shots") or [])
-                and len(c["shots"]) > 1]
-    if bad_solo:
+    # A lipsync shot's clip is sample-aligned with the whole cue VO from t=0, so it
+    # must LEAD its cue (the per-shot equal-split below plays shots in order; a
+    # lipsync at slot 0 shows clip-time [0, per] against VO-time [0, per] — in sync;
+    # any later slot would desync the mouth). B-roll/character cutaways follow it over
+    # the continuing VO. At most one lipsync per cue (both would want the t=0 slot).
+    bad_lead, bad_multi = [], []
+    for c in m["cues"]:
+        ls = [i for i, s in enumerate(c.get("shots") or []) if s.get("kind") == "lipsync"]
+        if len(ls) > 1:
+            bad_multi.append(c["id"])
+        elif ls and ls[0] != 0:
+            bad_lead.append(c["id"])
+    if bad_multi:
         raise RuntimeError(
-            f"[stage 4 assemble] lipsync shots must be the only shot in their cue; "
-            f"offending cue(s): {', '.join(bad_solo)}")
+            f"[stage 4 assemble] a cue may have at most one lipsync shot; "
+            f"offending cue(s): {', '.join(bad_multi)}")
+    if bad_lead:
+        raise RuntimeError(
+            f"[stage 4 assemble] a lipsync shot must be the first shot in its cue "
+            f"(so its mouth stays synced to the cue VO from t=0); "
+            f"offending cue(s): {', '.join(bad_lead)}")
     for cue in m["cues"]:
         vo = f"{p['vo']}/{cue['id']}.wav"
         vo_dur = probe_dur(vo)
