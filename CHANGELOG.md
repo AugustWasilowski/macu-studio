@@ -7,6 +7,27 @@ All notable changes to MACU Studio. Format loosely follows
 
 _Nothing yet._
 
+## [0.3.3] — 2026-06-12
+
+### Added
+- **Light / headless install.** The installer now asks (default **yes** — just hit Enter)
+  before pulling the ~18 GB AI model packs. Answer `n` (or pass `--no-models`) and Studio
+  installs without any local models: route stills/video/lipsync to Higgsfield or a remote
+  MACU render box and the script tools to Claude Code. Pull the packs any time later by
+  re-running `./deploy/fetch-models.sh` (idempotent — only missing files download).
+- **Claude Code integration.** A connector card on Settings → Engines detects your `claude`
+  CLI and provides copy-paste commands (pre-filled with this Studio's MCP URL) to hook up
+  Claude Code or Claude Desktop. And a new **Script tools (LLM)** engine route lets shot
+  lists, SFX plans, and card text generate through **your Claude subscription** (`claude -p`
+  headless) instead of the local Ollama model — no GPU needed, and it works while a render
+  holds the card.
+
+### Fixed
+- **Remote lipsync on long lines.** VO longer than ~7 s OOMed the remote GPU in a single
+  InfiniteTalk pass; it now splits at silence boundaries and chains segments (last frame →
+  next start image) automatically, and a remote-service restart fails fast instead of
+  hanging the render.
+
 ## [0.3.2] — 2026-06-12
 
 ### Added
