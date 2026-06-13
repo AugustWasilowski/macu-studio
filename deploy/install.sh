@@ -2,18 +2,27 @@
 # Top-level MACU installer. Runs the mechanical stages in order on a fresh machine;
 # each stage skips work already done. The un-scriptable parts (systemd units, the
 # Claude Code channel) are printed at the end for you to finish by hand.
-# Usage: ./deploy/install.sh [-y|--yes] [--with-talking-head]
-#   -y                  skip the confirm prompt
+# Usage: ./deploy/install.sh [-y|--yes] [--with-models|--no-models] [--with-talking-head]
+#   -y                  skip the confirm prompts (implies --with-models unless --no-models)
+#   --no-models         "light" install: skip every AI model download (~18 GB).
+#                       Generation runs remotely instead — route stills/video/
+#                       lipsync to Higgsfield or a remote render box and script
+#                       tools to Claude Code in Settings → Engines. Pull the
+#                       models any time later: ./deploy/fetch-models.sh
+#   --with-models       pull the model packs without asking
 #   --with-talking-head also pull the ~28 GB Wan 2.1 + InfiniteTalk stack
-#                       (local talking-head/lipsync models; optional)
+#                       (local talking-head/lipsync models; implies --with-models)
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 
 AUTO=0
 WITH_TALKING_HEAD="${MACU_INSTALL_TALKING_HEAD:-0}"
+WITH_MODELS="${MACU_INSTALL_MODELS:-}"        # empty = ask; 1/0 = decided by flag/env
 for a in "$@"; do case "$a" in
   -y|--yes) AUTO=1 ;;
-  --with-talking-head) WITH_TALKING_HEAD=1 ;;
+  --with-talking-head) WITH_TALKING_HEAD=1; WITH_MODELS=1 ;;
+  --no-models) WITH_MODELS=0 ;;
+  --with-models) WITH_MODELS=1 ;;
 esac; done
 
 # Retry a flaky network command up to 3 times with a growing backoff, so one WiFi
@@ -51,6 +60,25 @@ if [ "$AUTO" = 0 ]; then
     echo "   Non-interactive shell — re-run with -y to proceed."; exit 1
   fi
 fi
+echo
+
+# Second confirmation: the AI model packs are optional. A "light"/headless
+# install skips ~18 GB of downloads and routes generation to remote services
+# (Higgsfield / a remote render box / Claude Code) in Settings → Engines.
+if [ -z "$WITH_MODELS" ]; then
+  if [ "$AUTO" = 1 ]; then
+    WITH_MODELS=1
+  elif [ -t 0 ]; then
+    echo "   Local AI model packs (~18 GB: zeroscope video, Z-Image stills, Ollama text)."
+    echo "   Skip them for a light install — generation can run remotely instead, and"
+    echo "   you can pull them any time later with ./deploy/fetch-models.sh"
+    read -r -p "   Download the model packs now? [Y/n] " mans
+    case "$mans" in [nN]|[nN][oO]) WITH_MODELS=0 ;; *) WITH_MODELS=1 ;; esac
+  else
+    WITH_MODELS=1
+  fi
+fi
+[ "$WITH_MODELS" = 0 ] && echo "   → light install: skipping model downloads."
 echo
 
 echo; echo ">>> [1/6] preflight"
@@ -120,7 +148,7 @@ docker compose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null |
 docker compose -f deploy/services/omnivoice/docker-compose.yml create 2>/dev/null || true
 
 echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
-MACU_INSTALL_TALKING_HEAD="$WITH_TALKING_HEAD" ./deploy/fetch-models.sh
+MACU_INSTALL_MODELS="$WITH_MODELS" MACU_INSTALL_TALKING_HEAD="$WITH_TALKING_HEAD" ./deploy/fetch-models.sh
 
 echo; echo ">>> [5/6] build + start long-lived services (ComfyUI + Piper HAL)"
 docker compose -f deploy/services/comfyui/docker-compose.yml build

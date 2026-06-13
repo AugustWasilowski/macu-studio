@@ -27,7 +27,11 @@
 set -euo pipefail
 
 WITH_TALKING_HEAD="${MACU_INSTALL_TALKING_HEAD:-0}"
-for a in "$@"; do case "$a" in --with-talking-head) WITH_TALKING_HEAD=1;; esac; done
+WITH_MODELS="${MACU_INSTALL_MODELS:-1}"   # 0 = light install: skip every model pack
+for a in "$@"; do case "$a" in
+  --with-talking-head) WITH_TALKING_HEAD=1; WITH_MODELS=1;;
+  --no-models) WITH_MODELS=0;;
+esac; done
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 set -a; [ -f "$REPO/.env" ] && . "$REPO/.env"
@@ -49,6 +53,7 @@ if ! python3 -c 'import huggingface_hub' 2>/dev/null; then
 fi
 
 COMFY="$MACU_DATA_ROOT/comfyui"
+MODELS="$COMFY/models"
 T2V="$COMFY/models/text2video"
 say(){ printf '\n=== %s ===\n' "$1"; }
 
@@ -123,7 +128,12 @@ if [ ! -d "$NODE/.git" ]; then
   retry git clone --depth 1 https://github.com/ExponentialML/ComfyUI_ModelScopeT2V.git "$NODE"
 else echo "ModelScopeT2V node already present — skip"; fi
 
+if [ "$WITH_MODELS" = 0 ]; then
+  say "Light install — skipping all model packs (re-run ./deploy/fetch-models.sh to add them)"
+fi
+
 # --- text2video + clip weights (HuggingFace) ---------------------------------
+if [ "$WITH_MODELS" != 0 ]; then
 say "text2video + clip weights (~5.4 GB; skips files already present)"
 MODELS="$COMFY/models"
 mkdir -p "$MODELS/text2video" "$MODELS/clip"
@@ -183,7 +193,10 @@ for repo, fname, dst, final in WANT:
 print("text2video + clip weights ready")
 PY
 
+fi  # WITH_MODELS (zeroscope)
+
 # --- Z-Image still models (Characters page local engine) ----------------------
+if [ "$WITH_MODELS" != 0 ]; then
 say "Z-Image-Turbo still models (~10.5 GB; skips files already present)"
 hf_fetch "$(cat <<JSON
 [
@@ -193,6 +206,8 @@ hf_fetch "$(cat <<JSON
 ]
 JSON
 )"
+
+fi  # WITH_MODELS (z-image)
 
 # --- Talking-head stack (OPT-IN: ~28 GB) ---------------------------------------
 if [ "$WITH_TALKING_HEAD" = "1" ]; then
@@ -235,6 +250,7 @@ else
 fi
 
 # --- Ollama shot-gen model ----------------------------------------------------
+if [ "$WITH_MODELS" != 0 ]; then
 say "Ollama model (qwen2.5:7b-instruct-q4_K_M)"
 OLLAMA_COMPOSE="$REPO/deploy/services/ollama/docker-compose.yml"
 MACU_DATA_ROOT="$MACU_DATA_ROOT" retry docker compose -f "$OLLAMA_COMPOSE" up -d
@@ -246,6 +262,7 @@ if [ "$ready" -ne 1 ]; then
 fi
 retry docker exec ollama ollama pull qwen2.5:7b-instruct-q4_K_M
 echo "(ollama left running — the Studio backend manages start/stop on demand; 'docker stop ollama' to free VRAM)"
+fi  # WITH_MODELS (ollama)
 
 # --- Subtitle font ------------------------------------------------------------
 say "Subtitle font (BetterVCR.ttf)"

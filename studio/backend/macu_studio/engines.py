@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -47,6 +48,7 @@ DEFAULTS: dict = {
         "stills": "comfy_zimage",
         "cloud_video": "higgsfield",
         "lipsync": "higgsfield",
+        "textgen": "ollama_local",
     },
 }
 
@@ -69,6 +71,12 @@ def _capabilities(cfg: dict) -> list[dict]:
         {"id": "cloud_video", "engines": [
             {"id": "higgsfield", "available": True},
         ]},
+        {"id": "textgen", "engines": [
+            {"id": "ollama_local", "available": True},
+            {"id": "claude_cli", "available": _claude_installed(),
+             "reason": None if _claude_installed()
+                       else "install Claude Code (claude.com/claude-code) and sign in"},
+        ]},
         {"id": "lipsync", "engines": [
             {"id": "higgsfield", "available": True},
             {"id": "local_wan", "available": WAN_WORKFLOW.exists(),
@@ -85,7 +93,31 @@ _ALLOWED = {
     "stills": {"comfy_zimage", "higgsfield", "remote_render"},
     "cloud_video": {"higgsfield"},
     "lipsync": {"higgsfield", "local_wan", "remote_render"},
+    "textgen": {"ollama_local", "claude_cli"},
 }
+
+
+def claude_bin() -> str:
+    return os.environ.get("MACU_CLAUDE_BIN", "claude")
+
+
+def claude_path() -> str | None:
+    """Resolve the claude CLI. Under systemd the service PATH usually lacks
+    ~/.local/bin (the default user-install location), so check it explicitly."""
+    b = claude_bin()
+    if "/" in b:
+        return b if os.access(b, os.X_OK) else None
+    found = shutil.which(b)
+    if found:
+        return found
+    for cand in (Path.home() / ".local" / "bin" / b, Path("/usr/local/bin") / b):
+        if cand.exists() and os.access(cand, os.X_OK):
+            return str(cand)
+    return None
+
+
+def _claude_installed() -> bool:
+    return claude_path() is not None
 
 
 # ---- config io ------------------------------------------------------------------
@@ -127,7 +159,7 @@ def _env_overrides() -> tuple[dict, list[str]]:
         patch["endpoints"]["remote_render"]["url"] = remote.rstrip("/")
         patch["endpoints"]["remote_render"]["enabled"] = True
         over.append("endpoints.remote_render.url")
-    for cap in ("masters", "stills", "cloud_video", "lipsync"):
+    for cap in ("masters", "stills", "cloud_video", "lipsync", "textgen"):
         v = os.environ.get(f"MACU_ROUTE_{cap.upper()}", "").strip()
         if v:
             patch["routing"][cap] = v

@@ -3,8 +3,10 @@ async function J<T>(r: Response): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export type Capability = "masters" | "stills" | "cloud_video" | "lipsync";
-export type EngineId = "comfy_local" | "comfy_zimage" | "higgsfield" | "remote_render" | "local_wan";
+export type Capability = "masters" | "stills" | "cloud_video" | "lipsync" | "textgen";
+export type EngineId = "comfy_local" | "comfy_zimage" | "higgsfield" | "remote_render" | "local_wan" | "ollama_local" | "claude_cli";
+
+export interface ClaudeIntegration { installed: boolean; path: string | null; version: string | null; }
 
 export interface EnginesConfig {
   version: number;
@@ -31,4 +33,5 @@ export const enginesApi = {
       body: JSON.stringify(body),
     }).then((r) => J<EnginesConfig>(r)),
   probe: () => fetch("/api/engines/probe").then((r) => J<EngineProbe>(r)),
+  claude: () => fetch("/api/integrations/claude").then((r) => J<ClaudeIntegration>(r)),
 };

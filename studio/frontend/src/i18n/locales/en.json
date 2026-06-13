@@ -1187,5 +1187,17 @@
   "video.stillGroupLibrary": "Character library",
   "video.stillClear": "clear",
   "video.stillNone": "No stills yet — create characters and generate takes on the Characters tab.",
-  "video.manageCharacters": "manage characters →"
+  "video.manageCharacters": "manage characters →",
+  "engines.cap.textgen": "Script tools (LLM)",
+  "engines.name.ollama_local": "Ollama (local GPU)",
+  "engines.name.claude_cli": "Claude Code (your subscription)",
+  "engines.claude.title": "Claude Code",
+  "engines.claude.help": "Connect an agent to this Studio's MCP server, or route the script tools (shot lists, SFX plans, card text) through your Claude subscription — no local model needed.",
+  "engines.claude.installed": "installed",
+  "engines.claude.notInstalled": "not found on this machine — claude.com/claude-code",
+  "engines.claude.codeCmd": "Claude Code",
+  "engines.claude.desktopCmd": "Claude Desktop",
+  "engines.claude.copy": "copy",
+  "engines.claude.copied": "Copied to clipboard",
+  "engines.claude.textgenHint": "Tip: set Script tools above to \"Claude Code\" to generate shot lists with your Claude subscription instead of the local Ollama model — handy on light installs, and it skips the GPU entirely."
 }

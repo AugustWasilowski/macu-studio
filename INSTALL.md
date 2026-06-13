@@ -18,9 +18,13 @@ cd macu-studio
 ./deploy/start-studio.sh     # start Studio, then open http://localhost:8774/
 ```
 
-Add `--with-talking-head` to also pull the ~28 GB Wan 2.1 + InfiniteTalk stack
-(local talking-head/lipsync models — optional, can be added later by re-running
-`./deploy/fetch-models.sh --with-talking-head`).
+The installer asks (default **yes**) before pulling the ~18 GB AI model packs.
+Answer `n` for a **light install** — no local models; route stills/video/lipsync
+to Higgsfield or a remote MACU render box and the script tools to **Claude
+Code** in Settings → Engines. Pull the packs any time later with
+`./deploy/fetch-models.sh`. Flags: `--no-models`, `--with-models`, and
+`--with-talking-head` (adds the ~28 GB Wan 2.1 + InfiniteTalk local lipsync
+stack).
 
 Storage defaults to a repo-local **`./data/`** dir, so it works out of the box.
 To put the data elsewhere (e.g. a faster disk), set `MACU_SHARES` in `.env` and

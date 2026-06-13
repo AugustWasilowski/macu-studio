@@ -35,6 +35,7 @@ from . import compgen as compgen_mod
 from . import corpus as corpus_mod
 from . import emergency as emergency_mod
 from . import activity as activity_mod
+from . import engines as engines_mod
 from . import routes_assets, routes_graphics, routes_writers, routes_youtube, routes_docs, routes_gitsync, routes_shows, routes_voices, routes_version, routes_diag, routes_localize, routes_publish, routes_higgsfield, routes_engines, routes_characters
 from . import mcp_server
 from . import version as version_mod
@@ -641,7 +642,8 @@ def post_shots_generate(slug: str, body: dict = Body(default={})):
     is active). Sync def → runs in the threadpool so the long model call doesn't block."""
     only_missing = bool(body.get("only_missing"))
     busy, free = agen_mod.gpu_busy()
-    if busy:
+    if busy and engines_mod.route("textgen") == "ollama_local":
+        # Only Ollama competes for VRAM; the claude_cli engine runs off-GPU.
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
     activity_mod.set_running("Filling missing shots" if only_missing else "Generating shot list", ttl=180)
     try:
@@ -686,7 +688,8 @@ def post_sfx_generate(slug: str):
     GPU is busy (a render is active). Sync def → threadpool so the model call doesn't
     block the event loop."""
     busy, free = agen_mod.gpu_busy()
-    if busy:
+    if busy and engines_mod.route("textgen") == "ollama_local":
+        # Only Ollama competes for VRAM; the claude_cli engine runs off-GPU.
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
     activity_mod.set_running("Generating SFX list", ttl=180)
     try:
@@ -732,7 +735,8 @@ def post_card_text_generate(slug: str, body: dict = Body(default={})):
     if not card_type:
         raise HTTPException(400, "card_type required")
     busy, free = agen_mod.gpu_busy()
-    if busy:
+    if busy and engines_mod.route("textgen") == "ollama_local":
+        # Only Ollama competes for VRAM; the claude_cli engine runs off-GPU.
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
     activity_mod.set_running(f"Writing {card_type} card text", ttl=180)
     try:
@@ -793,7 +797,8 @@ def post_composition_generate(slug: str, body: dict = Body(...)):
     key = (body.get("key") or "").strip()
     brief = (body.get("brief") or "").strip()
     busy, free = agen_mod.gpu_busy()
-    if busy:
+    if busy and engines_mod.route("textgen") == "ollama_local":
+        # Only Ollama competes for VRAM; the claude_cli engine runs off-GPU.
         raise HTTPException(409, f"GPU busy ({free} MiB free) — a render is active; try again when idle")
     activity_mod.set_running(f"Generating composition {key}", ttl=240)
     try:

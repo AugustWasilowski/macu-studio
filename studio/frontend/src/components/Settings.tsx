@@ -386,7 +386,7 @@ function ArchivePanel() {
 }
 
 const URL_RE = /^https?:\/\/[\w.-]+(:\d+)?$/;
-const CAPABILITY_ORDER: Capability[] = ["masters", "stills", "cloud_video", "lipsync"];
+const CAPABILITY_ORDER: Capability[] = ["masters", "stills", "cloud_video", "lipsync", "textgen"];
 
 function EnginesPanel() {
   const t = useT();
@@ -438,6 +438,13 @@ function EnginesPanel() {
     const p = probe.data;
     const probing = probe.isFetching && !p;
     if (probing) return { color: "var(--amber, #fa3)", title: t("engines.probing") };
+    // textgen engines aren't network-probed — green from the availability matrix.
+    if (engine === "ollama_local" || engine === "claude_cli") {
+      const cap = c.capabilities.find((x) => x.id === "textgen");
+      const ok = cap?.engines.find((e) => e.id === engine)?.available;
+      return ok ? { color: "var(--green, #0c6)", title: "ok" }
+                : { color: "var(--line-soft)", title: t("engines.notConfigured") };
+    }
     const map: Record<string, keyof EngineProbe> = {
       comfy_local: "comfy_local", comfy_zimage: "comfy_local",
       higgsfield: "higgsfield", remote_render: "remote_render",
@@ -586,6 +593,9 @@ function EnginesPanel() {
         );
       })}
 
+      {/* ---- Claude Code connector ---- */}
+      <ClaudeCodeCard />
+
       {/* ---- Save bar ---- */}
       <div className="flex justify-end gap-2 pt-2 border-t hairline-soft sticky bottom-0 bg-bg-1 py-2">
         {dirty && (
@@ -597,6 +607,48 @@ function EnginesPanel() {
           {t("common.save")}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ClaudeCodeCard() {
+  const t = useT();
+  const pushToast = useStore((s) => s.pushToast);
+  const claude = useQuery({ queryKey: ["claude-integration"], queryFn: enginesApi.claude, staleTime: 60_000, retry: false });
+  const mcpUrl = `http://${window.location.host}/mcp`;
+  const addCmd = `claude mcp add --transport http macu-studio ${mcpUrl}`;
+  const desktopCmd = `npx -y mcp-remote@latest ${mcpUrl} --allow-http`;
+
+  const copy = (text: string) =>
+    navigator.clipboard.writeText(text).then(
+      () => pushToast(t("engines.claude.copied"), "ok"),
+      () => pushToast(text, "info"), // clipboard blocked (http) — show it instead
+    );
+
+  const CmdRow = ({ label, cmd }: { label: string; cmd: string }) => (
+    <div className="flex items-center gap-2">
+      <span className="label-tiny w-[110px] flex-none">{label}</span>
+      <code className="text-[10px] font-mono flex-1 truncate px-1.5 py-1 rounded bg-bg-3" title={cmd}>{cmd}</code>
+      <button className="btn text-[10px] px-1.5 py-0.5 flex-none" onClick={() => copy(cmd)}>{t("engines.claude.copy")}</button>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-2 pt-2 border-t hairline-soft">
+      <div className="flex items-center gap-2">
+        <span className="rounded-full flex-none" style={{
+          width: 10, height: 10,
+          background: claude.data?.installed ? "var(--green, #0c6)" : "var(--line-soft)",
+        }} />
+        <span className="label-tiny">{t("engines.claude.title")}</span>
+        <span className="label-tiny text-txt-faint ml-auto">
+          {claude.data?.installed ? (claude.data.version ?? t("engines.claude.installed")) : t("engines.claude.notInstalled")}
+        </span>
+      </div>
+      <p className="label-tiny leading-relaxed">{t("engines.claude.help")}</p>
+      <CmdRow label={t("engines.claude.codeCmd")} cmd={addCmd} />
+      <CmdRow label={t("engines.claude.desktopCmd")} cmd={desktopCmd} />
+      <p className="label-tiny leading-relaxed text-txt-faint">{t("engines.claude.textgenHint")}</p>
     </div>
   );
 }
