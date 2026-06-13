@@ -317,6 +317,46 @@ def usage(show_id: str, key: str) -> list[dict]:
     return out
 
 
+def _stub_key(name: str) -> str | None:
+    """Speaker/character name → a library key, or None if it can't be one."""
+    k = (name or "").strip().lower().replace(" ", "_")
+    k = "".join(ch for ch in k if ch.isalnum() or ch in "_-")
+    if not k:
+        return None
+    try:
+        return shows_mod.safe_segment(k, "character key")
+    except ValueError:
+        return None
+
+
+def ensure_stubs(show_id: str, manifest: dict) -> list[str]:
+    """Seed library stubs for every character/speaker the manifest mentions that
+    isn't in the roster yet — empty prompts, no takes, ready to fill in on the
+    Characters page. Called after manifest generation / shot-apply so the Cast
+    builds itself as episodes are written. Never touches existing characters."""
+    created: list[str] = []
+    seen: dict[str, dict] = {}
+    for key, val in (manifest.get("characters") or {}).items():
+        k = _stub_key(key)
+        if k:
+            seen[k] = val if isinstance(val, dict) else {"core": str(val or "")}
+    for cue in manifest.get("cues") or []:
+        k = _stub_key(cue.get("speaker") or "")
+        if k:
+            seen.setdefault(k, {})
+    for k, entry in seen.items():
+        if _json_path(show_id, k).exists():
+            continue
+        create(show_id, k, {
+            "name": k.replace("_", " ").title(),
+            "core": entry.get("core") or "",
+            "still_prompt": entry.get("still_prompt") or "",
+            "seed": entry.get("seed"),
+        })
+        created.append(k)
+    return created
+
+
 def import_episode(show_id: str, slug: str) -> dict:
     """Seed library entries from an episode's manifest characters (+ stills as
     take-001 where present). Existing library characters are left alone."""

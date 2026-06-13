@@ -472,5 +472,16 @@ def apply(slug: str) -> dict:
         ts = time.strftime("%Y%m%d-%H%M%S", time.localtime(path.stat().st_mtime))
         shutil.copy2(path, path.with_suffix(f".json.bak.{ts}"))
     saved = manifest_mod.save(slug, built["manifest"])
+    # Seed Cast stubs for new speakers/characters so the Characters page fills
+    # itself as episodes are written (best-effort; never blocks the apply).
+    cast_created: list[str] = []
+    try:
+        from . import characters as chars_mod
+        from . import shows as shows_mod
+        show, _ = shows_mod.resolve_episode(slug)
+        cast_created = chars_mod.ensure_stubs(show, built["manifest"])
+    except Exception:
+        pass
     return {"summary": built["summary"], "saved": saved,
+            "cast_created": cast_created,
             "backup": str(path.with_suffix(".json.bak.*"))}

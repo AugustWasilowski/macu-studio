@@ -8,16 +8,11 @@ from fastapi import APIRouter, Body, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from . import characters as chars
-from . import comfy_stills
-from . import engines
-from . import higgsfield as hf
-from . import remote_render
 from . import shows as shows_mod
+from . import still_engines
 from . import stilljobs
 
 router = APIRouter()
-
-STILL_ENGINES = ("comfy_zimage", "higgsfield", "remote_render")
 
 
 def _check_show(show: str) -> str:
@@ -114,46 +109,19 @@ async def post_upload_take(show: str, key: str, file: UploadFile):
 
 # ---- generation -------------------------------------------------------------------
 
-async def _gen_one(engine: str, prompt: str, seed: int | None, params: dict,
-                   dest: Path, name: str) -> dict:
-    if engine == "comfy_zimage":
-        return await comfy_stills.generate_one(prompt, seed, params, dest)
-    if engine == "remote_render":
-        return await remote_render.generate_one(prompt, seed, params, dest, name=name)
-    if engine == "higgsfield":
-        blk_model = (params or {}).get("model") or "soul_2"
-        g = await hf.generate("generate_image", {
-            "model": blk_model, "prompt": prompt, "aspect_ratio": "1:1", "count": 1,
-        })
-        res = await hf.wait_job(g["job_id"], timeout=600)
-        urls = hf.find_media_urls(res, exts=(".png", ".jpg", ".jpeg", ".webp")) \
-            or hf.find_media_urls(res)
-        if not urls:
-            raise RuntimeError(f"Higgsfield job finished but returned no image: {str(res)[:200]}")
-        with tempfile.NamedTemporaryFile(suffix=".img", delete=False) as t:
-            raw = Path(t.name)
-        try:
-            await hf.download(urls[0], raw)
-            stilljobs.png_normalize(raw, dest)
-        finally:
-            raw.unlink(missing_ok=True)
-        return {"seed": seed, "params": {}, "model": blk_model}
-    raise RuntimeError(f"unknown still engine: {engine}")
-
-
 @router.post("/api/shows/{show}/characters/{key}/generate")
 async def post_generate(show: str, key: str, body: dict = Body(default={})):
     """Generate 1-4 takes. body: {engine?, prompt?, seed?, count?, params?{model,
     width,height,steps,cfg,shift}}. engine defaults to the routed stills engine."""
     _check_show(show)
     c = _404(chars.load, show, key)
-    engine = (body.get("engine") or "").strip() or engines.route("stills")
-    if engine not in STILL_ENGINES:
-        raise HTTPException(400, f"engine must be one of {', '.join(STILL_ENGINES)}")
-    if engine == "higgsfield" and not hf.status()["connected"]:
-        raise HTTPException(409, "Higgsfield not connected — connect in Settings → Higgsfield")
-    if engine == "remote_render" and not engines.remote_url():
-        raise HTTPException(409, "remote render service not configured — Settings → Engines")
+    try:
+        engine = still_engines.resolve_engine(body.get("engine") or "")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    not_ready = still_engines.check_ready(engine)
+    if not_ready:
+        raise HTTPException(409, not_ready)
     prompt = (body.get("prompt") or "").strip() or (c.get("still_prompt") or "").strip()
     if not prompt:
         raise HTTPException(400, f"no prompt — set still_prompt on '{key}' or pass one")
@@ -169,8 +137,8 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
                 tmp = Path(t.name)
             tmp.unlink()  # engine writes it
             use_seed = (int(seed) + i) if seed not in (None, "") else None
-            info = await _gen_one(engine, prompt, use_seed, params, tmp,
-                                  name=f"{show}-{key}")
+            info = await still_engines.generate_one(engine, prompt, use_seed, params, tmp,
+                                                     name=f"{show}-{key}")
             chars.add_take(show, key, tmp, engine=engine, model=info.get("model"),
                            prompt=prompt, seed=info.get("seed"),
                            params=info.get("params"))

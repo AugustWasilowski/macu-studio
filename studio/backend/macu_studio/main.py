@@ -664,9 +664,17 @@ async def post_shots_apply(slug: str, body: dict = Body(...)):
     if not isinstance(proposal, dict):
         raise HTTPException(400, "proposal object required")
     try:
-        return shotgen_mod.apply(slug, proposal)
+        out = shotgen_mod.apply(slug, proposal)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
+    # New character defs from the shot plan → Cast stubs (best-effort).
+    try:
+        from . import characters as chars_mod
+        show, _ = shows_mod.resolve_episode(slug)
+        out["cast_created"] = chars_mod.ensure_stubs(show, manifest_mod.load(slug))
+    except Exception:
+        pass
+    return out
 
 
 # ---------- LLM sound-effect-list generation (Ollama on-demand) ----------

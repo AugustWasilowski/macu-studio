@@ -71,10 +71,11 @@ def _capabilities(cfg: dict) -> list[dict]:
         ]},
         {"id": "lipsync", "engines": [
             {"id": "higgsfield", "available": True},
-            {"id": "local_wan", "available": False,
-             "reason": "coming soon — install with --with-talking-head"
-                       if not WAN_WORKFLOW.exists()
-                       else "workflow installed — pipeline wiring lands in a future update"},
+            {"id": "local_wan", "available": WAN_WORKFLOW.exists(),
+             "reason": None if WAN_WORKFLOW.exists()
+                       else "install with --with-talking-head (~33 GB models)"},
+            {"id": "remote_render", "available": remote_on,
+             "reason": None if remote_on else "set + enable the remote render URL"},
         ]},
     ]
 
@@ -83,7 +84,7 @@ _ALLOWED = {
     "masters": {"comfy_local"},
     "stills": {"comfy_zimage", "higgsfield", "remote_render"},
     "cloud_video": {"higgsfield"},
-    "lipsync": {"higgsfield"},  # local_wan intentionally not settable yet
+    "lipsync": {"higgsfield", "local_wan", "remote_render"},
 }
 
 

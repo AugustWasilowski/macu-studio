@@ -150,18 +150,22 @@ def shot_hash(shot: dict, manifest: dict, ep_dir: Path) -> str:
     })
 
 
-def lipsync_hash(shot: dict, manifest: dict, ep_dir: Path, cue_id: str) -> str:
+def lipsync_hash(shot: dict, manifest: dict, ep_dir: Path, cue_id: str,
+                 engine: str = "higgsfield") -> str:
     p = shot_params(shot, manifest)
     still = resolve_still(shot, manifest, ep_dir)
     vo = ep_dir / "vo" / f"{cue_id}.wav"
-    return _h({
-        "model": p["model"],
-        "resolution": p["resolution"],
-        "aspect_ratio": p["aspect_ratio"],
+    payload = {
         "still_sha": file_sha(still) if still else None,
         "vo_sha": file_sha(vo),
-        "chunk_max_s": CHUNK_MAX_S,
-    })
+        "engine": engine,
+    }
+    if engine == "higgsfield":
+        # Model/resolution shape the cloud generation; the local/remote
+        # InfiniteTalk graph is fixed, so they'd only cause spurious staleness.
+        payload.update({"model": p["model"], "resolution": p["resolution"],
+                        "aspect_ratio": p["aspect_ratio"], "chunk_max_s": CHUNK_MAX_S})
+    return _h(payload)
 
 
 def still_hash(char: dict, manifest: dict) -> str:
@@ -194,11 +198,11 @@ def referenced_stills(manifest: dict) -> list[str]:
 
 
 def shot_state(shot: dict, cue: dict, manifest: dict, ep_dir: Path,
-               cached: dict[str, str]) -> dict:
+               cached: dict[str, str], lipsync_engine: str = "higgsfield") -> dict:
     """Cache verdict for one cloud shot: {hash, exists, fresh}."""
     sid = shot.get("id") or ""
     if shot.get("kind") == "lipsync":
-        h = lipsync_hash(shot, manifest, ep_dir, cue.get("id") or "")
+        h = lipsync_hash(shot, manifest, ep_dir, cue.get("id") or "", lipsync_engine)
     else:
         h = shot_hash(shot, manifest, ep_dir)
     clip = clip_path(ep_dir, sid)

@@ -16,18 +16,20 @@ the VO that stage 4 muxes.
 
 Usage: python3 stage_2b_cloud.py <slug>
 """
-import json, math, os, re, subprocess, sys, threading, time, urllib.error, urllib.request
+import json, math, mimetypes, os, random, re, subprocess, sys, threading, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
 import hf_cache as hfc
-from lib import episode_paths, load_manifest, ensure_dirs, probe_dur, progress_tick
+from lib import COMFY_URL, episode_paths, load_manifest, ensure_dirs, probe_dur, progress_tick
 
 STUDIO_URL = os.environ.get("MACU_STUDIO_URL", "http://127.0.0.1:8774").rstrip("/")
 MAX_CONCURRENT = 3        # parallel cloud jobs (Higgsfield free tier ~10; stay polite)
 JOB_TIMEOUT = 900         # per-generation ceiling
 STILL_TIMEOUT = 600
+WORKFLOWS_DIR = Path(__file__).resolve().parent / "workflows"
+LIPSYNC_FPS = 25          # the InfiniteTalk graph renders 25fps; stage 4 conforms to 24
 
 # Models whose media schema accepts a plain "image" reference role; everything
 # else gets "start_image". Server-side auto-coercion covers the gray area.
@@ -171,7 +173,203 @@ def _gen_video_shot(slug, m, ep, cue, shot):
     return sid
 
 
-# ---- lipsync shots -----------------------------------------------------------------------
+# ---- lipsync: local ComfyUI (wan21_infinitetalk) -----------------------------------------
+
+def _comfy_upload(path: Path) -> str:
+    """Upload a file into ComfyUI's input dir via /upload/image (it accepts any
+    file type — LoadAudio reads the same input dir). Returns the stored name."""
+    boundary = "----macu" + "".join(random.choices("0123456789abcdef", k=16))
+    ct = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="image"; filename="{path.name}"\r\n'
+        f"Content-Type: {ct}\r\n\r\n"
+    ).encode() + path.read_bytes() + (
+        f"\r\n--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="overwrite"\r\n\r\ntrue\r\n'
+        f"--{boundary}--\r\n"
+    ).encode()
+    req = urllib.request.Request(
+        f"{COMFY_URL}/upload/image", data=body, method="POST",
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        out = json.loads(r.read())
+    return out.get("name") or path.name
+
+
+def _bind_workflow(workflow_id: str, **params):
+    """Minimal mirror of the Studio registry's bind(): deep-copy the graph and
+    apply params along meta.inputs paths."""
+    wf = json.loads((WORKFLOWS_DIR / f"{workflow_id}.json").read_text())
+    meta, graph = wf["meta"], json.loads(json.dumps(wf["graph"]))
+    applied = dict(meta.get("defaults") or {})
+    applied.update({k: v for k, v in params.items() if v is not None})
+    if applied.get("seed") is None:
+        applied["seed"] = random.randint(0, 2**32 - 1)
+    for name, (node, key, field) in (meta.get("inputs") or {}).items():
+        if name in applied:
+            graph[str(node)][key][field] = applied[name]
+    return graph, meta["output_node"]
+
+
+def _conform_to_vo(raw: Path, out: Path, vo_dur: float, label: str) -> None:
+    """Talking-head mp4 (25fps, model audio) → pipeline clip: video-only, 24fps,
+    exactly vo_dur (stage 4 muxes the canonical VO wav)."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _ff(["-i", str(raw), "-an", "-r", "24",
+         "-vf", f"tpad=stop_mode=clone:stop_duration={vo_dur:.4f}",
+         "-t", f"{vo_dur:.4f}",
+         "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+         "-pix_fmt", "yuv420p", str(out)], label)
+
+
+def _gen_lipsync_local(slug, m, ep, cue, shot):
+    """One-shot whole-VO talking head on the local/routed ComfyUI — InfiniteTalk's
+    sliding window handles long audio natively, so no chunking here."""
+    sid, cid = shot["id"], cue["id"]
+    vo = ep / "vo" / f"{cid}.wav"
+    if not vo.exists():
+        raise RuntimeError(f"lipsync shot {sid}: vo/{cid}.wav missing — run stage 1 first")
+    still = hfc.resolve_still(shot, m, ep)
+    if not still or not still.exists():
+        raise RuntimeError(f"lipsync shot {sid}: source_still required")
+    vo_dur = probe_dur(str(vo))
+
+    img_name = _comfy_upload(still)
+    wav_name = _comfy_upload(vo)
+    graph, out_node = _bind_workflow(
+        "wan21_infinitetalk",
+        prompt=hfc.resolve_prompt(shot, m) or None,
+        image=img_name, audio=wav_name,
+        seed=shot.get("seed"),
+        max_frames=int(vo_dur * LIPSYNC_FPS) + 1,
+        filename_prefix=f"macu_lipsync_{slug}_{sid}",
+    )
+    req = urllib.request.Request(
+        f"{COMFY_URL}/prompt",
+        data=json.dumps({"prompt": graph, "client_id": f"macu-lipsync-{slug}"}).encode(),
+        headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            pid = json.loads(r.read())["prompt_id"]
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"lipsync {sid}: ComfyUI rejected the workflow ({e.code}): "
+                           f"{e.read().decode()[:400]} — are the talking-head models + "
+                           f"WanVideoWrapper/VHS/KJNodes installed (--with-talking-head)?")
+
+    # Slow renders (minutes per VO second on small GPUs). Stall-based watchdog:
+    # as long as ComfyUI's queue is busy we keep waiting, up to a hard ceiling.
+    HARD_S = 3 * 3600
+    STALL_S = 600
+    start = time.time()
+    last_busy = time.time()
+    files = None
+    while True:
+        time.sleep(10)
+        try:
+            with urllib.request.urlopen(f"{COMFY_URL}/history/{pid}", timeout=30) as r:
+                entry = json.loads(r.read()).get(pid)
+        except Exception:
+            entry = None
+        if entry and entry.get("status", {}).get("completed"):
+            outs = entry.get("outputs", {}).get(out_node, {}) or {}
+            files = outs.get("gifs") or outs.get("videos") or outs.get("images") or []
+            if not files:
+                raise RuntimeError(f"lipsync {sid}: graph finished but node {out_node} "
+                                   f"produced no video output")
+            break
+        if entry and entry.get("status", {}).get("status_str") == "error":
+            msgs = [x for x in entry.get("status", {}).get("messages", [])
+                    if x and x[0] == "execution_error"]
+            detail = (msgs[0][1].get("exception_message") if msgs else "") or "execution error"
+            raise RuntimeError(f"lipsync {sid}: ComfyUI error — {str(detail)[:400]}")
+        try:
+            with urllib.request.urlopen(f"{COMFY_URL}/queue", timeout=15) as r:
+                q = json.loads(r.read())
+            busy = bool(q.get("queue_running") or q.get("queue_pending"))
+        except Exception:
+            busy = False
+        if busy:
+            last_busy = time.time()
+        elif time.time() - last_busy > STALL_S and not entry:
+            raise RuntimeError(f"lipsync {sid}: ComfyUI lost the job (idle queue, "
+                               f"no history) — it likely crashed or was restarted")
+        if time.time() - start > HARD_S:
+            raise RuntimeError(f"lipsync {sid}: still rendering after {HARD_S//3600}h — giving up")
+
+    f0 = files[0]
+    from urllib.parse import urlencode
+    url = f"{COMFY_URL}/view?" + urlencode({
+        "filename": f0["filename"], "subfolder": f0.get("subfolder", ""),
+        "type": f0.get("type", "output")})
+    work = ep / ".work" / f"hf_{sid}"
+    work.mkdir(parents=True, exist_ok=True)
+    raw = work / "local_raw.mp4"
+    _download(url, raw)
+    _conform_to_vo(raw, hfc.clip_path(ep, sid), vo_dur, f"lipsync {sid} conform")
+    print(f"  lipsync {sid}: local ComfyUI done ({vo_dur:.1f}s VO, "
+          f"{round(time.time()-start)}s wall)")
+    return sid
+
+
+# ---- lipsync: remote render service (leo-render :8779 API) --------------------------------
+
+def _gen_lipsync_remote(slug, m, ep, cue, shot, base_url):
+    sid, cid = shot["id"], cue["id"]
+    vo = ep / "vo" / f"{cid}.wav"
+    if not vo.exists():
+        raise RuntimeError(f"lipsync shot {sid}: vo/{cid}.wav missing — run stage 1 first")
+    still = hfc.resolve_still(shot, m, ep)
+    if not still or not still.exists():
+        raise RuntimeError(f"lipsync shot {sid}: source_still required")
+    vo_dur = probe_dur(str(vo))
+
+    body = {"name": f"{slug}-{sid}",
+            "image_path": str(still), "audio_path": str(vo),
+            "params": {"frames": int(vo_dur * LIPSYNC_FPS) + 1,
+                       "steps": 10, "audio_cfg_scale": 3.0}}
+    req = urllib.request.Request(f"{base_url}/render", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            job_id = json.loads(r.read())["job_id"]
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"lipsync {sid}: remote render service unreachable at "
+                           f"{base_url} ({getattr(e, 'reason', e)}) — start it, or "
+                           f"reroute lipsync in Settings → Engines")
+
+    deadline = time.time() + max(1800.0, vo_dur * 240)   # cold start + queue headroom
+    start = time.time()
+    output = None
+    while True:
+        time.sleep(20)
+        with urllib.request.urlopen(f"{base_url}/status/{job_id}", timeout=30) as r:
+            st = json.loads(r.read())
+        if st.get("status") == "done":
+            output = st.get("output")
+            break
+        if st.get("status") == "error":
+            raise RuntimeError(f"lipsync {sid}: remote render failed — {st.get('error')}")
+        if time.time() > deadline:
+            raise RuntimeError(f"lipsync {sid}: remote render still "
+                               f"'{st.get('status')}' after {int(time.time()-start)}s")
+
+    work = ep / ".work" / f"hf_{sid}"
+    work.mkdir(parents=True, exist_ok=True)
+    raw = work / "remote_raw.mp4"
+    src = Path(output) if output else None
+    if src and src.exists():
+        import shutil
+        shutil.copyfile(src, raw)
+    else:
+        _download(f"{base_url}/result/{job_id}", raw)
+    _conform_to_vo(raw, hfc.clip_path(ep, sid), vo_dur, f"lipsync {sid} conform")
+    print(f"  lipsync {sid}: remote render done ({vo_dur:.1f}s VO, "
+          f"{round(time.time()-start)}s wall)")
+    return sid
+
+
+# ---- lipsync shots (Higgsfield cloud: chunk + chain) ---------------------------------------
 
 def _silence_midpoints(wav):
     """[(midpoint_s)] of detected silences — candidate chunk boundaries."""
@@ -312,10 +510,24 @@ def main(slug):
     if not cloud:
         return {"cloud_rendered": 0, "cloud_skipped": 0}
 
-    auth = _api("GET", "/api/higgsfield/auth", timeout=30)
-    if not auth.get("connected"):
-        raise RuntimeError("[stage 2b cloud] Higgsfield not connected — connect in "
-                           "Studio Settings → Higgsfield (or remove the cloud shots)")
+    # Engine routing (Settings → Engines). Lipsync can run on Higgsfield, the
+    # local/routed ComfyUI (wan21_infinitetalk), or a remote render service.
+    eng_cfg = _api("GET", "/api/engines", timeout=30)
+    lipsync_engine = (eng_cfg.get("routing") or {}).get("lipsync") or "higgsfield"
+    remote_ep = (eng_cfg.get("endpoints") or {}).get("remote_render") or {}
+    remote_url = remote_ep.get("url", "").rstrip("/") if remote_ep.get("enabled") else ""
+    if lipsync_engine == "remote_render" and not remote_url:
+        raise RuntimeError("[stage 2b cloud] lipsync is routed to the remote render "
+                           "service but its URL isn't set/enabled — Settings → Engines")
+
+    needs_hf = any(s.get("kind") == "higgsfield" for _c, s in cloud) \
+        or (lipsync_engine == "higgsfield"
+            and any(s.get("kind") == "lipsync" for _c, s in cloud))
+    if needs_hf:
+        auth = _api("GET", "/api/higgsfield/auth", timeout=30)
+        if not auth.get("connected"):
+            raise RuntimeError("[stage 2b cloud] Higgsfield not connected — connect in "
+                               "Studio Settings → Higgsfield (or reroute/remove the cloud shots)")
 
     stills_made = _ensure_stills(slug, m, ep)
 
@@ -324,13 +536,13 @@ def main(slug):
     entries = hfc.load_sidecar(sc_path, "shots")
     todo = []
     for cue, shot in cloud:
-        st = hfc.shot_state(shot, cue, m, ep, entries)
+        st = hfc.shot_state(shot, cue, m, ep, entries, lipsync_engine=lipsync_engine)
         if st["fresh"]:
             continue
         todo.append((cue, shot, st["hash"]))
     skipped = len(cloud) - len(todo)
     print(f"[stage 2b cloud] {len(todo)} shot(s) to generate, {skipped} cached, "
-          f"{stills_made} still(s) made")
+          f"{stills_made} still(s) made (lipsync engine: {lipsync_engine})")
     if not todo:
         return {"cloud_rendered": 0, "cloud_skipped": skipped, "stills": stills_made}
 
@@ -341,7 +553,12 @@ def main(slug):
     def work_one(item):
         cue, shot, h = item
         if shot.get("kind") == "lipsync":
-            sid = _gen_lipsync_shot(slug, m, ep, cue, shot)
+            if lipsync_engine == "local_wan":
+                sid = _gen_lipsync_local(slug, m, ep, cue, shot)
+            elif lipsync_engine == "remote_render":
+                sid = _gen_lipsync_remote(slug, m, ep, cue, shot, remote_url)
+            else:
+                sid = _gen_lipsync_shot(slug, m, ep, cue, shot)
         else:
             sid = _gen_video_shot(slug, m, ep, cue, shot)
         with lock:

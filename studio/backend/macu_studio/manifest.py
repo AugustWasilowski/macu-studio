@@ -6,6 +6,7 @@ from typing import Any
 
 from .episodes import episode_dir, manifest_path, final_video_path, final_srt_path, final_thumb_path
 from .config import SHARES
+from . import engines
 from . import hfcache
 from . import models
 from . import version
@@ -204,8 +205,9 @@ def derive_shots(slug: str, manifest: dict | None = None) -> list[dict]:
     # hash-accurate — we own clips/.hf_cache.json from day one, so the deferred-
     # staleness caveat on local shots doesn't apply.
     cached = hfcache.load_sidecar(hfcache.clips_sidecar_path(ep), "shots")
+    lipsync_engine = engines.route("lipsync")
     for cue, shot in hfcache.cloud_shots(m):
-        st = hfcache.shot_state(shot, cue, m, ep, cached)
+        st = hfcache.shot_state(shot, cue, m, ep, cached, lipsync_engine=lipsync_engine)
         sid = shot.get("id") or ""
         clip = hfcache.clip_path(ep, sid)
         rows.append({

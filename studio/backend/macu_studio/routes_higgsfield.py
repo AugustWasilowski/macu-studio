@@ -18,9 +18,11 @@ from pathlib import Path
 from fastapi import APIRouter, Body, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 
+from . import engines
 from . import higgsfield as hf
 from . import hfcache as hfc
 from . import manifest as manifest_mod
+from . import still_engines
 from . import stilljobs
 from .config import SHARES
 from .episodes import episode_dir
@@ -206,19 +208,25 @@ async def get_estimate(slug: str):
         raise HTTPException(404, f"unknown episode {slug}")
     ep = episode_dir(slug)
     cached = hfc.load_sidecar(hfc.clips_sidecar_path(ep), "shots")
+    lipsync_engine = engines.route("lipsync")
 
     shots_out: list[dict] = []
     total = 0.0
     unknown = 0
     try:
         for cue, shot in hfc.cloud_shots(m):
-            st = hfc.shot_state(shot, cue, m, ep, cached)
+            st = hfc.shot_state(shot, cue, m, ep, cached, lipsync_engine=lipsync_engine)
             kind = shot.get("kind")
             row: dict = {"id": shot.get("id"), "cue": cue.get("id"), "kind": kind,
                          "cached": st["fresh"], "credits": 0.0, "segments": 1, "note": None}
             if not st["fresh"]:
                 params = hfc.shot_params(shot, m)
-                if kind == "lipsync":
+                if kind == "lipsync" and lipsync_engine != "higgsfield":
+                    # Local/remote engines don't bill — listed, priced zero.
+                    row["note"] = ("local ComfyUI engine — free"
+                                   if lipsync_engine == "local_wan"
+                                   else "remote render engine — free")
+                elif kind == "lipsync":
                     vo = ep / "vo" / f"{cue.get('id')}.wav"
                     dur = manifest_mod._wav_dur(vo)
                     if dur is None:
@@ -298,27 +306,15 @@ async def _gen_still(slug: str, who: str, key: str) -> None:
         if not prompt:
             raise RuntimeError(f"character '{who}' has no still_prompt — set one first")
         blk = hfc.hf_block(m)
-        model = char.get("still_model") or blk["image_model"]
+        # Honors Settings → Engines routing (local Z-Image / Higgsfield / remote).
+        engine = still_engines.resolve_engine()
         job["state"] = "generating"
-        g = await hf.generate("generate_image", {
-            "model": model, "prompt": prompt, "aspect_ratio": "1:1", "count": 1,
-        })
-        job["job_id"] = g["job_id"]
-        res = await hf.wait_job(g["job_id"], timeout=600)
-        urls = hf.find_media_urls(res, exts=(".png", ".jpg", ".jpeg", ".webp"))
-        if not urls:
-            urls = hf.find_media_urls(res)
-        if not urls:
-            raise RuntimeError(f"job finished but no image URL found: {str(res)[:300]}")
-        job["state"] = "downloading"
+        job["engine"] = engine
         dest = hfc.still_path(ep, who)
-        with tempfile.NamedTemporaryFile(suffix=".img", dir="/tmp", delete=False) as t:
-            raw = Path(t.name)
-        try:
-            await hf.download(urls[0], raw)
-            await asyncio.to_thread(_png_normalize, raw, dest)
-        finally:
-            raw.unlink(missing_ok=True)
+        params = {"model": char.get("still_model") or blk["image_model"]} \
+            if engine == "higgsfield" else {}
+        await still_engines.generate_one(engine, prompt, None, params, dest,
+                                         name=f"{slug}-{who}")
         # Stamp the sidecar so derive/estimate can prove freshness.
         sc_path = hfc.stills_sidecar_path(ep)
         entries = hfc.load_sidecar(sc_path, "stills")
@@ -342,8 +338,9 @@ async def post_still_regen(slug: str, who: str):
     chars = m.get("characters") or {}
     if who not in chars:
         raise HTTPException(404, f"unknown character {who}")
-    if not hf.status()["connected"]:
-        raise HTTPException(409, "Higgsfield not connected — connect in Settings → Higgsfield")
+    not_ready = still_engines.check_ready(still_engines.resolve_engine())
+    if not_ready:
+        raise HTTPException(409, not_ready)
     key = f"{slug}:{who}"
     if stilljobs.is_active(key):
         raise HTTPException(409, f"a still generation for {who} is already running")
