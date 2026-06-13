@@ -146,6 +146,141 @@ def _rebind_voice(show: str, voice_name: str, new_id: str) -> int:
     return count
 
 
+@router.post("/api/voices/start")
+async def post_voices_start():
+    """Start the OmniVoice container (consumer-lifecycle, GPU) and wait until it
+    answers. Returns the live roster. Use before casting/validating when the engine
+    is idle — the TTS probe in /api/engines/probe shows whether it's up."""
+    try:
+        await run_in_threadpool(voices.ensure_up)
+    except RuntimeError as e:
+        raise HTTPException(502, str(e))
+    return voices.list_profiles_safe()
+
+
+@router.post("/api/voices/import")
+async def post_voices_import(body: dict = Body(default={})):
+    """Import a voices export into the LOCAL OmniVoice. `zip_path` (server-local)
+    is unpacked into refs/ first; omit it to (re)clone reference clips already on
+    disk. `names` limits to a subset; `show` rebinds that show's speaker_map entries
+    (by voice_name) to the freshly minted profile_ids. Clones run one at a time
+    (GPU). Returns {imported:{name:id}, rebound:{name:n}, failed:[{name,error}]}."""
+    zip_path = (body.get("zip_path") or "").strip()
+    only = body.get("names") or None
+    show = (body.get("show") or "").strip() or None
+
+    def _do_import() -> dict:
+        names: list[str] = []
+        # 1) unpack the zip's reference clips into refs/ (if a zip was given).
+        if zip_path:
+            p = Path(zip_path)
+            if not p.is_file():
+                raise FileNotFoundError(f"no zip at {zip_path}")
+            with zipfile.ZipFile(p) as zf:
+                meta_names = []
+                if "export.json" in zf.namelist():
+                    try:
+                        meta = json.loads(zf.read("export.json"))
+                        meta_names = [v.get("name") for v in (meta.get("voices") or [])
+                                      if v.get("name")]
+                    except Exception:
+                        meta_names = []
+                # map slug -> raw bytes for every bundled clip
+                slug_bytes = {Path(n).stem: zf.read(n) for n in zf.namelist()
+                              if n.startswith("voices/") and n.lower().endswith(".wav")}
+                # Prefer export.json's real (cased) names; fall back to slugs.
+                cand = meta_names or list(slug_bytes)
+                for nm in cand:
+                    data = slug_bytes.get(voices._slug(nm))
+                    if data is None:
+                        continue
+                    voices.import_ref(nm, data)
+                    names.append(nm)
+        else:
+            names = list(voices.all_refs().keys())
+        if only:
+            wanted = set(only)
+            names = [n for n in names if n in wanted]
+        if not names:
+            return {"imported": {}, "rebound": {}, "failed": [],
+                    "note": "no reference clips found to import"}
+        # 2) clone each into OmniVoice (serial — the engine is single-model).
+        imported: dict[str, str] = {}
+        rebound: dict[str, int] = {}
+        failed: list[dict] = []
+        for nm in names:
+            try:
+                res = voices.clone_ref(nm)
+                pid = res.get("id")
+                if not pid:
+                    failed.append({"name": nm, "error": "no profile_id returned"})
+                    continue
+                imported[nm] = pid
+                if show:
+                    rebound[nm] = _rebind_voice(show, nm, pid)
+            except Exception as e:  # noqa: BLE001
+                failed.append({"name": nm, "error": str(e)[:300]})
+        return {"imported": imported, "rebound": rebound, "failed": failed,
+                "count": len(imported)}
+
+    try:
+        return await run_in_threadpool(_do_import)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except RuntimeError as e:
+        raise HTTPException(502, str(e))
+
+
+@router.get("/api/episodes/{slug}/cast/validate")
+def get_cast_validate(slug: str):
+    """Cast doctor: cross-check every speaker the script uses against the running
+    OmniVoice roster, BEFORE a render. Flags speakers cast to OmniVoice whose
+    profile_id is stale (but recoverable by voice_name → self-heals at render) and
+    those that resolve by neither (would render a fallback voice → fix the cast or
+    import the voice). Speakers with no map entry use the default robot voice."""
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    sm = (m.get("voice") or {}).get("speaker_map") or {}
+    used = []
+    seen = set()
+    for c in (m.get("cues") or []):
+        s = c.get("speaker")
+        if s and s not in seen and c.get("hold_seconds") is None and (c.get("vo") or "").strip():
+            seen.add(s); used.append(s)
+
+    roster = voices.list_profiles_safe()
+    live_ids = {p.get("id") for p in roster.get("profiles") or []}
+    live_names = {p.get("name") for p in roster.get("profiles") or []}
+
+    speakers, problems = [], []
+    for s in used:
+        v = sm.get(s)
+        if not isinstance(v, dict) or v.get("engine") != "omnivoice":
+            speakers.append({"speaker": s, "engine": (v or {}).get("engine") or "default",
+                             "status": "default_voice"})
+            continue
+        pid, vname = v.get("profile_id"), v.get("voice_name")
+        if pid and pid in live_ids:
+            status = "ok"
+        elif vname and vname in live_names:
+            status = "self_heal"   # id stale but resolves by name at render
+        else:
+            status = "missing"; problems.append(s)
+        speakers.append({"speaker": s, "engine": "omnivoice",
+                         "voice_name": vname, "profile_id": pid, "status": status})
+
+    return {"slug": slug, "engine_running": roster.get("running", False),
+            "profiles_loaded": len(live_ids),
+            "ok": not problems and roster.get("running", False),
+            "missing": problems, "speakers": speakers,
+            "hint": ("Import/clone the missing voices (import_voices) so they resolve by "
+                     "name, then re-render." if problems else
+                     ("Start OmniVoice (start_voice_engine) to confirm against the live roster."
+                      if not roster.get("running") else "All cast voices resolve."))}
+
+
 @router.post("/api/voices/clone-ref")
 async def post_clone_ref(body: dict = Body(...)):
     """Re-clone one imported reference clip into the local OmniVoice (starts the

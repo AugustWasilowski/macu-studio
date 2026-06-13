@@ -242,6 +242,29 @@ async def _probe_http(url: str, timeout: float = 1.5) -> dict:
         return {"ok": False, "error": str(e) or e.__class__.__name__}
 
 
+async def _probe_omnivoice(timeout: float = 1.5) -> dict:
+    """OmniVoice TTS liveness + loaded-profile count. A 'down' result is NORMAL —
+    OmniVoice is consumer-lifecycle (started on demand for a VO render), so a grey
+    dot when idle isn't a fault. 'running but 0 profiles' IS the casting failure
+    mode (voices never imported), so we surface the count explicitly."""
+    from . import voices  # late import: avoid cycles
+    t0 = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as c:
+            r = await c.get(voices.OMNIVOICE_URL + "/profiles")
+        profs = r.json() if r.status_code < 400 else []
+        n = len(profs) if isinstance(profs, list) else 0
+        out = {"ok": True, "running": True, "profiles": n,
+               "latency_ms": int((time.monotonic() - t0) * 1000)}
+        if n == 0:
+            out["warn"] = "running but 0 voice profiles loaded — imports/clones haven't run"
+        return out
+    except Exception as e:
+        return {"ok": False, "running": False,
+                "error": str(e) or e.__class__.__name__,
+                "note": "consumer-lifecycle — starts on demand for a VO render; 'down' when idle is normal"}
+
+
 async def probe() -> dict:
     """Parallel liveness probes for the Settings Engines tab."""
     from . import higgsfield as hf  # late import: avoid module-load cycles
@@ -249,6 +272,8 @@ async def probe() -> dict:
     cfg = get_config()
     tasks: dict[str, Any] = {
         "comfy_local": _probe_http(cfg["endpoints"]["comfy_local"]["url"] + "/system_stats"),
+        "omnivoice": _probe_omnivoice(),
+        "piper": _probe_http("http://127.0.0.1:5050/"),
     }
     r_url = remote_url()
     if r_url:

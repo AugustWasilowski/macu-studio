@@ -19,6 +19,7 @@ Design notes:
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from typing import Any
@@ -61,6 +62,18 @@ CHARACTERS (show-level cast, feeds Higgsfield i2v/lipsync shots):
    It returns `invalidates` when replacing a still would re-bill paid cloud
    shots — STOP and confirm with the user before passing overwrite_still=true.
  - engines_status / set_engine_route control which service runs each capability.
+
+VOICES & CASTING (OmniVoice TTS — consumer-lifecycle, started on demand):
+ - list_voices shows the cloned roster; set_speaker_voice casts a SPEAKER to one.
+ - ALWAYS validate_cast(slug) before a VO render — it flags speakers cast to a
+   voice that won't resolve (status 'missing' → would render a generic fallback),
+   catching it in ~1s instead of after a multi-minute render.
+ - Voices are portable by voice_name but cast by a machine-specific profile_id;
+   import_voices(zip_path?, show=...) (re)clones reference clips into the LOCAL
+   OmniVoice and rebinds manifests by name. VO render also self-heals by name and
+   FAILS LOUD (never a silent fallback) if a cue's voice resolves by neither.
+ - start_voice_engine brings OmniVoice up; preview_vo(slug, cue_id) auditions one
+   line in seconds. render_title_cards(slug) renders title cards without masters.
 
 SCRIPT FORMAT (script.md):
   ## SEGMENT HEADER                 -> starts a segment
@@ -558,6 +571,77 @@ async def set_speaker_voice(slug: str, speaker: str, profile_id: str = "",
     else:
         body["engine"] = "default"
     return await _api("PUT", f"/api/episodes/{slug}/speaker-voice", body=body)
+
+
+@mcp.tool()
+async def start_voice_engine() -> dict:
+    """Start OmniVoice (the TTS engine) and wait until it answers, then return the
+    live voice roster. OmniVoice is consumer-lifecycle — stopped when idle so it
+    doesn't hog GPU — so 'running: false' in engines_status / list_voices is normal;
+    call this to bring it up before importing voices or validating a cast. Starting
+    cold can take up to ~3 min."""
+    return await _api("POST", "/api/voices/start")
+
+
+@mcp.tool()
+async def import_voices(zip_path: str = "", names: str = "", show: str = "") -> dict:
+    """Load cloned voices into the LOCAL OmniVoice so episodes cast to them render
+    correctly. `zip_path` is a server-local voices export (.zip of reference clips);
+    omit it to (re)clone reference clips already on disk. `names` is an optional
+    comma-separated subset. `show` rebinds that show's speaker_map entries (matched
+    by the portable voice_name) to the freshly minted profile_ids — pass it so
+    existing manifests resolve. Clones run one at a time on the GPU (slow for many
+    voices); starts OmniVoice if needed. Returns {imported:{name:profile_id},
+    rebound:{name:n}, failed:[...]}. Render also self-heals by voice_name, so even
+    without `show` an imported voice resolves at VO time."""
+    body: dict[str, Any] = {}
+    if zip_path:
+        body["zip_path"] = zip_path
+    if names:
+        body["names"] = [n.strip() for n in names.split(",") if n.strip()]
+    if show:
+        body["show"] = show
+    return await _api("POST", "/api/voices/import", body=body)
+
+
+@mcp.tool()
+async def validate_cast(slug: str) -> dict:
+    """Cast doctor — BEFORE a render, check every speaker the script uses against
+    the running OmniVoice roster. Flags speakers whose voice resolves by neither
+    profile_id nor voice_name (status 'missing' → would render a fallback voice;
+    fix the cast or import_voices), distinguishes ones that will self-heal by name
+    ('self_heal'), and notes speakers on the default robot voice. Catches the
+    silent-fallback bug in ~1s instead of after a multi-minute render. If OmniVoice
+    is stopped, start_voice_engine first for a live check."""
+    return await _api("GET", f"/api/episodes/{slug}/cast/validate")
+
+
+@mcp.tool()
+async def preview_vo(slug: str, cue_id: str, wait: bool = True) -> dict:
+    """Audition ONE cue's voiceover — re-render just that cue (drops its cached wav
+    + queues stage 1) so you can check a voice without rendering all of an episode's
+    lines. With wait=true (default) it blocks until the VO job finishes (seconds)
+    and returns the cue's audio URL + state; wait=false returns the job id. Pair with
+    set_speaker_voice / import_voices to dial in a voice fast."""
+    res = await _api("POST", f"/api/episodes/{slug}/cue/{cue_id}/regen")
+    if _is_err(res):
+        return res
+    job_id = res.get("job_id") or res.get("id")
+    audio_url = f"/api/episodes/{slug}/cue/{cue_id}/audio"
+    if not wait or not job_id:
+        return {"slug": slug, "cue_id": cue_id, "job_id": job_id,
+                "audio_url": audio_url, "queued": True}
+    deadline = time.monotonic() + 90.0
+    state = "running"
+    while time.monotonic() < deadline:
+        await asyncio.sleep(1.5)
+        job = await _api("GET", f"/api/jobs/{job_id}")
+        state = (job or {}).get("state") or state
+        if state in ("done", "error", "failed"):
+            break
+    return {"slug": slug, "cue_id": cue_id, "job_id": job_id, "state": state,
+            "audio_url": audio_url,
+            "hint": "Fetch audio_url to hear it, or get_episode to see VO status."}
 
 
 # --------------------------------------------------------------------------- #

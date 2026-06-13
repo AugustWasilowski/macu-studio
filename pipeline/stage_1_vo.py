@@ -181,6 +181,64 @@ def _resolve_voice(manifest, speaker):
     return manifest["voice"].get("default", {"engine": "piper"})
 
 
+def _omnivoice_profiles():
+    """Live OmniVoice roster → (live_ids:set, name_to_id:dict). Empty on any error
+    (caller treats that as 'no profiles loaded' and fails loud rather than guessing)."""
+    try:
+        with urllib.request.urlopen(OMNIVOICE_URL + "/profiles", timeout=10) as r:
+            data = json.loads(r.read())
+    except Exception:
+        return set(), {}
+    ids, name_to_id = set(), {}
+    for p in (data or []):
+        pid, nm = p.get("id"), p.get("name")
+        if pid:
+            ids.add(pid)
+        if nm and pid:
+            name_to_id.setdefault(nm, pid)
+    return ids, name_to_id
+
+
+def _heal_pid(voice_cfg, live_ids, name_to_id):
+    """Resolve the OmniVoice profile_id to actually POST for a cue. The manifest's
+    profile_id is machine-specific; if it isn't in the running engine we fall back
+    to resolving by the (portable) voice_name. Returns (profile_id, status) where
+    status is 'ok' (manifest id is live), 'healed' (resolved by name), or 'missing'
+    (neither resolves — the caller fails loud rather than render a wrong voice)."""
+    pid = voice_cfg.get("profile_id")
+    vname = voice_cfg.get("voice_name")
+    if pid and pid in live_ids:
+        return pid, "ok"
+    if vname and vname in name_to_id:
+        return name_to_id[vname], "healed"
+    return pid, "missing"
+
+
+def _heal_todo(todo, live_ids, name_to_id):
+    """Resolve every OmniVoice cue's profile_id against the live roster. Returns
+    (resolved_todo, healed[list], missing[list]). On any missing the caller must
+    fail loud — silent fallback to a generic voice is exactly the bug this guards."""
+    resolved, healed, missing = [], [], []
+    for t in todo:
+        cid, spk, text, out, voice, hold = t
+        if hold is None and voice.get("engine") == "omnivoice":
+            pid, status = _heal_pid(voice, live_ids, name_to_id)
+            if status == "missing":
+                missing.append((cid, spk, voice.get("voice_name"), voice.get("profile_id")))
+            elif status == "healed":
+                voice = dict(voice); voice["profile_id"] = pid
+                healed.append((voice.get("voice_name"), pid))
+                t = (cid, spk, text, out, voice, hold)
+        resolved.append(t)
+    return resolved, healed, missing
+
+
+class CastingError(RuntimeError):
+    """Raised when a cue is cast to OmniVoice but no live profile resolves for it —
+    by id or by voice_name. Fails the stage loud so casting gets fixed (import the
+    voice) before a render silently uses a generic fallback voice."""
+
+
 def main(slug):
     ensure_dirs(slug)
     p = episode_paths(slug)
@@ -249,6 +307,28 @@ def main(slug):
     if needs_omni:
         omnivoice_start()
         started_omni = True
+        # Self-heal casting: the manifest's profile_id is machine-specific, so
+        # resolve each OmniVoice cue against the LIVE roster (by id, else by the
+        # portable voice_name). If a cue resolves by neither, fail LOUD instead of
+        # letting OmniVoice fall back to a generic voice — the exact bug from the
+        # cross-machine smoke test.
+        live_ids, name_to_id = _omnivoice_profiles()
+        todo, healed, missing = _heal_todo(todo, live_ids, name_to_id)
+        if missing:
+            if started_omni and not keep_omni:
+                omnivoice_stop()
+            lines = "; ".join(
+                f"cue {cid} speaker {spk!r} (voice_name={vn!r}, profile_id={pid!r})"
+                for cid, spk, vn, pid in missing)
+            raise CastingError(
+                f"{len(missing)} cue(s) cast to OmniVoice have no matching profile "
+                f"(by id or voice_name) in the running engine ({len(live_ids)} profiles "
+                f"loaded): {lines}. Import/clone the voice (e.g. import_voices) so it "
+                f"resolves, then re-render. Refusing to render a fallback voice.")
+        if healed:
+            uniq = sorted(set(healed))
+            print(f"[stage 1 vo] self-healed {len(uniq)} voice(s) by name: "
+                  + ", ".join(f"{vn}->{pid[:8]}" for vn, pid in uniq))
 
     start = time.time()
     try:
@@ -348,8 +428,10 @@ def dub_vo(slug, lang, translations, ov_language, progress=None):
     needs_omni = any(_resolve_voice(m, c.get("speaker") or "").get("engine") == "omnivoice"
                      for c in dialogue)
     started = False
+    live_ids, name_to_id = set(), {}
     if needs_omni:
         omnivoice_start(); started = True
+        live_ids, name_to_id = _omnivoice_profiles()
 
     rendered = skipped = copied = drifted = 0
     cur_keys = {}
@@ -371,7 +453,15 @@ def dub_vo(slug, lang, translations, ov_language, progress=None):
                     progress(i + 1, len(dialogue))
                 continue
             if voice.get("engine") == "omnivoice":
-                _omnivoice(text, voice["profile_id"], out,
+                pid, status = _heal_pid(voice, live_ids, name_to_id)
+                if status == "missing":
+                    if started:
+                        omnivoice_stop()
+                    raise CastingError(
+                        f"dub: speaker {cue.get('speaker')!r} (voice_name="
+                        f"{voice.get('voice_name')!r}) has no matching OmniVoice profile "
+                        f"by id or name; import/clone the voice then re-run the dub.")
+                _omnivoice(text, pid, out,
                            speed=voice.get("speed"), guidance_scale=voice.get("guidance_scale"),
                            seed=voice.get("seed"), instruct=voice.get("instruct"),
                            language=ov_language, duration=round(target, 3))
