@@ -7,7 +7,9 @@ import { UI_STAGES, UIStage } from "./types";
 // the file menu, but #docs deep links keep working).
 export type TopPage = "docs" | "characters" | "cowork";
 export const TOP_PAGES: TopPage[] = ["docs", "characters", "cowork"];
-export const STRIP_PAGES: TopPage[] = ["characters", "cowork"];
+// Characters renders inline as numbered tab #2 (between Script and Audio); the
+// strip after the separator holds the remaining non-numbered pages.
+export const STRIP_PAGES: TopPage[] = ["cowork"];
 export type Page = "stage" | TopPage;
 
 export interface Route {

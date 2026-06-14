@@ -200,10 +200,14 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
         <IChevron size={14} style={{ transform: "rotate(-90deg)" }} />
       </button>
       <nav className="flex gap-1 ml-3" data-tour="tabs">
-        {UI_STAGES.map((s) => {
+        {/* Characters is the numbered tab #2 (between Script and Audio); the stage
+            tabs keep their own .n for the done-checkmark, but DISPLAY a shifted
+            number (everything after Script is +1) so the strip reads 1..7. */}
+        {UI_STAGES.flatMap((s) => {
           const active = page === "stage" && s.key === stage;
           const done = cur ? cur.done_stages >= s.n : false;
-          return (
+          const displayN = s.n <= 1 ? s.n : s.n + 1;
+          const stageTab = (
             <button
               key={s.key}
               data-tour={`tab-${s.key}`}
@@ -211,10 +215,25 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
               className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (active ? "active" : "")}
               style={active ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", color: "var(--amber)" } : {}}
             >
-              <span className={`tab-num ${done ? "done" : ""}`}>{done ? "✓" : s.n}</span>
+              <span className={`tab-num ${done ? "done" : ""}`}>{done ? "✓" : displayN}</span>
               <span className="font-semibold tracking-wider uppercase text-[11px]">{t("stage." + s.key)}</span>
             </button>
           );
+          if (s.key !== "script") return [stageTab];
+          const charsActive = page === "characters";
+          const charactersTab = (
+            <button
+              key="characters"
+              data-tour="tab-characters"
+              onClick={() => onPage("characters")}
+              className={"tab flex items-center gap-2 px-3 h-[32px] hairline-soft rounded-[3px] " + (charsActive ? "active" : "")}
+              style={charsActive ? { borderColor: "var(--amber)", boxShadow: "var(--glow-amber)", color: "var(--amber)" } : {}}
+            >
+              <span className="tab-num">2</span>
+              <span className="font-semibold tracking-wider uppercase text-[11px]">{t("toppage.characters")}</span>
+            </button>
+          );
+          return [stageTab, charactersTab];
         })}
         <span className="w-px self-stretch my-1 bg-[var(--line-soft)] mx-1" />
         {STRIP_PAGES.map((p) => {
