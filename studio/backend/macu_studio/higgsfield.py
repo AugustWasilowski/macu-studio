@@ -508,3 +508,174 @@ async def download(url: str, dest: Path) -> Path:
     finally:
         tmp.unlink(missing_ok=True)
     return dest
+
+
+# ---- Soul characters / Elements / account / provenance (SSA-129) ----------------
+# Leo owns this client layer; Studio UI (Max) consumes the shapes. All thin
+# passthroughs over call() so the response shapes match the live HF MCP tools.
+
+async def soul_list(status: str | None = None, type_: str = "soul_2",
+                    size: int = 100) -> dict:
+    """Trained Soul characters. status ∈ ready|training|failed (None = all).
+    Returns {items:[{id, name, status, type}], next_cursor}."""
+    args: dict = {"action": "list", "type": type_, "size": size}
+    if status:
+        args["status"] = status
+    res = await call("show_characters", args, timeout=60)
+    return res if isinstance(res, dict) else {"items": res}
+
+
+async def soul_train(name: str, images: list[str], type_: str = "soul_2") -> dict:
+    """Start Soul training (5-20 ref images: media_id / job_id / https URLs).
+    Non-blocking — poll soul_status(soul_id). Returns the new character record."""
+    if not name or not images:
+        raise RuntimeError("soul_train needs a name and 5-20 reference images")
+    return await call("show_characters",
+                      {"action": "train", "type": type_, "name": name, "images": images},
+                      timeout=120)
+
+
+async def soul_status(soul_id: str, type_: str = "soul_2") -> dict:
+    return await call("show_characters",
+                      {"action": "status", "type": type_, "soul_id": soul_id}, timeout=60)
+
+
+async def elements_list(size: int = 100) -> dict:
+    """Reusable reference Elements (instant single-image identity refs).
+    Returns {items:[...], next_cursor}."""
+    res = await call("show_reference_elements", {"action": "list", "size": size}, timeout=60)
+    return res if isinstance(res, dict) else {"items": res}
+
+
+async def element_get(element_id: str) -> dict:
+    return await call("show_reference_elements",
+                      {"action": "get", "element_id": element_id}, timeout=60)
+
+
+async def element_create(medias: list[dict], name: str | None = None,
+                         category: str = "character", description: str | None = None) -> dict:
+    """Create an Element from already-uploaded media. medias: [{id, url, type}].
+    Use element_from_file() to go straight from a local still."""
+    if not medias:
+        raise RuntimeError("element_create needs at least one media {id, url}")
+    args: dict = {"action": "create", "medias": medias, "category": category}
+    if name:
+        args["name"] = name
+    if description:
+        args["description"] = description
+    return await call("show_reference_elements", args, timeout=120)
+
+
+async def upload_media_ref(path: Path) -> dict:
+    """Like upload_media but also returns the media's public Higgsfield URL —
+    Elements/reference creation needs {id, url}, not just the id."""
+    ct = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    res = await call("media_upload", {"filename": path.name, "content_type": ct}, timeout=60)
+    up = res
+    if isinstance(res, dict):
+        for k in ("uploads", "files", "results"):
+            if isinstance(res.get(k), list) and res[k]:
+                up = res[k][0]
+                break
+    media_id = (up or {}).get("media_id") or (up or {}).get("id")
+    upload_url = (up or {}).get("upload_url") or (up or {}).get("url")
+    if not (media_id and upload_url):
+        raise RuntimeError(f"unexpected media_upload payload: {res!r}")
+    async with httpx.AsyncClient(timeout=600) as c:
+        r = await c.put(upload_url, content=path.read_bytes(), headers={"Content-Type": ct})
+        r.raise_for_status()
+    mtype = ct.split("/")[0]
+    if mtype not in ("image", "video", "audio"):
+        mtype = "file"
+    await call("media_confirm", {"media_id": media_id, "type": mtype}, timeout=60)
+    # The PUT target's path (minus the signed query) is the media's public origin URL.
+    public_url = (up or {}).get("public_url") or (up or {}).get("media_url") \
+        or str(upload_url).split("?")[0]
+    return {"media_id": str(media_id), "url": public_url}
+
+
+async def element_from_file(path: Path, name: str | None = None,
+                            category: str = "character") -> dict:
+    """Upload a local still and register it as a reusable Element in one step."""
+    ref = await upload_media_ref(path)
+    return await element_create(
+        [{"id": ref["media_id"], "url": ref["url"], "type": "media_input"}],
+        name=name, category=category)
+
+
+async def transactions(size: int = 20, cursor: int | None = None) -> dict:
+    """Credit transactions, newest first. Real per-generation costs live here.
+    Returns {items:[{display_name, credits, action, created_at}], next_cursor}."""
+    args: dict = {"size": size}
+    if cursor is not None:
+        args["cursor"] = cursor
+    res = await call("transactions", args, timeout=30)
+    return res if isinstance(res, dict) else {"items": res}
+
+
+async def plans() -> dict:
+    """Plans + credits + unlimited entitlements (show_plans_and_credits).
+    NB: once on the top plan the API returns plans:[] (only top-ups), so
+    parse_unlimited() yields [] for those accounts."""
+    return await call("show_plans_and_credits", {"intent": "general"}, timeout=30)
+
+
+def parse_unlimited(plans_payload: dict) -> list[dict]:
+    """Flatten unlimited/free entitlements from a show_plans_and_credits payload
+    into [{plan, period, group, model, badges, note}]. Empty when on the top plan."""
+    out: list[dict] = []
+    for plan in (plans_payload or {}).get("plans") or []:
+        pricing = plan.get("pricing") or {}
+        for period in ("monthly", "annual"):
+            pd = pricing.get(period) or {}
+            blocks = [pd.get("unlimitedAccess") or {}]
+            blocks.extend((pd.get("customSections") or {}).values())
+            for blk in blocks:
+                title = (blk or {}).get("title")
+                for f in (blk or {}).get("features") or []:
+                    out.append({
+                        "plan": plan.get("id"), "period": period, "group": title,
+                        "model": f.get("text"),
+                        "badges": [b.get("label") for b in (f.get("badges") or [])],
+                        "note": f.get("tooltip"),
+                    })
+    seen: set = set()
+    uniq: list[dict] = []
+    for e in out:
+        k = (e["model"], e["group"], e["period"])
+        if k not in seen:
+            seen.add(k)
+            uniq.append(e)
+    return uniq
+
+
+def gen_metadata(tool: str, model_requested: str, job_result: Any,
+                 *, credits_spent: float | None = None) -> dict:
+    """Stable provenance dict for a Higgsfield generation (SSA-129). Built from a
+    job_status result + the model we requested. Studio UI / take-records consume
+    this verbatim — keep the keys stable."""
+    g = (job_result.get("generation") if isinstance(job_result, dict) else None) or \
+        (job_result if isinstance(job_result, dict) else {})
+    p = (g or {}).get("params") or {}
+    r = (g or {}).get("results") or {}
+    urls = find_media_urls(job_result)
+    return {
+        "provider": "higgsfield",
+        "tool": tool,
+        "model_requested": model_requested,
+        "model_used": (g or {}).get("model") or model_requested,
+        "job_id": (g or {}).get("id"),
+        "seed": p.get("seed"),
+        "prompt": p.get("prompt"),
+        "aspect_ratio": p.get("aspect_ratio"),
+        "width": p.get("width"),
+        "height": p.get("height"),
+        "resolution": p.get("resolution"),
+        "raw_url": r.get("rawUrl") or (urls[0] if urls else None),
+        "thumb_url": r.get("minUrl"),
+        "created_at": (g or {}).get("createdAt"),
+        # job_status carries no cost; reconcile from transactions(). Web-only
+        # "unlimited" never applies to API gens, so this stays False here.
+        "credits_spent": credits_spent,
+        "unlimited": False,
+    }

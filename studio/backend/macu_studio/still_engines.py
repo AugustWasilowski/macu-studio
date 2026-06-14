@@ -88,5 +88,8 @@ async def generate_one(engine: str, prompt: str, seed: int | None, params: dict,
             stilljobs.png_normalize(raw, dest)
         finally:
             raw.unlink(missing_ok=True)
-        return {"seed": seed, "params": {}, "model": model}
+        # Provenance for the UI / take-record (SSA-129). model_used can differ from
+        # requested (server routing, e.g. nano_banana_pro -> nano_banana_2).
+        meta = hf.gen_metadata("generate_image", model, res)
+        return {"seed": seed, "params": {}, "model": meta["model_used"], "hf": meta}
     raise RuntimeError(f"unknown still engine: {engine}")

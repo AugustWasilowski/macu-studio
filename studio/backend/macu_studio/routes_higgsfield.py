@@ -143,6 +143,109 @@ async def get_models(refresh: bool = False):
         raise HTTPException(502, f"models failed: {e}")
 
 
+# ---- Soul characters / Elements / account (SSA-129) -----------------------------
+# Client-layer reads/writes for the HF-first-class-citizen UI. Studio UI (Max)
+# consumes these; shapes mirror the live HF MCP tools (see SSA-129 contract).
+
+@router.get("/api/higgsfield/souls")
+async def get_souls(status: str | None = None):
+    try:
+        return await hf.soul_list(status=status)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"soul list failed: {e}")
+
+
+@router.post("/api/higgsfield/souls/train")
+async def post_soul_train(body: dict = Body(...)):
+    name = (body.get("name") or "").strip()
+    images = body.get("images") or []
+    if not name or not images:
+        raise HTTPException(400, "name and 5-20 images[] required")
+    try:
+        return await hf.soul_train(name, images)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"soul train failed: {e}")
+
+
+@router.get("/api/higgsfield/souls/{soul_id}")
+async def get_soul(soul_id: str):
+    try:
+        return await hf.soul_status(soul_id)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"soul status failed: {e}")
+
+
+@router.get("/api/higgsfield/elements")
+async def get_elements():
+    try:
+        return await hf.elements_list()
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"elements list failed: {e}")
+
+
+@router.post("/api/higgsfield/elements")
+async def post_element(body: dict = Body(...)):
+    """Create a reusable Element. body: {path} (a still under the shares root) OR
+    {medias:[{id,url,type}]}, plus optional {name, category}."""
+    name = (body.get("name") or "").strip() or None
+    category = (body.get("category") or "character").strip()
+    try:
+        if body.get("path"):
+            p = _confine(str(body["path"]))
+            return await hf.element_from_file(p, name=name, category=category)
+        medias = body.get("medias") or []
+        if not medias:
+            raise HTTPException(400, "path or medias[] required")
+        return await hf.element_create(medias, name=name, category=category)
+    except HTTPException:
+        raise
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"element create failed: {e}")
+
+
+@router.get("/api/higgsfield/transactions")
+async def get_transactions(size: int = 20, cursor: int | None = None):
+    try:
+        return await hf.transactions(size=size, cursor=cursor)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"transactions failed: {e}")
+
+
+@router.get("/api/higgsfield/account")
+async def get_account():
+    """Account surface for the UI: connection + plan + credits + unlimited
+    entitlements (entitlements empty once on the top plan — API limitation)."""
+    out: dict = {**hf.status(), "credits": None, "plan": None, "unlimited": []}
+    if not out.get("connected"):
+        return out
+    try:
+        bal = await hf.balance()
+        out["credits"] = bal.get("credits")
+        out["plan"] = bal.get("subscription_plan_type")
+    except hf.NotConnectedError:
+        out["connected"] = False
+        return out
+    except Exception as e:
+        out["balance_error"] = str(e)
+    try:
+        out["unlimited"] = hf.parse_unlimited(await hf.plans())
+    except Exception as e:
+        out["plans_error"] = str(e)
+    return out
+
+
 # ---- cost estimate ------------------------------------------------------------
 
 # Cost is parameter-shaped, not prompt-shaped: one get_cost preflight per
