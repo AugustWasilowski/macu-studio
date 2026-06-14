@@ -5,7 +5,7 @@ Usage: python3 stage_8_burn.py <slug>
 """
 import sys, os, subprocess, time
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import episode_paths, load_manifest, ensure_dirs, ASSETS
+from lib import episode_paths, load_manifest, ensure_dirs, ASSETS, resolve_asset_path
 
 DEFAULT_STYLE = ("BorderStyle=1,Outline=2,Shadow=1,"
                  "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
@@ -37,7 +37,9 @@ def main(slug, src=None, srt=None, final=None, font=None):
     # CJK/Arabic/Indic) without touching the manifest; English burns are unchanged.
     font_name = font or subs.get("font", "DejaVu Sans")
     fontsize = subs.get("fontsize", 18)
-    fontsdir = subs.get("fontsdir", f"{ASSETS}/fonts")
+    # Re-root a foreign-host absolute fontsdir under this host's ASSETS/SHARES so a
+    # manifest authored elsewhere still finds its fonts here (SSA-126).
+    fontsdir = resolve_asset_path(subs.get("fontsdir", f"{ASSETS}/fonts"))
     extra = subs.get("force_style", DEFAULT_STYLE)
 
     # If manifest's font isn't actually present, fall back to fc-scan'ing the dir

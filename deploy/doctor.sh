@@ -95,6 +95,16 @@ if have nvidia-smi; then
 else FAIL nvidia-driver "no nvidia-smi — install the NVIDIA driver (an NVIDIA GPU is required)"; fi
 
 echo
+echo "Render pipeline (local frame interpolation — stage 3):"
+# stage_3_rife shells out to these on PATH. The docker image bundles them; a
+# bare-metal install must provide them or stage 3 dies after a long masters render
+# (SSA-126). install-prereqs.sh can install both on apt hosts.
+have anim_dump && PASS anim_dump "webp frame dump (libwebp)" \
+  || FAIL anim_dump "stage 3 needs it — apt: 'sudo apt-get install webp' (or ./deploy/install-prereqs.sh)"
+have rife-ncnn-vulkan && PASS rife-ncnn-vulkan "Vulkan frame interpolation" \
+  || FAIL rife-ncnn-vulkan "stage 3 needs it — prebuilt from github.com/nihui/rife-ncnn-vulkan (or ./deploy/install-prereqs.sh)"
+
+echo
 echo "Coupling (optional — for the Studio↔Claude chat tile / writers' room + TERMINAL drawer):"
 # Per-distro install hint for the optional terminal deps.
 if   have apt-get; then pkg_hint="sudo apt-get install ttyd tmux"

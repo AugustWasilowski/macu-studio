@@ -12,7 +12,7 @@ Stages are numbered 1-8:
 
 Writes /tmp/macu_render_<slug>_report.json with timings + output paths.
 """
-import sys, os, json, time, importlib.util, subprocess, glob, argparse
+import sys, os, json, time, importlib.util, subprocess, glob, argparse, shutil
 
 PIPELINE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PIPELINE)
@@ -29,6 +29,26 @@ STAGES = [
     (7, "srt",      "stage_7_srt"),
     (8, "burn",     "stage_8_burn"),
 ]
+
+# External binaries each stage shells out to, checked BEFORE stage 1 so a missing
+# tool fails in <1s instead of after a multi-hour masters render. The docker image
+# bundles these; a bare-metal install can lack them (SSA-126: a native install had
+# no anim_dump / rife-ncnn-vulkan and stage 3 died only after a 12.7h stage-2 run).
+STAGE_BINS = {
+    3: ["anim_dump", "rife-ncnn-vulkan"],   # webp frame dump + Vulkan interpolation
+}
+
+
+def preflight_binaries(stages_to_run):
+    """Return [(stage_n, binary)] for tools missing from PATH among the stages that
+    will actually run. Empty list = all good."""
+    missing = []
+    for num in stages_to_run:
+        for b in STAGE_BINS.get(num, []):
+            if shutil.which(b) is None:
+                missing.append((num, b))
+    return missing
+
 
 def load_stage(modname):
     spec = importlib.util.spec_from_file_location(modname, f"{PIPELINE}/{modname}.py")
@@ -143,6 +163,19 @@ def main():
     if not os.path.exists(paths["manifest"]):
         print(f"ERROR: manifest not found: {paths['manifest']}")
         emit("job.error", error=f"manifest not found: {paths['manifest']}")
+        sys.exit(2)
+
+    # Preflight: fail fast (before stage 1) if a stage's external binary is missing,
+    # so we never burn a multi-hour render only to die at collection/interpolation.
+    stages_to_run = [num for num, _, _ in STAGES
+                     if not (args.only and num != args.only) and num >= args.from_stage]
+    missing = preflight_binaries(stages_to_run)
+    if missing:
+        lines = ", ".join(f"{b} (stage {n})" for n, b in missing)
+        msg = (f"missing required binaries on PATH: {lines}. "
+               f"Install them (deploy/install-prereqs.sh on apt hosts) or run deploy/doctor.sh.")
+        print(f"ERROR: {msg}")
+        emit("job.error", error=msg)
         sys.exit(2)
 
     # Dub mode bypasses the 8-stage loop: localize an already-rendered episode.

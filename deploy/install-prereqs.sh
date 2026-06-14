@@ -76,4 +76,37 @@ if have docker && have nvidia-smi && ! (docker info 2>/dev/null | grep -qiE 'Run
   fi
 fi
 
+# --- stage 3 render binaries: anim_dump (libwebp) + rife-ncnn-vulkan --------
+# stage_3_rife shells out to these; without them a render dies at interpolation
+# after a long masters stage (SSA-126). anim_dump ships in the apt `webp` package;
+# rife-ncnn-vulkan has no apt package — install nihui's prebuilt release (binary +
+# bundled models) under /usr/local, matching the reference host's layout.
+if ! have anim_dump; then
+  say "installing anim_dump (libwebp tools)"
+  sudo apt-get update -qq && sudo apt-get install -y webp \
+    || echo "  couldn't install 'webp' — install anim_dump by hand for stage 3."
+fi
+if ! have rife-ncnn-vulkan; then
+  say "installing rife-ncnn-vulkan (prebuilt — Vulkan frame interpolation)"
+  have unzip || sudo apt-get install -y unzip || true
+  rife_ver="20221029"
+  rife_zip="rife-ncnn-vulkan-${rife_ver}-ubuntu.zip"
+  rife_url="https://github.com/nihui/rife-ncnn-vulkan/releases/download/${rife_ver}/${rife_zip}"
+  tmp="$(mktemp -d)"
+  if curl -fsSL "$rife_url" -o "$tmp/$rife_zip" && unzip -q "$tmp/$rife_zip" -d "$tmp"; then
+    src="$tmp/rife-ncnn-vulkan-${rife_ver}-ubuntu"
+    if [ -x "$src/rife-ncnn-vulkan" ]; then
+      sudo rm -rf /usr/local/lib/rife-ncnn-vulkan
+      sudo cp -r "$src" /usr/local/lib/rife-ncnn-vulkan
+      sudo ln -sf /usr/local/lib/rife-ncnn-vulkan/rife-ncnn-vulkan /usr/local/bin/rife-ncnn-vulkan
+      echo "  rife-ncnn-vulkan installed at /usr/local/lib/rife-ncnn-vulkan (models bundled)."
+    else
+      echo "  >> rife release layout unexpected — install by hand from $rife_url"
+    fi
+  else
+    echo "  >> couldn't fetch rife-ncnn-vulkan — install by hand from $rife_url"
+  fi
+  rm -rf "$tmp"
+fi
+
 say "prerequisite pass complete — the installer re-checks with doctor.sh next."

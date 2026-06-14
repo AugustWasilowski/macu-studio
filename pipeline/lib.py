@@ -58,6 +58,35 @@ COMFY_OUT = os.environ.get("MACU_COMFY_OUT", "/mnt/storage/comfyui/output/macu")
 COMFY_OUTPUT_ROOT = os.environ.get("MACU_COMFY_OUTPUT_ROOT", "/mnt/storage/comfyui/output")
 
 
+def resolve_asset_path(path, base=None):
+    """Resolve a manifest-supplied asset path to THIS host's filesystem.
+
+    Manifests sometimes carry absolute paths baked on another host — e.g. a
+    /mnt/storage/shares/MACU/assets/... path on a box where the share actually lives
+    under MACU_SHARES=/home/.../macu-data/shares/MACU. Stages used to read those
+    verbatim and break on the wrong host (SSA-126: music.source_dir, fontsdir).
+
+    Rules: an absolute path that EXISTS is used as-is. An absolute path that doesn't
+    is re-rooted under this host's ASSETS/SHARES by its last 'assets/' or 'shares/MACU/'
+    marker segment (so paths authored on any host resolve here). A relative path is
+    joined onto `base` (ASSETS by default). Falls back to the original string if
+    nothing matches — the caller's own existence check / ffmpeg then reports it."""
+    if not path:
+        return path
+    if os.path.isabs(path):
+        if os.path.exists(path):
+            return path
+        norm = path.replace("\\", "/")
+        for marker, root in (("/assets/", ASSETS), ("/shares/MACU/", SHARES)):
+            idx = norm.rfind(marker)
+            if idx != -1:
+                cand = os.path.join(root, norm[idx + len(marker):])
+                if os.path.exists(cand):
+                    return cand
+        return path
+    return os.path.join(base or ASSETS, path)
+
+
 def _omnivoice_compose_up():
     """Create + start the OmniVoice container from its compose file — for a fresh
     install where the image was pulled but no container was ever created (so

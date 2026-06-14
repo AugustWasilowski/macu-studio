@@ -4,7 +4,7 @@
 Idempotent: looks for the staged .zs.webp in clips/; if present, skips that key.
 Usage: python3 stage_2_masters.py <slug>
 """
-import sys, os, json, time, threading, urllib.request, urllib.error, random, glob, shutil, hashlib
+import sys, os, json, time, threading, urllib.request, urllib.error, urllib.parse, random, glob, shutil, hashlib
 sys.path.insert(0, os.path.dirname(__file__))
 from pathlib import Path
 from lib import (episode_paths, load_manifest, ensure_dirs, COMFY_URL,
@@ -88,6 +88,49 @@ def post(path, body):
 def get(path):
     with urllib.request.urlopen(f"{COMFY_URL}{path}", timeout=30) as r:
         return json.loads(r.read())
+
+
+def _download_view(filename, subfolder, target):
+    """Pull a ComfyUI output file over its HTTP /view API into `target`.
+    Works regardless of where the ComfyUI install put its output dir — no shared
+    filesystem assumed (the docker bind-mount path and a native install's output
+    root differ; this is the install-agnostic path)."""
+    q = urllib.parse.urlencode({"filename": filename,
+                                "subfolder": subfolder or "", "type": "output"})
+    with urllib.request.urlopen(f"{COMFY_URL}/view?{q}", timeout=120) as r, \
+         open(target, "wb") as out:
+        shutil.copyfileobj(r, out)
+
+
+def _collect_output(file_meta, target, slug):
+    """Stage one completed ComfyUI output file at `target`, install-agnostically.
+    Tries the configured local-filesystem paths first (docker bind-mount or a
+    same-box install where MACU_COMFY_OUT/MACU_COMFY_OUTPUT_ROOT point at the real
+    output dir), then a recursive glob by basename, then falls back to fetching the
+    bytes over ComfyUI's HTTP /view API. The /view fallback is what lets a NATIVE
+    ComfyUI install (whose output root isn't the docker mount path) collect cleanly
+    with no env tuning. Returns True on success, False if the file can't be found
+    anywhere — never raises, so one un-collectable shot can't crash the whole stage
+    after a multi-hour render (SSA-126)."""
+    fn = file_meta.get("filename")
+    if not fn:
+        return False
+    sub = file_meta.get("subfolder") or ""
+    for src in (os.path.join(COMFY_OUT, slug, fn),
+                os.path.join(COMFY_OUTPUT_ROOT, sub, fn)):
+        if os.path.exists(src):
+            shutil.copy2(src, target)
+            return True
+    hits = sorted(glob.glob(os.path.join(COMFY_OUTPUT_ROOT, "**", fn), recursive=True))
+    if hits:
+        shutil.copy2(hits[0], target)
+        return True
+    try:
+        _download_view(fn, sub, target)
+        return os.path.exists(target) and os.path.getsize(target) > 0
+    except Exception as e:
+        print(f"  WARN /view fetch failed for {fn}: {e}")
+        return False
 
 def main(slug):
     """Local zeroscope masters + (concurrently) Higgsfield cloud shots.
@@ -269,6 +312,7 @@ def _local_main(slug):
             return False  # unreachable ComfyUI counts as not-busy → stall clock advances
 
     done = set()
+    fetch_failed = {}   # key -> filename: completed in ComfyUI but output couldn't be located
     last_progress = time.time()
     while len(done) < len(jobs) and time.time() - start < HARD_S:
         time.sleep(6)
@@ -287,21 +331,28 @@ def _local_main(slug):
                     files = (e.get("outputs", {}).get(on, {}).get("images")
                              or e.get("outputs", {}).get(on, {}).get("gifs") or [])
                     if files:
-                        src = os.path.join(COMFY_OUT, slug, files[0]["filename"])
-                        if not os.path.exists(src):
-                            # ComfyUI puts it under output/<subfolder>/<filename>
-                            src = os.path.join(COMFY_OUTPUT_ROOT,
-                                                files[0]["subfolder"], files[0]["filename"])
-                        shutil.copy2(src, j["target"])
+                        # Completed in ComfyUI — stop polling this shot either way; a
+                        # failed FETCH is reported after the loop, NOT a hard crash here
+                        # (so it can't kill a multi-hour render at collection — SSA-126).
+                        if _collect_output(files[0], j["target"], slug):
+                            if j.get("i2v"):
+                                mcache[j["key"]] = j["hash"]; _save_masters_cache(p["clips"], mcache)
+                            print(f"  done {j['key']:24} +{round(time.time()-start,1)}s -> {j['target']}")
+                        else:
+                            fetch_failed[j["key"]] = files[0].get("filename")
+                            print(f"  !! {j['key']:24} rendered but output not collectable "
+                                  f"(filename={files[0].get('filename')})")
                         done.add(j["key"])
-                        if j.get("i2v"):
-                            mcache[j["key"]] = j["hash"]; _save_masters_cache(p["clips"], mcache)
-                        print(f"  done {j['key']:24} +{round(time.time()-start,1)}s -> {j['target']}")
                         progress_tick(2, "masters", len(done) / len(jobs))
             else:
-                # PID submission failed but cold-load probably still ran. Look for the file by prefix.
-                pattern = "{}/{}/{}*.webp".format(COMFY_OUT, slug, os.path.basename(j["prefix"]))
-                matches = sorted(glob.glob(pattern))
+                # PID submission failed but cold-load probably still ran. Look for the file by
+                # prefix under the configured output dir, then anywhere under the output root
+                # (a native install writes outside the docker mount path — SSA-126).
+                base = os.path.basename(j["prefix"])
+                matches = sorted(glob.glob("{}/{}/{}*.webp".format(COMFY_OUT, slug, base)))
+                if not matches:
+                    matches = sorted(glob.glob("{}/**/{}*.webp".format(COMFY_OUTPUT_ROOT, base),
+                                               recursive=True))
                 if matches:
                     shutil.copy2(matches[-1], j["target"])
                     done.add(j["key"])
@@ -328,6 +379,16 @@ def _local_main(slug):
     if len(done) < len(jobs):
         missing = [j["key"] for j in jobs if j["key"] not in done]
         raise RuntimeError(f"[stage 2 masters] timeout after {int((time.time()-start)/60)}m, missing: {missing}")
+
+    if fetch_failed:
+        # Every shot rendered, but some outputs couldn't be located on disk OR fetched
+        # over /view. That's an output-path/config problem, not a render failure — say so
+        # clearly (the old code hard-crashed on the first one mid-collection — SSA-126).
+        raise RuntimeError(
+            f"[stage 2 masters] {len(fetch_failed)}/{len(jobs)} shots rendered in ComfyUI but "
+            f"their output files couldn't be collected: {fetch_failed}. Point MACU_COMFY_OUT / "
+            f"MACU_COMFY_OUTPUT_ROOT at this ComfyUI's real output dir, or confirm COMFY_URL "
+            f"({COMFY_URL}) can serve /view. Re-run stage 2 to retry (staged shots are cached).")
 
     return {"rendered": len(jobs), "skipped": skipped,
             "wall_s": round(time.time()-start, 2)}

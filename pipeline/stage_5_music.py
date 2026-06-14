@@ -14,7 +14,7 @@ Usage: python3 stage_5_music.py <slug>
 """
 import sys, os, json, random, subprocess, shutil
 sys.path.insert(0, os.path.dirname(__file__))
-from lib import episode_paths, load_manifest, ensure_dirs, probe_dur, ASSETS
+from lib import episode_paths, load_manifest, ensure_dirs, probe_dur, ASSETS, resolve_asset_path
 
 SFX_DIR = f"{ASSETS}/sfx"
 
@@ -136,6 +136,10 @@ def main(slug):
     p = episode_paths(slug)
     m = load_manifest(slug)
     music = m.get("music") or {}
+    # Re-root a foreign-host absolute source_dir under this host's ASSETS/SHARES so a
+    # manifest authored elsewhere still finds its music here (SSA-126).
+    if music.get("source_dir"):
+        music["source_dir"] = resolve_asset_path(music["source_dir"])
     # SFX can be a bare list of {file,cue,at,gain,...} OR a dict with metadata:
     # {enabled, source_dir, note, wishlist, cues:[...]}. Both forms supported.
     sfx_raw = m.get("sfx") or []
