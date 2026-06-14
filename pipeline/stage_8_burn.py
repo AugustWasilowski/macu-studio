@@ -4,7 +4,7 @@
 Encodes with NVENC when available, else libx264 (override: MACU_BURN_ENCODER).
 Usage: python3 stage_8_burn.py <slug>
 """
-import sys, os, subprocess, time
+import sys, os, subprocess, time, shutil
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import episode_paths, load_manifest, ensure_dirs, ASSETS, resolve_asset_path
 
@@ -44,7 +44,23 @@ def run(cmd, timeout=1800):
     except subprocess.TimeoutExpired:
         print(f"TIMEOUT after {timeout}s:", " ".join(cmd[:6])); raise
 
-def main(slug, src=None, srt=None, final=None, font=None):
+def _archive_existing(final):
+    """Rename a prior final/<slug>.mp4 to a timestamped archive so we never clobber
+    it. Returns the archived basename (or None). Shared by burn + skip-burn."""
+    if not os.path.exists(final):
+        return None
+    base, ext = os.path.splitext(final)
+    stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(os.path.getmtime(final)))
+    archive = f"{base}.{stamp}{ext}"
+    n = 1
+    while os.path.exists(archive):
+        archive = f"{base}.{stamp}-{n}{ext}"; n += 1
+    os.rename(final, archive)
+    print(f"[stage 8 burn] archived previous final -> {os.path.basename(archive)}")
+    return os.path.basename(archive)
+
+
+def main(slug, src=None, srt=None, final=None, font=None, force=False):
     ensure_dirs(slug)
     p = episode_paths(slug)
     m = load_manifest(slug)
@@ -56,6 +72,21 @@ def main(slug, src=None, srt=None, final=None, font=None):
         final = p["out_mp4"]
 
     subs = m.get("subtitles") or {}
+
+    # Burn-in is optional (manifest subtitles.enabled, default on for back-compat).
+    # When off, the SRT is still generated (stage 7) — we just publish the music-mixed
+    # picture as the final without baked-in captions. The dub path passes force=True
+    # because a localized cut's whole point is its translated burned subs (SSA-130).
+    if not force and not subs.get("enabled", True):
+        start = time.time()
+        archived = _archive_existing(final)
+        shutil.copy2(src, final)
+        size_mb = os.path.getsize(final) / (1024 * 1024)
+        print(f"[stage 8 burn] subtitles.enabled=false — published {final} without burn-in "
+              f"({round(size_mb, 1)} MB, {round(time.time()-start, 2)}s)")
+        return {"final": final, "size_mb": round(size_mb, 2), "burned": False,
+                "archived": archived, "wall_s": round(time.time()-start, 2)}
+
     # `font` override lets the dub path swap in a script-appropriate face (e.g. Noto for
     # CJK/Arabic/Indic) without touching the manifest; English burns are unchanged.
     font_name = font or subs.get("font", "DejaVu Sans")
@@ -104,21 +135,12 @@ def main(slug, src=None, srt=None, final=None, font=None):
     run(["ffmpeg","-y","-i", src,"-vf", sub_filter,
          *_pick_video_encoder(),
          "-c:a","copy","-movflags","+faststart", tmp])
-    archived = None
-    if os.path.exists(final):
-        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(os.path.getmtime(final)))
-        archive = f"{base}.{stamp}{ext}"
-        n = 1
-        while os.path.exists(archive):
-            archive = f"{base}.{stamp}-{n}{ext}"; n += 1
-        os.rename(final, archive)
-        archived = os.path.basename(archive)
-        print(f"[stage 8 burn] archived previous final -> {archived}")
+    archived = _archive_existing(final)
     os.replace(tmp, final)
     size_mb = os.path.getsize(final) / (1024*1024)
     print(f"[stage 8 burn] {final} {round(size_mb,1)} MB "
           f"({round(time.time()-start,2)}s)")
-    return {"final": final, "size_mb": round(size_mb,2),
+    return {"final": final, "size_mb": round(size_mb,2), "burned": True,
             "font_used": font_name, "archived": archived,
             "wall_s": round(time.time()-start,2)}
 

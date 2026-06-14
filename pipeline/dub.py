@@ -282,8 +282,10 @@ def run_dub(slug, lang, engine, subs_only=False, emit=None):
 
     # ---- D6 burn ----
     emit("dub.stage.started", step="burn", lang=lang)
+    # force=True: a localized cut's whole point is its translated burned subs, so it
+    # ignores the show's subtitles.enabled=false default (SSA-130).
     res = stage_8_burn.main(slug, src=burn_src, srt=d["out_srt"], final=d["out_mp4"],
-                            font=_font_for_lang(lang)) or {}
+                            font=_font_for_lang(lang), force=True) or {}
     emit("dub.stage.done", step="burn", lang=lang, **{k: res[k] for k in ("size_mb", "font_used") if k in res})
 
     final_dur = None

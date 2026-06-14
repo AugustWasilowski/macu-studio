@@ -23,6 +23,28 @@ from typing import Any, Iterator
 CACHE_VERSION = 1
 CLOUD_KINDS = ("higgsfield", "lipsync")
 
+
+def is_mouthless(shot: dict, manifest: dict) -> bool:
+    """True when a shot's subject has no visible mouth to sync (masked / paper-bag
+    head, e.g. ep-022 masked_man). Flagged on the character as `no_lipsync` or
+    `mouthless`. Such a shot animates from its still via the i2v video path instead
+    of audio-driven lipsync — nothing to sync, and lipsync would warp the mask."""
+    who = shot.get("who") or ""
+    c = (manifest.get("characters") or {}).get(who)
+    return bool(isinstance(c, dict) and (c.get("no_lipsync") or c.get("mouthless")))
+
+
+def effective_kind(shot: dict, manifest: dict) -> str:
+    """The kind a shot is actually RENDERED/ASSEMBLED as. A `lipsync` shot whose
+    subject is mouthless routes through the `higgsfield` i2v video path (animate
+    the still, no audio-driven mouth). Every stage that branches on shot kind for
+    the lipsync-vs-video decision must use this, not the raw `kind`, so the render
+    cache, generation, and assembly all agree."""
+    k = shot.get("kind")
+    if k == "lipsync" and is_mouthless(shot, manifest):
+        return "higgsfield"
+    return k
+
 # Lipsync VO chunking: clips cap at 15s on every Higgsfield model; we chunk at
 # ≤12s so a split point can slide a couple seconds to land on silence.
 CHUNK_MAX_S = 12.0
@@ -228,7 +250,7 @@ def shot_state(shot: dict, cue: dict, manifest: dict, ep_dir: Path,
                cached: dict[str, str], lipsync_engine: str = "higgsfield") -> dict:
     """Cache verdict for one cloud shot: {hash, exists, fresh}."""
     sid = shot.get("id") or ""
-    if shot.get("kind") == "lipsync":
+    if effective_kind(shot, manifest) == "lipsync":
         h = lipsync_hash(shot, manifest, ep_dir, cue.get("id") or "", lipsync_engine)
     else:
         h = shot_hash(shot, manifest, ep_dir)

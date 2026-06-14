@@ -609,9 +609,11 @@ def main(slug):
         raise RuntimeError("[stage 2b cloud] lipsync is routed to the remote render "
                            "service but its URL isn't set/enabled — Settings → Engines")
 
-    needs_hf = any(s.get("kind") == "higgsfield" for _c, s in cloud) \
+    # effective_kind: a mouthless character's lipsync shot renders as an i2v video
+    # (higgsfield) shot, which always needs HF regardless of the lipsync engine.
+    needs_hf = any(hfc.effective_kind(s, m) == "higgsfield" for _c, s in cloud) \
         or (lipsync_engine == "higgsfield"
-            and any(s.get("kind") == "lipsync" for _c, s in cloud))
+            and any(hfc.effective_kind(s, m) == "lipsync" for _c, s in cloud))
     if needs_hf:
         auth = _api("GET", "/api/higgsfield/auth", timeout=30)
         if not auth.get("connected"):
@@ -641,7 +643,8 @@ def main(slug):
 
     def work_one(item):
         cue, shot, h = item
-        if shot.get("kind") == "lipsync":
+        # Mouthless characters reroute lipsync → i2v video (effective_kind).
+        if hfc.effective_kind(shot, m) == "lipsync":
             if lipsync_engine == "local_wan":
                 sid = _gen_lipsync_local(slug, m, ep, cue, shot)
             elif lipsync_engine == "remote_render":

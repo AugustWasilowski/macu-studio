@@ -9,6 +9,7 @@ import sys, os, glob, subprocess, time, json
 sys.path.insert(0, os.path.dirname(__file__))
 from lib import (episode_paths, load_manifest, ensure_dirs,
                  jank_filter, probe_dur, staged_master_dir, ASSETS)
+import hf_cache as hfc
 
 def run(cmd):
     try:
@@ -75,7 +76,7 @@ def cloud_shot(slug, sh, dur, work, m, full_jank=False):
     # with the cue VO — trimming one would desync the mouth, so it's ignored.
     pre = []
     trim = sh.get("trim") or {}
-    if sh.get("kind") != "lipsync":
+    if hfc.effective_kind(sh, m) != "lipsync":
         t_in = float(trim.get("in") or 0.0)
         t_out = trim.get("out")
         if t_in > 0:
@@ -163,7 +164,7 @@ def main(slug):
     # the continuing VO. At most one lipsync per cue (both would want the t=0 slot).
     bad_lead, bad_multi = [], []
     for c in m["cues"]:
-        ls = [i for i, s in enumerate(c.get("shots") or []) if s.get("kind") == "lipsync"]
+        ls = [i for i, s in enumerate(c.get("shots") or []) if hfc.effective_kind(s, m) == "lipsync"]
         if len(ls) > 1:
             bad_multi.append(c["id"])
         elif ls and ls[0] != 0:
