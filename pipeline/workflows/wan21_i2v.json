@@ -3,18 +3,54 @@
     "id": "wan21_i2v",
     "title": "Wan 2.1 image-to-video (masters)",
     "capability": "masters",
-    "description": "Image + prompt -> animated webp master clip (Wan 2.1 I2V 14B, lightx2v lcm distill: 6 steps, cfg stays 1.0 - distilled, do not tune; shift 5). The plain image-to-video sibling of wan21_infinitetalk (no audio / no lipsync) — used by the WAN masters backend to seed CHARACTER shots from a crafted still so the cast stays on-model. Reuses the same --with-talking-head models + ComfyUI-WanVideoWrapper/VideoHelperSuite/KJNodes custom nodes (no extra downloads). BEST-EFFORT GRAPH derived from the proven InfiniteTalk graph by dropping the audio path (LoadAudio/MultiTalkWav2VecEmbeds/Wav2VecModelLoader/MultiTalkModelLoader) and swapping the i2v encode to WanVideoImageToVideoEncode — the exact i2v node name/signature must be validated against a live WanVideoWrapper before this renders. Output is SaveAnimatedWEBP so stage 3 rife / stage 4 assemble consume it exactly like a zeroscope master.",
+    "description": "Image + prompt -> animated webp master clip (Wan 2.1 I2V 14B, lightx2v lcm distill: 6 steps, cfg stays 1.0 - distilled, do not tune; shift 5). The plain image-to-video sibling of wan21_infinitetalk (no audio / no lipsync) \u2014 used by the WAN masters backend to seed CHARACTER shots from a crafted still so the cast stays on-model. Reuses the same --with-talking-head models + ComfyUI-WanVideoWrapper/VideoHelperSuite/KJNodes custom nodes (no extra downloads). Derived from the proven InfiniteTalk graph by dropping the audio path (LoadAudio/MultiTalkWav2VecEmbeds/Wav2VecModelLoader/MultiTalkModelLoader); node 309 is a real WanVideoDecode (VAE node 129 + sampler latents node 128), not the InfiniteTalk passthrough \u2014 validated live against WanVideoWrapper on an ep-021 b-roll still (2026-06-13, SSA-125). Output is SaveAnimatedWEBP so stage 3 rife / stage 4 assemble consume it exactly like a zeroscope master.",
     "output_node": "400",
     "inputs": {
-      "prompt": ["241", "inputs", "positive_prompt"],
-      "negative": ["241", "inputs", "negative_prompt"],
-      "image": ["284", "inputs", "image"],
-      "seed": ["128", "inputs", "seed"],
-      "steps": ["128", "inputs", "steps"],
-      "width": ["245", "inputs", "value"],
-      "height": ["246", "inputs", "value"],
-      "num_frames": ["270", "inputs", "value"],
-      "filename_prefix": ["400", "inputs", "filename_prefix"]
+      "prompt": [
+        "241",
+        "inputs",
+        "positive_prompt"
+      ],
+      "negative": [
+        "241",
+        "inputs",
+        "negative_prompt"
+      ],
+      "image": [
+        "284",
+        "inputs",
+        "image"
+      ],
+      "seed": [
+        "128",
+        "inputs",
+        "seed"
+      ],
+      "steps": [
+        "128",
+        "inputs",
+        "steps"
+      ],
+      "width": [
+        "245",
+        "inputs",
+        "value"
+      ],
+      "height": [
+        "246",
+        "inputs",
+        "value"
+      ],
+      "num_frames": [
+        "270",
+        "inputs",
+        "value"
+      ],
+      "filename_prefix": [
+        "400",
+        "inputs",
+        "filename_prefix"
+      ]
     },
     "defaults": {
       "steps": 6,
@@ -65,11 +101,19 @@
         "load_device": "offload_device",
         "attention_mode": "sdpa",
         "rms_norm_function": "default",
-        "block_swap_args": ["134", 0],
-        "lora": ["138", 0]
+        "block_swap_args": [
+          "134",
+          0
+        ],
+        "lora": [
+          "138",
+          0
+        ]
       },
       "class_type": "WanVideoModelLoader",
-      "_meta": { "title": "WanVideo Model Loader" }
+      "_meta": {
+        "title": "WanVideo Model Loader"
+      }
     },
     "128": {
       "inputs": {
@@ -86,12 +130,23 @@
         "start_step": 0,
         "end_step": -1,
         "add_noise_to_samples": true,
-        "model": ["122", 0],
-        "image_embeds": ["192", 0],
-        "text_embeds": ["241", 0]
+        "model": [
+          "122",
+          0
+        ],
+        "image_embeds": [
+          "192",
+          0
+        ],
+        "text_embeds": [
+          "241",
+          0
+        ]
       },
       "class_type": "WanVideoSampler",
-      "_meta": { "title": "WanVideo Sampler" }
+      "_meta": {
+        "title": "WanVideo Sampler"
+      }
     },
     "129": {
       "inputs": {
@@ -101,7 +156,9 @@
         "verbose": false
       },
       "class_type": "WanVideoVAELoader",
-      "_meta": { "title": "WanVideo VAE Loader" }
+      "_meta": {
+        "title": "WanVideo VAE Loader"
+      }
     },
     "134": {
       "inputs": {
@@ -114,7 +171,9 @@
         "block_swap_debug": false
       },
       "class_type": "WanVideoBlockSwap",
-      "_meta": { "title": "WanVideo Block Swap" }
+      "_meta": {
+        "title": "WanVideo Block Swap"
+      }
     },
     "138": {
       "inputs": {
@@ -124,23 +183,45 @@
         "merge_loras": false
       },
       "class_type": "WanVideoLoraSelect",
-      "_meta": { "title": "WanVideo Lora Select" }
+      "_meta": {
+        "title": "WanVideo Lora Select"
+      }
     },
     "192": {
       "inputs": {
-        "width": ["291", 1],
-        "height": ["291", 2],
-        "num_frames": ["270", 0],
+        "width": [
+          "291",
+          1
+        ],
+        "height": [
+          "291",
+          2
+        ],
+        "num_frames": [
+          "270",
+          0
+        ],
         "force_offload": false,
         "noise_aug_strength": 0.0,
         "start_latent_strength": 1.0,
         "end_latent_strength": 1.0,
-        "vae": ["129", 0],
-        "clip_embeds": ["237", 0],
-        "start_image": ["291", 0]
+        "vae": [
+          "129",
+          0
+        ],
+        "clip_embeds": [
+          "237",
+          0
+        ],
+        "start_image": [
+          "291",
+          0
+        ]
       },
       "class_type": "WanVideoImageToVideoEncode",
-      "_meta": { "title": "WanVideo ImageToVideo Encode" }
+      "_meta": {
+        "title": "WanVideo ImageToVideo Encode"
+      }
     },
     "237": {
       "inputs": {
@@ -151,18 +232,28 @@
         "force_offload": true,
         "tiles": 0,
         "ratio": 0.5,
-        "clip_vision": ["238", 0],
-        "image_1": ["291", 0]
+        "clip_vision": [
+          "238",
+          0
+        ],
+        "image_1": [
+          "291",
+          0
+        ]
       },
       "class_type": "WanVideoClipVisionEncode",
-      "_meta": { "title": "WanVideo ClipVision Encode" }
+      "_meta": {
+        "title": "WanVideo ClipVision Encode"
+      }
     },
     "238": {
       "inputs": {
         "clip_name": "clip_vision_h.safetensors"
       },
       "class_type": "CLIPVisionLoader",
-      "_meta": { "title": "Load CLIP Vision" }
+      "_meta": {
+        "title": "Load CLIP Vision"
+      }
     },
     "241": {
       "inputs": {
@@ -175,56 +266,111 @@
         "device": "gpu"
       },
       "class_type": "WanVideoTextEncodeCached",
-      "_meta": { "title": "WanVideo TextEncode Cached" }
+      "_meta": {
+        "title": "WanVideo TextEncode Cached"
+      }
     },
     "245": {
-      "inputs": { "value": 512 },
+      "inputs": {
+        "value": 512
+      },
       "class_type": "INTConstant",
-      "_meta": { "title": "Width" }
+      "_meta": {
+        "title": "Width"
+      }
     },
     "246": {
-      "inputs": { "value": 512 },
+      "inputs": {
+        "value": 512
+      },
       "class_type": "INTConstant",
-      "_meta": { "title": "Height" }
+      "_meta": {
+        "title": "Height"
+      }
     },
     "270": {
-      "inputs": { "value": 49 },
+      "inputs": {
+        "value": 49
+      },
       "class_type": "INTConstant",
-      "_meta": { "title": "Num frames" }
+      "_meta": {
+        "title": "Num frames"
+      }
     },
     "281": {
       "inputs": {
-        "width": ["245", 0],
-        "height": ["246", 0],
+        "width": [
+          "245",
+          0
+        ],
+        "height": [
+          "246",
+          0
+        ],
         "upscale_method": "lanczos",
         "keep_proportion": "crop",
         "pad_color": "0, 0, 0",
         "crop_position": "center",
         "divisible_by": 16,
         "device": "cpu",
-        "image": ["284", 0]
+        "image": [
+          "284",
+          0
+        ]
       },
       "class_type": "ImageResizeKJv2",
-      "_meta": { "title": "Resize Image v2" }
+      "_meta": {
+        "title": "Resize Image v2"
+      }
     },
     "284": {
-      "inputs": { "image": "input.png" },
+      "inputs": {
+        "image": "input.png"
+      },
       "class_type": "LoadImage",
-      "_meta": { "title": "Load Image" }
+      "_meta": {
+        "title": "Load Image"
+      }
     },
     "291": {
-      "inputs": { "image": ["281", 0] },
+      "inputs": {
+        "image": [
+          "281",
+          0
+        ]
+      },
       "class_type": "GetImageSizeAndCount",
-      "_meta": { "title": "Get Image Size & Count" }
+      "_meta": {
+        "title": "Get Image Size & Count"
+      }
     },
     "309": {
-      "inputs": { "samples": ["128", 0] },
-      "class_type": "WanVideoPassImagesFromSamples",
-      "_meta": { "title": "WanVideo Pass Images From Samples" }
+      "inputs": {
+        "vae": [
+          "129",
+          0
+        ],
+        "samples": [
+          "128",
+          0
+        ],
+        "enable_vae_tiling": false,
+        "tile_x": 272,
+        "tile_y": 272,
+        "tile_stride_x": 144,
+        "tile_stride_y": 128
+      },
+      "class_type": "WanVideoDecode",
+      "_meta": {
+        "title": "WanVideo Decode"
+      }
     },
     "400": {
       "inputs": {
-        "images": ["309", 0],
+        "images": [
+          "309",
+          0
+        ],
         "filename_prefix": "macu_i2v",
         "fps": 16.0,
         "lossless": false,
@@ -232,7 +378,9 @@
         "method": "default"
       },
       "class_type": "SaveAnimatedWEBP",
-      "_meta": { "title": "Save Animated WEBP" }
+      "_meta": {
+        "title": "Save Animated WEBP"
+      }
     }
   }
 }
