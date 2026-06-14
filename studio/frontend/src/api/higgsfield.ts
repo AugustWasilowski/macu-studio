@@ -70,6 +70,16 @@ export interface HfAccount {
 }
 export interface HfTxn { display_name?: string; credits?: number; action?: string; created_at?: string; }
 
+// An item from the account generation history (show_generations). Output media is
+// results.rawUrl; thumb is results.thumbnailUrl (video) / results.minUrl (image).
+export interface HfGeneration {
+  id: string; type: "image" | "video"; status?: string; model?: string;
+  createdAt?: number;
+  params?: { prompt?: string; seed?: number | null; aspect_ratio?: string;
+             width?: number; height?: number; resolution?: string; [k: string]: unknown };
+  results?: { rawUrl?: string; thumbnailUrl?: string; minUrl?: string; url?: string; [k: string]: unknown };
+}
+
 // Generation provenance stamped on each HF take (backend gen_metadata()).
 export interface HfGenMeta {
   provider: string; tool: string;
@@ -93,6 +103,9 @@ export const higgsfieldApi = {
     post<HfElement>("/api/higgsfield/elements", body),
   account: () => fetch("/api/higgsfield/account").then((r) => J<HfAccount>(r)),
   transactions: (size = 20) => fetch(`/api/higgsfield/transactions?size=${size}`).then((r) => J<{ items: HfTxn[] }>(r)),
+  generations: (type?: "image" | "video", size = 24, cursor?: number) =>
+    fetch(`/api/higgsfield/generations?size=${size}${type ? `&type=${type}` : ""}${cursor != null ? `&cursor=${cursor}` : ""}`)
+      .then((r) => J<{ items: HfGeneration[]; next_cursor?: number | null }>(r)),
   cost: (params: { model: string; duration?: number; resolution?: string; aspect_ratio?: string }) =>
     post<{ model: string; credits: number | null }>("/api/higgsfield/cost", params),
   estimate: (slug: string) =>

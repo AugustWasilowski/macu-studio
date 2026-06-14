@@ -1254,5 +1254,10 @@
   "characters.trainSoulTitle": "Train a Higgsfield Soul from these takes for a reusable identity",
   "characters.trainSoulNeed": "Need at least 5 takes to train a Soul",
   "characters.trainSoulConfirm": "Train a Higgsfield Soul “{name}” from {n} takes? (uses your account; runs in the background)",
-  "characters.trainSoulStarted": "Soul “{name}” training started — it'll appear in the identity picker when ready"
+  "characters.trainSoulStarted": "Soul “{name}” training started — it'll appear in the identity picker when ready",
+  "characters.importHf": "Import from HF",
+  "characters.importHfTitle": "Import from Higgsfield",
+  "characters.importHfEmpty": "No generations in your Higgsfield account yet.",
+  "characters.importHfDone": "Imported into takes",
+  "characters.importHfHelp": "Generate free in the Higgsfield web app, then pull results in here — listing + download don't bill. Click a generation to add it as a take."
 }

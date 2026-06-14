@@ -133,6 +133,39 @@ async def post_take_to_element(show: str, key: str, take: str, body: dict = Body
         raise HTTPException(502, f"element create failed: {e}")
 
 
+@router.post("/api/shows/{show}/characters/{key}/import-generation")
+async def post_import_generation(show: str, key: str, body: dict = Body(...)):
+    """Harvest an existing Higgsfield generation (web- or API-made) into a take
+    (SSA-132). The $0 loop: generate free in the HF web app, pull it in here. Reuses
+    fetch_generation (downloads results.rawUrl) + the take-record hf plumbing so the
+    provenance chips light up. body: {gen_id}."""
+    from . import higgsfield as hf
+    _check_show(show)
+    _404(chars.load, show, key)
+    gen_id = (body.get("gen_id") or "").strip()
+    if not gen_id:
+        raise HTTPException(400, "gen_id required")
+    with tempfile.NamedTemporaryFile(suffix=".img", delete=False) as t:
+        raw = Path(t.name)
+    png = raw.with_suffix(".png")
+    try:
+        meta = await hf.fetch_generation(gen_id, raw)
+        stilljobs.png_normalize(raw, png)   # first frame if it's a video gen
+        rec = chars.add_take(show, key, png, engine="higgsfield",
+                             model=meta.get("model_used"), prompt=meta.get("prompt") or "",
+                             seed=meta.get("seed"), params={"imported_gen_id": gen_id}, hf=meta)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"import failed: {e}")
+    finally:
+        raw.unlink(missing_ok=True)
+        png.unlink(missing_ok=True)   # add_take moved it on success; no-op then
+    return {"ok": True, "take": rec, "default_take": chars.load(show, key)["default_take"]}
+
+
 @router.post("/api/shows/{show}/characters/{key}/train-soul")
 async def post_train_soul(show: str, key: str, body: dict = Body(default={})):
     """Train a Higgsfield Soul from this character's existing takes (SSA-129) — 5–20

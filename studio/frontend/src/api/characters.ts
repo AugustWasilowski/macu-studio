@@ -59,6 +59,8 @@ export const charactersApi = {
     post<{ id: string; name?: string }>(`${base(show)}/${key}/takes/${take}/element`, name ? { name } : {}),
   trainSoul: (show: string, key: string, body: { take_ids?: string[]; name?: string }) =>
     post<{ id: string; name?: string; status?: string }>(`${base(show)}/${key}/train-soul`, body),
+  importGeneration: (show: string, key: string, gen_id: string) =>
+    post<{ ok: boolean; take: Take; default_take: string | null }>(`${base(show)}/${key}/import-generation`, { gen_id }),
 
   generate: (show: string, key: string, body: { engine?: string; prompt?: string; seed?: number; count?: number; params?: Record<string, unknown>; soul_id?: string; element_id?: string }) =>
     post<{ ok: boolean; key: string; engine: string; count: number }>(`${base(show)}/${key}/generate`, body),

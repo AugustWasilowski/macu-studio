@@ -5,6 +5,7 @@ import { charactersApi } from "../api/characters";
 import type { Character, CharSummary, Take, UsageRow, UseResult } from "../api/characters";
 import { enginesApi } from "../api/engines";
 import { higgsfieldApi } from "../api/higgsfield";
+import type { HfGeneration } from "../api/higgsfield";
 import { showsApi } from "../api/shows";
 import { Field } from "../components/Field";
 import { Modal } from "../components/Modal";
@@ -128,6 +129,7 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
 
   const [zoomTake, setZoomTake] = useState<Take | null>(null);
   const [useOpen, setUseOpen] = useState<string | null>(null); // take id
+  const [importOpen, setImportOpen] = useState(false);
 
   if (c.isLoading) return <section className="panel grid place-items-center text-txt-dim">{t("common.loading")}</section>;
   if (c.isError || !c.data) return <section className="panel grid place-items-center text-red">{String(c.error)}</section>;
@@ -172,6 +174,7 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
       <div className="px-3 pb-3">
         <div className="flex items-center pb-1">
           <div className="label-tiny flex-1">{t("characters.takesTitle", { n: ch.takes.length })}</div>
+          <ImportFromHfButton onOpen={() => setImportOpen(true)} />
           <TrainSoulButton show={show} charKey={charKey} name={ch.name} takes={ch.takes} />
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
@@ -208,6 +211,10 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
       {useOpen && (
         <UseInEpisodeDialog show={show} charKey={charKey} takeId={useOpen}
                             onClose={() => setUseOpen(null)} />
+      )}
+      {importOpen && (
+        <ImportFromHfModal show={show} charKey={charKey} onClose={() => setImportOpen(false)}
+                           onImported={() => { refetch(); }} />
       )}
     </section>
   );
@@ -273,6 +280,68 @@ function TrainSoulButton({ show, charKey, name, takes }: {
             title={enough ? t("characters.trainSoulTitle") : t("characters.trainSoulNeed")}>
       {t("characters.trainSoul")}
     </button>
+  );
+}
+
+// "Import from Higgsfield" entry — hidden unless HF is connected.
+function ImportFromHfButton({ onOpen }: { onOpen: () => void }) {
+  const t = useT();
+  const account = useQuery({ queryKey: ["hf-account"], queryFn: higgsfieldApi.account, staleTime: 60_000, retry: false });
+  if (!account.data?.connected) return null;
+  return <button className="btn text-[11px]" onClick={onOpen} title={t("characters.importHfTitle")}>{t("characters.importHf")}</button>;
+}
+
+// Browse the HF account's image generations (web- or API-made) and pull one in as a
+// take — the $0 loop (generate free in the web app, harvest here). SSA-132.
+function ImportFromHfModal({ show, charKey, onClose, onImported }: {
+  show: string; charKey: string; onClose: () => void; onImported: () => void;
+}) {
+  const t = useT();
+  const push = useStore((s) => s.pushToast);
+  const gens = useQuery({ queryKey: ["hf-generations", "image"], queryFn: () => higgsfieldApi.generations("image"), retry: false });
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [done, setDone] = useState<Set<string>>(new Set());
+
+  const importOne = async (g: HfGeneration) => {
+    setBusyId(g.id);
+    try {
+      await charactersApi.importGeneration(show, charKey, g.id);
+      setDone((s) => new Set(s).add(g.id));
+      push(t("characters.importHfDone"), "ok");
+      onImported();
+    } catch (e) { push(String(e), "err"); } finally { setBusyId(null); }
+  };
+
+  const items = gens.data?.items ?? [];
+  return (
+    <Modal open onClose={onClose} title={t("characters.importHfTitle")} width={820}>
+      {gens.isLoading && <div className="text-txt-dim p-4">{t("common.loading")}</div>}
+      {gens.isError && <div className="text-red p-4 text-[12px]">{String(gens.error)}</div>}
+      {!gens.isLoading && !gens.isError && items.length === 0 && (
+        <div className="text-txt-faint p-4 text-[12px]">{t("characters.importHfEmpty")}</div>
+      )}
+      <div className="grid gap-2 max-h-[460px] overflow-y-auto" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
+        {items.map((g) => {
+          const thumb = g.results?.minUrl || g.results?.thumbnailUrl || g.results?.rawUrl;
+          const imported = done.has(g.id);
+          return (
+            <button key={g.id} className="group relative rounded overflow-hidden hairline-soft text-left disabled:opacity-60"
+                    disabled={busyId === g.id || imported} onClick={() => importOne(g)} title={g.params?.prompt || g.id}>
+              {thumb
+                ? <img src={thumb} alt="" className="w-full bg-black" style={{ aspectRatio: "1/1", objectFit: "cover" }} />
+                : <div className="w-full bg-bg-3 grid place-items-center text-txt-faint" style={{ aspectRatio: "1/1" }}>?</div>}
+              <div className="flex items-center justify-between px-1.5 py-1 text-[10px] bg-bg-2">
+                <span className="font-mono truncate">{g.model || g.type}</span>
+                {imported ? <span className="text-amber">✓</span>
+                          : busyId === g.id ? <span className="label-tiny">…</span>
+                          : <span className="label-tiny opacity-0 group-hover:opacity-100">⤵</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="label-tiny pt-2 leading-relaxed">{t("characters.importHfHelp")}</p>
+    </Modal>
   );
 }
 

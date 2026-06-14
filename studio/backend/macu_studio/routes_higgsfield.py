@@ -296,6 +296,42 @@ async def post_import(body: dict = Body(...)):
     return {"ok": True, "path": str(p), "hf": meta}
 
 
+@router.post("/api/episodes/{slug}/shot/{shot_id}/import-generation")
+async def post_shot_import_generation(slug: str, shot_id: str, body: dict = Body(...)):
+    """Harvest an existing Higgsfield generation into a cloud SHOT's clip (SSA-132) —
+    places it as clips/hf_<shot>.mp4 and stamps the shot sidecar fresh so stage 2b
+    skips regen. body: {gen_id}."""
+    gen_id = (body.get("gen_id") or "").strip()
+    if not gen_id:
+        raise HTTPException(400, "gen_id required")
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    found = next((((cue, shot)) for cue in (m.get("cues") or [])
+                 for shot in (cue.get("shots") or []) if shot.get("id") == shot_id), None)
+    if not found:
+        raise HTTPException(404, f"shot {shot_id} not found in {slug}")
+    cue, shot = found
+    if shot.get("kind") not in hfc.CLOUD_KINDS:
+        raise HTTPException(400, f"shot {shot_id} is kind '{shot.get('kind')}' — only cloud shots take an HF clip")
+    ep = episode_dir(slug)
+    dest = hfc.clip_path(ep, shot_id)
+    try:
+        meta = await hf.fetch_generation(gen_id, dest)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"import failed: {e}")
+    # Mark fresh so the render reuses the harvested clip instead of regenerating it.
+    sc_path = hfc.clips_sidecar_path(ep)
+    entries = hfc.load_sidecar(sc_path, "shots")
+    st = hfc.shot_state(shot, cue, m, ep, entries, lipsync_engine=engines.route("lipsync"))
+    entries[shot_id] = st["hash"]
+    hfc.save_sidecar(sc_path, "shots", entries)
+    return {"ok": True, "shot": shot_id, "clip": f"clips/hf_{shot_id}.mp4", "hf": meta}
+
+
 # ---- cost estimate ------------------------------------------------------------
 
 # Cost is parameter-shaped, not prompt-shaped: one get_cost preflight per
