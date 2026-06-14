@@ -24,6 +24,7 @@ from . import hfcache as hfc
 from . import manifest as manifest_mod
 from . import still_engines
 from . import stilljobs
+from . import config
 from .config import SHARES
 from .episodes import episode_dir
 
@@ -463,9 +464,13 @@ async def get_still_status(slug: str, who: str):
     entries = hfc.load_sidecar(hfc.stills_sidecar_path(ep), "stills")
     fresh = p.exists() and (entries.get(who) is None or entries.get(who) == hfc.still_hash(char, m))
     job = STILL_JOBS.get(f"{slug}:{who}") or {}
+    # Surface a fetchable URL + path for the active seed still so a headless client
+    # (Leo) can preview it after use_character_in_episode, instead of screenshotting.
+    url = config.asset_url(f"/api/episodes/{slug}/still/{who}") if p.exists() else None
     return {"exists": p.exists(), "fresh": fresh,
             "mtime": p.stat().st_mtime if p.exists() else None,
             "has_prompt": bool(char.get("still_prompt")),
+            "url": url, "path": str(p) if p.exists() else None,
             "job": {"state": job.get("state"), "error": job.get("error")} if job else None}
 
 

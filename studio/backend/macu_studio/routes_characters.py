@@ -8,11 +8,34 @@ from fastapi import APIRouter, Body, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from . import characters as chars
+from . import config
 from . import shows as shows_mod
 from . import still_engines
 from . import stilljobs
 
 router = APIRouter()
+
+
+def _enrich_takes(show: str, key: str, c: dict) -> dict:
+    """Surface a fetchable image URL + local path on each take so a HEADLESS client
+    (e.g. Leo over MCP) can pull the bytes to preview, instead of screenshotting the
+    Characters page. `url`/`thumb_url` are absolute when MACU_STUDIO_PUBLIC_URL is set,
+    else relative to the Studio host the caller is already on. Mutates the response
+    dict only (chars.load returns a fresh parse — nothing is written back to disk)."""
+    for t in c.get("takes") or []:
+        tid = t.get("id")
+        if not tid:
+            continue
+        base = f"/api/shows/{show}/characters/{key}/takes/{tid}"
+        t["url"] = config.asset_url(base)
+        t["thumb_url"] = config.asset_url(base + "?thumb=true")
+        t["path"] = str(chars.take_path(show, key, tid))
+    dt = c.get("default_take")
+    if dt:
+        base = f"/api/shows/{show}/characters/{key}/takes/{dt}"
+        c["default_take_url"] = config.asset_url(base)
+        c["default_take_thumb_url"] = config.asset_url(base + "?thumb=true")
+    return c
 
 
 def _check_show(show: str) -> str:
@@ -49,7 +72,8 @@ def post_character(show: str, body: dict = Body(...)):
 
 @router.get("/api/shows/{show}/characters/{key}")
 def get_character(show: str, key: str):
-    c = _404(chars.load, _check_show(show), key)
+    show = _check_show(show)
+    c = _enrich_takes(show, key, _404(chars.load, show, key))
     job = stilljobs.get(f"lib:{show}:{key}")
     return {**c, "job": {"state": job["state"], "error": job["error"],
                          "progress": job["progress"]} if job else None}
@@ -156,11 +180,12 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
 
 @router.get("/api/shows/{show}/characters/{key}/generate/status")
 def get_generate_status(show: str, key: str):
-    _check_show(show)
+    show = _check_show(show)
     job = stilljobs.get(f"lib:{show}:{key}")
-    c = _404(chars.load, show, key)
+    c = _enrich_takes(show, key, _404(chars.load, show, key))
     return {"job": job, "take_count": len(c.get("takes") or []),
-            "takes": c.get("takes") or [], "default_take": c.get("default_take")}
+            "takes": c.get("takes") or [], "default_take": c.get("default_take"),
+            "default_take_url": c.get("default_take_url")}
 
 
 # ---- episode sync ------------------------------------------------------------------

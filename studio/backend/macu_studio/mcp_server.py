@@ -56,6 +56,12 @@ CHARACTERS (show-level cast, feeds Higgsfield i2v/lipsync shots):
  - generate_character_takes makes reference stills (engine comfy_zimage = local +
    free; higgsfield = credits; remote_render = a remote GPU box; empty = the
    routed default). Poll character_take_status; set_default_take picks the keeper.
+   Each take carries `url`/`thumb_url` (+ local `path`) — pull these to PREVIEW takes
+   in chat for the user to choose, no screenshot needed.
+ - PREFERRED curated path for library characters: generate_character_takes ->
+   set_default_take -> use_character_in_episode(slug, take=...). This reuses one
+   vetted still across episodes; prefer it over generate_character_still / a per-
+   episode still_prompt (those mint a fresh one-off still each time).
  - Cast stubs are auto-seeded when manifest_from_script / apply_shots run — new
    speakers appear in list_characters with empty prompts to fill in.
  - use_character_in_episode copies the still into an episode (pre-stamped, free).
@@ -854,8 +860,11 @@ async def list_characters(show: str) -> dict:
 
 @mcp.tool()
 async def get_character(show: str, key: str) -> dict:
-    """Full character record: prompts, takes (with engine/model/seed provenance),
-    default take, and any running generation job."""
+    """Full character record: prompts, takes, default take, and any running
+    generation job. Each take carries `url` + `thumb_url` (fetchable image — absolute
+    if MACU_STUDIO_PUBLIC_URL is set, else relative to this Studio's host) and `path`
+    (local file) plus engine/model/seed provenance, so a headless client can pull the
+    image to preview takes for selection. Top-level `default_take_url` too."""
     return await _api("GET", f"/api/shows/{show}/characters/{key}")
 
 
@@ -895,7 +904,8 @@ async def generate_character_takes(show: str, key: str, engine: str = "",
 
 @mcp.tool()
 async def character_take_status(show: str, key: str) -> dict:
-    """Generation job state + the character's takes list."""
+    """Generation job state + the character's takes list (each take carries a
+    fetchable `url`/`thumb_url` + local `path` — pull these to preview takes)."""
     return await _api("GET", f"/api/shows/{show}/characters/{key}/generate/status")
 
 

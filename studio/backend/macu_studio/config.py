@@ -29,6 +29,18 @@ REPO_ROOT = STUDIO_ROOT.parent
 HOST = os.environ.get("MACU_STUDIO_HOST", "127.0.0.1")
 PORT = int(os.environ.get("MACU_STUDIO_PORT", "8774"))
 
+# Public base URL for building ABSOLUTE asset URLs (character take + episode still
+# images) that a REMOTE MCP client (e.g. headless Leo) can fetch directly. Empty →
+# emit relative paths so the client prepends the Studio host it's already talking to.
+# e.g. http://10.0.0.245:8774  or  https://studio.mayorawesome.com
+PUBLIC_BASE = os.environ.get("MACU_STUDIO_PUBLIC_URL", "").rstrip("/")
+
+
+def asset_url(path: str) -> str:
+    """Absolute URL if MACU_STUDIO_PUBLIC_URL is set, else the relative `path`
+    (the caller already knows which Studio host it connected to)."""
+    return f"{PUBLIC_BASE}{path}" if PUBLIC_BASE else path
+
 CORS_DEV_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
