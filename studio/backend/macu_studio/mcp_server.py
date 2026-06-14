@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -29,6 +31,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
 from . import activity as activity_mod
+from . import config
 from . import cowork_jobs
 from . import events as events_mod
 
@@ -1188,3 +1191,97 @@ async def cowork_recent_generations(type: str = "", limit: int = 10) -> dict:
                     "thumb_url": r.get("thumbnailUrl") or r.get("minUrl") or r.get("rawUrl"),
                     "created_at": g.get("createdAt")})
     return {"generations": out, "count": len(out)}
+
+
+# --------------------------------------------------------------------------- #
+# Skill serving (SSA: serve the shipped Claude Code skills over MCP)
+#
+# So an agent that connects to Studio can DISCOVER and PULL the skills with no
+# manual install — e.g. a CoWork agent fetches cowork-harvest + higgsfield-web-
+# free-gen and starts working the queue. Served text is readable REFERENCE, not an
+# auto-triggered installed skill (drop the file in the agent's skills dir for that).
+# --------------------------------------------------------------------------- #
+
+def _skills_root() -> Path:
+    return config.REPO_ROOT / "skills"
+
+
+def _skill_frontmatter(skill_md: Path) -> dict:
+    """Parse name/description/trigger from a SKILL.md YAML frontmatter (single-line
+    values; quotes stripped). Best-effort — a malformed header just yields {}."""
+    try:
+        text = skill_md.read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        return {}
+    m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    if not m:
+        return {}
+    out: dict = {}
+    for key in ("name", "description", "trigger"):
+        km = re.search(rf"^{key}:\s*(.+)$", m.group(1), re.M)
+        if km:
+            out[key] = km.group(1).strip().strip('"').strip("'")
+    return out
+
+
+def _skill_files(skill_dir: Path) -> list[str]:
+    """Markdown files in a skill (SKILL.md + reference/*), as skill-relative paths."""
+    return sorted(
+        str(p.relative_to(skill_dir)) for p in skill_dir.rglob("*.md")
+    )
+
+
+@mcp.tool()
+def list_skills() -> dict:
+    """List the Claude Code skills shipped with this Studio install, so a connecting
+    agent can discover them. Each entry has {name, description, trigger, files} —
+    fetch a file's markdown with get_skill(name, file). The CoWork free-generation
+    loop is the cowork-harvest + higgsfield-web-free-gen skills."""
+    root = _skills_root()
+    if not root.is_dir():
+        return {"skills": [], "note": f"no skills dir at {root}"}
+    skills = []
+    for d in sorted(root.iterdir()):
+        md = d / "SKILL.md"
+        if not (d.is_dir() and md.is_file()):
+            continue
+        fm = _skill_frontmatter(md)
+        skills.append({"name": fm.get("name") or d.name,
+                       "description": fm.get("description", ""),
+                       "trigger": fm.get("trigger", ""),
+                       "files": _skill_files(d),
+                       "resource": f"skill://{d.name}"})
+    return {"skills": skills, "count": len(skills)}
+
+
+def _read_skill_file(name: str, file: str = "SKILL.md") -> str:
+    """Path-confined read of a skill file; raises ValueError on a bad name/path."""
+    root = _skills_root().resolve()
+    skill_dir = (root / name).resolve()
+    if skill_dir.parent != root or not skill_dir.is_dir():
+        raise ValueError(f"unknown skill '{name}' — see list_skills")
+    target = (skill_dir / file).resolve()
+    if not (str(target) == str(skill_dir) or str(target).startswith(str(skill_dir) + "/")):
+        raise ValueError("file path escapes the skill directory")
+    if not target.is_file():
+        raise ValueError(f"no file '{file}' in skill '{name}' — see list_skills files[]")
+    return target.read_text(encoding="utf-8")
+
+
+@mcp.tool()
+def get_skill(name: str, file: str = "SKILL.md") -> dict:
+    """Fetch a shipped skill's markdown so you can follow it. file defaults to
+    SKILL.md; pass a skill-relative path from list_skills files[] for a reference
+    doc (e.g. file="reference/job-contract.md"). Returns {name, file, content}."""
+    try:
+        content = _read_skill_file(name, file)
+    except ValueError as e:
+        return {"error": True, "detail": str(e)}
+    return {"name": name, "file": file, "content": content}
+
+
+@mcp.resource("skill://{name}")
+def skill_resource(name: str) -> str:
+    """A shipped skill's SKILL.md, served as an MCP resource (skill://<name>).
+    Reference files are reachable via the get_skill tool."""
+    return _read_skill_file(name, "SKILL.md")
