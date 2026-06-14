@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from typing import Any
 
@@ -29,6 +30,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
 from . import activity as activity_mod
+from . import cowork_jobs
 from . import events as events_mod
 
 WORKFLOW_GUIDE = """\
@@ -1027,3 +1029,138 @@ async def studio_sync_apply(show: str, message: str = "") -> dict:
     direction of changes matters."""
     body = {"message": message} if message else {}
     return await _api("POST", f"/api/shows/{show}/sync/apply", body=body)
+
+
+# --------------------------------------------------------------------------- #
+# CoWork ↔ Studio job-board (SSA-133/137)
+#
+# The job store + REST CRUD are Leo's (cowork_jobs.py / routes_cowork.py); these
+# are the cowork_* MCP tools CoWork drives, the shared-token gate, and the
+# placement-on-done seam. Per the split: store = Leo, tools+auth+placement = Max.
+# --------------------------------------------------------------------------- #
+
+def _cowork_auth(token: str) -> dict | None:
+    """Shared-token gate for the cowork_* tools (R3). These mutate state on the
+    LAN-exposed :8774/mcp, so they're DISABLED until MACU_COWORK_TOKEN is set in
+    Studio's env, and every call must pass the matching `token`. Fail-closed —
+    we never expose the job board unauthenticated by accident."""
+    want = os.environ.get("MACU_COWORK_TOKEN", "")
+    if not want:
+        return {"error": True, "detail": "CoWork tools are disabled — set MACU_COWORK_TOKEN "
+                "in Studio's env and pass it as `token` to enable the job board."}
+    if token != want:
+        return {"error": True, "detail": "bad CoWork token"}
+    return None
+
+
+async def _place_generation(job: dict) -> None:
+    """Drop a finished job's harvested generation into its episode target, reusing
+    the SSA-132 placement routes (so the same provenance stamping applies). Target
+    is '<type>:<id>' — video/shot → the cloud clip; still/character|broll → the seed
+    still. Soul jobs carry no media (the soul_id is server-side) so there's nothing
+    to place."""
+    gen_ids = job.get("result_gen_ids") or []
+    if not gen_ids:
+        return
+    gid = gen_ids[0]
+    episode = job.get("episode") or ""
+    kind = job.get("kind")
+    ttype, _, tid = (job.get("target") or "").partition(":")
+    if not (episode and tid):
+        return
+    if kind == "video" or ttype == "shot":
+        await _api("POST", f"/api/episodes/{episode}/shot/{tid}/import-generation", body={"gen_id": gid})
+    elif kind == "still" or ttype in ("character", "broll"):
+        await _api("POST", f"/api/episodes/{episode}/still/{tid}/import-generation", body={"gen_id": gid})
+
+
+def _on_job_done(job: dict) -> None:
+    """Done-hook (R2): fires once when a job transitions to "done", whether via the
+    cowork_job_update tool OR a raw REST PATCH — one wiring covers both. Schedules
+    the async placement onto the running server loop; best-effort by contract."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return  # no event loop (e.g. a CLI mutation) — placement only runs in-server
+    loop.create_task(_place_generation(job))
+
+
+# Wire placement to the store seam at import (attach() runs before any job completes,
+# so _api has the app by the time the hook fires).
+cowork_jobs.set_done_hook(_on_job_done)
+
+
+@mcp.tool()
+async def cowork_jobs_list(token: str, status: str = "pending", episode: str = "",
+                           kind: str = "") -> dict:
+    """List browser-generation jobs from the CoWork job-board (oldest-first).
+    status/episode/kind filter (status="" = all). Needs the shared CoWork token."""
+    err = _cowork_auth(token)
+    if err:
+        return err
+    jobs = cowork_jobs.list_jobs(episode=episode or None, status=status or None, kind=kind or None)
+    return {"jobs": jobs, "count": len(jobs), "stats": cowork_jobs.stats(episode=episode or None)}
+
+
+@mcp.tool()
+async def cowork_job_claim(token: str, episode: str = "", kinds: list[str] | None = None,
+                           by: str = "cowork") -> dict:
+    """Atomically claim the oldest pending job (→ "claimed") so CoWork can work it
+    without racing. Optionally filter by episode / kinds. Returns the job, or
+    {job: null} if the queue is empty. Needs the shared CoWork token."""
+    err = _cowork_auth(token)
+    if err:
+        return err
+    job = cowork_jobs.claim_next(episode=episode or None, kinds=kinds or None, by=by or "cowork")
+    return {"job": job}
+
+
+@mcp.tool()
+async def cowork_job_update(token: str, id: str, status: str = "",
+                            result_gen_ids: list[str] | None = None, note: str = "",
+                            error: str = "", result_json: str = "") -> dict:
+    """Report progress on a CoWork job. Set status (claimed|in_progress|done|failed|
+    skipped) and, when done, the Higgsfield result_gen_ids you generated — Studio
+    auto-harvests them into the job's episode target on the done transition. result_json
+    is an optional JSON object merged into the job's freeform result (e.g. {"soul_id":..}).
+    Needs the shared CoWork token."""
+    err = _cowork_auth(token)
+    if err:
+        return err
+    result = None
+    if result_json.strip():
+        try:
+            result = json.loads(result_json)
+        except Exception as e:  # noqa: BLE001
+            return {"error": True, "detail": f"result_json is not valid JSON: {e}"}
+    try:
+        job = cowork_jobs.update_job(
+            id, status=status or None, result_gen_ids=result_gen_ids,
+            result=result, note=note or None, error=error or None)
+    except KeyError:
+        return {"error": True, "detail": f"unknown job id {id}"}
+    except ValueError as e:
+        return {"error": True, "detail": str(e)}
+    return {"job": job}
+
+
+@mcp.tool()
+async def cowork_jobs_create(token: str, episode: str, jobs_json: str) -> dict:
+    """Queue browser-generation jobs for CoWork to execute. jobs_json is a JSON array
+    of {kind: still|video|soul, target: "<type>:<id>", prompt?, model?, params?, note?}.
+    All-or-nothing validation. Mostly Leo/August queue work this way; CoWork lists +
+    claims + updates. Needs the shared CoWork token."""
+    err = _cowork_auth(token)
+    if err:
+        return err
+    try:
+        items = json.loads(jobs_json)
+        if not isinstance(items, list):
+            raise ValueError("jobs_json must be a JSON array")
+    except Exception as e:  # noqa: BLE001
+        return {"error": True, "detail": f"jobs_json invalid: {e}"}
+    try:
+        created = cowork_jobs.bulk_create(episode, items)
+    except (ValueError, KeyError) as e:
+        return {"error": True, "detail": str(e)}
+    return {"created": created, "count": len(created)}

@@ -296,6 +296,43 @@ async def post_import(body: dict = Body(...)):
     return {"ok": True, "path": str(p), "hf": meta}
 
 
+@router.post("/api/episodes/{slug}/still/{who}/import-generation")
+async def post_still_import_generation(slug: str, who: str, body: dict = Body(...)):
+    """Harvest an existing Higgsfield generation into an episode seed still (SSA-132/137)
+    for a character or b-roll key — places it as stills/<who>.png and stamps the stills
+    sidecar so the masters stage sees it fresh. Used by the CoWork job-board placement
+    hook for still-kind jobs. body: {gen_id}."""
+    gen_id = (body.get("gen_id") or "").strip()
+    if not gen_id:
+        raise HTTPException(400, "gen_id required")
+    try:
+        m = manifest_mod.load(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"unknown episode {slug}")
+    ep = episode_dir(slug)
+    dest = hfc.still_path(ep, who)
+    with tempfile.NamedTemporaryFile(suffix=".img", delete=False) as t:
+        raw = Path(t.name)
+    try:
+        meta = await hf.fetch_generation(gen_id, raw)
+        stilljobs.png_normalize(raw, dest)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"import failed: {e}")
+    finally:
+        raw.unlink(missing_ok=True)
+    # Stamp the stills sidecar fresh (character or b-roll hash, whichever applies).
+    char = (m.get("characters") or {}).get(who)
+    want = hfc.still_hash(char if isinstance(char, dict) else {}, m) if char is not None \
+        else hfc.broll_still_hash(m, who)
+    sc_path = hfc.stills_sidecar_path(ep)
+    entries = hfc.load_sidecar(sc_path, "stills")
+    entries[who] = want
+    hfc.save_sidecar(sc_path, "stills", entries)
+    return {"ok": True, "who": who, "still": f"stills/{who}.png", "hf": meta}
+
+
 @router.post("/api/episodes/{slug}/shot/{shot_id}/import-generation")
 async def post_shot_import_generation(slug: str, shot_id: str, body: dict = Body(...)):
     """Harvest an existing Higgsfield generation into a cloud SHOT's clip (SSA-132) —
