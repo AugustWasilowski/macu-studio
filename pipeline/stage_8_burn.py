@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Stage 8: burn manifest.subtitles SRT on the music-mixed nosubs via NVENC.
+"""Stage 8: burn manifest.subtitles SRT on the music-mixed nosubs.
 
+Encodes with NVENC when available, else libx264 (override: MACU_BURN_ENCODER).
 Usage: python3 stage_8_burn.py <slug>
 """
 import sys, os, subprocess, time
@@ -10,6 +11,28 @@ from lib import episode_paths, load_manifest, ensure_dirs, ASSETS, resolve_asset
 DEFAULT_STYLE = ("BorderStyle=1,Outline=2,Shadow=1,"
                  "PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
                  "MarginV=32,Alignment=2")
+
+def _pick_video_encoder():
+    """H.264 encoder args for the burn. MACU_BURN_ENCODER forces it (nvenc|libx264);
+    default 'auto' uses NVENC when this ffmpeg build advertises h264_nvenc, else falls
+    back to libx264 — a build without NVENC errored on '-cq' before (SSA-126)."""
+    libx264 = ["-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p"]
+    nvenc = ["-c:v", "h264_nvenc", "-preset", "p5", "-tune", "hq", "-cq", "22"]
+    choice = os.environ.get("MACU_BURN_ENCODER", "auto").strip().lower()
+    if choice == "libx264":
+        return libx264
+    if choice == "nvenc":
+        return nvenc
+    try:
+        enc = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"],
+                             capture_output=True, text=True, timeout=15).stdout
+        if "h264_nvenc" in enc:
+            return nvenc
+    except Exception:
+        pass
+    print("[stage 8 burn] h264_nvenc unavailable in this ffmpeg — using libx264")
+    return libx264
+
 
 def run(cmd, timeout=1800):
     # Per-call cap so a hung NVENC burn fails the stage (releasing the render lock)
@@ -79,7 +102,7 @@ def main(slug, src=None, srt=None, final=None, font=None):
     tmp = f"{base}.part{ext}"
     start = time.time()
     run(["ffmpeg","-y","-i", src,"-vf", sub_filter,
-         "-c:v","h264_nvenc","-preset","p5","-tune","hq","-cq","22",
+         *_pick_video_encoder(),
          "-c:a","copy","-movflags","+faststart", tmp])
     archived = None
     if os.path.exists(final):
