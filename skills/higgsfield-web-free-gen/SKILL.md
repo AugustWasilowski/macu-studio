@@ -65,6 +65,34 @@ FLUX.2 Pro · GPT Image · Seedream 4.5 · Kling O1 Image.
 - **Video:** "Minimax Hailuo 2.3" · Unlimited toggle **ON** → button reads
   `Unlimited` → free. (The toggle matters *most* for video — see cost below.)
 
+## Character consistency: Elements (free), NOT Souls (paid)
+
+To keep a character on-model across scenes and episodes, Higgsfield offers two
+mechanisms — and only one is free. **For this pipeline, use Elements.**
+
+- **Elements (use these).** A reusable character identity built from a **single
+  image**, **instant, no training, and FREE** — Elements work with the unlimited
+  models (Nano Banana Pro/2, Seedream, GPT Image, Kling 3.0, …). Create one from a
+  still via the web app's **"Save as Element"** (or `show_reference_elements`); it
+  returns an **`element_id`**. Embed **`<<<element_id>>>`** in any prompt to place
+  that character in a new scene/background, consistent across episodes. Sync the
+  `element_id` onto the Studio character record. (Studio's identity picker already
+  prefers Elements.)
+- **Souls (avoid for the free pipeline).** A *trained* identity model (Soul V2 /
+  Cinema) — the strongest identity lock, but **NOT on the unlimited list, so training
+  COSTS credits**. It needs ~5–20 reference images and ~10 min of training per
+  character, and only works with the `soul_2` / `soul_cinema_studio` image models.
+  Reach for a Soul only when a single-image Element isn't holding identity well
+  enough and the credit cost is worth it.
+
+**Rule of thumb:** Elements for cross-scene/episode consistency (free). For
+talking-head **lipsync** shots, consistency comes from feeding the chosen still into
+Hailuo 2.3 image-to-video — Elements matter mainly when you need the character in a
+*new* scene/background.
+
+> Worked example (ron): still gen `71b6dd93-d755-405a-bc80-7310fa7ab670`; Element
+> `macu_ron` → `element_id 343fb601-ff2f-4281-b284-84850bd19c43`, created free.
+
 ## Zero-cost verification (prove you're on the free lane)
 
 - **Subscription page** `higgsfield.ai/me/settings/subscription` → the **"Free

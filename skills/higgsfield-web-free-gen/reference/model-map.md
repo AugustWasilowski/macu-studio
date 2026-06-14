@@ -57,3 +57,17 @@ button reads `Unlimited`) after any reload or new tab.
 
 - **Still:** "Nano Banana Pro", aspect 1:1, 1k, Unlimited ON → button `Unlimited` → 0 cr.
 - **Video:** "Minimax Hailuo 2.3", Unlimited ON → button `Unlimited` → free.
+
+## Character identity: Elements (free) vs Souls (paid)
+
+| | Elements | Souls |
+|---|---|---|
+| Build from | a **single** image | **5–20** ref images |
+| Time | instant, no training | ~10 min training |
+| Cost | **FREE** (works with the unlimited models) | **NOT unlimited — training charges credits** |
+| Models | Nano Banana Pro/2, Seedream, GPT Image, Kling 3.0, … | `soul_2` / `soul_cinema_studio` only |
+| Use | `<<<element_id>>>` in a prompt → character in any new scene | strongest identity lock |
+
+**For the free pipeline, use Elements** for cross-scene/episode consistency. Reach
+for a Soul only if a single-image Element won't hold identity and the credits are
+worth it. (Lipsync consistency comes from the still → Hailuo 2.3 i2v, not from either.)
