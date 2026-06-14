@@ -4,8 +4,6 @@ import { EpisodeSummary, UI_STAGES, UIStage } from "../types";
 import { IBrace, IChevron, IList, ITerminal } from "./Icons";
 import { useStore } from "../store";
 import { Page, TopPage, STRIP_PAGES } from "../route";
-import { gitsyncApi } from "../api/gitsync";
-import { SyncModal } from "./SyncModal";
 import { versionApi } from "../api/version";
 import { VERSION_KEY } from "./UpdateModal";
 import { api } from "../api";
@@ -52,15 +50,6 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
   // checks once at startup, so this is usually populated by first paint.
   const version = useQuery({ queryKey: VERSION_KEY, queryFn: versionApi.get, refetchInterval: 5 * 60_000 });
   const updateAvailable = !!version.data?.check?.update_available;
-
-  // SYNC button: opens the Studio↔Studio sync modal (show-level, through the
-  // macu-web repo). It also quietly records the current episode's text into the
-  // local episode_meta history first, preserving the old button's behavior.
-  const [syncOpen, setSyncOpen] = useState(false);
-  function onSync() {
-    if (slug) gitsyncApi.sync(slug).catch(() => {});  // best-effort local history
-    setSyncOpen(true);
-  }
 
   async function onStop() {
     if (stopping) return;
@@ -256,17 +245,6 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
         </button>
         <JobStatus />
         <SysStat />
-        <button
-          className="btn"
-          data-tour="git-sync"
-          onClick={onSync}
-          disabled={!activeShow}
-          title={t("topbar.gitSyncTitle")}
-        >
-          <span className="font-semibold tracking-wider uppercase text-[11px]">
-            {t("topbar.gitSync")}
-          </span>
-        </button>
         {updateAvailable && (
           <button
             className="btn btn-cyan"
@@ -279,7 +257,6 @@ export function Topbar({ episodes, slug, page, stage, activeShow, go, onPick, on
           </button>
         )}
         <span className="seg-readout cyan">{clock}</span>
-      <SyncModal show={activeShow} open={syncOpen} onClose={() => setSyncOpen(false)} />
         <button className="btn" data-tour="drawers" onClick={toggleTerminal} title={t("topbar.terminalTitle")}>
           <ITerminal />
         </button>

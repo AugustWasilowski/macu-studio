@@ -4,6 +4,8 @@ import { api, type GenManifestSummary, type ScriptVersion, type ScriptDiffLine }
 import { useStore } from "../store";
 import { Modal } from "../components/Modal";
 import { Markdown } from "../components/Markdown";
+import { SyncModal } from "../components/SyncModal";
+import { gitsyncApi } from "../api/gitsync";
 import { useT, t as tFn } from "../i18n";
 import { Trans } from "../i18n/Trans";
 import { STARTER_SLUG as WIZARD_STARTER_SLUG } from "../wizard/starterScript";
@@ -14,6 +16,16 @@ export function Script({ slug }: { slug: string }) {
   const t = useT();
   const qc = useQueryClient();
   const push = useStore((s) => s.pushToast);
+  const activeShow = useStore((s) => s.activeShow);
+
+  // GIT SYNC: moved here from the top bar. Opens the Studio↔Studio sync modal
+  // (show-level, through the macu-web repo) and quietly records the current
+  // episode's text into local episode_meta history first (the old behavior).
+  const [syncOpen, setSyncOpen] = useState(false);
+  function onSync() {
+    if (slug) gitsyncApi.sync(slug).catch(() => {});  // best-effort local history
+    setSyncOpen(true);
+  }
 
   const scriptQ = useQuery({
     queryKey: ["script", slug],
@@ -96,6 +108,7 @@ export function Script({ slug }: { slug: string }) {
   return (
     <div className="flex flex-col h-full">
       <WizardBanner />
+      <SyncModal show={activeShow} open={syncOpen} onClose={() => setSyncOpen(false)} />
       <div className="flex flex-1 min-h-0">
       <section className="panel flex flex-col flex-1 min-w-0">
         <header className="flex items-center justify-between px-3 py-2 border-b hairline">
@@ -123,6 +136,15 @@ export function Script({ slug }: { slug: string }) {
               onClick={() => saveMut.mutate()}
             >
               {saveMut.isPending ? t("script.saving") : t("common.save")}
+            </button>
+            <button
+              className="btn"
+              data-tour="git-sync"
+              disabled={!activeShow}
+              title={t("topbar.gitSyncTitle")}
+              onClick={onSync}
+            >
+              {t("topbar.gitSync")}
             </button>
             <button
               className="btn btn-cyan"
