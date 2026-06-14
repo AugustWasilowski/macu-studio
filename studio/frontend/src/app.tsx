@@ -28,6 +28,21 @@ import { versionApi } from "./api/version";
 import { STARTER_SLUG } from "./wizard/starterScript";
 import { UIStage } from "./types";
 
+// Auto-open the update modal at most once per day. We persist the last auto-prompt
+// time so a page refresh doesn't re-pop the dialog every reload (manual "Check for
+// updates" from the File menu is unaffected — it bypasses this gate).
+const UPDATE_PROMPT_KEY = "macu-studio.updatePrompt.lastShown";
+const UPDATE_PROMPT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+function updatePromptedRecently(): boolean {
+  try {
+    const ts = Number(localStorage.getItem(UPDATE_PROMPT_KEY));
+    return Number.isFinite(ts) && ts > 0 && Date.now() - ts < UPDATE_PROMPT_INTERVAL_MS;
+  } catch {
+    return false;
+  }
+}
+
 const qc = new QueryClient({
   defaultOptions: {
     queries: {
@@ -85,6 +100,8 @@ function Shell() {
   useEffect(() => {
     if (autoPrompted || tourOpen || wizardActive || !updateAvailable || updateOpen) return;
     setAutoPrompted(true);
+    if (updatePromptedRecently()) return;  // already auto-prompted within the last day
+    try { localStorage.setItem(UPDATE_PROMPT_KEY, String(Date.now())); } catch { /* non-fatal */ }
     openUpdate();
   }, [autoPrompted, tourOpen, wizardActive, updateAvailable, updateOpen, openUpdate]);
 
