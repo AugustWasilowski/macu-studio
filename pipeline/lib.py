@@ -220,17 +220,37 @@ def probe_dur(path):
     return float(r.stdout.strip())
 
 
-def jank_filter():
+def jank_filter(full=False):
+    """The MACU broadcast look, as an ffmpeg -vf chain.
+
+    Default (August's call 2026-06-14, SSA-127) is the CLEAN look: B&W + broadcast
+    contrast + grain + chroma fringe + vignette, on a clean lanczos upscale. The
+    wiggle (geq sine-warp), scanlines (tinterlace), and lo-fi pixelation (256->1024
+    neighbor down-up) are dropped. Pass full=True (manifest `style.jank: true`) to
+    restore the original full-retro recipe per-episode."""
+    if full:
+        # Original full-jank recipe — the down-up neighbor scale is the lo-fi
+        # pixelation; geq is the VHS tracking wiggle; tinterlace is the scanlines.
+        return (
+            "scale=256:256:flags=neighbor,"
+            "scale=1024:1024:flags=neighbor,"
+            "hue=s=0,"
+            "curves=master='0/0 0.25/0.20 0.75/0.85 1/1',"
+            "gblur=sigma=0.4,"
+            "noise=alls=24:allf=t+u,"
+            "chromashift=cbh=2:crh=-2,"
+            "geq=lum='lum(X+sin(T*9+Y*0.04)*1.5,Y)':cb=128:cr=128,"
+            "tinterlace=mode=interleave_top,"
+            "vignette=angle=PI/5,"
+            "format=yuv420p"
+        )
     return (
-        "scale=256:256:flags=neighbor,"
-        "scale=1024:1024:flags=neighbor,"
+        "scale=1024:1024:flags=lanczos,"
         "hue=s=0,"
         "curves=master='0/0 0.25/0.20 0.75/0.85 1/1',"
         "gblur=sigma=0.4,"
         "noise=alls=24:allf=t+u,"
         "chromashift=cbh=2:crh=-2,"
-        "geq=lum='lum(X+sin(T*9+Y*0.04)*1.5,Y)':cb=128:cr=128,"
-        "tinterlace=mode=interleave_top,"
         "vignette=angle=PI/5,"
         "format=yuv420p"
     )

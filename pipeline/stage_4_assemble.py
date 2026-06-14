@@ -16,26 +16,26 @@ def run(cmd):
     except subprocess.CalledProcessError as e:
         print("FAIL:", " ".join(cmd[:6])); print(e.stderr[-1500:]); raise
 
-def rife_shot(rife_dir, sid, dur, work):
+def rife_shot(rife_dir, sid, dur, work, full_jank=False):
     out = f"{work}/{sid}.mp4"
     pngs = sorted(glob.glob(f"{rife_dir}/*.png"))
     n = len(pngs)
     fps_in = max(1.0, n / dur)
     run(["ffmpeg","-y","-framerate", f"{fps_in:.6f}",
          "-i", f"{rife_dir}/%08d.png",
-         "-vf", jank_filter(),
+         "-vf", jank_filter(full_jank),
          "-r","24","-t", f"{dur:.4f}",
          "-c:v","libx264","-preset","medium","-crf","22",
          "-movflags","+faststart","-pix_fmt","yuv420p", out])
     return out
 
 
-def freeze_shot(rife_dir, sid, dur, work):
+def freeze_shot(rife_dir, sid, dur, work, full_jank=False):
     """Hold-cue variant of rife_shot: lock onto the master's first frame for the
     full per-shot duration. Stops mouths/gestures from animating during a silent
-    reaction beat. The jank_filter still runs per output frame so noise,
-    scanline-shimmer, and tinterlace keep the broadcast aesthetic alive on top
-    of the still image — only the underlying character pose is frozen."""
+    reaction beat. The jank_filter still runs per output frame so noise/grain
+    keep the broadcast aesthetic alive on top of the still image — only the
+    underlying character pose is frozen."""
     pngs = sorted(glob.glob(f"{rife_dir}/*.png"))
     if not pngs:
         raise FileNotFoundError(f"freeze_shot: no PNGs in {rife_dir}")
@@ -43,7 +43,7 @@ def freeze_shot(rife_dir, sid, dur, work):
     out = f"{work}/{sid}.mp4"
     run(["ffmpeg","-y","-loop","1","-framerate","24",
          "-i", first,
-         "-vf", jank_filter(),
+         "-vf", jank_filter(full_jank),
          "-r","24","-t", f"{dur:.4f}",
          "-c:v","libx264","-preset","medium","-crf","22",
          "-movflags","+faststart","-pix_fmt","yuv420p", out])
@@ -56,7 +56,7 @@ def probe_dims(path):
     return int(w), int(h)
 
 
-def cloud_shot(slug, sh, dur, work, m):
+def cloud_shot(slug, sh, dur, work, m, full_jank=False):
     """Higgsfield/lipsync shot: the cached cloud clip (clips/hf_<id>.mp4), with the
     shot's crop/pan/zoom + trim applied, optionally janked, fitted to its slot.
     Crop/trim live ONLY here (excluded from the generation cache hash), so editing
@@ -94,9 +94,9 @@ def cloud_shot(slug, sh, dur, work, m):
     cx = min(max(cx_n * w0, side / 2), w0 - side / 2)
     cy = min(max(cy_n * h0, side / 2), h0 - side / 2)
     vf = f"crop={side:.0f}:{side:.0f}:{cx - side/2:.0f}:{cy - side/2:.0f},"
-    # jank_filter starts with its own 256→1024 neighbor-scale chain (the broadcast
-    # look needs the down-up sample); the non-jank path scales directly.
-    vf += jank_filter() if jank else "scale=1024:1024,format=yuv420p"
+    # jank_filter scales to 1024 itself (clean lanczos by default, or the full-retro
+    # down-up when style.jank=true); the non-jank path scales directly.
+    vf += jank_filter(full_jank) if jank else "scale=1024:1024,format=yuv420p"
     # Fit the slot: clone-pad if shorter (also covers cue pad_seconds), cut at dur.
     vf += f",tpad=stop_mode=clone:stop_duration={dur:.4f}"
     run(["ffmpeg","-y", *pre, "-i", src,
@@ -142,6 +142,8 @@ def main(slug):
         return {"cached": True, "nosubs": nosubs}
 
     start = time.time()
+    # Episode-wide look: clean by default (SSA-127), style.jank:true restores full retro.
+    full_jank = bool((m.get("style") or {}).get("jank", False))
     cue_videos = []
     cue_durs = {}
     # Pre-flight: a cue with no shots has no video to show and would divide-by-zero
@@ -197,11 +199,11 @@ def main(slug):
             if sh["kind"] in ("character","broll"):
                 rife = staged_master_dir(slug, sh["who"], sh["kind"])
                 if is_hold and not hold_play:
-                    shot_mp4s.append(freeze_shot(rife, sh["id"], sdur, p["work"]))
+                    shot_mp4s.append(freeze_shot(rife, sh["id"], sdur, p["work"], full_jank))
                 else:
-                    shot_mp4s.append(rife_shot(rife, sh["id"], sdur, p["work"]))
+                    shot_mp4s.append(rife_shot(rife, sh["id"], sdur, p["work"], full_jank))
             elif sh["kind"] in ("higgsfield", "lipsync"):
-                shot_mp4s.append(cloud_shot(slug, sh, sdur, p["work"], m))
+                shot_mp4s.append(cloud_shot(slug, sh, sdur, p["work"], m, full_jank))
             elif sh["kind"] == "title":
                 # Per-episode titles dir wins; fall back to shared assets/titles/
                 tm = f"{p['titles']}/{sh['asset']}.mp4"
