@@ -1245,5 +1245,9 @@
   "characters.finalPromptEmpty": "(empty)",
   "settings.hf.unlimitedTitle": "Unlimited entitlements",
   "settings.hf.unlimitedNote": "Web-only — pipeline/API generations are always billed.",
-  "settings.hf.txnsTitle": "Recent credit activity"
+  "settings.hf.txnsTitle": "Recent credit activity",
+  "settings.hf.modelDefaultsTitle": "Models for {show}",
+  "settings.hf.modelNeedsConnect": "Connect Higgsfield to choose per-type models.",
+  "settings.hf.modelCatalogDefault": "Catalog default",
+  "settings.hf.modelSaved": "Model default saved"
 }

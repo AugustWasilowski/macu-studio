@@ -185,12 +185,20 @@ def lipsync_hash(shot: dict, manifest: dict, ep_dir: Path, cue_id: str,
     if engine == "higgsfield":
         # Model/resolution shape the cloud generation; the local/remote
         # InfiniteTalk graph is fixed, so they'd only cause spurious staleness.
-        payload.update({"model": p["model"], "resolution": p["resolution"],
+        payload.update({"model": lipsync_model(shot, manifest), "resolution": p["resolution"],
                         "aspect_ratio": p["aspect_ratio"], "chunk_max_s": CHUNK_MAX_S})
     else:
         # Sampler preset shapes local/remote output (fast vs quality).
         payload["preset"] = hf_block(manifest).get("lipsync_preset") or "quality"
     return _h(payload)
+
+
+def lipsync_model(shot: dict, manifest: dict) -> str:
+    """HF model for an audio-driven lipsync shot: per-shot override → the show's
+    `lipsync_model` default → the general video model. Lets the operator pick a
+    distinct lipsync model per show (SSA-131) without changing b-roll video."""
+    blk = hf_block(manifest)
+    return shot.get("model") or blk.get("lipsync_model") or blk["model"]
 
 
 def still_hash(char: dict, manifest: dict) -> str:

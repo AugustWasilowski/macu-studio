@@ -5,6 +5,7 @@ import { Field } from "./Field";
 import { useStore } from "../store";
 import { showsApi } from "../api/shows";
 import { higgsfieldApi } from "../api/higgsfield";
+import type { HfModel } from "../api/higgsfield";
 import { enginesApi } from "../api/engines";
 import type { Capability, EngineId, EngineProbe, EnginesConfig } from "../api/engines";
 import { THEMES, currentTheme, parseThemeId, setTheme } from "../theme";
@@ -593,6 +594,9 @@ function EnginesPanel() {
         );
       })}
 
+      {/* ---- HF model defaults (per show) ---- */}
+      <HfModelDefaultsCard routing={draft.routing} />
+
       {/* ---- Claude Code connector ---- */}
       <ClaudeCodeCard />
 
@@ -607,6 +611,67 @@ function EnginesPanel() {
           {t("common.save")}
         </button>
       </div>
+    </div>
+  );
+}
+
+// Per-show HF model defaults (SSA-131): pick the specific Higgsfield model for each
+// generation TYPE routed to Higgsfield, populated from the model catalog filtered by
+// output type. Writes the active show's episode_defaults.higgsfield (where image_model
+// already lives + what the render reads); new episodes inherit, existing keep theirs.
+const HF_MODEL_TYPES: { cap: Capability; field: string; out: "image" | "video" }[] = [
+  { cap: "stills", field: "image_model", out: "image" },
+  { cap: "cloud_video", field: "model", out: "video" },
+  { cap: "lipsync", field: "lipsync_model", out: "video" },
+];
+
+function HfModelDefaultsCard({ routing }: { routing: Record<Capability, EngineId> }) {
+  const t = useT();
+  const qc = useQueryClient();
+  const pushToast = useStore((s) => s.pushToast);
+  const show = useStore((s) => s.activeShow);
+  const account = useQuery({ queryKey: ["hf-account"], queryFn: higgsfieldApi.account, retry: false });
+  const connected = !!account.data?.connected;
+  const cfg = useQuery({ queryKey: ["show-config", show], queryFn: () => showsApi.config(show), enabled: !!show });
+  const models = useQuery({ queryKey: ["hf-models"], queryFn: () => higgsfieldApi.models(), enabled: connected, staleTime: 3600_000, retry: false });
+
+  // Only types actually routed to Higgsfield get a model picker.
+  const rows = HF_MODEL_TYPES.filter((r) => routing[r.cap] === "higgsfield");
+  if (rows.length === 0) return null;
+
+  const ed = (cfg.data?.episode_defaults ?? {}) as { higgsfield?: Record<string, string> };
+  const hfDefaults = ed.higgsfield ?? {};
+
+  const setModel = async (field: string, value: string) => {
+    if (!cfg.data) return;
+    const cur = (cfg.data.episode_defaults ?? {}) as Record<string, unknown>;
+    const nextHf = { ...(cur.higgsfield as Record<string, unknown> ?? {}) };
+    if (value) nextHf[field] = value; else delete nextHf[field];
+    try {
+      await showsApi.putConfig(show, { episode_defaults: { ...cur, higgsfield: nextHf } });
+      qc.invalidateQueries({ queryKey: ["show-config", show] });
+      pushToast(t("settings.hf.modelSaved"), "ok");
+    } catch (e) { pushToast(String(e), "err"); }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 pt-1 border-t hairline-soft">
+      <div className="label-tiny">{t("settings.hf.modelDefaultsTitle", { show })}</div>
+      {!connected && <span className="label-tiny leading-relaxed">{t("settings.hf.modelNeedsConnect")}</span>}
+      {connected && rows.map((r) => {
+        const opts = (models.data?.items ?? []).filter((m: HfModel) => m.output_type === r.out);
+        return (
+          <div key={r.cap} className="flex items-center gap-2 px-2 py-1.5 rounded hairline-soft text-[12px]">
+            <span className="flex-1">{t(`engines.cap.${r.cap}`)}</span>
+            <select className="input text-[12px] py-0.5 w-[200px]" value={hfDefaults[r.field] ?? ""}
+                    disabled={!models.data}
+                    onChange={(e) => setModel(r.field, e.target.value)}>
+              <option value="">{t("settings.hf.modelCatalogDefault")}</option>
+              {opts.map((m) => <option key={m.id} value={m.id}>{m.name || m.id}</option>)}
+            </select>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -180,7 +180,13 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
     if body.get("element_id"):
         params["element_id"] = str(body["element_id"])
     # The show look (B&W suffix + negative) so library takes match the episode aesthetic.
-    style = (shows_mod.get_show(show).get("episode_defaults") or {}).get("style")
+    ep_defaults = shows_mod.get_show(show).get("episode_defaults") or {}
+    style = ep_defaults.get("style")
+    # Honor the show's HF image-model default (SSA-131) for library takes when no
+    # explicit model / Soul / Element was chosen (a Soul forces soul_2 downstream).
+    hf_image_model = (ep_defaults.get("higgsfield") or {}).get("image_model")
+    if hf_image_model and not params.get("model") and not params.get("soul_id"):
+        params["model"] = hf_image_model
     jkey = f"lib:{show}:{key}"
 
     async def runner(job: dict) -> None:

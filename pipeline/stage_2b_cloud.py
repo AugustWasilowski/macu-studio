@@ -506,7 +506,7 @@ def _gen_lipsync_shot(slug, m, ep, cue, shot):
         raise RuntimeError(f"lipsync shot {sid}: source_still required (character key with a "
                            f"generated still, or an episode-relative image path)")
     params = hfc.shot_params(shot, m)
-    model = params["model"]
+    model = hfc.lipsync_model(shot, m)   # per-show lipsync model default (SSA-131)
     dur = probe_dur(str(vo))
     work = ep / ".work" / f"hf_{sid}"
     work.mkdir(parents=True, exist_ok=True)
