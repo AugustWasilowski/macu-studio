@@ -57,7 +57,42 @@ export interface HfStillStatus {
   job: { state: string | null; error: string | null } | null;
 }
 
+// ---- Soul characters / Elements / account (SSA-129) ----------------------------
+export interface HfSoul { id: string; name?: string; status?: string; type?: string;
+  preview_url?: string; thumb_url?: string; }
+export interface HfElement { id: string; name?: string; category?: string;
+  url?: string; thumb_url?: string; preview_url?: string; }
+export interface HfUnlimited { plan?: string; period?: string; group?: string;
+  model?: string; badges?: string[]; note?: string; }
+export interface HfAccount {
+  connected: boolean; credits: number | null; plan: string | null;
+  unlimited: HfUnlimited[]; balance_error?: string; plans_error?: string;
+}
+export interface HfTxn { display_name?: string; credits?: number; action?: string; created_at?: string; }
+
+// Generation provenance stamped on each HF take (backend gen_metadata()).
+export interface HfGenMeta {
+  provider: string; tool: string;
+  model_requested: string; model_used: string;
+  job_id: string | null; seed: number | null; prompt: string | null;
+  aspect_ratio?: string | null; width?: number | null; height?: number | null;
+  resolution?: string | null;
+  raw_url: string | null; thumb_url: string | null; created_at?: string | null;
+  credits_spent: number | null; unlimited: boolean;
+  soul_id?: string; element_id?: string;
+}
+
 export const higgsfieldApi = {
+  souls: (status?: string) =>
+    fetch(`/api/higgsfield/souls${status ? `?status=${status}` : ""}`).then((r) => J<{ items: HfSoul[] }>(r)),
+  soulTrain: (name: string, images: string[]) =>
+    post<HfSoul>("/api/higgsfield/souls/train", { name, images }),
+  soulStatus: (id: string) => fetch(`/api/higgsfield/souls/${id}`).then((r) => J<HfSoul>(r)),
+  elements: () => fetch("/api/higgsfield/elements").then((r) => J<{ items: HfElement[] }>(r)),
+  createElement: (body: { path?: string; medias?: unknown[]; name?: string; category?: string }) =>
+    post<HfElement>("/api/higgsfield/elements", body),
+  account: () => fetch("/api/higgsfield/account").then((r) => J<HfAccount>(r)),
+  transactions: (size = 20) => fetch(`/api/higgsfield/transactions?size=${size}`).then((r) => J<{ items: HfTxn[] }>(r)),
   cost: (params: { model: string; duration?: number; resolution?: string; aspect_ratio?: string }) =>
     post<{ model: string; credits: number | null }>("/api/higgsfield/cost", params),
   estimate: (slug: string) =>

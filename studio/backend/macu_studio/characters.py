@@ -140,9 +140,14 @@ def next_take_id(c: dict) -> str:
 
 
 def add_take(show_id: str, key: str, png: Path, *, engine: str, model: str | None,
-             prompt: str, seed: int | None, params: dict | None) -> dict:
+             prompt: str, seed: int | None, params: dict | None,
+             hf: dict | None = None) -> dict:
     """Record an already-written take PNG into character.json (re-reads the file
-    so concurrent appends within one process don't clobber each other)."""
+    so concurrent appends within one process don't clobber each other).
+
+    `hf` is the Higgsfield generation-provenance dict (model_used, job_id, seed,
+    resolution, soul/element ref, raw/thumb URLs) — present only for HF takes; the
+    UI renders it as metadata chips (SSA-129)."""
     c = load(show_id, key)
     tid = next_take_id(c)
     dest = take_path(show_id, key, tid)
@@ -152,6 +157,8 @@ def add_take(show_id: str, key: str, png: Path, *, engine: str, model: str | Non
     rec = {"id": tid, "file": f"takes/{tid}.png", "engine": engine, "model": model,
            "prompt": prompt, "seed": seed, "params": params or {},
            "sha16": hfc.file_sha(dest), "created_at": _now()}
+    if hf:
+        rec["hf"] = hf
     c.setdefault("takes", []).append(rec)
     if not c.get("default_take"):
         c["default_take"] = tid

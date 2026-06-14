@@ -72,10 +72,21 @@ async def generate_one(engine: str, prompt: str, seed: int | None, params: dict,
     if engine == "higgsfield":
         # No negative_prompt on HF's generate_image — the B&W suffix in the prompt
         # carries the monochrome look instead.
-        model = (params or {}).get("model") or HF_DEFAULT_STILL_MODEL
-        g = await hf.generate("generate_image", {
-            "model": model, "prompt": prompt, "aspect_ratio": "1:1", "count": 1,
-        })
+        params = params or {}
+        # Consistent-identity refs (SSA-129): a Soul binds to soul_2 + soul_id; an
+        # Element injects as <<<element_id>>> in the prompt (works with general
+        # models like nano_banana). A Soul wins if somehow both are set.
+        soul_id = params.get("soul_id")
+        element_id = params.get("element_id")
+        model = params.get("model") or HF_DEFAULT_STILL_MODEL
+        gen_params: dict = {"prompt": prompt, "aspect_ratio": "1:1", "count": 1}
+        if soul_id:
+            model = "soul_2"
+            gen_params["soul_id"] = soul_id
+        elif element_id and f"<<<{element_id}>>>" not in prompt:
+            gen_params["prompt"] = f"{prompt} <<<{element_id}>>>"
+        gen_params["model"] = model
+        g = await hf.generate("generate_image", gen_params)
         res = await hf.wait_job(g["job_id"], timeout=600)
         urls = hf.find_media_urls(res, exts=(".png", ".jpg", ".jpeg", ".webp")) \
             or hf.find_media_urls(res)
@@ -91,5 +102,10 @@ async def generate_one(engine: str, prompt: str, seed: int | None, params: dict,
         # Provenance for the UI / take-record (SSA-129). model_used can differ from
         # requested (server routing, e.g. nano_banana_pro -> nano_banana_2).
         meta = hf.gen_metadata("generate_image", model, res)
-        return {"seed": seed, "params": {}, "model": meta["model_used"], "hf": meta}
+        if soul_id:
+            meta["soul_id"] = soul_id
+        elif element_id:
+            meta["element_id"] = element_id
+        ref = {k: v for k, v in (("soul_id", soul_id), ("element_id", element_id)) if v}
+        return {"seed": seed, "params": ref, "model": meta["model_used"], "hf": meta}
     raise RuntimeError(f"unknown still engine: {engine}")

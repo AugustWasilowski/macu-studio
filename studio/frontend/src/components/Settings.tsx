@@ -658,6 +658,8 @@ function HiggsfieldPanel() {
   const qc = useQueryClient();
   const pushToast = useStore((s) => s.pushToast);
   const auth = useQuery({ queryKey: ["hf-auth"], queryFn: higgsfieldApi.auth });
+  const account = useQuery({ queryKey: ["hf-account"], queryFn: higgsfieldApi.account, enabled: !!auth.data?.connected, retry: false });
+  const txns = useQuery({ queryKey: ["hf-txns"], queryFn: () => higgsfieldApi.transactions(8), enabled: !!auth.data?.connected, retry: false });
 
   const [handle, setHandle] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -789,9 +791,40 @@ function HiggsfieldPanel() {
             <span className="font-mono ml-auto">{a.credits ?? "—"}</span>
           </div>
           {a.balance_error && <span className="label-tiny text-red">{a.balance_error}</span>}
+
+          {/* Account surface (SSA-129): unlimited entitlements are web-only — API gens
+              always bill — so we label that explicitly and never imply free generation. */}
+          {(account.data?.unlimited?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-1 px-3 py-2 rounded hairline-soft text-[12px]">
+              <span className="label-tiny">{t("settings.hf.unlimitedTitle")}</span>
+              {account.data!.unlimited.slice(0, 8).map((u, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="truncate">{u.model || u.group}</span>
+                  {u.period && <span className="label-tiny ml-auto uppercase">{u.period}</span>}
+                </div>
+              ))}
+              <span className="label-tiny pt-1">{t("settings.hf.unlimitedNote")}</span>
+            </div>
+          )}
+          {(txns.data?.items?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-1 px-3 py-2 rounded hairline-soft text-[12px]">
+              <span className="label-tiny">{t("settings.hf.txnsTitle")}</span>
+              {txns.data!.items.slice(0, 8).map((tx, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="truncate">{tx.display_name || tx.action || "—"}</span>
+                  {tx.credits != null && (
+                    <span className="font-mono ml-auto" style={{ color: tx.credits < 0 ? "var(--red)" : "inherit" }}>
+                      {tx.credits > 0 ? `+${tx.credits}` : tx.credits}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button className="btn flex-1 justify-center" disabled={busy}
-                    onClick={() => qc.invalidateQueries({ queryKey: ["hf-auth"] })}>
+                    onClick={() => { qc.invalidateQueries({ queryKey: ["hf-auth"] }); qc.invalidateQueries({ queryKey: ["hf-account"] }); qc.invalidateQueries({ queryKey: ["hf-txns"] }); }}>
               {t("settings.hf.refreshBalance")}
             </button>
             <button className="btn flex-1 justify-center" disabled={busy} onClick={refreshModels}>

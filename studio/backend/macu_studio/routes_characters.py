@@ -112,6 +112,27 @@ def post_default_take(show: str, key: str, take: str):
     return _404(chars.set_default_take, _check_show(show), key, take)
 
 
+@router.post("/api/shows/{show}/characters/{key}/takes/{take}/element")
+async def post_take_to_element(show: str, key: str, take: str, body: dict = Body(default={})):
+    """Register an existing take as a reusable Higgsfield Element (SSA-129) — the
+    natural way to give a fixed-still MACU character a consistent identity ref the
+    HF engine can reuse across generations. Backend resolves the take's file path;
+    the client never handles filesystem paths."""
+    from . import higgsfield as hf
+    _check_show(show)
+    c = _404(chars.load, show, key)
+    src = chars.take_path(show, key, take)
+    if not src.exists():
+        raise HTTPException(404, f"take {take} not found")
+    name = (body.get("name") or "").strip() or c.get("name") or key
+    try:
+        return await hf.element_from_file(src, name=name, category="character")
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"element create failed: {e}")
+
+
 @router.post("/api/shows/{show}/characters/{key}/takes/upload")
 async def post_upload_take(show: str, key: str, file: UploadFile):
     _check_show(show)
@@ -151,7 +172,13 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
         raise HTTPException(400, f"no prompt — set still_prompt on '{key}' or pass one")
     seed = body.get("seed")
     count = max(1, min(4, int(body.get("count") or 1)))
-    params = body.get("params") or {}
+    params = dict(body.get("params") or {})
+    # Consistent-identity refs for the HF engine (SSA-129): a Soul (soul_2 + soul_id)
+    # or an Element (<<<id>>> prompt injection). Passed through params to the engine.
+    if body.get("soul_id"):
+        params["soul_id"] = str(body["soul_id"])
+    if body.get("element_id"):
+        params["element_id"] = str(body["element_id"])
     # The show look (B&W suffix + negative) so library takes match the episode aesthetic.
     style = (shows_mod.get_show(show).get("episode_defaults") or {}).get("style")
     jkey = f"lib:{show}:{key}"
@@ -167,7 +194,7 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
                                                     name=f"{show}-{key}", style=style)
             chars.add_take(show, key, tmp, engine=engine, model=info.get("model"),
                            prompt=prompt, seed=info.get("seed"),
-                           params=info.get("params"))
+                           params=info.get("params"), hf=info.get("hf"))
             job["progress"]["done"] = i + 1
         if engine == "comfy_zimage":
             from . import comfy_stills

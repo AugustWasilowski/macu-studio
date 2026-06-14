@@ -4,6 +4,8 @@ import { api } from "../api";
 import { charactersApi } from "../api/characters";
 import type { Character, CharSummary, Take, UsageRow, UseResult } from "../api/characters";
 import { enginesApi } from "../api/engines";
+import { higgsfieldApi } from "../api/higgsfield";
+import { showsApi } from "../api/shows";
 import { Field } from "../components/Field";
 import { Modal } from "../components/Modal";
 import { useStore } from "../store";
@@ -156,6 +158,7 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
           <Field label={t("characters.fieldStillPrompt")} value={d.still_prompt} rows={4}
                  placeholder={t("characters.fieldStillPromptPh")}
                  onChange={(v) => setDraft({ ...d, still_prompt: v })} onBlur={() => saveField("still_prompt", d.still_prompt)} />
+          <FinalPromptChip show={show} stillPrompt={d.still_prompt} />
           <Field label={t("characters.fieldVoiceHint")} value={d.voice_hint}
                  onChange={(v) => setDraft({ ...d, voice_hint: v })} onBlur={() => saveField("voice_hint", d.voice_hint)} />
           <UsagePanel show={show} charKey={charKey} />
@@ -175,7 +178,14 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
                       onDefault={async () => { await charactersApi.setDefault(show, charKey, take.id); refetch(); }}
                       onDelete={async () => { await charactersApi.deleteTake(show, charKey, take.id); refetch(); }}
                       onZoom={() => setZoomTake(take)}
-                      onUse={() => setUseOpen(take.id)} />
+                      onUse={() => setUseOpen(take.id)}
+                      onElement={async () => {
+                        try {
+                          const el = await charactersApi.takeToElement(show, charKey, take.id, ch.name);
+                          push(t("characters.elementCreated", { name: el.name || el.id }), "ok");
+                          qc.invalidateQueries({ queryKey: ["hf-elements"] });
+                        } catch (e) { push(String(e), "err"); }
+                      }} />
           ))}
           {ch.takes.length === 0 && <div className="text-txt-faint text-[12px] py-4">{t("characters.noTakes")}</div>}
         </div>
@@ -188,6 +198,7 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
           <div className="label-tiny pt-2 font-mono">
             {zoomTake.engine}{zoomTake.model ? ` · ${zoomTake.model}` : ""}{zoomTake.seed != null ? ` · seed ${zoomTake.seed}` : ""}
           </div>
+          <HfMetaChips take={zoomTake} full />
           {zoomTake.prompt && <p className="text-[12px] text-txt-dim pt-1 whitespace-pre-wrap">{zoomTake.prompt}</p>}
         </Modal>
       )}
@@ -199,11 +210,12 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
   );
 }
 
-function TakeCard({ show, charKey, take, isDefault, onDefault, onDelete, onZoom, onUse }: {
+function TakeCard({ show, charKey, take, isDefault, onDefault, onDelete, onZoom, onUse, onElement }: {
   show: string; charKey: string; take: Take; isDefault: boolean;
-  onDefault: () => void; onDelete: () => void; onZoom: () => void; onUse: () => void;
+  onDefault: () => void; onDelete: () => void; onZoom: () => void; onUse: () => void; onElement: () => void;
 }) {
   const t = useT();
+  const isHf = take.engine === "higgsfield";
   return (
     <div className="group relative rounded overflow-hidden hairline-soft"
          style={isDefault ? { outline: "2px solid var(--amber)", boxShadow: "var(--glow-amber)" } : {}}>
@@ -214,15 +226,109 @@ function TakeCard({ show, charKey, take, isDefault, onDefault, onDelete, onZoom,
         <span className="font-mono truncate">{take.id}{take.seed != null ? ` · ${take.seed}` : ""}</span>
         <span className="label-tiny">{take.engine === "comfy_zimage" ? "local" : take.engine}</span>
       </div>
+      <HfMetaChips take={take} />
       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {!isDefault && (
           <button className="btn p-1 text-[10px]" title={t("characters.setDefault")} onClick={onDefault}>★</button>
+        )}
+        {isHf && (
+          <button className="btn p-1 text-[10px]" title={t("characters.takeToElement")} onClick={onElement}>⧉</button>
         )}
         <button className="btn p-1 text-[10px]" title={t("characters.useInEpisode")} onClick={onUse}>⤵</button>
         <button className="btn p-1 text-[10px]" title={t("common.delete")} onClick={onDelete}>🗑</button>
       </div>
       {isDefault && <span className="absolute top-1 left-1 text-amber text-[11px]" title={t("characters.defaultTake")}>★</span>}
     </div>
+  );
+}
+
+// Generation-provenance chips for an HF take (model_used / resolution / Soul|Element
+// ref). `full` adds job id + a raw-image link in the zoom modal. No-op for non-HF takes.
+function HfMetaChips({ take, full = false }: { take: Take; full?: boolean }) {
+  const t = useT();
+  const hf = take.hf;
+  if (!hf) return null;
+  const chip = (txt: string, title?: string) => (
+    <span key={txt} className="label-tiny px-1 rounded bg-bg-3 truncate" title={title || txt}>{txt}</span>
+  );
+  const chips = [];
+  if (hf.model_used) chips.push(chip(hf.model_used));
+  if (hf.resolution) chips.push(chip(hf.resolution));
+  else if (hf.width && hf.height) chips.push(chip(`${hf.width}×${hf.height}`));
+  if (hf.soul_id) chips.push(chip(t("characters.soulBadge"), `soul ${hf.soul_id}`));
+  if (hf.element_id) chips.push(chip(t("characters.elementBadge"), `element ${hf.element_id}`));
+  return (
+    <div className={"flex flex-wrap gap-1 " + (full ? "pt-2" : "px-1.5 pb-1")}>
+      {chips}
+      {full && hf.job_id && chip(`job ${hf.job_id.slice(0, 8)}`, hf.job_id)}
+      {full && hf.raw_url && (
+        <a className="label-tiny px-1 rounded bg-bg-3 underline" href={hf.raw_url} target="_blank" rel="noopener noreferrer">
+          {t("characters.rawImage")}
+        </a>
+      )}
+    </div>
+  );
+}
+
+// Read-only preview of the prompt actually sent to the engine: the still prompt
+// plus the show's appended style suffix (SSA-129 — surfaces the silent append).
+function FinalPromptChip({ show, stillPrompt }: { show: string; stillPrompt: string }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const cfg = useQuery({ queryKey: ["show-config", show], queryFn: () => showsApi.config(show), staleTime: 300_000 });
+  const ed = (cfg.data?.episode_defaults ?? {}) as { style?: { suffix?: string } };
+  const suffix = (ed.style?.suffix ?? "").trim();
+  if (!stillPrompt.trim() && !suffix) return null;
+  const base = stillPrompt.trim();
+  const final = suffix && !base.endsWith(suffix) ? `${base}${base ? ", " : ""}${suffix.replace(/^,\s*/, "")}` : base;
+  return (
+    <div className="rounded hairline-soft text-[11px]">
+      <button className="w-full flex items-center gap-1 px-2 py-1 text-left label-tiny hover:text-amber"
+              onClick={() => setOpen((o) => !o)}>
+        <span>{open ? "▾" : "▸"}</span>{t("characters.finalPrompt")}
+        {suffix && <span className="ml-auto label-tiny">{t("characters.styleAppended")}</span>}
+      </button>
+      {open && (
+        <p className="px-2 pb-2 text-txt-dim whitespace-pre-wrap font-mono leading-relaxed">{final || t("characters.finalPromptEmpty")}</p>
+      )}
+    </div>
+  );
+}
+
+// Pick a trained Soul or a reusable Element to lock character identity across HF
+// generations (SSA-129). Souls = soul_2 + soul_id; Elements = <<<id>>> prompt inject.
+function HfIdentityPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useT();
+  const account = useQuery({ queryKey: ["hf-account"], queryFn: higgsfieldApi.account, staleTime: 60_000, retry: false });
+  const connected = !!account.data?.connected;
+  const souls = useQuery({ queryKey: ["hf-souls"], queryFn: () => higgsfieldApi.souls(), enabled: connected, retry: false });
+  const elements = useQuery({ queryKey: ["hf-elements"], queryFn: () => higgsfieldApi.elements(), enabled: connected, retry: false });
+
+  if (!connected) {
+    return <p className="label-tiny leading-relaxed">{t("characters.hfNotConnected")}</p>;
+  }
+  const soulItems = (souls.data?.items ?? []).filter((s) => !s.status || s.status === "ready");
+  const elItems = elements.data?.items ?? [];
+  return (
+    <label className="flex flex-col gap-1 text-[12px]">
+      <span className="label-tiny">{t("characters.identityRef")}</span>
+      <select className="input text-[12px] py-0.5" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{t("characters.identityNone")}</option>
+        {elItems.length > 0 && (
+          <optgroup label={t("characters.elementsGroup")}>
+            {elItems.map((el) => <option key={el.id} value={`element:${el.id}`}>{el.name || el.id}</option>)}
+          </optgroup>
+        )}
+        {soulItems.length > 0 && (
+          <optgroup label={t("characters.soulsGroup")}>
+            {soulItems.map((s) => <option key={s.id} value={`soul:${s.id}`}>{s.name || s.id}</option>)}
+          </optgroup>
+        )}
+      </select>
+      {soulItems.length === 0 && elItems.length === 0 && (
+        <span className="label-tiny leading-relaxed">{t("characters.identityEmpty")}</span>
+      )}
+    </label>
   );
 }
 
@@ -240,15 +346,23 @@ function GeneratePanel({ show, charKey, stillPrompt, busy, job, onStarted }: {
   const [prompt, setPrompt] = useState("");
   const [seed, setSeed] = useState("");
   const [count, setCount] = useState(1);
-  useEffect(() => { setPrompt(""); setSeed(""); setCount(1); }, [charKey]);
+  // Consistent-identity ref for the HF engine: "" | "soul:<id>" | "element:<id>".
+  const [identity, setIdentity] = useState("");
+  useEffect(() => { setPrompt(""); setSeed(""); setCount(1); setIdentity(""); }, [charKey]);
+
+  const effEngine = engine || routed;
+  const isHf = effEngine === "higgsfield";
 
   const start = async () => {
     try {
+      const [kind, id] = identity ? identity.split(":") : [];
       const r = await charactersApi.generate(show, charKey, {
         engine: engine || undefined,
         prompt: prompt.trim() || undefined,
         seed: seed.trim() ? parseInt(seed, 10) : undefined,
         count,
+        ...(isHf && kind === "soul" ? { soul_id: id } : {}),
+        ...(isHf && kind === "element" ? { element_id: id } : {}),
       });
       push(t("characters.genQueued", { n: r.count, engine: r.engine }), "run");
       onStarted();
@@ -272,6 +386,7 @@ function GeneratePanel({ show, charKey, stillPrompt, busy, job, onStarted }: {
           ))}
         </select>
       </label>
+      {isHf && <HfIdentityPicker value={identity} onChange={setIdentity} />}
       <Field label={t("characters.genPrompt")} value={prompt} rows={3}
              placeholder={stillPrompt || t("characters.genPromptPh")} onChange={setPrompt} />
       <div className="grid grid-cols-2 gap-2">

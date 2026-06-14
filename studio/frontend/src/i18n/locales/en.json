@@ -1228,5 +1228,22 @@
   "sync.nothingDone": "Nothing needed syncing.",
   "sync.done": "Synced — {pushed} pushed, {pulled} pulled",
   "sync.doneErrors": "Sync finished with {n} error(s)",
-  "sync.notConnected": "Not connected to macu-web. Connect on the Publish page — both Studios must use the same connection key — then sync."
+  "sync.notConnected": "Not connected to macu-web. Connect on the Publish page — both Studios must use the same connection key — then sync.",
+  "characters.identityRef": "Identity reference (Higgsfield)",
+  "characters.identityNone": "None (one-off)",
+  "characters.elementsGroup": "Elements (single-image refs)",
+  "characters.soulsGroup": "Souls (trained)",
+  "characters.identityEmpty": "No Souls or Elements yet — make an Element from a take (⧉) for a reusable identity.",
+  "characters.hfNotConnected": "Connect Higgsfield in Settings to use Souls/Elements.",
+  "characters.takeToElement": "Make a reusable Element from this take",
+  "characters.elementCreated": "Created Element “{name}”",
+  "characters.soulBadge": "Soul",
+  "characters.elementBadge": "Element",
+  "characters.rawImage": "raw",
+  "characters.finalPrompt": "Final prompt",
+  "characters.styleAppended": "+ show style",
+  "characters.finalPromptEmpty": "(empty)",
+  "settings.hf.unlimitedTitle": "Unlimited entitlements",
+  "settings.hf.unlimitedNote": "Web-only — pipeline/API generations are always billed.",
+  "settings.hf.txnsTitle": "Recent credit activity"
 }

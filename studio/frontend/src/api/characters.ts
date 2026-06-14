@@ -1,3 +1,5 @@
+import type { HfGenMeta } from "./higgsfield";
+
 async function J<T>(r: Response): Promise<T> {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${await r.text().catch(() => "")}`);
   return r.json() as Promise<T>;
@@ -15,6 +17,7 @@ export interface Take {
   id: string; file: string; engine: string; model: string | null;
   prompt: string; seed: number | null; params: Record<string, unknown>;
   sha16: string; created_at: string;
+  hf?: HfGenMeta;   // Higgsfield generation provenance (HF takes only)
 }
 export interface CharJob {
   state: string; error: string | null;
@@ -52,8 +55,10 @@ export const charactersApi = {
     fetch(`${base(show)}/${key}/takes/${take}`, { method: "DELETE" }).then((r) => J<Character>(r)),
   setDefault: (show: string, key: string, take: string) =>
     post<Character>(`${base(show)}/${key}/takes/${take}/default`),
+  takeToElement: (show: string, key: string, take: string, name?: string) =>
+    post<{ id: string; name?: string }>(`${base(show)}/${key}/takes/${take}/element`, name ? { name } : {}),
 
-  generate: (show: string, key: string, body: { engine?: string; prompt?: string; seed?: number; count?: number; params?: Record<string, unknown> }) =>
+  generate: (show: string, key: string, body: { engine?: string; prompt?: string; seed?: number; count?: number; params?: Record<string, unknown>; soul_id?: string; element_id?: string }) =>
     post<{ ok: boolean; key: string; engine: string; count: number }>(`${base(show)}/${key}/generate`, body),
   generateStatus: (show: string, key: string) =>
     fetch(`${base(show)}/${key}/generate/status`).then((r) =>
