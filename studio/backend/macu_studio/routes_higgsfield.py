@@ -246,6 +246,56 @@ async def get_account():
     return out
 
 
+# ---- generation history + harvest (SSA-132 / SSA-134) ----------------------------
+# Leo owns the HF-client side: list account history (web + API gens) and the
+# low-level fetch. Studio-side PLACEMENT routes (characters/shot import-generation)
+# are Max's and call hf.fetch_generation() directly.
+
+@router.get("/api/higgsfield/generations")
+async def get_generations(type: str | None = None, size: int = 24, cursor: float | None = None):
+    """Account generation history — web- AND API-made. type=image|video, paginated
+    via next_cursor. Items: {id, type, status, model, params, results:{rawUrl,...}}."""
+    try:
+        return await hf.generations(type_=type, size=size, cursor=cursor)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"generations failed: {e}")
+
+
+@router.get("/api/higgsfield/medias")
+async def get_medias(type: str = "image", size: int = 20, cursor: float | None = None):
+    try:
+        return await hf.medias(type_=type, size=size, cursor=cursor)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"medias failed: {e}")
+
+
+@router.post("/api/higgsfield/import")
+async def post_import(body: dict = Body(...)):
+    """Low-level harvest escape hatch: download a completed generation's primary
+    media to a path under the shares root. body: {gen_id, dest_path}. The Studio-side
+    placement routes (Max's) call hf.fetch_generation() directly; this is the generic
+    primitive + handy for headless pulls."""
+    gen_id = (body.get("gen_id") or "").strip()
+    dest = str(body.get("dest_path") or "").strip()
+    if not gen_id or not dest:
+        raise HTTPException(400, "gen_id and dest_path required")
+    p = Path(dest).resolve()
+    if not str(p).startswith(str(Path(SHARES).resolve()) + "/"):
+        raise HTTPException(400, f"dest_path must live under {SHARES}")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        meta = await hf.fetch_generation(gen_id, p)
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"import failed: {e}")
+    return {"ok": True, "path": str(p), "hf": meta}
+
+
 # ---- cost estimate ------------------------------------------------------------
 
 # Cost is parameter-shaped, not prompt-shaped: one get_cost preflight per
