@@ -135,25 +135,39 @@ async def post_take_to_element(show: str, key: str, take: str, body: dict = Body
 
 @router.post("/api/shows/{show}/characters/{key}/import-generation")
 async def post_import_generation(show: str, key: str, body: dict = Body(...)):
-    """Harvest an existing Higgsfield generation (web- or API-made) into a take
-    (SSA-132). The $0 loop: generate free in the HF web app, pull it in here. Reuses
-    fetch_generation (downloads results.rawUrl) + the take-record hf plumbing so the
-    provenance chips light up. body: {gen_id}."""
+    """Register a Higgsfield generation as a show-level character take (SSA-132/142).
+    The $0 loop: CoWork locks a canon still free in the HF web app, this pulls it in
+    as a take so the Characters library shows canon. body: {gen_id?, url?, set_default?}.
+    gen_id fetches results.rawUrl with full provenance; url downloads a direct image
+    (fallback when the gen isn't in the account history). set_default stars the new
+    take so it shows on /#characters."""
     from . import higgsfield as hf
     _check_show(show)
     _404(chars.load, show, key)
     gen_id = (body.get("gen_id") or "").strip()
-    if not gen_id:
-        raise HTTPException(400, "gen_id required")
+    url = (body.get("url") or "").strip()
+    set_default = bool(body.get("set_default", False))
+    if not (gen_id or url):
+        raise HTTPException(400, "gen_id or url required")
     with tempfile.NamedTemporaryFile(suffix=".img", delete=False) as t:
         raw = Path(t.name)
     png = raw.with_suffix(".png")
     try:
-        meta = await hf.fetch_generation(gen_id, raw)
+        if gen_id:
+            meta = await hf.fetch_generation(gen_id, raw)     # full provenance
+        else:
+            await hf.download(url, raw)                         # direct image URL
+            meta = {"provider": "higgsfield", "raw_url": url, "model_used": None,
+                    "prompt": None, "seed": None}
         stilljobs.png_normalize(raw, png)   # first frame if it's a video gen
         rec = chars.add_take(show, key, png, engine="higgsfield",
                              model=meta.get("model_used"), prompt=meta.get("prompt") or "",
-                             seed=meta.get("seed"), params={"imported_gen_id": gen_id}, hf=meta)
+                             seed=meta.get("seed"),
+                             params={k: v for k, v in (("imported_gen_id", gen_id),
+                                                       ("source_url", url)) if v},
+                             hf=meta)
+        if set_default:
+            chars.set_default_take(show, key, rec["id"])
     except hf.NotConnectedError as e:
         raise HTTPException(409, str(e))
     except HTTPException:

@@ -1285,3 +1285,23 @@ def skill_resource(name: str) -> str:
     """A shipped skill's SKILL.md, served as an MCP resource (skill://<name>).
     Reference files are reachable via the get_skill tool."""
     return _read_skill_file(name, "SKILL.md")
+
+
+@mcp.tool()
+async def import_character_take(show: str, key: str, gen_id: str = "", url: str = "",
+                                set_default: bool = True) -> dict:
+    """Register a Higgsfield generation as a SHOW-LEVEL character take (SSA-142), so
+    the Characters library (/#characters) reflects a canon still CoWork locked free
+    in the web app. Pass a Higgsfield `gen_id` (full provenance via the read API) OR a
+    direct image `url` (fallback when the gen isn't in the account history).
+    `set_default` (default true) stars the new take so it shows as the character's
+    face. Run this right after locking each character's canon still — distinct from
+    cowork_job_complete, which harvests into a single EPISODE."""
+    if not (gen_id or url):
+        return {"error": True, "detail": "gen_id or url required"}
+    body: dict = {"set_default": set_default}
+    if gen_id:
+        body["gen_id"] = gen_id
+    if url:
+        body["url"] = url
+    return await _api("POST", f"/api/shows/{show}/characters/{key}/import-generation", body=body)
