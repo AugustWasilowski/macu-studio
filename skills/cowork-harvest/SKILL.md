@@ -37,7 +37,10 @@ Repeat until the queue has no pending jobs:
    - `model` — the requested model (e.g. `hailuo_2_3`, `nano_banana`); pick it in the UI.
    - `kind` — `still` (image gen), `video` (video gen), or `soul` (train a Soul).
    - `params` — may carry `seed`, `duration_s`, `input_still` (a start-frame to upload), `soul_id`, etc.
-   Drive the browser to produce it. **Use the unlimited/free path**, not anything that bills.
+   Drive the browser to produce it. **Use the unlimited/free path** — follow the
+   **`higgsfield-web-free-gen`** skill for exactly how (the Unlimited toggle, the
+   model-label traps, and how to verify you weren't billed). Generation is browser
+   clicks only; never use the MCP `generate_*` tools (they cost credits).
 
 4. **Find the generation id** you just made:
    `cowork_recent_generations(type="video")` → returns the account's newest

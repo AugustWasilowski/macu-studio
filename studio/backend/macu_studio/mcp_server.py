@@ -121,6 +121,17 @@ THINGS TO KNOW:
   with cloud shots — it prices by the current routing. Cached shots are free;
   crop/trim edits never re-bill. higgsfield_status shows connection/plan/
   credits (connecting is a Settings-UI action, not an MCP one).
+
+COWORK JOB-BOARD (free-web -> local-harvest, the $0 loop): Higgsfield's unlimited
+tiers are WEB-APP ONLY (the API always bills). A browser-capable CoWork agent works
+a job queue here: cowork_jobs_create queues "generate this" jobs; CoWork claims them
+(cowork_job_claim), generates them FREE in the Higgsfield web app, then reports the
+result generation id (cowork_job_complete / cowork_job_update status=done,
+result_gen_ids=[...]) and Studio auto-harvests the result into the episode target
+(still -> stills/<key>.png, video -> clips/hf_<shot>.mp4). cowork_recent_generations
+finds the id of a just-made web gen. cowork_jobs_list watches the queue (also the
+"CoWork" UI tab). The browser-side how-to is the cowork-harvest + higgsfield-web-
+free-gen skills. result_gen_ids are Higgsfield GENERATION ids, not URLs.
 """
 
 mcp = FastMCP(
