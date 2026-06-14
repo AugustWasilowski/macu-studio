@@ -170,7 +170,10 @@ function CharacterDetail({ show, charKey, onDeleted, onChanged }: {
 
       {/* takes grid */}
       <div className="px-3 pb-3">
-        <div className="label-tiny pb-1">{t("characters.takesTitle", { n: ch.takes.length })}</div>
+        <div className="flex items-center pb-1">
+          <div className="label-tiny flex-1">{t("characters.takesTitle", { n: ch.takes.length })}</div>
+          <TrainSoulButton show={show} charKey={charKey} name={ch.name} takes={ch.takes} />
+        </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
           {ch.takes.map((take) => (
             <TakeCard key={take.id} show={show} charKey={charKey} take={take}
@@ -239,6 +242,37 @@ function TakeCard({ show, charKey, take, isDefault, onDefault, onDelete, onZoom,
       </div>
       {isDefault && <span className="absolute top-1 left-1 text-amber text-[11px]" title={t("characters.defaultTake")}>★</span>}
     </div>
+  );
+}
+
+// Train a Higgsfield Soul from this character's takes (SSA-129). The take library is
+// already a same-identity reference set; HF wants 5–20. Async — the new Soul shows up
+// in the identity picker once it's done training. Hidden unless HF is connected.
+function TrainSoulButton({ show, charKey, name, takes }: {
+  show: string; charKey: string; name: string; takes: Take[];
+}) {
+  const t = useT();
+  const qc = useQueryClient();
+  const push = useStore((s) => s.pushToast);
+  const account = useQuery({ queryKey: ["hf-account"], queryFn: higgsfieldApi.account, staleTime: 60_000, retry: false });
+  const [busy, setBusy] = useState(false);
+  if (!account.data?.connected) return null;
+  const enough = takes.length >= 5;
+  const train = async () => {
+    const ids = takes.slice(0, 20).map((tk) => tk.id);
+    if (!confirm(t("characters.trainSoulConfirm", { n: ids.length, name }))) return;
+    setBusy(true);
+    try {
+      await charactersApi.trainSoul(show, charKey, { take_ids: ids, name });
+      push(t("characters.trainSoulStarted", { name }), "ok");
+      qc.invalidateQueries({ queryKey: ["hf-souls"] });
+    } catch (e) { push(String(e), "err"); } finally { setBusy(false); }
+  };
+  return (
+    <button className="btn text-[11px]" disabled={!enough || busy} onClick={train}
+            title={enough ? t("characters.trainSoulTitle") : t("characters.trainSoulNeed")}>
+      {t("characters.trainSoul")}
+    </button>
   );
 }
 

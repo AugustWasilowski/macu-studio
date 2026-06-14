@@ -1249,5 +1249,10 @@
   "settings.hf.modelDefaultsTitle": "Models for {show}",
   "settings.hf.modelNeedsConnect": "Connect Higgsfield to choose per-type models.",
   "settings.hf.modelCatalogDefault": "Catalog default",
-  "settings.hf.modelSaved": "Model default saved"
+  "settings.hf.modelSaved": "Model default saved",
+  "characters.trainSoul": "Train Soul",
+  "characters.trainSoulTitle": "Train a Higgsfield Soul from these takes for a reusable identity",
+  "characters.trainSoulNeed": "Need at least 5 takes to train a Soul",
+  "characters.trainSoulConfirm": "Train a Higgsfield Soul “{name}” from {n} takes? (uses your account; runs in the background)",
+  "characters.trainSoulStarted": "Soul “{name}” training started — it'll appear in the identity picker when ready"
 }

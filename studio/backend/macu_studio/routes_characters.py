@@ -133,6 +133,35 @@ async def post_take_to_element(show: str, key: str, take: str, body: dict = Body
         raise HTTPException(502, f"element create failed: {e}")
 
 
+@router.post("/api/shows/{show}/characters/{key}/train-soul")
+async def post_train_soul(show: str, key: str, body: dict = Body(default={})):
+    """Train a Higgsfield Soul from this character's existing takes (SSA-129) — 5–20
+    same-identity reference images, which the take library already is. Uploads each
+    selected take to HF, then kicks off training (async; poll the Souls list / the
+    identity picker, which shows it once status=ready). body: {take_ids?, name?}."""
+    from . import higgsfield as hf
+    _check_show(show)
+    c = _404(chars.load, show, key)
+    take_ids = body.get("take_ids") or [tk["id"] for tk in (c.get("takes") or [])]
+    if not (5 <= len(take_ids) <= 20):
+        raise HTTPException(400, f"Soul training needs 5–20 takes; got {len(take_ids)}")
+    name = (body.get("name") or "").strip() or c.get("name") or key
+    try:
+        media_ids = []
+        for tid in take_ids:
+            src = chars.take_path(show, key, tid)
+            if not src.exists():
+                raise HTTPException(404, f"take {tid} not found")
+            media_ids.append(await hf.upload_media(src))
+        return await hf.soul_train(name, media_ids)
+    except HTTPException:
+        raise
+    except hf.NotConnectedError as e:
+        raise HTTPException(409, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"soul training failed: {e}")
+
+
 @router.post("/api/shows/{show}/characters/{key}/takes/upload")
 async def post_upload_take(show: str, key: str, file: UploadFile):
     _check_show(show)

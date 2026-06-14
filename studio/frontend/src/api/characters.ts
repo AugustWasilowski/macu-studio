@@ -57,6 +57,8 @@ export const charactersApi = {
     post<Character>(`${base(show)}/${key}/takes/${take}/default`),
   takeToElement: (show: string, key: string, take: string, name?: string) =>
     post<{ id: string; name?: string }>(`${base(show)}/${key}/takes/${take}/element`, name ? { name } : {}),
+  trainSoul: (show: string, key: string, body: { take_ids?: string[]; name?: string }) =>
+    post<{ id: string; name?: string; status?: string }>(`${base(show)}/${key}/train-soul`, body),
 
   generate: (show: string, key: string, body: { engine?: string; prompt?: string; seed?: number; count?: number; params?: Record<string, unknown>; soul_id?: string; element_id?: string }) =>
     post<{ ok: boolean; key: string; engine: string; count: number }>(`${base(show)}/${key}/generate`, body),
