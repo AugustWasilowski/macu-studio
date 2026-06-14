@@ -46,7 +46,9 @@ TYPICAL WORKFLOW — new episode, start to published:
  6. generate_sfx(slug) [optional]   -> same dry-run/apply pattern
  7. generate_card_text(slug, card_type) [optional] -> title cards / YouTube thumb;
     render_title_cards(slug) renders just the cards (no video-masters stage)
- 8. run_pipeline(slug)              -> queues the render; poll render_status(job_id)
+ 8. run_pipeline(slug)              -> queues the render; then await_render(slug,
+                                       job_id) blocks to a milestone (don't
+                                       blind-poll render_status in a loop)
  9. git_sync(slug)                  -> commit the episode's text files
 10. set_episode_meta / set_episode_youtube / set_episode_published, then
     publish_show(show)              -> push to the connected macu-web site
@@ -97,7 +99,9 @@ SCRIPT FORMAT (script.md):
 
 THINGS TO KNOW:
 - Everything render/GPU-related is queued and asynchronous: run_pipeline returns a
-  job_id immediately; renders take many minutes. Poll render_status(job_id).
+  job_id immediately; renders take many minutes. Don't blind-poll — call
+  await_render(slug, job_id, until='masters'|'final'|<stage>) to BLOCK until a
+  checkpoint, then act. render_status(job_id) is the one-shot snapshot.
 - generate_* tools run a local LLM on the GPU and return 409 if a render is
   active — check studio_status first.
 - All generate_* tools are DRY RUNS by default. Nothing is written until you call
@@ -537,7 +541,8 @@ async def run_pipeline(slug: str, from_stage: int = 0, only: int = 0) -> dict:
     unchanged stage is skipped, so re-running after a small edit is cheap.
     from_stage=N re-runs from stage N; only=N runs just that stage; leave both 0
     for the normal cached full run. Returns immediately with a job_id — the render
-    takes many minutes. Poll render_status(job_id=...) for progress."""
+    takes many minutes. Then await_render(slug, job_id=...) to BLOCK until a
+    milestone (e.g. until='final'); render_status(job_id) is a one-shot snapshot."""
     body: dict[str, Any] = {}
     if from_stage and from_stage > 1:
         body["from_stage"] = int(from_stage)
@@ -551,9 +556,10 @@ async def run_pipeline(slug: str, from_stage: int = 0, only: int = 0) -> dict:
 
 @mcp.tool()
 async def render_status(job_id: str = "", slug: str = "") -> dict:
-    """Render progress. With job_id: that job's state + recent stage events. With
-    slug: that episode's per-stage cache status + its active job id. With neither:
-    the whole render-job queue."""
+    """Render progress, ONE-SHOT (returns immediately). With job_id: that job's
+    state + recent stage events. With slug: that episode's per-stage cache status +
+    its active job id. With neither: the whole render-job queue. To WAIT for a
+    stage instead of polling this in a loop, use await_render(slug, job_id)."""
     if job_id:
         return await _api("GET", f"/api/jobs/{job_id}")
     if slug:
@@ -562,6 +568,65 @@ async def render_status(job_id: str = "", slug: str = "") -> dict:
         return {"slug": slug, "stages": stages,
                 "active_render_job": (active or {}).get("job_id")}
     return await _api("GET", "/api/jobs")
+
+
+# Stage number for each `until=` alias await_render accepts (matches the 8-stage
+# order in manifest.episode_pipeline_status: vo, masters, rife, assemble, music,
+# whisper, srt, burn).
+_AWAIT_STAGES = {"vo": 1, "masters": 2, "rife": 3, "assemble": 4, "music": 5,
+                 "whisper": 6, "srt": 7, "subs": 7, "burn": 8, "final": 8}
+_AWAIT_JOB_TERMINAL = {"done", "error", "abandoned", "cancelled", "failed"}
+
+
+@mcp.tool()
+async def await_render(slug: str, job_id: str = "", until: str = "final",
+                       timeout_s: int = 600, interval_s: int = 15) -> dict:
+    """BLOCK until a render reaches a milestone, then return — so you can *await* a
+    checkpoint instead of looping on render_status and burning context between
+    polls. Resolves the moment the target stage flips to done/error, OR the whole
+    job terminates, OR timeout_s elapses. After run_pipeline, prefer this over
+    manual polling.
+
+    `until` is a stage number 1-8 or an alias: vo(1), masters(2), rife(3),
+    assemble(4), music(5), whisper(6), srt/subs(7), burn/final(8). Pass job_id
+    (from run_pipeline) so a crash/cancel wakes you too; omit it to await purely on
+    on-disk stage status.
+
+    Returns {reached, reason, stage, stage_status, stage_note, job_state, stages}.
+    reason is 'stage:done'/'stage:error', 'job:<state>', or 'timeout'. On 'timeout'
+    the render is still going — just call await_render again to keep waiting (it's
+    idempotent, re-reads live state each call). Note the masters stage reads 'idle'
+    until shot 1's file lands even though ComfyUI is already crunching."""
+    try:
+        target = _AWAIT_STAGES.get(until.strip().lower()) or int(until)
+    except (ValueError, TypeError):
+        return {"error": True,
+                "detail": f"until must be a stage 1-8 or one of {sorted(_AWAIT_STAGES)}"}
+    if not 1 <= target <= 8:
+        return {"error": True, "detail": "until stage must be 1..8"}
+    interval = max(5, min(int(interval_s), 60))
+    deadline = time.monotonic() + max(10, min(int(timeout_s), 1800))
+    while True:
+        stages = await _api("GET", f"/api/episodes/{slug}/pipeline")
+        if _is_err(stages):
+            return stages
+        rows = stages.get("stages") if isinstance(stages, dict) else stages
+        st = next((s for s in (rows or []) if s.get("n") == target), {})
+        job_state = None
+        if job_id:
+            job = await _api("GET", f"/api/jobs/{job_id}")
+            if not _is_err(job):
+                inner = job.get("job") if isinstance(job.get("job"), dict) else job
+                job_state = inner.get("state") if isinstance(inner, dict) else None
+        snap = {"stage": target, "stage_status": st.get("status"),
+                "stage_note": st.get("note"), "job_state": job_state, "stages": rows}
+        if st.get("status") in ("done", "error"):
+            return {"reached": True, "reason": f"stage:{st.get('status')}", **snap}
+        if job_state in _AWAIT_JOB_TERMINAL:
+            return {"reached": job_state == "done", "reason": f"job:{job_state}", **snap}
+        if time.monotonic() >= deadline:
+            return {"reached": False, "reason": "timeout", **snap}
+        await asyncio.sleep(interval)
 
 
 @mcp.tool()

@@ -159,6 +159,15 @@ Send the thumb strip with `SendUserFile` immediately, so August has it without o
 
 The **HTTP service is built and running** — `pipeline/serve.py` as systemd `macu-render.service` on `:8773`. `POST /render {slug, from_stage?, only?, episodes_dir?}` queues a job (single-worker GPU queue) and re-runs `run.py` as a subprocess with `--events-out`; `GET /events/<job_id>` streams the same `stage.started`/`stage.done`/`job.error` events as SSE. **MACU Studio** drives renders through this service (and supplies `episodes_dir` for non-default shows — see Multi-show above). This skill, by contrast, invokes `run.py` directly; the two share the exact same stage code and caches, so a Studio render and a `/macu-render` CLI run are interchangeable on the same episode dir.
 
+## Queue → AWAIT → review (don't blind-poll)
+
+After queuing a render, **block to a milestone instead of polling status in a loop** (which wastes the orchestrating agent's context between checks):
+
+- **Driving Studio over MCP:** `run_pipeline(slug)` → `await_render(slug, job_id, until='final')`. `await_render` parks server-side and returns the moment the target stage flips `done`/`error`, the job terminates, or it times out (`reason='timeout'` → just call it again to keep waiting; it's idempotent). `until` takes a stage number 1-8 or an alias: `vo masters rife assemble music whisper srt burn final`. `render_status` is the one-shot snapshot. Stop at `until='masters'` to review B&W stills/masters before the long RIFE+assemble tail.
+- **Cron / CI / a plain shell driver (no MCP):** `python pipeline/render_watch.py --slug <slug> --job <job_id> --until final` — same per-stage status, blocks and exits 0 at the milestone (2 if the services go unreachable).
+
+Both key off the same `/api/episodes/<slug>/pipeline` per-stage `status`. Caveat: the `masters` stage reads `idle` until shot 1's file lands even though ComfyUI is already crunching — "idle / 0 masters" early is normal, not a stall.
+
 ## Future hooks
 
 - **Movietone 1.19:1** crop (SSA-87 deferred) — add `crop=1024:861:0:81` to stage 8 between the subtitles filter and the encode when `manifest.assembly.output_crop` is set.
