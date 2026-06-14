@@ -315,7 +315,7 @@ async def _gen_still(slug: str, who: str, key: str) -> None:
         params = {"model": char.get("still_model") or blk["image_model"]} \
             if engine == "higgsfield" else {}
         await still_engines.generate_one(engine, prompt, None, params, dest,
-                                         name=f"{slug}-{who}")
+                                         name=f"{slug}-{who}", style=m.get("style"))
         if engine == "comfy_zimage":
             from . import comfy_stills
             await comfy_stills.free_vram()
@@ -435,7 +435,8 @@ async def post_stills_render(slug: str, body: dict = Body(default={})):
             char = chars.get(key) if isinstance(chars.get(key), dict) else {}
             params = {"model": char.get("still_model") or blk["image_model"]} \
                 if engine == "higgsfield" else {}
-            await still_engines.generate_one(engine, prompt, None, params, dest, name=f"{slug}-{key}")
+            await still_engines.generate_one(engine, prompt, None, params, dest,
+                                             name=f"{slug}-{key}", style=m.get("style"))
             if engine == "comfy_zimage":
                 from . import comfy_stills
                 await comfy_stills.free_vram()

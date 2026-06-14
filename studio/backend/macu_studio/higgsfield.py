@@ -189,16 +189,33 @@ def _parse_result(res) -> Any:
 async def call(tool: str, args: dict | None = None, *, timeout: float = 120.0,
                auth: OAuthClientProvider | None = None) -> Any:
     """One tool call on a fresh session (shared auth provider serializes token
-    handling across concurrent callers)."""
+    handling across concurrent callers).
+
+    The whole body is bounded by `timeout` — NOT just `call_tool`. All HF traffic
+    serializes through the shared OAuthClientProvider's lock, so if a predecessor
+    wedges while holding it (a stalled status poll / token refresh), a later call
+    would otherwise block forever acquiring the lock / setting up the client /
+    initializing, before any HTTP request fires (the "generate hangs at 0/1" bug).
+    Wrapping everything in wait_for surfaces that as a timeout AND cancels the
+    wedged context managers, which releases the lock for the next caller."""
     provider = auth or _get_provider()
-    try:
+
+    async def _run() -> Any:
         async with streamablehttp_client(MCP_URL, auth=provider, timeout=timeout) as (r, w, _):
             async with ClientSession(r, w) as session:
                 await session.initialize()
-                res = await asyncio.wait_for(session.call_tool(tool, args or {}), timeout)
+                res = await session.call_tool(tool, args or {})
                 return _parse_result(res)
+
+    try:
+        return await asyncio.wait_for(_run(), timeout)
     except NotConnectedError:
         raise
+    except asyncio.TimeoutError:
+        raise RuntimeError(
+            f"Higgsfield call '{tool}' timed out after {int(timeout)}s with no response "
+            "(a prior request may have wedged the shared session — retry)"
+        ) from None
     except BaseException as e:  # anyio wraps failures in ExceptionGroups
         nce = _find_exc(e, NotConnectedError)
         if nce:

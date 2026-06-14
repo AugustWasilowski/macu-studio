@@ -22,6 +22,11 @@ from typing import Awaitable, Callable
 
 ACTIVE = ("queued", "generating", "downloading")
 
+# Hard per-take ceiling. A job stuck past this fails with an error instead of
+# pinning the UI at "Generating 0/1" forever (belt-and-suspenders over the
+# per-call timeouts in the engines themselves).
+JOB_WATCHDOG_S = 1500.0
+
 # key -> {state, engine, error, started, progress: {done, total}, job_id?}
 JOBS: dict[str, dict] = {}
 
@@ -45,11 +50,16 @@ def start(key: str, engine: str, total: int,
                  "started": time.time(), "progress": {"done": 0, "total": total}}
     JOBS[key] = job
 
+    budget = JOB_WATCHDOG_S * max(1, total)
+
     async def wrap() -> None:
         try:
-            await runner(job)
+            await asyncio.wait_for(runner(job), timeout=budget)
             if job["state"] in ACTIVE:
                 job["state"] = "done"
+        except asyncio.TimeoutError:
+            job["state"] = "error"
+            job["error"] = f"timed out after {int(budget)}s (still-generation watchdog)"
         except Exception as e:
             job["state"] = "error"
             job["error"] = str(e) or e.__class__.__name__

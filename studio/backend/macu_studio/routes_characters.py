@@ -152,6 +152,8 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
     seed = body.get("seed")
     count = max(1, min(4, int(body.get("count") or 1)))
     params = body.get("params") or {}
+    # The show look (B&W suffix + negative) so library takes match the episode aesthetic.
+    style = (shows_mod.get_show(show).get("episode_defaults") or {}).get("style")
     jkey = f"lib:{show}:{key}"
 
     async def runner(job: dict) -> None:
@@ -162,7 +164,7 @@ async def post_generate(show: str, key: str, body: dict = Body(default={})):
             tmp.unlink()  # engine writes it
             use_seed = (int(seed) + i) if seed not in (None, "") else None
             info = await still_engines.generate_one(engine, prompt, use_seed, params, tmp,
-                                                     name=f"{show}-{key}")
+                                                    name=f"{show}-{key}", style=style)
             chars.add_take(show, key, tmp, engine=engine, model=info.get("model"),
                            prompt=prompt, seed=info.get("seed"),
                            params=info.get("params"))
