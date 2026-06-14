@@ -1138,3 +1138,42 @@ async def cowork_jobs_create(episode: str, jobs_json: str) -> dict:
     except (ValueError, KeyError) as e:
         return {"error": True, "detail": str(e)}
     return {"created": created, "count": len(created)}
+
+
+@mcp.tool()
+async def cowork_job_complete(id: str, gen_ids: list[str], note: str = "") -> dict:
+    """One-call completion for the CoWork harvest skill: mark a job done AND attach
+    the Higgsfield generation id(s) you just made, in a single step. Studio then
+    auto-harvests the result into the job's episode target. gen_ids are HIGGSFIELD
+    GENERATION IDs (from the account history) — NOT media URLs; placement fetches
+    each generation's rawUrl by id. Sugar over cowork_job_update(status="done", ...)."""
+    if not gen_ids:
+        return {"error": True, "detail": "gen_ids required — the Higgsfield generation id(s) "
+                "you just made (see cowork_recent_generations)"}
+    try:
+        job = cowork_jobs.update_job(id, status="done", result_gen_ids=gen_ids,
+                                     note=note or None)
+    except KeyError:
+        return {"error": True, "detail": f"unknown job id {id}"}
+    return {"job": job, "harvesting": True}
+
+
+@mcp.tool()
+async def cowork_recent_generations(type: str = "", limit: int = 10) -> dict:
+    """Find the generation you just made in the Higgsfield web app, so you can report
+    its id back via cowork_job_complete. Returns the account's most-recent generations
+    (newest first; web- AND API-made), trimmed to {id, type, model, prompt, thumb_url,
+    created_at}. type=image|video narrows it. The `id` is what goes in gen_ids."""
+    res = await _api("GET", "/api/higgsfield/generations",
+                     params={"type": type, "size": max(1, min(50, limit))} if type
+                     else {"size": max(1, min(50, limit))})
+    if _is_err(res):
+        return res
+    out = []
+    for g in (res.get("items") or [])[:limit]:
+        r = g.get("results") or {}
+        out.append({"id": g.get("id"), "type": g.get("type"), "model": g.get("model"),
+                    "prompt": (g.get("params") or {}).get("prompt"),
+                    "thumb_url": r.get("thumbnailUrl") or r.get("minUrl") or r.get("rawUrl"),
+                    "created_at": g.get("createdAt")})
+    return {"generations": out, "count": len(out)}
