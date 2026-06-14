@@ -679,3 +679,48 @@ def gen_metadata(tool: str, model_requested: str, job_result: Any,
         "credits_spent": credits_spent,
         "unlimited": False,
     }
+
+
+async def generations(type_: str | None = None, size: int = 24, cursor=None) -> dict:
+    """Browse the account's generation history — web- AND API-made, same account
+    (this is what makes the free-web → local-harvest loop work). Returns
+    {items:[{id,type,status,model,params,results:{rawUrl,...}}], next_cursor}."""
+    args: dict = {"size": size}
+    if type_:
+        args["type"] = type_
+    if cursor is not None:
+        args["cursor"] = cursor
+    res = await call("show_generations", args, timeout=60)
+    return res if isinstance(res, dict) else {"items": res}
+
+
+async def medias(type_: str, size: int = 20, cursor=None) -> dict:
+    """List uploaded media. Returns {items:[{id,url,created_at}], next_cursor}."""
+    args: dict = {"type": type_, "size": size}
+    if cursor is not None:
+        args["cursor"] = cursor
+    res = await call("show_medias", args, timeout=60)
+    return res if isinstance(res, dict) else {"items": res}
+
+
+async def fetch_generation(gen_id: str, dest: Path) -> dict:
+    """Harvest a completed generation's RESULT media to dest (works for web- or
+    API-made gens — anything in the account history). Returns the gen_metadata
+    provenance dict. The download itself is free.
+
+    Pulls from generation.results.rawUrl specifically — NOT a blind scan of the
+    payload, which would also match params.input_image (the start frame) and grab
+    the wrong file."""
+    res = await call("job_status", {"jobId": gen_id, "sync": False}, timeout=60)
+    g = (res.get("generation") if isinstance(res, dict) else None) or (res if isinstance(res, dict) else {})
+    results = (g or {}).get("results") or {}
+    url = results.get("rawUrl") or results.get("url")
+    if not url:
+        # fallback: scan ONLY the results block (never params/input media)
+        scan = find_media_urls(results)
+        url = scan[0] if scan else None
+    if not url:
+        raise RuntimeError(f"generation {gen_id} has no result media (not complete?)")
+    await download(url, dest)
+    tool = "generate_video" if (g or {}).get("type") == "video" else "generate_image"
+    return gen_metadata(tool, (g or {}).get("model") or "", res)
