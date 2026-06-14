@@ -4,6 +4,8 @@ Endpoints under /api ; SPA mounted at /. Runs as `uvicorn macu_studio.main:app`.
 """
 from __future__ import annotations
 import time
+import os
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -43,9 +45,47 @@ from . import shows as shows_mod
 from .config import EPISODES, FRONTEND_DIST, CORS_DEV_ORIGINS, CHAT_WEBHOOK_TOKEN, SHARES
 
 
+class _AccessLogNoiseFilter(logging.Filter):
+    """uvicorn logs one INFO line per HTTP request on the `uvicorn.access` logger.
+    The Studio SPA polls several endpoints a few times a second, which drowns the
+    log in `... "GET /api/... " 200` lines. By default we drop the SUCCESSFUL
+    (2xx/3xx) access lines so the log stays readable, while keeping 4xx/5xx (the
+    ones worth seeing). Set MACU_STUDIO_ACCESS_LOG=all (also verbose/debug/1) to
+    restore full per-request access logging."""
+
+    def __init__(self):
+        super().__init__()
+        v = (os.environ.get("MACU_STUDIO_ACCESS_LOG") or "").strip().lower()
+        self.verbose = v in ("all", "verbose", "debug", "1", "true", "yes", "on")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if self.verbose:
+            return True
+        # uvicorn.access record args = (client_addr, method, path, http_version, status)
+        try:
+            status = int(record.args[4])  # type: ignore[index]
+        except Exception:
+            return True  # unfamiliar record shape — never suppress
+        return status >= 400  # keep errors, drop the 2xx/3xx polling chatter
+
+
+def _install_access_log_filter() -> None:
+    """Attach the noise filter to uvicorn.access. Done in lifespan (after uvicorn has
+    configured its own logging) so our filter isn't clobbered by uvicorn's dictConfig."""
+    lg = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, _AccessLogNoiseFilter) for f in lg.filters):
+        lg.addFilter(_AccessLogNoiseFilter())
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[macu-studio] EPISODES={EPISODES} FRONTEND_DIST={FRONTEND_DIST}")
+    # Quiet the per-request access-log chatter (2xx/3xx polls) unless
+    # MACU_STUDIO_ACCESS_LOG is set — see _AccessLogNoiseFilter.
+    try:
+        _install_access_log_filter()
+    except Exception as e:
+        print(f"[macu-studio] access-log filter not installed: {e}")
     # Materialize the editable Ollama prompt files into docs/ so they appear on
     # the Docs page even before the first generation. No-op once they exist.
     try:
