@@ -545,17 +545,28 @@ def _gen_lipsync_shot(slug, m, ep, cue, shot):
         chunk_wav = work / f"chunk{i:02d}.wav"
         _ff(["-i", str(vo), "-ss", f"{a:.4f}", "-t", f"{cdur:.4f}",
              "-c:a", "pcm_s16le", str(chunk_wav)], f"lipsync {sid} chunk {i}")
+        seg_dur = max(2, min(15, math.ceil(cdur)))
+        img_id = _upload(prev_image)
+        aud_id = _upload(chunk_wav)
         body = {"tool": "generate_video",
                 "params": {**params,
-                           "duration": max(2, min(15, math.ceil(cdur))),
+                           "duration": seg_dur,
                            "prompt": hfc.resolve_prompt(shot, m)
                                      or "talking head, mouth synced to the voice, subtle natural motion",
                            "count": 1,
                            "medias": [
-                               {"value": _upload(prev_image), "role": _media_role(model)},
-                               {"value": _upload(chunk_wav), "role": "audio"},
+                               {"value": img_id, "role": _media_role(model)},
+                               {"value": aud_id, "role": "audio"},
                            ]}}
+        # Evidence for lipsync debugging: which model, the requested clip length,
+        # the ACTUAL audio chunk length, and the two media ids (confirms a distinct
+        # audio media is attached, role "audio"). Pull job_status on this job id to
+        # see what HF did with the audio drive.
+        print(f"    seg{i:02d} submit: model={model} dur={seg_dur}s "
+              f"audio_len={probe_dur(str(chunk_wav)):.2f}s "
+              f"start_image={img_id} audio_media={aud_id}", flush=True)
         job = _api("POST", "/api/higgsfield/generate", body, timeout=300)
+        print(f"    seg{i:02d} job_id={job.get('job_id')}", flush=True)
         urls = _wait_job(job["job_id"], label=f"lipsync {sid} seg{i}")
         mp4s = [u for u in urls if ".mp4" in u.split("?")[0].lower()] or urls
         raw = work / f"raw{i:02d}.mp4"

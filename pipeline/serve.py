@@ -151,7 +151,7 @@ def worker():
         if not job:
             continue
         job.state = "running"; job.started_at = time.time(); job._persist()
-        cmd = [sys.executable, RUN_PY, job.slug,
+        cmd = [sys.executable, "-u", RUN_PY, job.slug,
                "--events-out", job.events_path]
         if getattr(job, "dub_lang", None):
             # Localize job: bypass the 8-stage render, run the dub path instead.
@@ -167,6 +167,10 @@ def worker():
         # MACU_EPISODES via lib.episode_paths, so setting it here points run.py
         # and every child stage at the right show's dir. Unset → server default.
         env = os.environ.copy()
+        # Stream run.py's stdout to run.log live — block buffering to a pipe/file
+        # otherwise holds sparse progress prints until the process exits, so a
+        # long stage looks frozen with an empty run.log (SSA: ep-022 lipsync debug).
+        env["PYTHONUNBUFFERED"] = "1"
         if getattr(job, "episodes_dir", None):
             env["MACU_EPISODES"] = job.episodes_dir
         # Per-job ComfyUI endpoint (engine routing in Studio). lib.py reads

@@ -392,9 +392,35 @@ async def get_cost(params: dict) -> Any:
 
 # ---- generation helpers ---------------------------------------------------------
 
+# Extension → (content_type, media kind). Takes precedence over mimetypes.guess_type
+# so a thin/missing system mime DB can never downgrade a .wav to application/octet-stream
+# → kind "file", which strips the audio drive off an audio-sync model (e.g. wan2_7
+# lipsync silently degrades to a plain i2v gen that freezes after a few seconds).
+_EXT_MEDIA = {
+    ".wav": ("audio/wav", "audio"), ".mp3": ("audio/mpeg", "audio"),
+    ".m4a": ("audio/mp4", "audio"), ".aac": ("audio/aac", "audio"),
+    ".flac": ("audio/flac", "audio"), ".ogg": ("audio/ogg", "audio"),
+    ".mp4": ("video/mp4", "video"), ".webm": ("video/webm", "video"),
+    ".mov": ("video/quicktime", "video"),
+    ".png": ("image/png", "image"), ".jpg": ("image/jpeg", "image"),
+    ".jpeg": ("image/jpeg", "image"), ".webp": ("image/webp", "image"),
+}
+
+
+def _media_kind(path: Path) -> tuple[str, str]:
+    """(content_type, media kind ∈ image|video|audio|file) for an upload, preferring
+    the explicit extension map over the host's mimetypes DB."""
+    hit = _EXT_MEDIA.get(path.suffix.lower())
+    if hit:
+        return hit
+    ct = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    kind = ct.split("/")[0]
+    return ct, (kind if kind in ("image", "video", "audio") else "file")
+
+
 async def upload_media(path: Path) -> str:
     """Local file → confirmed media_id (media_upload → PUT bytes → media_confirm)."""
-    ct = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    ct, mtype = _media_kind(path)
     res = await call("media_upload", {"filename": path.name, "content_type": ct}, timeout=60)
     up = res
     if isinstance(res, dict):
@@ -409,9 +435,6 @@ async def upload_media(path: Path) -> str:
     async with httpx.AsyncClient(timeout=600) as c:
         r = await c.put(upload_url, content=path.read_bytes(), headers={"Content-Type": ct})
         r.raise_for_status()
-    mtype = ct.split("/")[0]
-    if mtype not in ("image", "video", "audio"):
-        mtype = "file"
     await call("media_confirm", {"media_id": media_id, "type": mtype}, timeout=60)
     return str(media_id)
 
