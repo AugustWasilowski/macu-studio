@@ -761,6 +761,13 @@ async def get_job(job_id: str, sync: bool = False):
     except Exception as e:
         raise HTTPException(502, f"job_status failed: {e}")
     out = res if isinstance(res, dict) else {"raw": res}
+    # HF job_status nests the real status under `generation` (top-level has none),
+    # so surface it at top level — pipeline _wait_job + the UI both read res.status.
+    # Without this the poller never sees a terminal state and hangs to JOB_TIMEOUT.
+    gen = out.get("generation") if isinstance(out.get("generation"), dict) else {}
+    status = out.get("status") or out.get("state") or gen.get("status") or gen.get("state")
+    if status is not None:
+        out["status"] = status
     out.setdefault("urls", hf.find_media_urls(res))
     return out
 

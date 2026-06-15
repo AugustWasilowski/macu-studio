@@ -77,7 +77,11 @@ def _wait_job(job_id, timeout=JOB_TIMEOUT, label=""):
     deadline = time.time() + timeout
     while True:
         res = _api("GET", f"/api/higgsfield/jobs/{job_id}?sync=true", timeout=120)
-        st = str(res.get("status") or res.get("state") or "").lower()
+        # HF nests status under `generation`; read top-level first, fall back to it
+        # so harvest never hangs on a non-terminal top-level when the gen is done.
+        gen = res.get("generation") if isinstance(res.get("generation"), dict) else {}
+        st = str(res.get("status") or res.get("state")
+                 or gen.get("status") or gen.get("state") or "").lower()
         if any(s in st for s in ("completed", "succeeded", "success", "done")):
             urls = res.get("urls") or []
             if not urls:

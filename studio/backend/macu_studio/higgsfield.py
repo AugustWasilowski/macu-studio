@@ -500,7 +500,9 @@ async def wait_job(job_id: str, timeout: float = 900.0) -> dict:
     deadline = time.time() + timeout
     while True:
         res = await call("job_status", {"jobId": job_id, "sync": True}, timeout=90)
-        st = str((res or {}).get("status") or (res or {}).get("state") or "").lower()
+        gen = (res or {}).get("generation") if isinstance((res or {}).get("generation"), dict) else {}
+        st = str((res or {}).get("status") or (res or {}).get("state")
+                 or gen.get("status") or gen.get("state") or "").lower()
         if any(s in st for s in _TERMINAL_OK):
             return res
         if any(s in st for s in _TERMINAL_BAD):
