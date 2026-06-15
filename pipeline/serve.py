@@ -67,11 +67,13 @@ os.makedirs(JOBS_ROOT, exist_ok=True)
 
 class Job:
     def __init__(self, job_id, slug, from_stage=1, only=None, episodes_dir=None,
-                 dub_lang=None, dub_engine=None, subs_only=False, comfy_url=None):
+                 dub_lang=None, dub_engine=None, subs_only=False, comfy_url=None,
+                 only_shot=None):
         self.id = job_id
         self.slug = slug
         self.from_stage = from_stage
         self.only = only
+        self.only_shot = only_shot         # set → render ONLY this shot id (MACU_ONLY_SHOT)
         self.episodes_dir = episodes_dir   # None → use the server default (MACU)
         self.comfy_url = comfy_url         # None → lib.py's MACU_COMFY_URL default
         self.dub_lang = dub_lang           # set → run.py --dub (localize, not a render)
@@ -94,6 +96,7 @@ class Job:
         return {
             "id": self.id, "slug": self.slug,
             "from_stage": self.from_stage, "only": self.only,
+            "only_shot": getattr(self, "only_shot", None),
             "episodes_dir": self.episodes_dir,
             "comfy_url": getattr(self, "comfy_url", None),
             "dub_lang": self.dub_lang, "dub_engine": self.dub_engine,
@@ -125,6 +128,7 @@ def load_existing_jobs():
             j = Job.__new__(Job)
             j.id = d["id"]; j.slug = d["slug"]
             j.from_stage = d.get("from_stage", 1); j.only = d.get("only")
+            j.only_shot = d.get("only_shot")
             j.episodes_dir = d.get("episodes_dir")
             j.dub_lang = d.get("dub_lang"); j.dub_engine = d.get("dub_engine")
             j.subs_only = d.get("subs_only", False)
@@ -177,6 +181,9 @@ def worker():
         # MACU_COMFY_URL, so every stage follows with zero stage changes.
         if getattr(job, "comfy_url", None):
             env["MACU_COMFY_URL"] = job.comfy_url
+        # Single-shot isolation: stage 2 (masters + cloud) filters to this shot id.
+        if getattr(job, "only_shot", None):
+            env["MACU_ONLY_SHOT"] = job.only_shot
         try:
             with open(job.log_path, "wb") as log:
                 # start_new_session so the whole render tree (run.py + ffmpeg/rife children)
@@ -314,6 +321,7 @@ class Handler(BaseHTTPRequestHandler):
         job = Job(job_id, slug,
                   from_stage=int(body.get("from_stage", 1)),
                   only=body.get("only"),
+                  only_shot=(body.get("only_shot") or None),
                   episodes_dir=(body.get("episodes_dir") or None),
                   dub_lang=dub_lang, dub_engine=dub_engine, subs_only=subs_only,
                   comfy_url=comfy_url)

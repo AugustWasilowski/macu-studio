@@ -178,11 +178,19 @@ def _local_main(slug):
     ep_base = p["base"]
     mcache = _load_masters_cache(p["clips"])
 
+    # Single-shot isolation (MACU_ONLY_SHOT): a generate_cloud_shot regen wants ONLY
+    # that shot rendered. Filtering the enumeration by shot id means a cloud/lipsync
+    # target matches no local (character/broll) shot → zero local jobs, so we never
+    # attempt — and block on — the rest of the episode's zeroscope masters.
+    only_shot = os.environ.get("MACU_ONLY_SHOT") or None
+
     # Discover unique (kind, key) from cues' shots
     unique = []
     seen = set()
     for cue in m["cues"]:
         for shot in cue["shots"]:
+            if only_shot and shot.get("id") != only_shot:
+                continue
             if shot.get("kind") in ("character","broll"):
                 k = (shot["kind"], shot["who"])
                 if k not in seen:

@@ -120,12 +120,15 @@ def _ff(args, label):
 
 # ---- stills -------------------------------------------------------------------------
 
-def _ensure_stills(slug, m, ep):
+def _ensure_stills(slug, m, ep, only_keys=None):
     """Generate missing/stale character stills (via the Studio still routes, which
-    own the image-gen flow + sidecar stamping)."""
+    own the image-gen flow + sidecar stamping). only_keys (when set) limits work to
+    that set of character keys — used by single-shot isolation."""
     chars = m.get("characters") or {}
     made = 0
     for who in hfc.referenced_stills(m):
+        if only_keys is not None and who not in only_keys:
+            continue
         char = chars.get(who) if isinstance(chars.get(who), dict) else {}
         p = hfc.still_path(ep, who)
         entries = hfc.load_sidecar(hfc.stills_sidecar_path(ep), "stills")
@@ -606,7 +609,13 @@ def main(slug):
     m = load_manifest(slug)
     ep = Path(p["base"])
 
+    # Single-shot isolation (MACU_ONLY_SHOT): a generate_cloud_shot regen renders
+    # ONLY the target shot — skip every other cloud shot (and, in stage_2_masters,
+    # every local master) so one shot can't be blocked by 16 unrelated ones.
+    only_shot = os.environ.get("MACU_ONLY_SHOT") or None
     cloud = list(hfc.cloud_shots(m))
+    if only_shot:
+        cloud = [(c, s) for (c, s) in cloud if s.get("id") == only_shot]
     if not cloud:
         return {"cloud_rendered": 0, "cloud_skipped": 0}
 
@@ -631,7 +640,11 @@ def main(slug):
             raise RuntimeError("[stage 2b cloud] Higgsfield not connected — connect in "
                                "Studio Settings → Higgsfield (or reroute/remove the cloud shots)")
 
-    stills_made = _ensure_stills(slug, m, ep)
+    # Under single-shot isolation only ensure the stills the target shot references.
+    only_keys = None
+    if only_shot:
+        only_keys = {(s.get("source_still") or "").strip() for _c, s in cloud}
+    stills_made = _ensure_stills(slug, m, ep, only_keys=only_keys)
 
     sc_path = hfc.clips_sidecar_path(ep)
     lock = threading.Lock()

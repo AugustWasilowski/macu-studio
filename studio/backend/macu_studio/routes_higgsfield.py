@@ -798,4 +798,7 @@ async def post_cloud_shot_regen(slug: str, shot_id: str):
     if work.exists():
         import shutil
         shutil.rmtree(work, ignore_errors=True)
-    return await pipeline_mod.submit(slug, only=2)
+    # Single-shot isolation: render ONLY this shot — stage 2 skips every other local
+    # master + cloud shot, so a single cloud-shot regen can't be blocked (or billed)
+    # by the rest of the episode (e.g. doomed zeroscope masters on a WAN-only ComfyUI).
+    return await pipeline_mod.submit(slug, only=2, only_shot=shot_id)
