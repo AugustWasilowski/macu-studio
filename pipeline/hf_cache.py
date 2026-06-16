@@ -138,6 +138,34 @@ def resolve_prompt(shot: dict, manifest: dict) -> str:
     return (base + suffix) if base else base
 
 
+# The neutral talking-head prompt for audio-driven lipsync (wan2_7 etc.). Identity
+# comes from the still; the prompt must NOT carry the scene `core` or the model
+# dramatizes the scene (subject looks away) and never lip-syncs — see
+# macu-hf-lipsync-input-quality. Overridable per-shot/per-char with `lipsync_prompt`.
+LIPSYNC_DEFAULT_PROMPT = ("talking head, speaking directly to camera, head and "
+                          "shoulders, minimal movement, mouth synced to the voice, "
+                          "subtle natural motion")
+
+
+def lipsync_prompt(shot: dict, manifest: dict) -> str:
+    """Prompt for an audio-driven lipsync shot. Precedence: per-shot `lipsync_prompt`
+    → the referenced character's `lipsync_prompt` → the neutral talking-head default.
+    It NEVER falls back to the scene/action `core` (resolve_prompt) — that's what
+    made wan2_7 heads stop syncing on ep-022. The higgsfield style suffix appends,
+    same as resolve_prompt, so the look matches the b-roll shots."""
+    blk = hf_block(manifest)
+    base = (shot.get("lipsync_prompt") or "").strip()
+    if not base:
+        who = shot.get("who") or ""
+        c = (manifest.get("characters") or {}).get(who)
+        if isinstance(c, dict):
+            base = (c.get("lipsync_prompt") or "").strip()
+    if not base:
+        base = LIPSYNC_DEFAULT_PROMPT
+    suffix = (blk.get("style_suffix") or "").strip()
+    return base + suffix
+
+
 def resolve_still(shot_or_char: dict, manifest: dict, ep_dir: Path) -> Path | None:
     """A shot's source_still is either a character key (→ stills/<who>.png) or a
     path relative to the episode dir."""
@@ -182,6 +210,9 @@ def lipsync_hash(shot: dict, manifest: dict, ep_dir: Path, cue_id: str,
         "vo_sha": file_sha(vo),
         "engine": engine,
     }
+    # The resolved talking-head prompt shapes the generation on EVERY engine
+    # (SSA-144): editing a per-char/per-shot lipsync_prompt must re-bill the clip.
+    payload["prompt"] = lipsync_prompt(shot, manifest)
     if engine == "higgsfield":
         # Model/resolution shape the cloud generation; the local/remote
         # InfiniteTalk graph is fixed, so they'd only cause spurious staleness.

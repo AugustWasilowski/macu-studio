@@ -258,7 +258,7 @@ def _gen_lipsync_local(slug, m, ep, cue, shot):
     pname, preset = _lipsync_preset(m)
     graph, out_node = _bind_workflow(
         "wan21_infinitetalk",
-        prompt=hfc.resolve_prompt(shot, m) or None,
+        prompt=hfc.lipsync_prompt(shot, m),
         image=img_name, audio=wav_name,
         seed=shot.get("seed"),
         max_frames=int(vo_dur * LIPSYNC_FPS) + 1,
@@ -558,8 +558,7 @@ def _gen_lipsync_shot(slug, m, ep, cue, shot):
         body = {"tool": "generate_video",
                 "params": {**params,
                            "duration": seg_dur,
-                           "prompt": hfc.resolve_prompt(shot, m)
-                                     or "talking head, mouth synced to the voice, subtle natural motion",
+                           "prompt": hfc.lipsync_prompt(shot, m),
                            "count": 1,
                            "medias": [
                                {"value": img_id, "role": _media_role(model)},
