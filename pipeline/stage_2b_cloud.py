@@ -672,6 +672,10 @@ def main(slug):
         cue, shot, h = item
         # Mouthless characters reroute lipsync → i2v video (effective_kind).
         if hfc.effective_kind(shot, m) == "lipsync":
+            # SSA-145: warn (don't block) on a still that won't lip-sync well —
+            # too-small/absent face, landscape framing, or a stale library take.
+            for w in hfc.lipsync_still_warnings(shot, m, ep):
+                print(f"  [warn] {shot.get('id')}: {w}", flush=True)
             if lipsync_engine == "local_wan":
                 sid = _gen_lipsync_local(slug, m, ep, cue, shot)
             elif lipsync_engine == "remote_render":

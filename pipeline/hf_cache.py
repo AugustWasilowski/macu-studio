@@ -177,6 +177,85 @@ def resolve_still(shot_or_char: dict, manifest: dict, ep_dir: Path) -> Path | No
     return ep_dir / ref
 
 
+# ---- lipsync still guards (SSA-145) --------------------------------------------
+
+def _png_dims(path: Path) -> tuple[int, int] | None:
+    """(width, height) from a PNG's IHDR — stdlib only, no PIL dep."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(24)
+        if head[:8] != b"\x89PNG\r\n\x1a\n":
+            return None
+        return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+    except Exception:
+        return None
+
+
+def _face_fraction(path: Path) -> float | None:
+    """Largest frontal-face area as a fraction of the frame, via opencv's haar
+    cascade. None when opencv isn't installed (the guard then falls back to the
+    cheap dims/aspect check). 0.0 means a detector ran but found no face."""
+    try:
+        import cv2  # type: ignore
+    except Exception:
+        return None
+    try:
+        img = cv2.imread(str(path))
+        if img is None:
+            return None
+        h, w = img.shape[:2]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        faces = cascade.detectMultiScale(gray, 1.1, 4)
+        if len(faces) == 0:
+            return 0.0
+        return max(fw * fh for (_x, _y, fw, fh) in faces) / float(w * h)
+    except Exception:
+        return None
+
+
+def lipsync_still_warnings(shot: dict, manifest: dict, ep_dir: Path) -> list[str]:
+    """Best-effort pre-submit checks for an audio-driven lipsync still (SSA-145).
+    wan2_7 needs a findable mouth: a wide/small-face still animates the scene
+    instead of lip-syncing (the ep-022 'static head' trap). Returns human-readable
+    warning strings — never raises, never blocks the render.
+
+      - face too small / not found  → no mouth to drive
+      - landscape/wide still        → face likely small
+      - on-disk still ≠ synced library take → stale / hand-swapped (wrong default_take)
+    """
+    warns: list[str] = []
+    still = resolve_still(shot, manifest, ep_dir)
+    if not still or not still.exists():
+        return warns
+    frac = _face_fraction(still)
+    if frac is not None:
+        if frac == 0.0:
+            warns.append(f"no frontal face detected in {still.name} — wan2_7 may "
+                         f"animate the scene instead of lip-syncing; use a tight "
+                         f"head-and-shoulders take")
+        elif frac < 0.06:
+            warns.append(f"face fills only {frac*100:.1f}% of {still.name} — likely "
+                         f"too small for wan2_7 to lip-sync; use a tighter frontal take")
+    dims = _png_dims(still)
+    if dims:
+        w, h = dims
+        if w > h * 1.3:
+            warns.append(f"{still.name} is landscape ({w}x{h}) — frontal portrait/"
+                         f"square stills lip-sync more reliably")
+    who = shot.get("who") or ""
+    entry = (manifest.get("characters") or {}).get(who)
+    if isinstance(entry, dict) and entry.get("library_sha"):
+        cur = file_sha(still)
+        if cur and cur != entry["library_sha"]:
+            ref = entry.get("library_ref") or "the library take"
+            warns.append(f"still {still.name} differs from synced library take "
+                         f"{ref} — re-sync the character (Use in episode) unless this "
+                         f"is an intentional hand-swap")
+    return warns
+
+
 def shot_params(shot: dict, manifest: dict) -> dict:
     """The generation-shaping params for a higgsfield video shot (also the
     memoization shape for cost estimates)."""
