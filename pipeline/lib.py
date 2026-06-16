@@ -101,12 +101,45 @@ def _omnivoice_compose_up():
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
+_DOCKER_HELP = (
+    "OmniVoice runs as a LOCAL Docker container, but Docker isn't usable from this "
+    "environment.\n"
+    "  • Docker Desktop + WSL (common): the distro's `docker` shim can dangle after a "
+    "distro move/reinstall.\n"
+    "    Fix: Docker Desktop -> Settings -> Resources -> WSL Integration -> enable this "
+    "distro -> Apply & Restart,\n"
+    "    then `wsl --shutdown` and reopen the distro. Verify: `docker info`.\n"
+    "  • Then ensure the container exists: `docker ps -a | grep omnivoice` (if missing: "
+    "`docker compose -f deploy/services/omnivoice/docker-compose.yml create`)."
+)
+
+
+def _docker_ok():
+    """(ok, detail) — is the `docker` CLI present AND the daemon/integration reachable?
+    Catches the Docker-Desktop-on-WSL failure where /usr/bin/docker dangles after a
+    distro move (FileNotFoundError) or the daemon is unreachable (`docker info` != 0),
+    so the on-demand start can fail with an actionable message instead of a raw trace."""
+    try:
+        r = subprocess.run(["docker", "info", "--format", "{{.ServerVersion}}"],
+                           capture_output=True, text=True, timeout=20)
+    except FileNotFoundError:
+        return False, "the `docker` CLI is not on PATH (missing or dangling symlink)"
+    except Exception as e:
+        return False, f"could not run docker: {e}"
+    if r.returncode != 0:
+        return False, (r.stderr.strip() or r.stdout.strip() or "docker daemon unreachable")
+    return True, (r.stdout.strip() or "ok")
+
+
 def omnivoice_start(wait_timeout=180, poll_interval=2):
     """Bring the OmniVoice container up and wait until :3900 responds.
 
     Idempotent: if the container is already running, `docker start` is a no-op
     and the probe loop just confirms readiness. Raises RuntimeError on timeout.
     """
+    ok, detail = _docker_ok()
+    if not ok:
+        raise RuntimeError(f"[omnivoice] Docker is not usable here ({detail}).\n{_DOCKER_HELP}")
     print(f"[omnivoice] starting container '{OMNIVOICE_CONTAINER}' ...")
     r = subprocess.run(["docker", "start", OMNIVOICE_CONTAINER],
                        capture_output=True, text=True)
@@ -147,8 +180,13 @@ def omnivoice_start(wait_timeout=180, poll_interval=2):
 
 def omnivoice_stop():
     """Stop the OmniVoice container to release VRAM. Best-effort — never raises."""
-    r = subprocess.run(["docker", "stop", "-t", "5", OMNIVOICE_CONTAINER],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run(["docker", "stop", "-t", "5", OMNIVOICE_CONTAINER],
+                           capture_output=True, text=True)
+    except Exception as e:
+        # runs in finally blocks — a missing/dangling docker must not mask the real error
+        print(f"[omnivoice] stop skipped — docker not usable: {e}")
+        return
     if r.returncode == 0:
         print(f"[omnivoice] stopped (VRAM released)")
     else:
