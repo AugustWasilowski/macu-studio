@@ -114,6 +114,10 @@ THINGS TO KNOW:
 - write_manifest replaces the whole manifest: read_manifest first, modify, write
   back. Prefer the purpose-built tools (set_episode_meta, set_speaker_voice...)
   over hand-editing manifest JSON.
+- EDGE CASES: a dense, compressed gotchas cheatsheet (lipsync / voice / cloud /
+  manifest / install traps) lives at the MCP resource macu://gotchas. Read it when a
+  render, voice, or cloud step behaves unexpectedly — it's pull-on-demand, so it
+  costs nothing until you fetch it.
 - CLOUD SHOTS: kind 'higgsfield' (cloud t2v/i2v) bills the user's Higgsfield
   account per generation. kind 'lipsync' (still + cue VO -> talking head; must
   be the FIRST shot in its cue, max one per cue — b-roll/character cutaways may
@@ -135,6 +139,55 @@ result_gen_ids=[...]) and Studio auto-harvests the result into the episode targe
 finds the id of a just-made web gen. cowork_jobs_list watches the queue (also the
 "CoWork" UI tab). The browser-side how-to is the cowork-harvest + higgsfield-web-
 free-gen skills. result_gen_ids are Higgsfield GENERATION ids, not URLs.
+"""
+
+# Compressed agent-facing edge-case cheatsheet, served at resource macu://gotchas.
+# Pull-on-demand (zero tokens until fetched). Written DENSE on purpose — one line per
+# trap, symbol-heavy (→ = leads-to/fix, ✗ = don't, ⚠ = warns-not-blocks); an agent is
+# the reader, so skip prose. Seeded from real ep-018..023 production traps. Keep
+# entries one line; add a trap the moment it bites someone twice.
+GOTCHAS = """\
+MACU gotchas — dense agent cheatsheet. Pull when a step misbehaves; don't memorize.
+Legend: → leads-to/fix · ✗ don't · ⚠ warns-not-blocks.
+
+GPU / QUEUE
+- One GPU, serialized: renders + generate_* + OmniVoice contend. 409 = busy → studio_status, retry when idle.
+- Renders async: run_pipeline → job_id fast; await_render(until=masters|final|<stage>). ✗ blind-poll render_status.
+- Heavy GPU svcs (OmniVoice/Ollama/ComfyUI-lipsync) are consumer-lifecycle: start at job, stop in finally.
+- Local InfiniteTalk lipsync = single ComfyUI FIFO → wall ≈ Σ per-shot (NOT /workers); 600s stall-watchdog resets on busy queue, 3h/shot hard ceiling.
+
+CLOUD / HIGGSFIELD (billed)
+- API ALWAYS bills; "unlimited" Ultra = web-app only. $0 path = CoWork web-gen → harvest. estimate_episode_cost + surface total BEFORE run_pipeline / generate_cloud_shot.
+- Cached shots free; crop/trim/pan/zoom never re-bill (applied at stage 4). Job status NESTS: read top-level then generation.{status,urls}.
+- Single-shot regen: MACU_ONLY_SHOT isolates ONE shot (skips other cloud + ALL local masters) — else 1 regen drags every zeroscope master + 300s hang.
+- Cloud b-roll dedup by content hash: identical shots → 1 paid gen, clip copied per id. ✗ hand-merge repeats "to save credits" (pipeline already does).
+
+LIPSYNC (wan2_7 / InfiniteTalk)
+- STATIC head = INPUT not model. (1) wide/small-face still → no mouth to drive → tight FRONTAL head&shoulders take. (2) scene-`core` prompt → model dramatizes scene → use lipsync_prompt.
+- Prompt precedence: shot.lipsync_prompt → char.lipsync_prompt → neutral talking-head default; NEVER the scene `core`. Editing it re-bills (now in lipsync_hash).
+- ⚠ Still guard pre-submit (all engines): face too small/absent, landscape, or on-disk still ≠ synced library_sha (wrong default_take). Warns only.
+- A lipsync shot must be the FIRST shot in its cue, ≤1 per cue; b-roll/character cutaways may follow over the continuing VO.
+- Mouthless char (bag-head/mask): flag mouthless|no_lipsync → effective_kind routes to i2v. Worth it only on a FRESH build (flagging after static clips rendered = wasted re-gen).
+
+VOICE (OmniVoice / Piper)
+- Bind speaker_map by voice_name (portable); profile_id is machine-local + self-heals by name. import/export mints a NEW id per box. validate_cast before VO render — 'missing' fails LOUD, never silent fallback.
+- VO + dub cache keyed on voice_name (not profile_id); legacy id-keyed entries migrate in place (one reseed, no re-render).
+- hold_seconds cue: changing the value → delete vo/<id>.wav before --from 1 (cache trap).
+- Robot voices (Piper HAL) stay English in dubs → route speaker_map to OmniVoice HAL_OV for localized robots.
+- instruct/speed/seed/guidance_scale shape prosody — prefer over re-cloning. instruct vocab is constrained (gender/age/pitch/accent/whisper) — free-text emotion → 400.
+
+MANIFEST
+- version MUST be int — a string label (e.g. "s3-rewrite-v4") 500s every save/publish/meta. music block needs clip_seconds (~19.8) or stage 5 KeyError.
+- write_manifest replaces the WHOLE file: read → modify → write. Prefer set_episode_meta/set_speaker_voice over hand-edit.
+- subtitles: ✗ FontName=/Fontsize= inside force_style (libass takes the LAST key → drops the font). Edit scripts only in the live tree episodes/<slug>/; episode_meta/ is the git mirror (clobbered).
+
+INSTALL (Docker-Desktop / WSL)
+- OmniVoice = local on-demand container. A WSL distro move wipes the image store, dangles the docker CLI, and drops image TAGS (layers survive). ./deploy/doctor.sh checks image+container; fix = WSL-integration restart + `docker compose ... up -d --force-recreate`.
+- credsStore=desktop.exe blocks even anon public pulls (exec format error) → `DOCKER_CONFIG=$(mktemp -d) docker compose ... pull` (installer auto-bypasses).
+
+PUBLISH (macu-web / YouTube)
+- create-show + set-show Public are owner-only UI steps; the web connect token is one-time. Episode reindexed before published:true stays PRIVATE → fix via POST /api/episode/<slug>/visibility.
+- YouTube update action resets embeddable → must hard-set embeddable=true; docker restart n8n after any workflow graph edit.
 """
 
 mcp = FastMCP(
@@ -1285,6 +1338,14 @@ def skill_resource(name: str) -> str:
     """A shipped skill's SKILL.md, served as an MCP resource (skill://<name>).
     Reference files are reachable via the get_skill tool."""
     return _read_skill_file(name, "SKILL.md")
+
+
+@mcp.resource("macu://gotchas")
+def gotchas_resource() -> str:
+    """Compressed agent-facing edge-case cheatsheet (lipsync / voice / cloud /
+    manifest / install traps). Pull-on-demand — read it when a render, voice, or
+    cloud step behaves unexpectedly. Dense by design; not prose."""
+    return GOTCHAS
 
 
 @mcp.tool()

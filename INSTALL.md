@@ -161,6 +161,39 @@ panel mentions new config options, diff your `.env` against `.env.example`.
   **`setup-macu-channel`** skill, which generates the token, starts the chat
   bridge, and tests the loop.
 
+## Troubleshooting
+
+Run `./deploy/doctor.sh` first — it's re-runnable and also checks that the
+OmniVoice/Ollama **images are pulled and their containers exist** (with fix commands).
+
+**OmniVoice won't render voice (especially Docker Desktop + WSL).** Voice runs as a
+local `omnivoice` Docker container the pipeline starts on demand. After a **WSL distro
+move/reinstall** two things commonly break it:
+
+- *The `docker` CLI dangles, or the daemon is unreachable inside the distro.* Docker
+  Desktop → Settings → Resources → **WSL Integration** → enable this distro → Apply &
+  Restart, then `wsl --shutdown` and reopen. Verify with `docker info` **inside the
+  distro**. (Toggling the integration alone often flaps — a full Docker Desktop restart
+  is what takes.)
+- *The image store got wiped / the container was orphaned.* The **GPU services** section
+  of `doctor.sh` says which. Re-pull + recreate:
+  ```bash
+  docker compose -f deploy/services/omnivoice/docker-compose.yml up -d --force-recreate
+  ```
+  If a manual pull fails with `docker-credential-desktop.exe: exec format error`, your
+  `~/.docker/config.json` points `credsStore` at a Windows helper Linux can't exec — it
+  blocks even **anonymous public** pulls. The installer pulls with a sanitized config
+  automatically; to pull by hand, bypass it:
+  ```bash
+  DOCKER_CONFIG="$(mktemp -d)" docker compose -f deploy/services/omnivoice/docker-compose.yml pull
+  ```
+
+**Imported voices don't render / "no matching profile".** Import/export mints a **new
+`profile_id` per machine**, so bind `speaker_map` by **`voice_name`**, not a pinned id
+from the other box — stage 1 resolves the live roster by name automatically. If it still
+fails loud, the voice isn't in the local OmniVoice roster: import/clone it (Audio page),
+then re-render.
+
 ## Services reference
 
 See `deploy/services/README.md` for the individual compose stacks, ports, and

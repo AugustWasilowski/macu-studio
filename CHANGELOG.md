@@ -7,6 +7,22 @@ All notable changes to MACU Studio. Format loosely follows
 
 _Nothing yet._
 
+## [0.4.3] — 2026-06-15
+
+### Added
+- **Agent gotchas cheatsheet.** The Studio MCP server serves a compressed,
+  agent-targeted edge-case cheatsheet at the resource `macu://gotchas` — lipsync,
+  voice, cloud-billing, manifest, and install traps, one dense line each. It's
+  pull-on-demand, so it costs a connected agent nothing until it's fetched; the
+  server instructions point to it.
+
+### Changed
+- **Docs.** INSTALL gains a Troubleshooting section for the OmniVoice-on-WSL "can't
+  render voice" recovery (re-runnable doctor service checks, WSL-integration restart,
+  credsStore-bypass pulls, and binding voices by the portable `voice_name`). The
+  lipsync / voice / cloud / manifest traps from 0.4.2 are captured in the new
+  `macu://gotchas` resource above rather than scattered through prose.
+
 ## [0.4.2] — 2026-06-15
 
 ### Added
