@@ -166,6 +166,7 @@ CLOUD / HIGGSFIELD (billed)
 LIPSYNC (wan2_7 / InfiniteTalk)
 - STATIC head = INPUT not model. (1) wide/small-face still → no mouth to drive → tight FRONTAL head&shoulders take. (2) scene-`core` prompt → model dramatizes scene → use lipsync_prompt.
 - Prompt precedence: shot.lipsync_prompt → char.lipsync_prompt → neutral talking-head default; NEVER the scene `core`. Editing it re-bills (now in lipsync_hash).
+- lipsync needs source_still (= the character key). manifest_from_script emits character shots as {who, seed} with NO source_still, so converting kind=character→lipsync ALSO requires setting source_still=who — else every shot errors "source_still required". Recipe = kind:lipsync AND source_still:<who>.
 - ⚠ Still guard pre-submit (all engines): face too small/absent, landscape, or on-disk still ≠ synced library_sha (wrong default_take). Warns only.
 - A lipsync shot must be the FIRST shot in its cue, ≤1 per cue; b-roll/character cutaways may follow over the continuing VO.
 - Mouthless char (bag-head/mask): flag mouthless|no_lipsync → effective_kind routes to i2v. Worth it only on a FRESH build (flagging after static clips rendered = wasted re-gen).
