@@ -16,7 +16,7 @@ the VO that stage 4 muxes.
 
 Usage: python3 stage_2b_cloud.py <slug>
 """
-import json, math, mimetypes, os, random, re, subprocess, sys, threading, time, urllib.error, urllib.request
+import json, math, mimetypes, os, random, re, shutil, subprocess, sys, threading, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -653,25 +653,73 @@ def main(slug):
     lock = threading.Lock()
     entries = hfc.load_sidecar(sc_path, "shots")
     todo = []
+    donors: dict[str, str] = {}   # SSA-146: content hash -> a fresh sibling's shot id
     for cue, shot in cloud:
         st = hfc.shot_state(shot, cue, m, ep, entries, lipsync_engine=lipsync_engine)
         if st["fresh"]:
+            # A cached non-lipsync clip can donate to identical shots this run.
+            if hfc.effective_kind(shot, m) != "lipsync":
+                donors.setdefault(st["hash"], shot["id"])
             continue
         todo.append((cue, shot, st["hash"]))
     skipped = len(cloud) - len(todo)
-    print(f"[stage 2b cloud] {len(todo)} shot(s) to generate, {skipped} cached, "
-          f"{stills_made} still(s) made (lipsync engine: {lipsync_engine})")
-    if not todo:
+
+    # SSA-146: dedup non-lipsync cloud shots by content hash. Crop/trim/pan/zoom
+    # are applied per-cue at assembly (stage 4) and excluded from the hash, so two
+    # cues citing the same b-roll source share ONE generation; the clip is then
+    # copied to each shot id so assembly still finds a per-id file. Lipsync carries
+    # per-cue audio (and the talking-head prompt) in its hash → never deduped.
+    lipsync_items, video_groups, group_order = [], {}, []
+    for cue, shot, h in todo:
+        if hfc.effective_kind(shot, m) == "lipsync":
+            lipsync_items.append((cue, shot, h))
+            continue
+        if h not in video_groups:
+            video_groups[h] = []
+            group_order.append(h)
+        video_groups[h].append((cue, shot, h))
+
+    # Each work item: (cue, shot, hash, followers, donor_sid). A donor_sid means
+    # "copy from an already-fresh sibling, render nothing"; followers are identical
+    # shots materialized from the representative's clip once it renders.
+    work_items = [(c, s, h, [], None) for (c, s, h) in lipsync_items]
+    dedup_saved = 0
+    for h in group_order:
+        members = video_groups[h]
+        donor = donors.get(h)
+        if donor:
+            for c, s, _h in members:
+                work_items.append((c, s, h, [], donor))
+                dedup_saved += 1
+        else:
+            rep, followers = members[0], members[1:]
+            dedup_saved += len(followers)
+            work_items.append((rep[0], rep[1], h, followers, None))
+
+    print(f"[stage 2b cloud] {len(work_items)} job(s) to run ({dedup_saved} deduped), "
+          f"{skipped} cached, {stills_made} still(s) made (lipsync engine: {lipsync_engine})")
+    if not work_items:
         return {"cloud_rendered": 0, "cloud_skipped": skipped, "stills": stills_made}
 
     start = time.time()
     done = 0
     errors = []
 
+    def _stamp_followers(cur, sid, followers):
+        # Same content as `sid`: copy its clip to each follower id + stamp fresh.
+        for _fc, fshot, fh in followers:
+            fsid = fshot["id"]
+            shutil.copy2(hfc.clip_path(ep, sid), hfc.clip_path(ep, fsid))
+            cur[fsid] = fh
+
     def work_one(item):
-        cue, shot, h = item
+        cue, shot, h, followers, donor_sid = item
+        sid = shot["id"]
+        if donor_sid:
+            # Pure copy from a cached identical sibling — no generation, no bill.
+            shutil.copy2(hfc.clip_path(ep, donor_sid), hfc.clip_path(ep, sid))
         # Mouthless characters reroute lipsync → i2v video (effective_kind).
-        if hfc.effective_kind(shot, m) == "lipsync":
+        elif hfc.effective_kind(shot, m) == "lipsync":
             # SSA-145: warn (don't block) on a still that won't lip-sync well —
             # too-small/absent face, landscape framing, or a stale library take.
             for w in hfc.lipsync_still_warnings(shot, m, ep):
@@ -687,26 +735,27 @@ def main(slug):
         with lock:
             cur = hfc.load_sidecar(sc_path, "shots")
             cur[sid] = h
+            _stamp_followers(cur, sid, followers)
             hfc.save_sidecar(sc_path, "shots", cur)
         return sid
 
     with ThreadPoolExecutor(max_workers=MAX_CONCURRENT) as ex:
-        futs = {ex.submit(work_one, it): it for it in todo}
+        futs = {ex.submit(work_one, it): it for it in work_items}
         for fut in as_completed(futs):
-            cue, shot, _h = futs[fut]
+            cue, shot, _h, _f, _d = futs[fut]
             try:
                 sid = fut.result()
                 done += 1
                 print(f"  done {sid:24} +{round(time.time()-start, 1)}s")
             except Exception as e:
                 errors.append(f"{shot.get('id')}: {e}")
-            progress_tick(2, "cloud", (done + len(errors)) / len(todo))
+            progress_tick(2, "cloud", (done + len(errors)) / len(work_items))
 
     if errors:
-        raise RuntimeError(f"[stage 2b cloud] {len(errors)}/{len(todo)} shot(s) failed "
+        raise RuntimeError(f"[stage 2b cloud] {len(errors)}/{len(work_items)} job(s) failed "
                            f"({done} succeeded and are cached):\n  " + "\n  ".join(errors))
     return {"cloud_rendered": done, "cloud_skipped": skipped, "stills": stills_made,
-            "cloud_wall_s": round(time.time() - start, 2)}
+            "cloud_deduped": dedup_saved, "cloud_wall_s": round(time.time() - start, 2)}
 
 
 if __name__ == "__main__":
