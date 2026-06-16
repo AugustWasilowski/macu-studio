@@ -160,6 +160,7 @@ CLOUD / HIGGSFIELD (billed)
 - API ALWAYS bills; "unlimited" Ultra = web-app only. $0 path = CoWork web-gen → harvest. estimate_episode_cost + surface total BEFORE run_pipeline / generate_cloud_shot.
 - Cached shots free; crop/trim/pan/zoom never re-bill (applied at stage 4). Job status NESTS: read top-level then generation.{status,urls}.
 - Single-shot regen: MACU_ONLY_SHOT isolates ONE shot (skips other cloud + ALL local masters) — else 1 regen drags every zeroscope master + 300s hang.
+- Raw POST /render (bypassing MCP run_pipeline) needs explicit episodes_dir (+ comfy_url) for a non-default show: it defaults episodes_dir to <MACU>/episodes (no show segment) → "manifest not found". MCP run_pipeline sets both; the raw render API does not.
 - Cloud b-roll dedup by content hash: identical shots → 1 paid gen, clip copied per id. ✗ hand-merge repeats "to save credits" (pipeline already does).
 
 LIPSYNC (wan2_7 / InfiniteTalk)
