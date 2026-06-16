@@ -7,6 +7,40 @@ All notable changes to MACU Studio. Format loosely follows
 
 _Nothing yet._
 
+## [0.4.2] — 2026-06-15
+
+### Added
+- **Lipsync still guard.** Before an audio-driven lipsync shot is sent to the cloud,
+  the still is checked for a findable mouth — a wide or small-face portrait makes the
+  model animate the scene instead of lip-syncing. You get a warning (face too small or
+  not found, landscape framing, or a still that no longer matches the character's
+  synced library take); it never blocks the render, just flags the likely-static shot
+  so you can swap in a tighter take.
+
+### Changed
+- **Lipsync prompts stay on-face.** Talking-head shots no longer inherit the
+  character's scene/action prompt — that was making the model dramatize the scene
+  (look away, gesture) instead of speaking to camera. They now use a neutral
+  talking-head prompt, overridable per character or per shot with `lipsync_prompt`.
+  Editing that prompt re-renders the clip (it's part of the cache key now).
+- **Cloud b-roll renders once.** Two cues that pull from the same b-roll source now
+  share a single paid cloud generation — the clip is reused across cues, with each
+  cue's own crop/trim/pan applied at assembly. Lipsync is never deduplicated (its
+  audio differs per cue). Cuts credits on episodes that reuse establishing shots.
+- **Portable voices, no needless re-renders.** A voice imported onto another machine
+  gets a new internal id but the same name; VO is now cached by voice **name**, so an
+  import no longer re-renders every line. Existing caches migrate in place — no
+  re-render on upgrade.
+
+### Fixed
+- **OmniVoice local install on Docker-Desktop/WSL.** `./deploy/doctor.sh` now also
+  checks that the OmniVoice/Ollama images are pulled **and** their containers exist
+  (a WSL distro move can wipe Docker's image store and orphan the container, leaving a
+  fresh-looking install that silently can't render voice), and gives a WSL-integration
+  hint when the daemon is unreachable. The installer pulls those public images with a
+  sanitized Docker config so a Windows credential helper that Linux can't run stops
+  blocking anonymous pulls.
+
 ## [0.4.1] — 2026-06-12
 
 ### Fixed

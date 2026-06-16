@@ -107,11 +107,22 @@ echo "GPU services (on-demand — OmniVoice voices, Ollama shot-gen):"
 # (the Leo class of bug). Re-runnable: this only inspects state, fixes nothing.
 svc_check(){ # label  image-repo(no tag/digest)  container-name
   local label="$1" image="$2" cont="$3"
-  local img=0 con=0
-  docker image ls --format '{{.Repository}}' 2>/dev/null | grep -qx "$image" && img=1
+  local img=0 con=0 imgid=""
   docker container inspect "$cont" >/dev/null 2>&1 && con=1
-  if [ "$img" = 1 ] && [ "$con" = 1 ]; then
+  [ "$con" = 1 ] && imgid=$(docker container inspect -f '{{.Image}}' "$cont" 2>/dev/null)
+  # Image is "present" if the repo TAG resolves OR the container's pinned image id
+  # does. A WSL distro move can drop the tag while the layers + container still run
+  # fine, so a tag-only check false-warns on a perfectly runnable install (the
+  # `docker start omnivoice` path works off the image id, not the tag) — Leo, 2026-06-15.
+  if docker image ls --format '{{.Repository}}' 2>/dev/null | grep -qx "$image"; then
+    img=1
+  elif [ -n "$imgid" ] && docker image inspect "$imgid" >/dev/null 2>&1; then
+    img=1
+  fi
+  if [ "$con" = 1 ] && [ "$img" = 1 ]; then
     PASS "$label" "image + container ($(docker container inspect -f '{{.State.Status}}' "$cont" 2>/dev/null))"
+  elif [ "$con" = 1 ]; then
+    WARN "$label" "container '$cont' exists but its image is gone — recreate: docker compose -f deploy/services/$label/docker-compose.yml up -d --force-recreate"
   elif [ "$img" = 1 ]; then
     WARN "$label" "image present, no '$cont' container — create it: docker compose -f deploy/services/$label/docker-compose.yml create"
   else
