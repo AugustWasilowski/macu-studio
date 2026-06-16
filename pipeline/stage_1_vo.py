@@ -37,15 +37,20 @@ CACHE_FILE_NAME = ".cache.json"
 CACHE_VERSION = 1
 
 
-def _cue_cache_key(cue, voice_cfg):
+def _cue_cache_key(cue, voice_cfg, legacy=False):
     """Stable 16-hex hash of everything that determines a cue's rendered wav.
 
     For hold cues (vo:"" + hold_seconds:N), only the duration matters — silence
     is silence regardless of voice config. Including voice_cfg here would mean
     a speaker_map edit (unrelated to silence) needlessly invalidates hold wavs.
     For dialogue cues, the hash covers the text, the speaker label, and the
-    resolved voice config (engine + profile_id + voice_name) so any tweak that
-    would change what TTS produces will invalidate the cache.
+    resolved voice config.
+
+    Voice identity is the PORTABLE voice_name, NOT the machine-specific profile_id
+    (SSA-147): import/export mints a new profile_id per install, so keying on the id
+    would re-render every cue after a voice import even though the voice is identical.
+    `legacy=True` reproduces the old profile_id-bearing key so an existing cache
+    migrates in place (one reseed, no re-render) on the switch to the portable key.
     """
     hold = cue.get("hold_seconds")
     if hold is not None:
@@ -55,13 +60,14 @@ def _cue_cache_key(cue, voice_cfg):
             "vo": cue.get("vo") or "",
             "speaker": cue.get("speaker") or "",
             "engine": voice_cfg.get("engine"),
-            "profile_id": voice_cfg.get("profile_id"),
             "voice_name": voice_cfg.get("voice_name"),
             "speed": voice_cfg.get("speed"),
             "guidance_scale": voice_cfg.get("guidance_scale"),
             "seed": voice_cfg.get("seed"),
             "instruct": voice_cfg.get("instruct"),
         }
+        if legacy:
+            payload["profile_id"] = voice_cfg.get("profile_id")
     raw = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:16]
 
@@ -269,6 +275,14 @@ def main(slug):
                 seeded += 1
                 skipped += 1
                 continue
+            if stored == _cue_cache_key(cue, voice, legacy=True):
+                # Portable-key migration (SSA-147): the wav was cached under the old
+                # profile_id-bearing key but nothing about the voice actually changed
+                # — reseed to the portable key, don't re-render.
+                cache[cue["id"]] = key
+                seeded += 1
+                skipped += 1
+                continue
             # else stored != key and stored is not None → text/voice changed → regen.
         hold = cue.get("hold_seconds")
         todo.append((cue["id"], cue.get("speaker") or "",
@@ -400,11 +414,16 @@ def _fit_duration(path, target_dur, tol=0.04):
         os.unlink(work)
 
 
-def _dub_cache_key(lang, text, voice_cfg, target_dur):
-    payload = {"lang": lang, "text": text or "", "profile_id": voice_cfg.get("profile_id"),
+def _dub_cache_key(lang, text, voice_cfg, target_dur, legacy=False):
+    # Voice identity = portable voice_name, not the machine-specific profile_id
+    # (SSA-147); legacy=True reproduces the old id-bearing key for one-time migration.
+    payload = {"lang": lang, "text": text or "", "voice_name": voice_cfg.get("voice_name"),
                "speed": voice_cfg.get("speed"), "guidance_scale": voice_cfg.get("guidance_scale"),
                "seed": voice_cfg.get("seed"), "instruct": voice_cfg.get("instruct"),
                "target_dur": round(float(target_dur), 3)}
+    if legacy:
+        payload["profile_id"] = voice_cfg.get("profile_id")
+        del payload["voice_name"]
     raw = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:16]
 
@@ -447,7 +466,10 @@ def dub_vo(slug, lang, translations, ov_language, progress=None):
             out = f"{out_dir}/{cid}.wav"
             key = _dub_cache_key(lang, text, voice, target)
             cur_keys[cid] = key
-            if os.path.exists(out) and os.path.getsize(out) > 0 and cache.get(cid) == key:
+            if os.path.exists(out) and os.path.getsize(out) > 0 and cache.get(cid) in (
+                    key, _dub_cache_key(lang, text, voice, target, legacy=True)):
+                # Portable-key migration (SSA-147): reseed a legacy id-keyed entry.
+                cache[cid] = key
                 skipped += 1
                 if progress:
                     progress(i + 1, len(dialogue))

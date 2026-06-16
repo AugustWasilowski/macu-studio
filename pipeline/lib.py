@@ -3,7 +3,7 @@
 All stage scripts accept <slug> as argv and read paths relative to
 /mnt/storage/shares/MACU/episodes/<slug>/.
 """
-import os, json, socket, subprocess, time, glob, urllib.request, urllib.error
+import os, json, socket, subprocess, tempfile, time, glob, urllib.request, urllib.error
 from pathlib import Path
 
 # Load the repo-root .env (the pipeline has no config.py). Wrapped so Max's SYSTEM
@@ -87,6 +87,34 @@ def resolve_asset_path(path, base=None):
     return os.path.join(base or ASSETS, path)
 
 
+def _credsafe_env():
+    """os.environ with DOCKER_CONFIG pointed at a sanitized config dir (SSA-147).
+
+    On Docker-Desktop-on-WSL, ~/.docker/config.json sets credsStore=desktop(.exe) —
+    a Windows credential helper Linux can't exec ('exec format error') — which
+    blocks even ANONYMOUS public pulls. We copy the config minus credsStore/
+    credHelpers/auths (keeping proxies/mirrors) into a temp dir so the public
+    OmniVoice/Ollama images pull without a cred helper. Best-effort: returns the
+    ambient env unchanged if anything fails."""
+    env = dict(os.environ)
+    try:
+        cfgdir = tempfile.mkdtemp(prefix="macu-dockercfg-")
+        src = Path.home() / ".docker" / "config.json"
+        cfg = {}
+        if src.exists():
+            try:
+                cfg = json.loads(src.read_text())
+            except Exception:
+                cfg = {}
+        for k in ("credsStore", "credHelpers", "auths"):
+            cfg.pop(k, None)
+        (Path(cfgdir) / "config.json").write_text(json.dumps(cfg))
+        env["DOCKER_CONFIG"] = cfgdir
+    except Exception:
+        pass
+    return env
+
+
 def _omnivoice_compose_up():
     """Create + start the OmniVoice container from its compose file — for a fresh
     install where the image was pulled but no container was ever created (so
@@ -98,7 +126,7 @@ def _omnivoice_compose_up():
     if envfile.exists():
         cmd += ["--env-file", str(envfile)]
     cmd += ["-f", str(compose), "up", "-d"]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, env=_credsafe_env())
 
 
 _DOCKER_HELP = (

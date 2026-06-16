@@ -158,12 +158,34 @@ esac
 echo "  (override the data location in .env / deploy/services/.env if you want it elsewhere)"
 
 echo; echo ">>> [3/6] pull + create on-demand service containers (ollama + omnivoice)"
-retry docker compose -f deploy/services/ollama/docker-compose.yml pull
-retry docker compose -f deploy/services/omnivoice/docker-compose.yml pull
+# credsStore-safe pulls (SSA-147): on Docker-Desktop-on-WSL, ~/.docker/config.json
+# usually sets credsStore=desktop.exe — a Windows cred helper Linux can't exec
+# ('exec format error') — which blocks even ANONYMOUS public pulls. These images
+# are public, so pull with a sanitized DOCKER_CONFIG (credsStore/credHelpers/auths
+# stripped, proxies/mirrors kept). Falls back to an empty config on any error.
+PULL_CFG="$(mktemp -d)"
+trap 'rm -rf "$PULL_CFG"' EXIT
+if [ -f "$HOME/.docker/config.json" ]; then
+  python3 - "$HOME/.docker/config.json" "$PULL_CFG/config.json" <<'PY' 2>/dev/null || echo '{}' >"$PULL_CFG/config.json"
+import json, sys
+try:
+    cfg = json.load(open(sys.argv[1]))
+except Exception:
+    cfg = {}
+for k in ("credsStore", "credHelpers", "auths"):
+    cfg.pop(k, None)
+json.dump(cfg, open(sys.argv[2], "w"))
+PY
+else
+  echo '{}' >"$PULL_CFG/config.json"
+fi
+dcompose(){ DOCKER_CONFIG="$PULL_CFG" docker compose "$@"; }
+retry dcompose -f deploy/services/ollama/docker-compose.yml pull
+retry dcompose -f deploy/services/omnivoice/docker-compose.yml pull
 # Create the containers (stopped) so the on-demand `docker start omnivoice` works
 # later — pulling the image alone leaves no container to start.
-docker compose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null || true
-docker compose -f deploy/services/omnivoice/docker-compose.yml create 2>/dev/null || true
+dcompose -f deploy/services/ollama/docker-compose.yml create 2>/dev/null || true
+dcompose -f deploy/services/omnivoice/docker-compose.yml create 2>/dev/null || true
 
 echo; echo ">>> [4/6] fetch public models + assets (~8 GB — slow)"
 MACU_INSTALL_MODELS="$WITH_MODELS" MACU_INSTALL_TALKING_HEAD="$WITH_TALKING_HEAD" ./deploy/fetch-models.sh

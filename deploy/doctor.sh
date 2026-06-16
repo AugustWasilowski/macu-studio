@@ -12,6 +12,8 @@ PASS(){ printf "  ${green}✓${rst} %-22s %s\n" "$1" "${2:-}"; ok=$((ok+1)); }
 FAIL(){ printf "  ${red}✗${rst} %-22s %s\n" "$1" "${yellow}${2:-}${rst}"; miss=$((miss+1)); }
 WARN(){ printf "  ${yellow}!${rst} %-22s %s\n" "$1" "${dim}${2:-}${rst}"; }
 have(){ command -v "$1" >/dev/null 2>&1; }
+is_wsl(){ grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; }
+docker_usable=0   # set to 1 once `docker info` succeeds (gates the services section)
 
 echo "MACU preflight — checking host prerequisites"
 echo
@@ -59,6 +61,7 @@ echo
 echo "Docker + GPU:"
 if have docker; then
   if docker info >/dev/null 2>&1; then
+    docker_usable=1
     PASS docker "$(docker --version 2>/dev/null | cut -d, -f1)"
     # Compose v2 (the `docker compose` subcommand) — the installer uses it everywhere.
     # The old standalone v1 `docker-compose` is NOT a substitute and will break mid-build.
@@ -78,6 +81,8 @@ if have docker; then
     # Separate "you lack permission" from "the daemon is down" — the fix is different.
     if docker info 2>&1 | grep -qiE 'permission denied|dial unix.*docker.sock'; then
       FAIL docker "no permission for the Docker socket — run:  sudo usermod -aG docker $(id -un)  then log out and back in"
+    elif is_wsl; then
+      FAIL docker "daemon unreachable in this WSL distro — Docker Desktop → Settings → Resources → WSL Integration → enable this distro → Apply & Restart, then 'wsl --shutdown' and reopen. A distro move can also wipe the image store (see the services section)."
     else
       FAIL docker "daemon unreachable — start Docker (Docker Desktop, or 'sudo systemctl start docker')"
     fi
@@ -93,6 +98,37 @@ if have nvidia-smi; then
     WARN gpu-vram "$((vram_mib/1024)) GB — 11-12 GB recommended; the video (T2V) stage may OOM below ~11 GB (see README → System requirements)"
   fi
 else FAIL nvidia-driver "no nvidia-smi — install the NVIDIA driver (an NVIDIA GPU is required)"; fi
+
+echo
+echo "GPU services (on-demand — OmniVoice voices, Ollama shot-gen):"
+# The on-demand `docker start omnivoice` (stage 1 VO) needs BOTH the image pulled
+# AND a created container. A WSL distro move can wipe Docker Desktop's image store
+# and orphan the container, so a fresh-looking install silently can't render voice
+# (the Leo class of bug). Re-runnable: this only inspects state, fixes nothing.
+svc_check(){ # label  image-repo(no tag/digest)  container-name
+  local label="$1" image="$2" cont="$3"
+  local img=0 con=0
+  docker image ls --format '{{.Repository}}' 2>/dev/null | grep -qx "$image" && img=1
+  docker container inspect "$cont" >/dev/null 2>&1 && con=1
+  if [ "$img" = 1 ] && [ "$con" = 1 ]; then
+    PASS "$label" "image + container ($(docker container inspect -f '{{.State.Status}}' "$cont" 2>/dev/null))"
+  elif [ "$img" = 1 ]; then
+    WARN "$label" "image present, no '$cont' container — create it: docker compose -f deploy/services/$label/docker-compose.yml create"
+  else
+    WARN "$label" "image not pulled — re-run installer step [3/6], or: docker compose -f deploy/services/$label/docker-compose.yml pull && ... create"
+  fi
+}
+if [ "$docker_usable" = 1 ]; then
+  svc_check omnivoice ghcr.io/debpalash/omnivoice-studio omnivoice
+  svc_check ollama    ollama/ollama                       ollama
+  # credsStore that Linux can't exec → public pulls fail (the installer now bypasses
+  # it, but flag it so a manual `docker compose pull` failure isn't a mystery).
+  if is_wsl && grep -qiE '"credsStore"\s*:\s*"desktop' "$HOME/.docker/config.json" 2>/dev/null; then
+    WARN docker-creds "~/.docker/config.json uses the Windows 'desktop' cred helper — anonymous public pulls need 'DOCKER_CONFIG=<empty> docker compose pull' (the installer does this automatically)"
+  fi
+else
+  WARN services "skipped — Docker isn't usable; fix the docker ✗ above, then re-run ./deploy/doctor.sh"
+fi
 
 echo
 echo "Render pipeline (local frame interpolation — stage 3):"
